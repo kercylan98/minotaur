@@ -46,7 +46,7 @@ func (slf *gateway) run(stateMachine *StateMachine, appName string, port int, on
 		ip := context.GetHeader("X-Real-IP")
 		ws, err := upgrade.Upgrade(context.Writer, context.Request, nil)
 		if err != nil {
-			log.Error("Websocket Upgrade error", zap.Error(err))
+			log.Error("Gateway", zap.Error(err))
 			return
 		}
 		if len(ip) == 0 {
@@ -57,14 +57,14 @@ func (slf *gateway) run(stateMachine *StateMachine, appName string, port int, on
 		}
 		conn := onCreateConnHandleFunc()
 		if err := context.ShouldBind(conn); err != nil {
-			log.Error("ServeWebSocket", zap.Error(err))
+			log.Error("Gateway", zap.Error(err))
 			context.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
 		playerGuid, err := stateMachine.sonyflake.NextID()
 		if err != nil {
-			log.Error("GuidGenerateFailed", zap.Error(err))
+			log.Error("Gateway", zap.Error(err))
 			context.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
