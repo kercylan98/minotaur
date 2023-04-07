@@ -1,0 +1,15 @@
+syntax = "proto3";
+// protoc --proto_path . --go_out=./game/protobuf/protobuf/ --go-grpc_out=./game/protobuf/protobuf/ ./game/protobuf/*.proto
+
+package protobuf;
+option go_package = "./;protobuf";
+
+enum MessageCode {
+  SystemHeartbeat = 0;    // 心跳
+}
+
+//通用消息
+message Message {
+  int32 code = 1;
+  bytes data = 2;
+}
