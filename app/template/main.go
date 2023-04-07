@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"minotaur/app/template/app"
 	"minotaur/game"
-	"minotaur/game/gateway/conn"
+	"minotaur/game/conn"
 	"minotaur/game/protobuf/protobuf"
 )
 

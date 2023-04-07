@@ -23,7 +23,7 @@ const (
 
 type OnCreateConnHandleFunc func() Conn
 type gateway struct {
-	server *http.Server
+	httpServer *http.Server
 }
 
 func (slf *gateway) run(stateMachine *StateMachine, appName string, port int, onCreateConnHandleFunc OnCreateConnHandleFunc) *gateway {
@@ -121,14 +121,14 @@ func (slf *gateway) run(stateMachine *StateMachine, appName string, port int, on
 	})
 
 	// HttpServer
-	slf.server = &http.Server{
+	slf.httpServer = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
-	log.Info("GatewayStart", zap.String("listen", slf.server.Addr))
+	log.Info("GatewayStart", zap.String("listen", slf.httpServer.Addr))
 
 	go func() {
-		if err := slf.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := slf.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			stateMachine.errChannel <- err
 			return
 		}
@@ -139,7 +139,7 @@ func (slf *gateway) run(stateMachine *StateMachine, appName string, port int, on
 
 func (slf *gateway) shutdown(context context.Context) error {
 	log.Info("GatewayShutdown", zap.String("stateMachine", "start"))
-	if err := slf.server.Shutdown(context); err != nil {
+	if err := slf.httpServer.Shutdown(context); err != nil {
 		return err
 	}
 	log.Info("GatewayShutdown", zap.String("stateMachine", "normal"))
