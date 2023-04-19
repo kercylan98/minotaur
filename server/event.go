@@ -5,15 +5,15 @@ import (
 	"minotaur/utils/log"
 )
 
-type ReceivePacketEventHandle func(conn *Conn, packet []byte)
+type ConnectionReceivePacketEventHandle func(conn *Conn, packet []byte)
 type ConnectionOpenedEventHandle func(conn *Conn)
 type ConnectionClosedEventHandle func(conn *Conn)
 
 type event struct {
 	*Server
-	receivePacketEventHandles    []ReceivePacketEventHandle
-	connectionOpenedEventHandles []ConnectionOpenedEventHandle
-	connectionClosedEventHandles []ConnectionClosedEventHandle
+	connectionReceivePacketEventHandles []ConnectionReceivePacketEventHandle
+	connectionOpenedEventHandles        []ConnectionOpenedEventHandle
+	connectionClosedEventHandles        []ConnectionClosedEventHandle
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数
@@ -44,22 +44,22 @@ func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
 	}
 }
 
-// RegReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
-func (slf *event) RegReceivePacketEvent(handle ReceivePacketEventHandle) {
+// RegConnectionReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
+func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacketEventHandle) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.receivePacketEventHandles = append(slf.receivePacketEventHandles, handle)
+	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
 }
 
-func (slf *event) OnReceivePacketEvent(conn *Conn, packet []byte) {
-	for _, handle := range slf.receivePacketEventHandles {
+func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
+	for _, handle := range slf.connectionReceivePacketEventHandles {
 		handle(conn, packet)
 	}
 }
 
 func (slf *event) check() {
-	if len(slf.receivePacketEventHandles) == 0 {
-		log.Warn("Server", zap.String("ReceivePacketEvent", "Invalid server, no packets processed"))
+	if len(slf.connectionReceivePacketEventHandles) == 0 {
+		log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "Invalid server, no packets processed"))
 	}
 }

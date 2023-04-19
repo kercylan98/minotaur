@@ -186,7 +186,7 @@ func (slf *Server) dispatchMessage(msg *message) {
 	switch msg.t {
 	case MessageTypePacket:
 		conn, packet := msg.t.deconstructPacket(msg.attrs...)
-		slf.OnReceivePacketEvent(conn, packet)
+		slf.OnConnectionReceivePacketEvent(conn, packet)
 	case MessageTypeError:
 		err, action := msg.t.deconstructError(msg.attrs...)
 		switch action {
