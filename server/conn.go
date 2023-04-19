@@ -6,6 +6,7 @@ import (
 	"github.com/xtaci/kcp-go/v5"
 )
 
+// newKcpConn 创建一个处理KCP的连接
 func newKcpConn(session *kcp.UDPSession) *Conn {
 	return &Conn{
 		ip:  session.RemoteAddr().String(),
@@ -17,6 +18,7 @@ func newKcpConn(session *kcp.UDPSession) *Conn {
 	}
 }
 
+// newKcpConn 创建一个处理GNet的连接
 func newGNetConn(conn gnet.Conn) *Conn {
 	return &Conn{
 		ip: conn.RemoteAddr().String(),
@@ -27,6 +29,7 @@ func newGNetConn(conn gnet.Conn) *Conn {
 	}
 }
 
+// newKcpConn 创建一个处理WebSocket的连接
 func newWebsocketConn(ws *websocket.Conn) *Conn {
 	return &Conn{
 		ws: ws,
@@ -36,6 +39,7 @@ func newWebsocketConn(ws *websocket.Conn) *Conn {
 	}
 }
 
+// Conn 服务器连接
 type Conn struct {
 	ip    string
 	ws    *websocket.Conn
@@ -44,10 +48,12 @@ type Conn struct {
 	write func(data []byte) error
 }
 
+// Write 向连接中写入数据
 func (slf *Conn) Write(data []byte) error {
 	return slf.write(data)
 }
 
+// Close 关闭连接
 func (slf *Conn) Close() {
 	if slf.ws != nil {
 		slf.ws.Close()

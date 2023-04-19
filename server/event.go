@@ -59,7 +59,7 @@ func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 }
 
 func (slf *event) check() {
-	if len(slf.connectionReceivePacketEventHandles) == 0 {
+	if slf.network != NetworkHttp && len(slf.connectionReceivePacketEventHandles) == 0 {
 		log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "Invalid server, no packets processed"))
 	}
 }

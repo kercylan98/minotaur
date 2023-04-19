@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// New 根据特定网络类型创建一个服务器
 func New(network Network) *Server {
 	server := &Server{
 		network: network,
@@ -28,6 +29,7 @@ func New(network Network) *Server {
 	return server
 }
 
+// Server 网络服务器
 type Server struct {
 	*event
 	network        Network
@@ -37,7 +39,7 @@ type Server struct {
 	messageChannel chan *message
 }
 
-// Run 使用特定网络模式运行服务器
+// Run 使用特定地址运行服务器
 //
 //	server.NetworkTCP (addr:":8888")
 //	server.NetworkTCP4 (addr:":8888")
@@ -192,6 +194,7 @@ func (slf *Server) Run(addr string) error {
 	return nil
 }
 
+// Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	close(slf.messageChannel)
 	if err != nil {
@@ -201,6 +204,7 @@ func (slf *Server) Shutdown(err error) {
 	}
 }
 
+// HttpRouter 当网络类型为 NetworkHttp 时将被允许获取路由器进行路由注册，否则将会发生 panic
 func (slf *Server) HttpRouter() gin.IRouter {
 	if slf.httpServer == nil {
 		panic(ErrNetworkOnlySupportHttp)
@@ -208,6 +212,7 @@ func (slf *Server) HttpRouter() gin.IRouter {
 	return slf.httpServer
 }
 
+// PushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	slf.messageChannel <- &message{
 		t:     messageType,
@@ -215,6 +220,7 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	}
 }
 
+// dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *message) {
 	defer func() {
 		if err := recover(); err != nil {
