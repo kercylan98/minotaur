@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/gnet"
+	"github.com/xtaci/kcp-go/v5"
 	"go.uber.org/zap"
 	"minotaur/utils/log"
 	"net/http"
@@ -44,9 +45,10 @@ type Server struct {
 //	server.NetworkUDP (addr:":8888")
 //	server.NetworkUDP4 (addr:":8888")
 //	server.NetworkUDP6 (addr:":8888")
-//	server.Unix (addr:"socketPath")
-//	server.Http (addr:":8888")
-//	server.Websocket (addr:":8888/ws")
+//	server.NetworkUnix (addr:"socketPath")
+//	server.NetworkHttp (addr:":8888")
+//	server.NetworkWebsocket (addr:":8888/ws")
+//	server.NetworkKcp (addr:":8888")
 func (slf *Server) Run(addr string) error {
 	if slf.event == nil {
 		return ErrConstructed
@@ -70,6 +72,41 @@ func (slf *Server) Run(addr string) error {
 		go func() {
 			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+			}
+		}()
+	case NetworkKcp:
+		listener, err := kcp.ListenWithOptions(slf.addr, nil, 0, 0)
+		if err != nil {
+			return err
+		}
+		go connectionInitHandle()
+		go func() {
+			for {
+				session, err := listener.AcceptKCP()
+				if err != nil {
+					continue
+				}
+
+				conn := newKcpConn(session)
+				slf.OnConnectionOpenedEvent(conn)
+
+				go func(conn *Conn) {
+					defer func() {
+						if err := recover(); err != nil {
+							conn.Close()
+							slf.OnConnectionClosedEvent(conn)
+						}
+					}()
+
+					buf := make([]byte, 4096)
+					for {
+						n, err := conn.kcp.Read(buf)
+						if err != nil {
+							panic(err)
+						}
+						slf.PushMessage(MessageTypePacket, conn, buf[:n])
+					}
+				}(conn)
 			}
 		}()
 	case NetworkHttp:
@@ -109,6 +146,7 @@ func (slf *Server) Run(addr string) error {
 
 			conn := newWebsocketConn(ws)
 			conn.ip = ip
+			slf.OnConnectionOpenedEvent(conn)
 
 			defer func() {
 				if err := recover(); err != nil {

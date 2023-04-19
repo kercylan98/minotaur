@@ -12,4 +12,5 @@ const (
 	NetworkUnix      Network = "unix"
 	NetworkHttp      Network = "http"
 	NetworkWebsocket Network = "websocket"
+	NetworkKcp       Network = "kcp"
 )
