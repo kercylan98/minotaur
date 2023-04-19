@@ -65,7 +65,7 @@ func newLogger() *zap.Logger {
 		)
 	}
 
-	return zap.New(cores, zap.AddCaller())
+	return zap.New(cores, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
 func getWriter(filename string, times int32) io.Writer {
