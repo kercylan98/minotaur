@@ -1,8 +1,0 @@
-syntax = "proto3";
-// protoc --proto_path . --go_out=./game/protobuf/protobuf/ --go-grpc_out=./game/protobuf/protobuf/ ./game/protobuf/*.proto
-
-package protobuf;
-option go_package = "./;protobuf";
-
-// 心跳
-message SystemHeartbeatClient {}

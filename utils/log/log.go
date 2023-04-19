@@ -12,11 +12,6 @@ import (
 
 var (
 	Logger *zap.Logger
-
-	Info  func(msg string, fields ...zap.Field)
-	Warn  func(msg string, fields ...zap.Field)
-	Debug func(msg string, fields ...zap.Field)
-	Error func(msg string, fields ...zap.Field)
 )
 
 const (
@@ -27,11 +22,6 @@ const (
 
 func init() {
 	Logger = newLogger()
-
-	Info = Logger.Info
-	Warn = Logger.Warn
-	Debug = Logger.Debug
-	Error = Logger.Error
 }
 
 func newLogger() *zap.Logger {
@@ -93,4 +83,20 @@ func getWriter(filename string, times int32) io.Writer {
 		panic(err)
 	}
 	return hook
+}
+
+func Info(msg string, fields ...zap.Field) {
+	Logger.Info(msg, fields...)
+}
+
+func Warn(msg string, fields ...zap.Field) {
+	Logger.Warn(msg, fields...)
+}
+
+func Debug(msg string, fields ...zap.Field) {
+	Logger.Debug(msg, fields...)
+}
+
+func Error(msg string, fields ...zap.Field) {
+	Logger.Error(msg, fields...)
 }
