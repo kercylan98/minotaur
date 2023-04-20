@@ -3,6 +3,8 @@ package server
 import (
 	"go.uber.org/zap"
 	"minotaur/utils/log"
+	"minotaur/utils/runtimes"
+	"reflect"
 )
 
 type ConnectionReceivePacketEventHandle func(conn *Conn, packet []byte)
@@ -22,6 +24,7 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionClosedEventHandles = append(slf.connectionClosedEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn) {
@@ -36,6 +39,7 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionOpenedEventHandles = append(slf.connectionOpenedEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
@@ -50,6 +54,7 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
