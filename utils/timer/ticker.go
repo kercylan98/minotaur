@@ -8,8 +8,8 @@ import (
 	"github.com/RussellLuo/timingwheel"
 )
 
-// Manager 管理器
-type Manager struct {
+// Ticker 管理器
+type Ticker struct {
 	timer  *Timer
 	wheel  *timingwheel.TimingWheel
 	timers map[string]*Scheduler
@@ -17,7 +17,7 @@ type Manager struct {
 }
 
 // Release 释放管理器，并将管理器重新放回 Timer 池中
-func (slf *Manager) Release() {
+func (slf *Ticker) Release() {
 	slf.timer.lock.Lock()
 	defer slf.timer.lock.Unlock()
 
@@ -30,11 +30,11 @@ func (slf *Manager) Release() {
 
 	slf.lock.Unlock()
 
-	slf.timer.Managers = append(slf.timer.Managers, slf)
+	slf.timer.tickers = append(slf.timer.tickers, slf)
 }
 
 // StopTimer 停止特定名称的调度器
-func (slf *Manager) StopTimer(name string) {
+func (slf *Ticker) StopTimer(name string) {
 	slf.lock.Lock()
 	defer slf.lock.Unlock()
 
@@ -45,7 +45,7 @@ func (slf *Manager) StopTimer(name string) {
 }
 
 // IsStopped 特定名称的调度器是否已停止
-func (slf *Manager) IsStopped(name string) bool {
+func (slf *Ticker) IsStopped(name string) bool {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
 	if s, ok := slf.timers[name]; ok {
@@ -55,7 +55,7 @@ func (slf *Manager) IsStopped(name string) bool {
 }
 
 // GetSchedulers 获取所有调度器名称
-func (slf *Manager) GetSchedulers() []string {
+func (slf *Ticker) GetSchedulers() []string {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
 	names := make([]string, 0, len(slf.timers))
@@ -66,12 +66,12 @@ func (slf *Manager) GetSchedulers() []string {
 }
 
 // After 设置一个在特定时间后运行一次的调度器
-func (slf *Manager) After(name string, after time.Duration, handleFunc interface{}, args ...interface{}) {
+func (slf *Ticker) After(name string, after time.Duration, handleFunc interface{}, args ...interface{}) {
 	slf.Loop(name, after, timingWheelTick, 1, handleFunc, args...)
 }
 
-// Loop 设置一个在特定时间后仿佛运行的调度器
-func (slf *Manager) Loop(name string, after, interval time.Duration, times int, handleFunc interface{}, args ...interface{}) {
+// Loop 设置一个在特定时间后反复运行的调度器
+func (slf *Ticker) Loop(name string, after, interval time.Duration, times int, handleFunc interface{}, args ...interface{}) {
 	slf.StopTimer(name)
 
 	if after < timingWheelTick {
@@ -93,7 +93,7 @@ func (slf *Manager) Loop(name string, after, interval time.Duration, times int, 
 		total:    times,
 		cbFunc:   reflect.ValueOf(handleFunc),
 		cbArgs:   values,
-		manager:  slf,
+		ticker:   slf,
 	}
 
 	slf.lock.Lock()
@@ -101,4 +101,3 @@ func (slf *Manager) Loop(name string, after, interval time.Duration, times int, 
 	scheduler.timer = slf.wheel.ScheduleFunc(scheduler, scheduler.caller)
 	slf.lock.Unlock()
 }
-

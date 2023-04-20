@@ -23,7 +23,7 @@ type Scheduler struct {
 
 	timer *timingwheel.Timer
 
-	manager *Manager
+	ticker *Ticker
 
 	lock sync.RWMutex
 }
@@ -65,7 +65,7 @@ func (slf *Scheduler) Caller() {
 	slf.trigger++
 	if slf.total > 0 && slf.trigger >= slf.total {
 		slf.lock.Unlock()
-		slf.manager.StopTimer(slf.name)
+		slf.ticker.StopTimer(slf.name)
 	} else {
 		slf.lock.Unlock()
 	}

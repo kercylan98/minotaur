@@ -8,31 +8,31 @@ import (
 
 var timer = new(Timer)
 
-func GetManager(size int) *Manager {
-	return timer.NewManager(size)
+func GetTicker(size int) *Ticker {
+	return timer.NewTicker(size)
 }
 
 type Timer struct {
-	Managers []*Manager
-	lock     sync.Mutex
+	tickers []*Ticker
+	lock    sync.Mutex
 }
 
-func (slf *Timer) NewManager(size int) *Manager {
+func (slf *Timer) NewTicker(size int) *Ticker {
 	slf.lock.Lock()
 	defer slf.lock.Unlock()
 
-	var manager *Manager
-	if len(slf.Managers) > 0 {
-		manager = slf.Managers[0]
-		slf.Managers = slf.Managers[1:]
-		return manager
+	var ticker *Ticker
+	if len(slf.tickers) > 0 {
+		ticker = slf.tickers[0]
+		slf.tickers = slf.tickers[1:]
+		return ticker
 	}
 
-	manager = &Manager{
+	ticker = &Ticker{
 		timer:  slf,
 		wheel:  timingwheel.NewTimingWheel(timingWheelTick, int64(size)),
 		timers: make(map[string]*Scheduler),
 	}
-	manager.wheel.Start()
-	return manager
+	ticker.wheel.Start()
+	return ticker
 }
