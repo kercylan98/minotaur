@@ -8,6 +8,7 @@ func NewMap[Key comparable, value any]() *Map[Key, value] {
 	}
 }
 
+// Map 并发安全的字典数据结构
 type Map[Key comparable, Value any] struct {
 	lock sync.RWMutex
 	data map[Key]Value
@@ -76,6 +77,14 @@ func (slf *Map[Key, Value]) DeleteExist(key Key) bool {
 	delete(slf.data, key)
 	slf.lock.Unlock()
 	return true
+}
+
+func (slf *Map[Key, Value]) Clear() {
+	slf.lock.Lock()
+	defer slf.lock.Unlock()
+	for k := range slf.data {
+		delete(slf.data, k)
+	}
 }
 
 func (slf *Map[Key, Value]) Range(handle func(key Key, value Value)) {

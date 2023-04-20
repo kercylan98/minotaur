@@ -1,6 +1,8 @@
 package main
 
-import "minotaur/server"
+import (
+	"minotaur/server"
+)
 
 func main() {
 	s := server.New(server.NetworkKcp)
