@@ -5,6 +5,13 @@ import (
 )
 
 func main() {
-	s := server.New(server.NetworkKcp)
-	s.Run(":9999")
+	ms := server.NewMultipleServer(
+		func() (addr string, srv *server.Server) {
+			return ":9999", server.New(server.NetworkTCP)
+		},
+		func() (addr string, srv *server.Server) {
+			return ":19999", server.New(server.NetworkGRPC)
+		},
+	)
+	ms.Run()
 }

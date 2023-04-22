@@ -13,4 +13,5 @@ const (
 	NetworkHttp      Network = "http"
 	NetworkWebsocket Network = "websocket"
 	NetworkKcp       Network = "kcp"
+	NetworkGRPC      Network = "grpc"
 )

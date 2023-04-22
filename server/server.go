@@ -7,7 +7,9 @@ import (
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"minotaur/utils/log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,11 +34,14 @@ func New(network Network) *Server {
 // Server 网络服务器
 type Server struct {
 	*event
-	network        Network
-	addr           string
-	httpServer     *gin.Engine
-	gServer        *gServer
-	messageChannel chan *message
+	network            Network
+	addr               string
+	httpServer         *gin.Engine
+	grpcServer         *grpc.Server
+	gServer            *gNet
+	messageChannel     chan *message
+	initMessageChannel bool
+	multiple           bool
 }
 
 // Run 使用特定地址运行服务器
@@ -58,10 +63,14 @@ func (slf *Server) Run(addr string) error {
 	slf.event.check()
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
-	var connectionInitHandle = func() {
+	var connectionInitHandle = func(callback func()) {
+		slf.initMessageChannel = true
 		slf.messageChannel = make(chan *message, 4096*1000)
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket {
-			slf.gServer = &gServer{Server: slf}
+			slf.gServer = &gNet{Server: slf}
+		}
+		if callback != nil {
+			go callback()
 		}
 		for message := range slf.messageChannel {
 			slf.dispatchMessage(message)
@@ -69,20 +78,29 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	switch slf.network {
-	case NetworkTCP, NetworkTCP4, NetworkTCP6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
-		go connectionInitHandle()
+	case NetworkGRPC:
+		listener, err := net.Listen(string(NetworkTCP), slf.addr)
+		if err != nil {
+			return err
+		}
+		slf.grpcServer = grpc.NewServer()
 		go func() {
-			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
+			if err := slf.grpcServer.Serve(listener); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		}()
+	case NetworkTCP, NetworkTCP4, NetworkTCP6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
+		go connectionInitHandle(func() {
+			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
+				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+			}
+		})
 	case NetworkKcp:
 		listener, err := kcp.ListenWithOptions(slf.addr, nil, 0, 0)
 		if err != nil {
 			return err
 		}
-		go connectionInitHandle()
-		go func() {
+		go connectionInitHandle(func() {
 			for {
 				session, err := listener.AcceptKCP()
 				if err != nil {
@@ -110,7 +128,7 @@ func (slf *Server) Run(addr string) error {
 					}
 				}(conn)
 			}
-		}()
+		})
 	case NetworkHttp:
 		go func() {
 			if err := slf.httpServer.Run(addr); err != nil {
@@ -118,7 +136,7 @@ func (slf *Server) Run(addr string) error {
 			}
 		}()
 	case NetworkWebsocket:
-		go connectionInitHandle()
+		go connectionInitHandle(nil)
 		var pattern string
 		var index = strings.Index(addr, "/")
 		if index == -1 {
@@ -178,29 +196,36 @@ func (slf *Server) Run(addr string) error {
 		return ErrCanNotSupportNetwork
 	}
 
-	log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
-	log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
-		zap.Any("network", slf.network),
-		zap.String("listen", slf.addr),
-	)
-	log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
+	if !slf.multiple {
+		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
+		log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
+			zap.Any("network", slf.network),
+			zap.String("listen", slf.addr),
+		)
+		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
 
-	systemSignal := make(chan os.Signal, 1)
-	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-	select {
-	case <-systemSignal:
-		slf.Shutdown(nil)
+		systemSignal := make(chan os.Signal, 1)
+		signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+		select {
+		case <-systemSignal:
+			slf.Shutdown(nil)
+		}
 	}
+
 	return nil
 }
 
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
-	close(slf.messageChannel)
+	if slf.initMessageChannel {
+		close(slf.messageChannel)
+	}
 	if err != nil {
-		log.Error("Server", zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+		log.Error("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
+			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 	} else {
-		log.Info("Server", zap.String("action", "shutdown"), zap.String("state", "normal"))
+		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
+			zap.String("action", "shutdown"), zap.String("state", "normal"))
 	}
 }
 
