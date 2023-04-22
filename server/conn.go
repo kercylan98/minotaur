@@ -46,6 +46,7 @@ type Conn struct {
 	gn    gnet.Conn
 	kcp   *kcp.UDPSession
 	write func(data []byte) error
+	data  map[any]any
 }
 
 // Write 向连接中写入数据
@@ -63,4 +64,24 @@ func (slf *Conn) Close() {
 		slf.kcp.Close()
 	}
 	slf.write = nil
+}
+
+func (slf *Conn) SetData(key, value any) *Conn {
+	if slf.data == nil {
+		slf.data = map[any]any{}
+	}
+	slf.data[key] = value
+	return slf
+}
+
+func (slf *Conn) GetData(key any) any {
+	return slf.data[key]
+}
+
+func (slf *Conn) ReleaseData() *Conn {
+	for k := range slf.data {
+		delete(slf.data, k)
+	}
+	slf.data = nil
+	return slf
 }

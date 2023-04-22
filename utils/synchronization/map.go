@@ -87,6 +87,15 @@ func (slf *Map[Key, Value]) Clear() {
 	}
 }
 
+func (slf *Map[Key, Value]) ClearHandle(handle func(key Key, value Value)) {
+	slf.lock.Lock()
+	defer slf.lock.Unlock()
+	for k, v := range slf.data {
+		handle(k, v)
+		delete(slf.data, k)
+	}
+}
+
 func (slf *Map[Key, Value]) Range(handle func(key Key, value Value)) {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
