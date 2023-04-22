@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+func NewPlayerLoginLauncher[PlayerID comparable](player game.Player[PlayerID]) *PlayerLoginLauncher[PlayerID] {
+	return &PlayerLoginLauncher[PlayerID]{
+		Player: player,
+	}
+}
+
 type PlayerLoginLauncher[PlayerID comparable] struct {
 	game.Player[PlayerID]
 	loggedTime time.Time // 登录时间
