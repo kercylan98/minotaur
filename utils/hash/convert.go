@@ -26,3 +26,21 @@ func Reversal[K comparable, V comparable](m map[K]V) map[V]K {
 	}
 	return nm
 }
+
+// ToMap 将切片转换为 map
+func ToMap[V any](slice []V) map[int]V {
+	var m = make(map[int]V)
+	for i, v := range slice {
+		m[i] = v
+	}
+	return m
+}
+
+// ToSortMap 将切片转换为 SortMap
+func ToSortMap[V any](slice []V) SortMap[int, V] {
+	var m SortMap[int, V]
+	for i, v := range slice {
+		m.Set(i, v)
+	}
+	return m
+}
