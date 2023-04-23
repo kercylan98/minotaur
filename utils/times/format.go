@@ -13,6 +13,7 @@ const (
 	IntervalHour
 	IntervalMinute
 	IntervalSecond
+	IntervalNow
 )
 
 var (
@@ -22,6 +23,7 @@ var (
 		IntervalHour:   "小时前",
 		IntervalMinute: "分钟前",
 		IntervalSecond: "秒钟前",
+		IntervalNow:    "刚刚",
 	}
 )
 
@@ -40,7 +42,7 @@ func IntervalFormat(time1, time2 time.Time) string {
 	cur := time1.Unix()
 	ct := cur - time2.Unix()
 	if ct <= 0 {
-		return "刚刚"
+		return intervalFormat[IntervalNow]
 	}
 	var res string
 	for i := 0; i < len(byTime); i++ {
