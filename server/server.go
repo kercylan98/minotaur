@@ -19,7 +19,7 @@ import (
 )
 
 // New 根据特定网络类型创建一个服务器
-func New(network Network) *Server {
+func New(network Network, options ...Option) *Server {
 	server := &Server{
 		network: network,
 	}
@@ -28,20 +28,24 @@ func New(network Network) *Server {
 	if network == NetworkHttp {
 		server.httpServer = gin.New()
 	}
+	for _, option := range options {
+		option(server)
+	}
 	return server
 }
 
 // Server 网络服务器
 type Server struct {
 	*event
-	network            Network
-	addr               string
-	httpServer         *gin.Engine
-	grpcServer         *grpc.Server
-	gServer            *gNet
-	messageChannel     chan *message
-	initMessageChannel bool
-	multiple           bool
+	network            Network       // 网络类型
+	addr               string        // 侦听地址
+	httpServer         *gin.Engine   // HTTP模式下的服务器
+	grpcServer         *grpc.Server  // GRPC模式下的服务器
+	gServer            *gNet         // TCP或UDP模式下的服务器
+	messageChannel     chan *message // 消息管道
+	initMessageChannel bool          // 消息管道是否已经初始化
+	multiple           bool          // 是否为多服务器模式下运行
+	prod               bool          // 是否为生产模式
 }
 
 // Run 使用特定地址运行服务器
@@ -130,6 +134,9 @@ func (slf *Server) Run(addr string) error {
 			}
 		})
 	case NetworkHttp:
+		if slf.prod {
+			gin.SetMode(gin.ReleaseMode)
+		}
 		go func() {
 			if err := slf.httpServer.Run(addr); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
@@ -213,6 +220,11 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	return nil
+}
+
+// IsProd 是否为生产模式
+func (slf *Server) IsProd() bool {
+	return slf.prod
 }
 
 // Shutdown 停止运行服务器
