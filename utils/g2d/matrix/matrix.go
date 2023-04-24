@@ -50,10 +50,10 @@ func (slf *Matrix[T]) Swap(x1, y1, x2, y2 int) {
 }
 
 // TrySwap 尝试交换两个位置的内容，交换后不满足表达式时进行撤销
-func (slf *Matrix[T]) TrySwap(x1, y1, x2, y2 int, expression bool) {
+func (slf *Matrix[T]) TrySwap(x1, y1, x2, y2 int, expressionHandle func(matrix *Matrix[T]) bool) {
 	a, b := slf.Get(x1, y1), slf.Get(x2, y2)
 	slf.m[x1][y1], slf.m[x2][y2] = b, a
-	if expression {
+	if !expressionHandle(slf) {
 		slf.m[x1][y1], slf.m[x2][y2] = a, b
 	}
 }
