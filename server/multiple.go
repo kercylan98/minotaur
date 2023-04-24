@@ -40,7 +40,7 @@ func (slf *MultipleServer) Run() {
 		}(slf.addresses[i], slf.servers[i])
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	log.Info("Server", zap.String("Minotaur Multiple Server", "===================================================================="))
 	for _, server := range slf.servers {

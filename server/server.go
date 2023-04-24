@@ -89,12 +89,14 @@ func (slf *Server) Run(addr string) error {
 		}
 		slf.grpcServer = grpc.NewServer()
 		go func() {
+			slf.OnServerStartBeforeEvent()
 			if err := slf.grpcServer.Serve(listener); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		}()
 	case NetworkTCP, NetworkTCP4, NetworkTCP6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
 		go connectionInitHandle(func() {
+			slf.OnServerStartBeforeEvent()
 			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
@@ -105,6 +107,7 @@ func (slf *Server) Run(addr string) error {
 			return err
 		}
 		go connectionInitHandle(func() {
+			slf.OnServerStartBeforeEvent()
 			for {
 				session, err := listener.AcceptKCP()
 				if err != nil {
@@ -138,6 +141,7 @@ func (slf *Server) Run(addr string) error {
 			gin.SetMode(gin.ReleaseMode)
 		}
 		go func() {
+			slf.OnServerStartBeforeEvent()
 			if err := slf.httpServer.Run(addr); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
@@ -195,6 +199,7 @@ func (slf *Server) Run(addr string) error {
 			}
 		})
 		go func() {
+			slf.OnServerStartBeforeEvent()
 			if err := http.ListenAndServe(slf.addr, nil); err != nil {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
@@ -204,19 +209,22 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	if !slf.multiple {
+		time.Sleep(500 * time.Millisecond)
 		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
 		log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
 			zap.Any("network", slf.network),
 			zap.String("listen", slf.addr),
 		)
 		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
-
+		slf.OnServerStartFinishEvent()
 		systemSignal := make(chan os.Signal, 1)
 		signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 		select {
 		case <-systemSignal:
 			slf.Shutdown(nil)
 		}
+	} else {
+		slf.OnServerStartFinishEvent()
 	}
 
 	return nil

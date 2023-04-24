@@ -7,15 +7,43 @@ import (
 	"reflect"
 )
 
+type ServerStartBeforeEventHandle func(srv *Server)
+type ServerStartFinishEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(conn *Conn, packet []byte)
 type ConnectionOpenedEventHandle func(conn *Conn)
 type ConnectionClosedEventHandle func(conn *Conn)
 
 type event struct {
 	*Server
+	serverStartBeforeEventHandles       []ServerStartBeforeEventHandle
+	serverStartFinishEventHandles       []ServerStartFinishEventHandle
 	connectionReceivePacketEventHandles []ConnectionReceivePacketEventHandle
 	connectionOpenedEventHandles        []ConnectionOpenedEventHandle
 	connectionClosedEventHandles        []ConnectionClosedEventHandle
+}
+
+// RegServerStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
+func (slf *event) RegServerStartBeforeEvent(handle ServerStartBeforeEventHandle) {
+	slf.serverStartBeforeEventHandles = append(slf.serverStartBeforeEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnServerStartBeforeEvent() {
+	for _, handle := range slf.serverStartBeforeEventHandles {
+		handle(slf.Server)
+	}
+}
+
+// RegServerStartFinishEvent 在服务器启动完成时将立刻执行被注册的事件处理函数
+func (slf *event) RegServerStartFinishEvent(handle ServerStartFinishEventHandle) {
+	slf.serverStartFinishEventHandles = append(slf.serverStartFinishEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnServerStartFinishEvent() {
+	for _, handle := range slf.serverStartFinishEventHandles {
+		handle(slf.Server)
+	}
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数
