@@ -34,7 +34,6 @@ type World[PlayerID comparable] struct {
 	actorGeneratedEventHandles    []game.ActorGeneratedEventHandle
 	actorAnnihilationEventHandles []game.ActorAnnihilationEventHandle
 	actorOwnerChangeEventHandles  []game.ActorOwnerChangeEventHandle[PlayerID]
-	worldGeneratedEventHandles    []game.WorldGeneratedEventHandle[PlayerID]
 	worldResetEventHandles        []game.WorldResetEventHandle[PlayerID]
 	worldReleasedEventHandles     []game.WorldReleaseEventHandle[PlayerID]
 
@@ -171,10 +170,12 @@ func (slf *World[PlayerID]) Reset() {
 	slf.owners.Clear()
 	slf.actors.Clear()
 	slf.actorGuid.Store(0)
+	slf.OnWorldResetEvent()
 }
 
 func (slf *World[PlayerID]) Release() {
 	if !slf.released.Swap(true) {
+		slf.OnWorldReleaseEvent()
 		slf.Reset()
 		slf.players = nil
 		slf.playerActors = nil
@@ -186,16 +187,6 @@ func (slf *World[PlayerID]) Release() {
 		slf.actorGeneratedEventHandles = nil
 		slf.actorAnnihilationEventHandles = nil
 		slf.actorOwnerChangeEventHandles = nil
-	}
-}
-
-func (slf *World[PlayerID]) RegWorldGeneratedEvent(handle game.WorldGeneratedEventHandle[PlayerID]) {
-	slf.worldGeneratedEventHandles = append(slf.worldGeneratedEventHandles, handle)
-}
-
-func (slf *World[PlayerID]) OnWorldGeneratedEvent() {
-	for _, handle := range slf.worldGeneratedEventHandles {
-		handle(slf)
 	}
 }
 

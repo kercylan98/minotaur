@@ -44,9 +44,6 @@ type World[PlayerID comparable] interface {
 	// Release 释放世界资源，释放后世界将不可用
 	Release()
 
-	// RegWorldGeneratedEvent 世界创建完成时将立即执行被注册的事件处理函数
-	RegWorldGeneratedEvent(handle WorldGeneratedEventHandle[PlayerID])
-	OnWorldGeneratedEvent()
 	// RegWorldResetEvent 世界被重置后将立即执行被注册的事件处理函数
 	RegWorldResetEvent(handle WorldResetEventHandle[PlayerID])
 	OnWorldResetEvent()
@@ -71,7 +68,6 @@ type World[PlayerID comparable] interface {
 }
 
 type (
-	WorldGeneratedEventHandle[ID comparable]   func(world World[ID])
 	WorldResetEventHandle[ID comparable]       func(world World[ID])
 	WorldReleaseEventHandle[ID comparable]     func(world World[ID])
 	PlayerJoinWorldEventHandle[ID comparable]  func(player Player[ID])
