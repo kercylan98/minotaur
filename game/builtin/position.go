@@ -2,7 +2,7 @@ package builtin
 
 import "minotaur/game"
 
-// NewPosition 创建一个新的Position对象。
+// NewPosition 创建一个新的位置对象。
 func NewPosition(x, y, z float64) *Position {
 	return &Position{
 		x: x,
