@@ -34,6 +34,9 @@ type World[PlayerID comparable] struct {
 	actorGeneratedEventHandles    []game.ActorGeneratedEventHandle
 	actorAnnihilationEventHandles []game.ActorAnnihilationEventHandle
 	actorOwnerChangeEventHandles  []game.ActorOwnerChangeEventHandle[PlayerID]
+	worldGeneratedEventHandles    []game.WorldGeneratedEventHandle[PlayerID]
+	worldResetEventHandles        []game.WorldResetEventHandle[PlayerID]
+	worldReleasedEventHandles     []game.WorldReleaseEventHandle[PlayerID]
 
 	released atomic.Bool
 }
@@ -183,6 +186,36 @@ func (slf *World[PlayerID]) Release() {
 		slf.actorGeneratedEventHandles = nil
 		slf.actorAnnihilationEventHandles = nil
 		slf.actorOwnerChangeEventHandles = nil
+	}
+}
+
+func (slf *World[PlayerID]) RegWorldGeneratedEvent(handle game.WorldGeneratedEventHandle[PlayerID]) {
+	slf.worldGeneratedEventHandles = append(slf.worldGeneratedEventHandles, handle)
+}
+
+func (slf *World[PlayerID]) OnWorldGeneratedEvent() {
+	for _, handle := range slf.worldGeneratedEventHandles {
+		handle(slf)
+	}
+}
+
+func (slf *World[PlayerID]) RegWorldResetEvent(handle game.WorldResetEventHandle[PlayerID]) {
+	slf.worldResetEventHandles = append(slf.worldResetEventHandles, handle)
+}
+
+func (slf *World[PlayerID]) OnWorldResetEvent() {
+	for _, handle := range slf.worldResetEventHandles {
+		handle(slf)
+	}
+}
+
+func (slf *World[PlayerID]) RegWorldReleaseEvent(handle game.WorldReleaseEventHandle[PlayerID]) {
+	slf.worldReleasedEventHandles = append(slf.worldReleasedEventHandles, handle)
+}
+
+func (slf *World[PlayerID]) OnWorldReleaseEvent() {
+	for _, handle := range slf.worldReleasedEventHandles {
+		handle(slf)
 	}
 }
 
