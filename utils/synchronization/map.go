@@ -178,3 +178,9 @@ func (slf *Map[Key, Value]) Map() map[Key]Value {
 	slf.lock.RUnlock()
 	return m
 }
+
+func (slf *Map[Key, Value]) Size() int {
+	slf.lock.RLock()
+	defer slf.lock.RUnlock()
+	return len(slf.data)
+}

@@ -11,61 +11,49 @@ type ActorMove struct {
 }
 
 func (slf *ActorMove) MoveTo2D(x, y float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetXY(x, y)
 }
 
 func (slf *ActorMove) MoveBy2D(dx, dy float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetXY(slf.GetX()+dx, slf.GetY()+dy)
 }
 
 func (slf *ActorMove) MoveTo3D(x, y, z float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetXYZ(x, y, z)
 }
 
 func (slf *ActorMove) MoveBy3D(dx, dy, dz float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetXYZ(slf.GetX()+dx, slf.GetY()+dy, slf.GetZ()+dz)
 }
 
 func (slf *ActorMove) MoveToX(x float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetX(x)
 }
 
 func (slf *ActorMove) MoveByX(dx float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetX(slf.GetX() + dx)
 }
 
 func (slf *ActorMove) MoveToY(y float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetY(y)
 }
 
 func (slf *ActorMove) MoveByY(dy float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetY(slf.GetY() + dy)
 }
 
 func (slf *ActorMove) MoveToZ(z float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetZ(z)
 }
 
 func (slf *ActorMove) MoveByZ(dz float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.SetZ(slf.GetZ() + dz)
 }
 
 func (slf *ActorMove) GetSpeed() float64 {
-	//TODO implement me
-	panic("implement me")
+	return slf.speed
 }
 
 func (slf *ActorMove) SetSpeed(speed float64) {
-	//TODO implement me
-	panic("implement me")
+	slf.speed = speed
 }

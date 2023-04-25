@@ -24,4 +24,15 @@ type Position interface {
 	SetXY(x, y float64)
 	// SetXYZ 设置X、Y和Z轴坐标
 	SetXYZ(x, y, z float64)
+	// Clone 克隆当前位置到新结构体
+	Clone() Position
+	// Compare 比较两个坐标是否相同
+	Compare(position Position) bool
+	// RegPositionChangeEvent 当位置发生改变时，将立即执行注册的事件处理函数
+	RegPositionChangeEvent(handle PositionChangeEventHandle)
+	OnPositionChangeEvent(old, new Position)
 }
+
+type (
+	PositionChangeEventHandle func(old, new Position)
+)
