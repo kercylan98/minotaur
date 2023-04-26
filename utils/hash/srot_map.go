@@ -4,6 +4,14 @@ import (
 	"sort"
 )
 
+func NewSortMap[K comparable, V any]() *SortMap[K, V] {
+	return &SortMap[K, V]{
+		m: map[K]V{},
+		s: map[int]K{},
+		r: map[K]int{},
+	}
+}
+
 // SortMap 有序的 map 实现
 type SortMap[K comparable, V any] struct {
 	i int
@@ -13,16 +21,6 @@ type SortMap[K comparable, V any] struct {
 }
 
 func (slf *SortMap[K, V]) Set(key K, value V) {
-	if slf.m == nil {
-		slf.m = make(map[K]V)
-	}
-	if slf.s == nil {
-		slf.s = make(map[int]K)
-	}
-	if slf.r == nil {
-		slf.r = make(map[K]int)
-	}
-
 	if i, exist := slf.r[key]; exist {
 		slf.s[i] = key
 		slf.m[key] = value
@@ -42,12 +40,12 @@ func (slf *SortMap[K, V]) Del(key K) {
 	}
 }
 
-func (slf SortMap[K, V]) Get(key K) V {
+func (slf *SortMap[K, V]) Get(key K) V {
 	v := slf.m[key]
 	return v
 }
 
-func (slf SortMap[K, V]) For(handle func(key K, value V) bool) {
+func (slf *SortMap[K, V]) For(handle func(key K, value V) bool) {
 	for k, v := range slf.m {
 		if !handle(k, v) {
 			break
@@ -55,7 +53,7 @@ func (slf SortMap[K, V]) For(handle func(key K, value V) bool) {
 	}
 }
 
-func (slf SortMap[K, V]) ForSort(handle func(key K, value V) bool) {
+func (slf *SortMap[K, V]) ForSort(handle func(key K, value V) bool) {
 	var indexes []int
 	for i, _ := range slf.s {
 		indexes = append(indexes, i)
@@ -69,7 +67,7 @@ func (slf SortMap[K, V]) ForSort(handle func(key K, value V) bool) {
 	}
 }
 
-func (slf SortMap[K, V]) ToMap() map[K]V {
+func (slf *SortMap[K, V]) ToMap() map[K]V {
 	var m = make(map[K]V)
 	for k, v := range slf.m {
 		m[k] = v
@@ -77,7 +75,7 @@ func (slf SortMap[K, V]) ToMap() map[K]V {
 	return m
 }
 
-func (slf SortMap[K, V]) ToSlice() []V {
+func (slf *SortMap[K, V]) ToSlice() []V {
 	var s = make([]V, 0, len(slf.m))
 	for _, v := range slf.m {
 		s = append(s, v)
@@ -85,7 +83,21 @@ func (slf SortMap[K, V]) ToSlice() []V {
 	return s
 }
 
-func (slf SortMap[K, V]) KeyToSlice() []K {
+func (slf *SortMap[K, V]) ToSliceSort() []V {
+	var indexes []int
+	for i, _ := range slf.s {
+		indexes = append(indexes, i)
+	}
+	sort.Ints(indexes)
+	var result []V
+	for _, i := range indexes {
+		k := slf.s[i]
+		result = append(result, slf.m[k])
+	}
+	return result
+}
+
+func (slf *SortMap[K, V]) KeyToSlice() []K {
 	var s = make([]K, 0, len(slf.m))
 	for k := range slf.m {
 		s = append(s, k)
