@@ -12,10 +12,10 @@ import (
 
 var (
 	Logger *zap.Logger
+	prod   bool
 )
 
 const (
-	debug   = true
 	logPath = "./logs"
 	logTime = 7
 )
@@ -52,7 +52,7 @@ func newLogger() *zap.Logger {
 
 	var cores zapcore.Core
 
-	if debug {
+	if !prod {
 		cores = zapcore.NewTee(
 			zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
 		)
@@ -99,4 +99,8 @@ func Debug(msg string, fields ...zap.Field) {
 
 func Error(msg string, fields ...zap.Field) {
 	Logger.Error(msg, fields...)
+}
+
+func SetProd() {
+	prod = true
 }

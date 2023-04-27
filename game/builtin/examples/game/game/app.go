@@ -12,7 +12,7 @@ var (
 )
 
 func init() {
-	Server = server.New(server.NetworkTCP)
+	Server = server.New(server.NetworkWebsocket)
 	Game = &app{
 		World: builtin.NewWorld[int64, *Player](0),
 	}

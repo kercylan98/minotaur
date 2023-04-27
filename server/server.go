@@ -141,6 +141,7 @@ func (slf *Server) Run(addr string) error {
 		})
 	case NetworkHttp:
 		if slf.prod {
+			log.SetProd()
 			gin.SetMode(gin.ReleaseMode)
 		}
 		go func() {
@@ -235,6 +236,11 @@ func (slf *Server) Run(addr string) error {
 // IsProd 是否为生产模式
 func (slf *Server) IsProd() bool {
 	return slf.prod
+}
+
+// IsDev 是否为开发模式
+func (slf *Server) IsDev() bool {
+	return !slf.prod
 }
 
 // Shutdown 停止运行服务器
