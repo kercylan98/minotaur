@@ -5,5 +5,5 @@ type Notify interface {
 	// GetTitle 获取通知标题
 	GetTitle() string
 	// GetContent 获取通知内容
-	GetContent() string
+	GetContent() (string, error)
 }
