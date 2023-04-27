@@ -32,6 +32,7 @@ func newGNetConn(conn gnet.Conn) *Conn {
 // newKcpConn 创建一个处理WebSocket的连接
 func newWebsocketConn(ws *websocket.Conn) *Conn {
 	return &Conn{
+		ip: ws.RemoteAddr().String(),
 		ws: ws,
 		write: func(data []byte) error {
 			return ws.WriteMessage(websocket.BinaryMessage, data)
@@ -47,6 +48,10 @@ type Conn struct {
 	kcp   *kcp.UDPSession
 	write func(data []byte) error
 	data  map[any]any
+}
+
+func (slf *Conn) GetID() string {
+	return slf.ip
 }
 
 // Write 向连接中写入数据

@@ -19,6 +19,10 @@ func (slf *Player[ID]) GetID() ID {
 	return slf.id
 }
 
+func (slf *Player[ID]) GetConnID() string {
+	return slf.conn.GetID()
+}
+
 // Send 向该玩家发送数据
 func (slf *Player[ID]) Send(packet []byte) error {
 	return slf.conn.Write(packet)

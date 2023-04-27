@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"minotaur/utils/log"
+	"minotaur/utils/synchronization"
 	"net"
 	"net/http"
 	"os"
@@ -37,8 +38,9 @@ func New(network Network, options ...Option) *Server {
 // Server 网络服务器
 type Server struct {
 	*event
-	network            Network       // 网络类型
-	addr               string        // 侦听地址
+	network            Network // 网络类型
+	addr               string  // 侦听地址
+	connections        *synchronization.Map[string, *Conn]
 	httpServer         *gin.Engine   // HTTP模式下的服务器
 	grpcServer         *grpc.Server  // GRPC模式下的服务器
 	gServer            *gNet         // TCP或UDP模式下的服务器
@@ -68,6 +70,7 @@ func (slf *Server) Run(addr string) error {
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var connectionInitHandle = func(callback func()) {
+		slf.connections = synchronization.NewMap[string, *Conn]()
 		slf.initMessageChannel = true
 		slf.messageChannel = make(chan *message, 4096*1000)
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket {
@@ -176,7 +179,6 @@ func (slf *Server) Run(addr string) error {
 			}
 
 			conn := newWebsocketConn(ws)
-			conn.ip = ip
 			slf.OnConnectionOpenedEvent(conn)
 
 			defer func() {
@@ -237,6 +239,11 @@ func (slf *Server) IsProd() bool {
 
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
+	if slf.connections != nil {
+		slf.connections.Range(func(connId string, conn *Conn) {
+			conn.Close()
+		})
+	}
 	if slf.initMessageChannel {
 		close(slf.messageChannel)
 	}

@@ -1,9 +1,11 @@
 package builtin
 
-type WorldOption[PlayerID comparable] func(world *World[PlayerID])
+import "minotaur/game"
 
-func WithWorldPlayerLimit[PlayerID comparable](playerLimit int) WorldOption[PlayerID] {
-	return func(world *World[PlayerID]) {
+type WorldOption[PlayerID comparable, Player game.Player[PlayerID]] func(world *World[PlayerID, Player])
+
+func WithWorldPlayerLimit[PlayerID comparable, Player game.Player[PlayerID]](playerLimit int) WorldOption[PlayerID, Player] {
+	return func(world *World[PlayerID, Player]) {
 		world.playerLimit = playerLimit
 	}
 }

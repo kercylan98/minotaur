@@ -1,15 +1,17 @@
 package game
 
 // World 游戏世界接口定义
-type World[PlayerID comparable] interface {
+type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetGuid 获取世界的唯一标识符
 	GetGuid() int64
 	// GetPlayerLimit 获取玩家人数上限
 	GetPlayerLimit() int
+	// GetPlayerWithConnID 根据连接ID获取玩家
+	GetPlayerWithConnID(id string) P
 	// GetPlayer 根据玩家id获取玩家
-	GetPlayer(id PlayerID) Player[PlayerID]
+	GetPlayer(id PlayerID) P
 	// GetPlayers 获取世界中的所有玩家
-	GetPlayers() map[PlayerID]Player[PlayerID]
+	GetPlayers() map[PlayerID]P
 	// GetActor 根据唯一标识符获取世界中的游戏对象
 	GetActor(guid int64) Actor
 	// GetActors 获取世界中的所有游戏对象
@@ -26,9 +28,9 @@ type World[PlayerID comparable] interface {
 	IsOwner(id PlayerID, guid int64) bool
 
 	// Join 使特定玩家加入游戏世界
-	Join(player Player[PlayerID]) error
+	Join(player P) error
 	// Leave 使特定玩家离开游戏世界
-	Leave(player Player[PlayerID])
+	Leave(id PlayerID)
 
 	// AddActor 添加游戏对象
 	AddActor(actor Actor)
@@ -45,17 +47,17 @@ type World[PlayerID comparable] interface {
 	Release()
 
 	// RegWorldResetEvent 世界被重置后将立即执行被注册的事件处理函数
-	RegWorldResetEvent(handle WorldResetEventHandle[PlayerID])
+	RegWorldResetEvent(handle WorldResetEventHandle[PlayerID, P])
 	OnWorldResetEvent()
 	// RegWorldReleaseEvent 直接被释放前将立即执行被注册的事件处理函数，此刻世界仍然可用
-	RegWorldReleaseEvent(handle WorldReleaseEventHandle[PlayerID])
+	RegWorldReleaseEvent(handle WorldReleaseEventHandle[PlayerID, P])
 	OnWorldReleaseEvent()
 	// RegPlayerJoinWorldEvent 玩家进入世界时将立即执行被注册的事件处理函数
-	RegPlayerJoinWorldEvent(handle PlayerJoinWorldEventHandle[PlayerID])
-	OnPlayerJoinWorldEvent(player Player[PlayerID])
+	RegPlayerJoinWorldEvent(handle PlayerJoinWorldEventHandle[PlayerID, P])
+	OnPlayerJoinWorldEvent(player P)
 	// RegPlayerLeaveWorldEvent 玩家离开世界时将立即执行被注册的事件处理函数
-	RegPlayerLeaveWorldEvent(handle PlayerLeaveWorldEventHandle[PlayerID])
-	OnPlayerLeaveWorldEvent(player Player[PlayerID])
+	RegPlayerLeaveWorldEvent(handle PlayerLeaveWorldEventHandle[PlayerID, P])
+	OnPlayerLeaveWorldEvent(player P)
 	// RegActorGeneratedEvent 游戏世界中的游戏对象生成完成时将立即执行被注册的事件处理函数
 	RegActorGeneratedEvent(handle ActorGeneratedEventHandle)
 	OnActorGeneratedEvent(actor Actor)
@@ -68,11 +70,11 @@ type World[PlayerID comparable] interface {
 }
 
 type (
-	WorldResetEventHandle[ID comparable]       func(world World[ID])
-	WorldReleaseEventHandle[ID comparable]     func(world World[ID])
-	PlayerJoinWorldEventHandle[ID comparable]  func(player Player[ID])
-	PlayerLeaveWorldEventHandle[ID comparable] func(player Player[ID])
-	ActorGeneratedEventHandle                  func(actor Actor)
-	ActorAnnihilationEventHandle               func(actor Actor)
-	ActorOwnerChangeEventHandle[ID comparable] func(actor Actor, old, new ID, isolated bool)
+	WorldResetEventHandle[ID comparable, P Player[ID]]       func(world World[ID, P])
+	WorldReleaseEventHandle[ID comparable, P Player[ID]]     func(world World[ID, P])
+	PlayerJoinWorldEventHandle[ID comparable, P Player[ID]]  func(player P)
+	PlayerLeaveWorldEventHandle[ID comparable, P Player[ID]] func(player P)
+	ActorGeneratedEventHandle                                func(actor Actor)
+	ActorAnnihilationEventHandle                             func(actor Actor)
+	ActorOwnerChangeEventHandle[ID comparable]               func(actor Actor, old, new ID, isolated bool)
 )
