@@ -1,6 +1,10 @@
-package time
+package offset
 
 import "time"
+
+func NewTime(offset time.Duration) *Time {
+	return &Time{offset: offset}
+}
 
 // Time 带有偏移量的时间
 type Time struct {
