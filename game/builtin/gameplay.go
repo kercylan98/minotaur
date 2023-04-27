@@ -65,3 +65,8 @@ func (slf *Gameplay) OnGameplayTimeChangeEvent() {
 		handle(current)
 	}
 }
+
+func (slf *Gameplay) Release() {
+	slf.gameplayStartEventHandles = nil
+	slf.gameplayTimeChangeEventHandles = nil
+}

@@ -15,6 +15,8 @@ type Gameplay interface {
 	GetCurrentTime() time.Time
 	// SetTimeOffset 设置玩法时间偏移
 	SetTimeOffset(offset time.Duration)
+	// Release 释放游戏玩法资源
+	Release()
 
 	// RegGameplayStartEvent 在游戏玩法开始时将立即执行被注册的事件处理函数
 	RegGameplayStartEvent(handle GameplayStartEventHandle)
