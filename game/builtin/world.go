@@ -1,7 +1,9 @@
 package builtin
 
 import (
+	"go.uber.org/zap"
 	"minotaur/game"
+	"minotaur/utils/log"
 	"minotaur/utils/synchronization"
 	"sync/atomic"
 )
@@ -104,6 +106,7 @@ func (slf *World[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
 	}
+	log.Debug("World", zap.Any("Join", player.GetID()), zap.String("connId", player.GetConnID()))
 	slf.players.Set(player.GetID(), player)
 	if actors := slf.playerActors.Get(player.GetID()); actors == nil {
 		actors = synchronization.NewMap[int64, game.Actor]()
@@ -119,6 +122,7 @@ func (slf *World[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
+	log.Debug("World", zap.Any("Leave", player.GetID()), zap.String("connId", player.GetConnID()))
 	slf.OnPlayerLeaveWorldEvent(player)
 	slf.playerActors.Get(player.GetID()).Range(func(guid int64, actor game.Actor) {
 		slf.OnActorAnnihilationEvent(actor)
@@ -171,6 +175,7 @@ func (slf *World[PlayerID, Player]) RemoveActorOwner(guid int64) {
 }
 
 func (slf *World[PlayerID, Player]) Reset() {
+	log.Debug("World", zap.Int64("Reset", slf.guid))
 	slf.players.Clear()
 	slf.playerActors.Range(func(id PlayerID, actors *synchronization.Map[int64, game.Actor]) {
 		actors.Clear()
@@ -185,6 +190,7 @@ func (slf *World[PlayerID, Player]) Reset() {
 
 func (slf *World[PlayerID, Player]) Release() {
 	if !slf.released.Swap(true) {
+		log.Debug("World", zap.Int64("Release", slf.guid))
 		slf.OnWorldReleaseEvent()
 		slf.Reset()
 		slf.players = nil
