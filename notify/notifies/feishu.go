@@ -30,11 +30,7 @@ type FeiShu struct {
 	MsgType   string `json:"msg_type"`
 }
 
-func (slf *FeiShu) GetTitle() string {
-	return ""
-}
-
-func (slf *FeiShu) GetContent() (string, error) {
+func (slf *FeiShu) Format() (string, error) {
 	data, err := json.Marshal(slf)
 	if err != nil {
 		return "", err

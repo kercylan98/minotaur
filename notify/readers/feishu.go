@@ -22,7 +22,7 @@ type FeiShu struct {
 }
 
 func (slf *FeiShu) Push(notify notify.Notify) error {
-	content, err := notify.GetContent()
+	content, err := notify.Format()
 	if err != nil {
 		return err
 	}
