@@ -197,6 +197,8 @@ func (slf *World[PlayerID, Player]) Release() {
 		slf.actorGeneratedEventHandles = nil
 		slf.actorAnnihilationEventHandles = nil
 		slf.actorOwnerChangeEventHandles = nil
+		slf.worldResetEventHandles = nil
+		slf.worldReleasedEventHandles = nil
 	}
 }
 

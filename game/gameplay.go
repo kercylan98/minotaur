@@ -24,9 +24,13 @@ type Gameplay interface {
 	// RegGameplayTimeChangeEvent 游戏玩法的时间被改变（非自然流逝）时将立刻执行被注册的事件处理函数
 	RegGameplayTimeChangeEvent(handle GameplayTimeChangeEventHandle)
 	OnGameplayTimeChangeEvent()
+	// RegGameplayReleaseEvent 游戏玩法资源被释放前将立即执行被注册的事件处理函数
+	RegGameplayReleaseEvent(handle GameplayReleaseEventHandle)
+	OnGameplayReleaseEvent()
 }
 
 type (
 	GameplayStartEventHandle      func(startTime time.Time)
 	GameplayTimeChangeEventHandle func(current time.Time)
+	GameplayReleaseEventHandle    func()
 )

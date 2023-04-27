@@ -18,6 +18,7 @@ type Gameplay struct {
 
 	gameplayStartEventHandles      []game.GameplayStartEventHandle
 	gameplayTimeChangeEventHandles []game.GameplayTimeChangeEventHandle
+	gameplayReleaseEventHandles    []game.GameplayReleaseEventHandle
 }
 
 func (slf *Gameplay) GameStart(handle func() error) error {
@@ -40,6 +41,13 @@ func (slf *Gameplay) GetCurrentTime() time.Time {
 func (slf *Gameplay) SetTimeOffset(offset time.Duration) {
 	slf.Time.SetOffset(offset)
 	slf.OnGameplayTimeChangeEvent()
+}
+
+func (slf *Gameplay) Release() {
+	slf.OnGameplayReleaseEvent()
+	slf.gameplayStartEventHandles = nil
+	slf.gameplayTimeChangeEventHandles = nil
+	slf.gameplayReleaseEventHandles = nil
 }
 
 func (slf *Gameplay) RegGameplayStartEvent(handle game.GameplayStartEventHandle) {
@@ -66,7 +74,12 @@ func (slf *Gameplay) OnGameplayTimeChangeEvent() {
 	}
 }
 
-func (slf *Gameplay) Release() {
-	slf.gameplayStartEventHandles = nil
-	slf.gameplayTimeChangeEventHandles = nil
+func (slf *Gameplay) RegGameplayReleaseEvent(handle game.GameplayReleaseEventHandle) {
+	slf.gameplayReleaseEventHandles = append(slf.gameplayReleaseEventHandles, handle)
+}
+
+func (slf *Gameplay) OnGameplayReleaseEvent() {
+	for _, handle := range slf.gameplayReleaseEventHandles {
+		handle()
+	}
 }
