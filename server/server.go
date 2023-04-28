@@ -325,7 +325,7 @@ func (slf *Server) dispatchMessage(msg *message) {
 	defer func() {
 		slf.messagePool.Release(msg)
 		if err := recover(); err != nil {
-			log.Error("Server", zap.Any("error", err))
+			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err))
 		}
 	}()
 	switch msg.t {
