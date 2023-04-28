@@ -45,6 +45,7 @@ type Server struct {
 	grpcServer         *grpc.Server                        // GRPC模式下的服务器
 	gServer            *gNet                               // TCP或UDP模式下的服务器
 	messagePool        *synchronization.Pool[*message]     // 消息池
+	messagePoolSize    int                                 // 消息池大小
 	messageChannel     chan *message                       // 消息管道
 	initMessageChannel bool                                // 消息管道是否已经初始化
 	multiple           bool                                // 是否为多服务器模式下运行
@@ -73,7 +74,10 @@ func (slf *Server) Run(addr string) error {
 	var connectionInitHandle = func(callback func()) {
 		slf.connections = synchronization.NewMap[string, *Conn]()
 		slf.initMessageChannel = true
-		slf.messagePool = synchronization.NewPool[*message](1024,
+		if slf.messagePoolSize <= 0 {
+			slf.messagePoolSize = 1024
+		}
+		slf.messagePool = synchronization.NewPool[*message](slf.messagePoolSize,
 			func() *message {
 				return &message{}
 			}, func(data *message) {
