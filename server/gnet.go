@@ -21,7 +21,6 @@ func (slf *gNet) OnShutdown(server gnet.Server) {
 		slf.connections.Delete(k)
 	}
 	slf.connections = nil
-	return
 }
 
 func (slf *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {

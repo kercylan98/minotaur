@@ -48,6 +48,15 @@ func (slf *Pool[T]) Release(data T) {
 	slf.put(data)
 }
 
+func (slf *Pool[T]) Close() {
+	slf.mutex.Lock()
+	slf.buffers = nil
+	slf.bufferSize = 0
+	slf.generator = nil
+	slf.releaser = nil
+	slf.mutex.Unlock()
+}
+
 func (slf *Pool[T]) put(data T) {
 	slf.mutex.Lock()
 	if len(slf.buffers) > slf.bufferSize {
