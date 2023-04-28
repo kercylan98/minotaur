@@ -21,3 +21,11 @@ func Float64() float64 {
 func Float32() float32 {
 	return rand.Float32()
 }
+
+// IntN 返回一个0~n的整数
+func IntN(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	return rand.Intn(n)
+}
