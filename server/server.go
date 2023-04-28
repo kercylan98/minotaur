@@ -38,16 +38,17 @@ func New(network Network, options ...Option) *Server {
 // Server 网络服务器
 type Server struct {
 	*event
-	network            Network // 网络类型
-	addr               string  // 侦听地址
-	connections        *synchronization.Map[string, *Conn]
-	httpServer         *gin.Engine   // HTTP模式下的服务器
-	grpcServer         *grpc.Server  // GRPC模式下的服务器
-	gServer            *gNet         // TCP或UDP模式下的服务器
-	messageChannel     chan *message // 消息管道
-	initMessageChannel bool          // 消息管道是否已经初始化
-	multiple           bool          // 是否为多服务器模式下运行
-	prod               bool          // 是否为生产模式
+	network            Network                             // 网络类型
+	addr               string                              // 侦听地址
+	connections        *synchronization.Map[string, *Conn] // 所有在线的连接
+	httpServer         *gin.Engine                         // HTTP模式下的服务器
+	grpcServer         *grpc.Server                        // GRPC模式下的服务器
+	gServer            *gNet                               // TCP或UDP模式下的服务器
+	messagePool        *synchronization.Pool[*message]     // 消息池
+	messageChannel     chan *message                       // 消息管道
+	initMessageChannel bool                                // 消息管道是否已经初始化
+	multiple           bool                                // 是否为多服务器模式下运行
+	prod               bool                                // 是否为生产模式
 }
 
 // Run 使用特定地址运行服务器
@@ -72,6 +73,14 @@ func (slf *Server) Run(addr string) error {
 	var connectionInitHandle = func(callback func()) {
 		slf.connections = synchronization.NewMap[string, *Conn]()
 		slf.initMessageChannel = true
+		slf.messagePool = synchronization.NewPool[*message](1024,
+			func() *message {
+				return &message{}
+			}, func(data *message) {
+				data.t = 0
+				data.attrs = nil
+			},
+		)
 		slf.messageChannel = make(chan *message, 4096*1000)
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket {
 			slf.gServer = &gNet{Server: slf}
@@ -272,15 +281,16 @@ func (slf *Server) HttpRouter() gin.IRouter {
 
 // PushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
-	slf.messageChannel <- &message{
-		t:     messageType,
-		attrs: attrs,
-	}
+	msg := slf.messagePool.Get()
+	msg.t = messageType
+	msg.attrs = attrs
+	slf.messageChannel <- msg
 }
 
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *message) {
 	defer func() {
+		slf.messagePool.Release(msg)
 		if err := recover(); err != nil {
 			log.Error("Server", zap.Any("error", err))
 		}
