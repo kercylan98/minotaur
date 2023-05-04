@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Logger *zap.Logger
+	logger *zap.Logger
 	prod   bool
 )
 
@@ -21,7 +21,7 @@ const (
 )
 
 func init() {
-	Logger = newLogger()
+	logger = newLogger()
 }
 
 func newLogger() *zap.Logger {
@@ -86,19 +86,19 @@ func getWriter(filename string, times int32) io.Writer {
 }
 
 func Info(msg string, fields ...zap.Field) {
-	Logger.Info(msg, fields...)
+	logger.Info(msg, fields...)
 }
 
 func Warn(msg string, fields ...zap.Field) {
-	Logger.Warn(msg, fields...)
+	logger.Warn(msg, fields...)
 }
 
 func Debug(msg string, fields ...zap.Field) {
-	Logger.Debug(msg, fields...)
+	logger.Debug(msg, fields...)
 }
 
 func Error(msg string, fields ...zap.Field) {
-	Logger.Error(msg, fields...)
+	logger.Error(msg, fields...)
 }
 
 func SetProd() {
