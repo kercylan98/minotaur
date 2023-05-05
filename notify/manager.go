@@ -6,6 +6,7 @@ import (
 	"reflect"
 )
 
+// NewManager 通过指定的 Sender 创建一个通知管理器， senders 包中提供了一些内置的 Sender
 func NewManager(senders ...Sender) *Manager {
 	manager := &Manager{
 		senders:       senders,

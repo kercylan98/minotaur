@@ -1,4 +1,4 @@
-package readers
+package senders
 
 import (
 	"fmt"
