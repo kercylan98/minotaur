@@ -108,7 +108,7 @@ func (slf *World[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
 	}
-	log.Debug("World", zap.Any("Join", player.GetID()), zap.String("connId", player.GetConnID()))
+	log.Debug("World.Join", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
 	slf.players.Set(player.GetID(), player)
 	if actors := slf.playerActors.Get(player.GetID()); actors == nil {
 		actors = synchronization.NewMap[int64, game.Actor]()
@@ -124,7 +124,7 @@ func (slf *World[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
-	log.Debug("World", zap.Any("Leave", player.GetID()), zap.String("connId", player.GetConnID()))
+	log.Debug("World.Leave", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
 	slf.OnPlayerLeaveWorldEvent(player)
 	slf.playerActors.Get(player.GetID()).Range(func(guid int64, actor game.Actor) {
 		slf.OnActorAnnihilationEvent(actor)
