@@ -9,9 +9,9 @@ import (
 
 type StartBeforeEventHandle func(srv *Server)
 type StartFinishEventHandle func(srv *Server)
-type ConnectionReceivePacketEventHandle func(conn *Conn, packet []byte)
-type ConnectionOpenedEventHandle func(conn *Conn)
-type ConnectionClosedEventHandle func(conn *Conn)
+type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
+type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
+type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
 
 type event struct {
 	*Server
@@ -59,7 +59,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn) {
 	log.Debug("Server", zap.String("ConnectionClosed", conn.GetID()))
 	slf.Server.connections.Delete(conn.ip)
 	for _, handle := range slf.connectionClosedEventHandles {
-		handle(conn)
+		handle(slf.Server, conn)
 	}
 }
 
@@ -76,7 +76,7 @@ func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
 	log.Debug("Server", zap.String("ConnectionOpened", conn.GetID()))
 	slf.Server.connections.Set(conn.ip, conn)
 	for _, handle := range slf.connectionOpenedEventHandles {
-		handle(conn)
+		handle(slf.Server, conn)
 	}
 }
 
@@ -91,7 +91,7 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 	for _, handle := range slf.connectionReceivePacketEventHandles {
-		handle(conn, packet)
+		handle(slf.Server, conn, packet)
 	}
 }
 
