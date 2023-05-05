@@ -18,6 +18,8 @@ type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	IsExistPlayer(id PlayerID) bool
 	// IsOwner 检查玩家是否是房主
 	IsOwner(id PlayerID) bool
+	// ChangeOwner 设置玩家为房主
+	ChangeOwner(id PlayerID)
 
 	// Join 使特定玩家加入房间
 	Join(player P) error

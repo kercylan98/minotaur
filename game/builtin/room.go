@@ -57,6 +57,13 @@ func (slf *Room[PlayerID, Player]) IsOwner(id PlayerID) bool {
 	return !slf.noMaster && slf.owner == id
 }
 
+func (slf *Room[PlayerID, Player]) ChangeOwner(id PlayerID) {
+	if slf.noMaster || slf.owner == id {
+		return
+	}
+	slf.owner = id
+}
+
 func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
