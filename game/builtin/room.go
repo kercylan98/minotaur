@@ -16,13 +16,17 @@ func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64) *Roo
 }
 
 type Room[PlayerID comparable, Player game.Player[PlayerID]] struct {
-	guid        int64
-	playerLimit int
-	playersConn *synchronization.Map[string, Player]
-	players     *synchronization.Map[PlayerID, Player]
+	guid            int64
+	owner           PlayerID
+	noMaster        bool
+	playerLimit     int
+	playersConn     *synchronization.Map[string, Player]
+	players         *synchronization.Map[PlayerID, Player]
+	kickCheckHandle func(id, target PlayerID) error
 
 	playerJoinRoomEventHandles  []game.PlayerJoinRoomEventHandle[PlayerID, Player]
 	playerLeaveRoomEventHandles []game.PlayerLeaveRoomEventHandle[PlayerID, Player]
+	playerKickedOutEventHandles []game.PlayerKickedOutEventHandle[PlayerID, Player]
 }
 
 func (slf *Room[PlayerID, Player]) GetGuid() int64 {
@@ -49,6 +53,10 @@ func (slf *Room[PlayerID, Player]) IsExistPlayer(id PlayerID) bool {
 	return slf.players.Exist(id)
 }
 
+func (slf *Room[PlayerID, Player]) IsOwner(id PlayerID) bool {
+	return !slf.noMaster && slf.owner == id
+}
+
 func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
@@ -56,6 +64,9 @@ func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
 	slf.players.Set(player.GetID(), player)
 	slf.playersConn.Set(player.GetConnID(), player)
+	if slf.players.Size() == 1 && !slf.noMaster {
+		slf.owner = player.GetID()
+	}
 	slf.OnPlayerJoinRoomEvent(player)
 	return nil
 }
@@ -69,6 +80,26 @@ func (slf *Room[PlayerID, Player]) Leave(id PlayerID) {
 	slf.OnPlayerLeaveRoomEvent(player)
 	slf.players.Delete(player.GetID())
 	slf.playersConn.Delete(player.GetConnID())
+}
+
+func (slf *Room[PlayerID, Player]) KickOut(id, target PlayerID, reason string) error {
+	player, exist := slf.players.GetExist(target)
+	if !exist {
+		return nil
+	}
+	if slf.kickCheckHandle != nil {
+		if err := slf.kickCheckHandle(id, target); err != nil {
+			return err
+		}
+	} else if slf.noMaster {
+		return ErrRoomNoHasMaster
+	} else if slf.owner != id {
+		return ErrRoomNotIsOwner
+	}
+
+	slf.OnPlayerKickedOutEvent(id, target, reason)
+	slf.Leave(player.GetID())
+	return nil
 }
 
 func (slf *Room[PlayerID, Player]) RegPlayerJoinRoomEvent(handle game.PlayerJoinRoomEventHandle[PlayerID, Player]) {
@@ -88,5 +119,15 @@ func (slf *Room[PlayerID, Player]) RegPlayerLeaveRoomEvent(handle game.PlayerLea
 func (slf *Room[PlayerID, Player]) OnPlayerLeaveRoomEvent(player Player) {
 	for _, handle := range slf.playerLeaveRoomEventHandles {
 		handle(slf, player)
+	}
+}
+
+func (slf *Room[PlayerID, Player]) RegPlayerKickedOutEvent(handle game.PlayerKickedOutEventHandle[PlayerID, Player]) {
+	slf.playerKickedOutEventHandles = append(slf.playerKickedOutEventHandles, handle)
+}
+
+func (slf *Room[PlayerID, Player]) OnPlayerKickedOutEvent(executor, kicked PlayerID, reason string) {
+	for _, handle := range slf.playerKickedOutEventHandles {
+		handle(slf, executor, kicked, reason)
 	}
 }
