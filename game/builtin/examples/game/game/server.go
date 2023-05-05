@@ -11,7 +11,7 @@ func init() {
 	Server.RegConnectionReceivePacketEvent(onConnectionReceivePacket)
 }
 
-func onConnectionReceivePacket(conn *server.Conn, packet []byte) {
+func onConnectionReceivePacket(srv *server.Server, conn *server.Conn, packet []byte) {
 	player := Game.World.GetPlayerWithConnID(conn.GetID())
 	if player == nil {
 		return
@@ -31,7 +31,7 @@ func onConnectionClosed(player *Player) {
 	player.Close()
 }
 
-func onConnectionOpened(conn *server.Conn) {
+func onConnectionOpened(srv *server.Server, conn *server.Conn) {
 	player := NewPlayer(sole.GetSync(), conn)
 	if err := Game.World.Join(player); err != nil {
 		panic(err)

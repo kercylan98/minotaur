@@ -267,6 +267,11 @@ func (slf *Server) IsDev() bool {
 	return !slf.prod
 }
 
+// GetConnections 获取所有在线的连接
+func (slf *Server) GetConnections() synchronization.MapReadonly[string, *Conn] {
+	return slf.connections
+}
+
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	if slf.initMessageChannel {
