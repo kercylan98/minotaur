@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 )
 
+// NewWorld 创建一个内置的游戏世界
 func NewWorld[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...WorldOption[PlayerID, Player]) *World[PlayerID, Player] {
 	world := &World[PlayerID, Player]{
 		guid:         guid,
@@ -23,6 +24,7 @@ func NewWorld[PlayerID comparable, Player game.Player[PlayerID]](guid int64, opt
 	return world
 }
 
+// World 游戏世界的内置实现，实现了基本的游戏世界接口
 type World[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	guid         int64
 	actorGuid    atomic.Int64
