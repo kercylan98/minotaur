@@ -1,5 +1,7 @@
 package game
 
+import "minotaur/utils/synchronization"
+
 // World 游戏世界接口定义
 type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetGuid 获取世界的唯一标识符
@@ -11,15 +13,15 @@ type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetPlayer 根据玩家id获取玩家
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取世界中的所有玩家
-	GetPlayers() map[PlayerID]P
+	GetPlayers() synchronization.MapReadonly[PlayerID, P]
 	// GetActor 根据唯一标识符获取世界中的游戏对象
 	GetActor(guid int64) Actor
 	// GetActors 获取世界中的所有游戏对象
-	GetActors() map[int64]Actor
+	GetActors() synchronization.MapReadonly[int64, Actor]
 	// GetPlayerActor 获取游戏世界中归属特定玩家的特定游戏对象
 	GetPlayerActor(id PlayerID, guid int64) Actor
 	// GetPlayerActors 获取游戏世界中归属特定玩家的所有游戏对象
-	GetPlayerActors(id PlayerID) map[int64]Actor
+	GetPlayerActors(id PlayerID) synchronization.MapReadonly[int64, Actor]
 	// IsExistPlayer 检查游戏世界中是否存在特定玩家
 	IsExistPlayer(id PlayerID) bool
 	// IsExistActor 检查游戏世界中是否存在特定游戏对象
@@ -59,22 +61,22 @@ type World[PlayerID comparable, P Player[PlayerID]] interface {
 	RegPlayerLeaveWorldEvent(handle PlayerLeaveWorldEventHandle[PlayerID, P])
 	OnPlayerLeaveWorldEvent(player P)
 	// RegActorGeneratedEvent 游戏世界中的游戏对象生成完成时将立即执行被注册的事件处理函数
-	RegActorGeneratedEvent(handle ActorGeneratedEventHandle)
+	RegActorGeneratedEvent(handle ActorGeneratedEventHandle[PlayerID, P])
 	OnActorGeneratedEvent(actor Actor)
 	// RegActorAnnihilationEvent 游戏世界中的游戏对象被移除前执行被注册的事件处理函数
-	RegActorAnnihilationEvent(handle ActorAnnihilationEventHandle)
+	RegActorAnnihilationEvent(handle ActorAnnihilationEventHandle[PlayerID, P])
 	OnActorAnnihilationEvent(actor Actor)
 	// RegActorOwnerChangeEvent 游戏对象的归属被改变时立刻执行被注册的事件处理函数
-	RegActorOwnerChangeEvent(handle ActorOwnerChangeEventHandle[PlayerID])
+	RegActorOwnerChangeEvent(handle ActorOwnerChangeEventHandle[PlayerID, P])
 	OnActorOwnerChangeEvent(actor Actor, old, new PlayerID, isolated bool)
 }
 
 type (
-	WorldResetEventHandle[ID comparable, P Player[ID]]       func(world World[ID, P])
-	WorldReleaseEventHandle[ID comparable, P Player[ID]]     func(world World[ID, P])
-	PlayerJoinWorldEventHandle[ID comparable, P Player[ID]]  func(player P)
-	PlayerLeaveWorldEventHandle[ID comparable, P Player[ID]] func(player P)
-	ActorGeneratedEventHandle                                func(actor Actor)
-	ActorAnnihilationEventHandle                             func(actor Actor)
-	ActorOwnerChangeEventHandle[ID comparable]               func(actor Actor, old, new ID, isolated bool)
+	WorldResetEventHandle[ID comparable, P Player[ID]]        func(world World[ID, P])
+	WorldReleaseEventHandle[ID comparable, P Player[ID]]      func(world World[ID, P])
+	PlayerJoinWorldEventHandle[ID comparable, P Player[ID]]   func(world World[ID, P], player P)
+	PlayerLeaveWorldEventHandle[ID comparable, P Player[ID]]  func(world World[ID, P], player P)
+	ActorGeneratedEventHandle[ID comparable, P Player[ID]]    func(world World[ID, P], actor Actor)
+	ActorAnnihilationEventHandle[ID comparable, P Player[ID]] func(world World[ID, P], actor Actor)
+	ActorOwnerChangeEventHandle[ID comparable, P Player[ID]]  func(world World[ID, P], actor Actor, old, new ID, isolated bool)
 )

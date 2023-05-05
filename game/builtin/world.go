@@ -37,9 +37,9 @@ type World[PlayerID comparable, Player game.Player[PlayerID]] struct {
 
 	playerJoinWorldEventHandles   []game.PlayerJoinWorldEventHandle[PlayerID, Player]
 	playerLeaveWorldEventHandles  []game.PlayerLeaveWorldEventHandle[PlayerID, Player]
-	actorGeneratedEventHandles    []game.ActorGeneratedEventHandle
-	actorAnnihilationEventHandles []game.ActorAnnihilationEventHandle
-	actorOwnerChangeEventHandles  []game.ActorOwnerChangeEventHandle[PlayerID]
+	actorGeneratedEventHandles    []game.ActorGeneratedEventHandle[PlayerID, Player]
+	actorAnnihilationEventHandles []game.ActorAnnihilationEventHandle[PlayerID, Player]
+	actorOwnerChangeEventHandles  []game.ActorOwnerChangeEventHandle[PlayerID, Player]
 	worldResetEventHandles        []game.WorldResetEventHandle[PlayerID, Player]
 	worldReleasedEventHandles     []game.WorldReleaseEventHandle[PlayerID, Player]
 
@@ -62,16 +62,16 @@ func (slf *World[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 	return slf.players.Get(id)
 }
 
-func (slf *World[PlayerID, Player]) GetPlayers() map[PlayerID]Player {
-	return slf.players.Map()
+func (slf *World[PlayerID, Player]) GetPlayers() synchronization.MapReadonly[PlayerID, Player] {
+	return slf.players
 }
 
 func (slf *World[PlayerID, Player]) GetActor(guid int64) game.Actor {
 	return slf.actors.Get(guid)
 }
 
-func (slf *World[PlayerID, Player]) GetActors() map[int64]game.Actor {
-	return slf.actors.Map()
+func (slf *World[PlayerID, Player]) GetActors() synchronization.MapReadonly[int64, game.Actor] {
+	return slf.actors
 }
 
 func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game.Actor {
@@ -81,8 +81,8 @@ func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game
 	return nil
 }
 
-func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) map[int64]game.Actor {
-	return slf.playerActors.Get(id).Map()
+func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) synchronization.MapReadonly[int64, game.Actor] {
+	return slf.playerActors.Get(id)
 }
 
 func (slf *World[PlayerID, Player]) IsExistPlayer(id PlayerID) bool {
@@ -236,7 +236,7 @@ func (slf *World[PlayerID, Player]) RegPlayerJoinWorldEvent(handle game.PlayerJo
 
 func (slf *World[PlayerID, Player]) OnPlayerJoinWorldEvent(player Player) {
 	for _, handle := range slf.playerJoinWorldEventHandles {
-		handle(player)
+		handle(slf, player)
 	}
 }
 
@@ -246,36 +246,36 @@ func (slf *World[PlayerID, Player]) RegPlayerLeaveWorldEvent(handle game.PlayerL
 
 func (slf *World[PlayerID, Player]) OnPlayerLeaveWorldEvent(player Player) {
 	for _, handle := range slf.playerLeaveWorldEventHandles {
-		handle(player)
+		handle(slf, player)
 	}
 }
 
-func (slf *World[PlayerID, Player]) RegActorGeneratedEvent(handle game.ActorGeneratedEventHandle) {
+func (slf *World[PlayerID, Player]) RegActorGeneratedEvent(handle game.ActorGeneratedEventHandle[PlayerID, Player]) {
 	slf.actorGeneratedEventHandles = append(slf.actorGeneratedEventHandles, handle)
 }
 
 func (slf *World[PlayerID, Player]) OnActorGeneratedEvent(actor game.Actor) {
 	for _, handle := range slf.actorGeneratedEventHandles {
-		handle(actor)
+		handle(slf, actor)
 	}
 }
 
-func (slf *World[PlayerID, Player]) RegActorAnnihilationEvent(handle game.ActorAnnihilationEventHandle) {
+func (slf *World[PlayerID, Player]) RegActorAnnihilationEvent(handle game.ActorAnnihilationEventHandle[PlayerID, Player]) {
 	slf.actorAnnihilationEventHandles = append(slf.actorAnnihilationEventHandles, handle)
 }
 
 func (slf *World[PlayerID, Player]) OnActorAnnihilationEvent(actor game.Actor) {
 	for _, handle := range slf.actorAnnihilationEventHandles {
-		handle(actor)
+		handle(slf, actor)
 	}
 }
 
-func (slf *World[PlayerID, Player]) RegActorOwnerChangeEvent(handle game.ActorOwnerChangeEventHandle[PlayerID]) {
+func (slf *World[PlayerID, Player]) RegActorOwnerChangeEvent(handle game.ActorOwnerChangeEventHandle[PlayerID, Player]) {
 	slf.actorOwnerChangeEventHandles = append(slf.actorOwnerChangeEventHandles, handle)
 }
 
 func (slf *World[PlayerID, Player]) OnActorOwnerChangeEvent(actor game.Actor, old, new PlayerID, isolated bool) {
 	for _, handle := range slf.actorOwnerChangeEventHandles {
-		handle(actor, old, new, isolated)
+		handle(slf, actor, old, new, isolated)
 	}
 }
