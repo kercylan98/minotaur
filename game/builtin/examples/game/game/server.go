@@ -1,6 +1,7 @@
 package game
 
 import (
+	"minotaur/game"
 	"minotaur/server"
 	"minotaur/utils/sole"
 )
@@ -26,7 +27,7 @@ func onConnectionReceivePacket(srv *server.Server, conn *server.Conn, packet []b
 	}
 }
 
-func onConnectionClosed(player *Player) {
+func onConnectionClosed(world game.World[int64, *Player], player *Player) {
 	Game.Leave(player.GetID())
 	player.Close()
 }
