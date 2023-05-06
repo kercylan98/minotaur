@@ -3,7 +3,7 @@ package senders
 import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"minotaur/notify"
+	"github.com/kercylan98/minotaur/notify"
 	"net/http"
 )
 

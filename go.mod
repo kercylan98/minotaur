@@ -1,4 +1,4 @@
-module minotaur
+module github.com/kercylan98/minotaur
 
 go 1.20
 

@@ -1,8 +1,8 @@
 package builtin
 
 import (
-	"minotaur/game"
-	"minotaur/utils/offset"
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/offset"
 	"time"
 )
 

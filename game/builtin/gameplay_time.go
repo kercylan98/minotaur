@@ -1,8 +1,8 @@
 package builtin
 
 import (
-	"minotaur/game"
-	"minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/timer"
 	"time"
 )
 

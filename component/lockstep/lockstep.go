@@ -1,7 +1,7 @@
 package lockstep
 
 import (
-	"minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
 	"time"
 )

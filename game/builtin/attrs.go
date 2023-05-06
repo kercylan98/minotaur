@@ -1,9 +1,9 @@
 package builtin
 
 import (
-	"minotaur/game"
-	"minotaur/utils/huge"
-	"minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/huge"
+	"github.com/kercylan98/minotaur/utils/synchronization"
 )
 
 func NewAttrs() *Attrs {

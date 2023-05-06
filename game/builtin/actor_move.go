@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"minotaur/game"
+	"github.com/kercylan98/minotaur/game"
 )
 
 type ActorMove struct {

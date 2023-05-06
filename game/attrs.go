@@ -1,6 +1,6 @@
 package game
 
-import "minotaur/utils/huge"
+import "github.com/kercylan98/minotaur/utils/huge"
 
 // Attrs 属性
 type Attrs interface {

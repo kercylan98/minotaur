@@ -1,6 +1,6 @@
 package golang
 
-import "minotaur/exporter/configuration"
+import "github.com/kercylan98/minotaur/exporter/configuration"
 
 func GetFieldType(fieldType string) configuration.FieldType {
 	switch fieldType {

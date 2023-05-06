@@ -1,6 +1,6 @@
 package builtin
 
-import "minotaur/game"
+import "github.com/kercylan98/minotaur/game"
 
 // NewPosition 创建一个新的位置对象。
 func NewPosition(x, y, z float64) *Position {

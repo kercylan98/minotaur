@@ -1,6 +1,6 @@
 package game
 
-import "minotaur/utils/synchronization"
+import "github.com/kercylan98/minotaur/utils/synchronization"
 
 // Room 房间类似于简版的游戏世界，不过没有游戏实体
 type Room[PlayerID comparable, P Player[PlayerID]] interface {

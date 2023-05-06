@@ -1,10 +1,10 @@
 package builtin
 
 import (
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/synchronization"
 	"go.uber.org/zap"
-	"minotaur/game"
-	"minotaur/utils/log"
-	"minotaur/utils/synchronization"
 )
 
 func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64) *Room[PlayerID, Player] {

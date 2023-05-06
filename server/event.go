@@ -1,9 +1,9 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/runtimes"
 	"go.uber.org/zap"
-	"minotaur/utils/log"
-	"minotaur/utils/runtimes"
 	"reflect"
 )
 

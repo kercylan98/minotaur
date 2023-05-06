@@ -1,8 +1,8 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
-	"minotaur/utils/log"
 	"os"
 	"os/signal"
 	"syscall"

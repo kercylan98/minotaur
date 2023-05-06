@@ -2,8 +2,8 @@ package golang
 
 import (
 	"fmt"
-	"minotaur/exporter/configuration"
-	"minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/exporter/configuration"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"strings"
 )
 

@@ -1,7 +1,7 @@
 package extension
 
 import (
-	"minotaur/game"
+	"github.com/kercylan98/minotaur/game"
 	"time"
 )
 

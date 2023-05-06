@@ -2,11 +2,11 @@ package analyzer
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/exporter/configuration"
+	"github.com/kercylan98/minotaur/exporter/configuration/golang"
+	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/xuri/excelize/v2"
 	"go.uber.org/zap"
-	"minotaur/exporter/configuration"
-	"minotaur/exporter/configuration/golang"
-	"minotaur/utils/log"
 	"strconv"
 	"strings"
 )

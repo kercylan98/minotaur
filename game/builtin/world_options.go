@@ -1,6 +1,6 @@
 package builtin
 
-import "minotaur/game"
+import "github.com/kercylan98/minotaur/game"
 
 // WorldOption 世界构建可选项
 type WorldOption[PlayerID comparable, Player game.Player[PlayerID]] func(world *World[PlayerID, Player])

@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"fmt"
-	"minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/utils/timer"
 )
 
 type GameplayTimeOption func(time *GameplayTime)

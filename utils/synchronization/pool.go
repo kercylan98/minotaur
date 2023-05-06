@@ -1,8 +1,8 @@
 package synchronization
 
 import (
+	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
-	"minotaur/utils/log"
 	"sync"
 )
 

@@ -1,6 +1,6 @@
 package builtin
 
-import "minotaur/game"
+import "github.com/kercylan98/minotaur/game"
 
 // RoomOption 房间构建可选项
 type RoomOption[PlayerID comparable, Player game.Player[PlayerID]] func(room *Room[PlayerID, Player])

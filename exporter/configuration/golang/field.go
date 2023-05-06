@@ -1,7 +1,7 @@
 package golang
 
 import (
-	"minotaur/exporter/configuration"
+	"github.com/kercylan98/minotaur/exporter/configuration"
 )
 
 func NewField(id int, name string, fieldType configuration.FieldType, isIndex bool) *Field {

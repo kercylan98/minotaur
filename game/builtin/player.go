@@ -1,6 +1,6 @@
 package builtin
 
-import "minotaur/server"
+import "github.com/kercylan98/minotaur/server"
 
 func NewPlayer[ID comparable](id ID, conn *server.Conn) *Player[ID] {
 	return &Player[ID]{

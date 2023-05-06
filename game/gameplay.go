@@ -1,7 +1,7 @@
 package game
 
 import (
-	"minotaur/utils/offset"
+	"github.com/kercylan98/minotaur/utils/offset"
 	"time"
 )
 

@@ -1,6 +1,6 @@
 package game
 
-import "minotaur/utils/synchronization"
+import "github.com/kercylan98/minotaur/utils/synchronization"
 
 // World 游戏世界接口定义
 type World[PlayerID comparable, P Player[PlayerID]] interface {
