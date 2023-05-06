@@ -26,6 +26,7 @@ func New(network Network, options ...Option) *Server {
 		event:   &event{},
 		network: network,
 		options: options,
+		core:    1,
 	}
 	server.event.Server = server
 
@@ -61,6 +62,7 @@ type Server struct {
 	initMessageChannel bool                                // 消息管道是否已经初始化
 	multiple           bool                                // 是否为多服务器模式下运行
 	prod               bool                                // 是否为生产模式
+	core               int                                 // 消息处理核心数
 }
 
 // Run 使用特定地址运行服务器
@@ -103,8 +105,12 @@ func (slf *Server) Run(addr string) error {
 		if callback != nil {
 			go callback()
 		}
-		for message := range slf.messageChannel {
-			slf.dispatchMessage(message)
+		for i := 0; i < slf.core; i++ {
+			go func() {
+				for message := range slf.messageChannel {
+					slf.dispatchMessage(message)
+				}
+			}()
 		}
 	}
 

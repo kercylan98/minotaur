@@ -1,5 +1,10 @@
 package server
 
+import (
+	"go.uber.org/zap"
+	"minotaur/utils/log"
+)
+
 type Option func(srv *Server)
 
 // WithProd 通过生产模式运行服务器
@@ -15,5 +20,18 @@ func WithProd() Option {
 func WithMessageBufferSize(size int) Option {
 	return func(srv *Server) {
 		srv.messagePoolSize = size
+	}
+}
+
+// WithMultiCore 通过特定核心数量运行服务器，默认为单核
+//   - count > 1 的情况下，将会有对应数量的 goroutine 来处理消息
+//   - 注意：HTTP和GRPC网络模式下不会生效
+func WithMultiCore(count int) Option {
+	return func(srv *Server) {
+		srv.core = count
+		if srv.core < 1 {
+			log.Warn("WithMultiCore", zap.Int("count", count), zap.String("tips", "wrong core count configuration, corrected to 1, currently in single-core mode"))
+			srv.core = 1
+		}
 	}
 }
