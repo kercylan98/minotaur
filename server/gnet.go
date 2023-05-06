@@ -19,12 +19,13 @@ func (slf *gNet) OnShutdown(server gnet.Server) {
 
 func (slf *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
 	conn := newGNetConn(c)
+	c.SetContext(conn)
 	slf.OnConnectionOpenedEvent(conn)
 	return
 }
 
 func (slf *gNet) OnClosed(c gnet.Conn, err error) (action gnet.Action) {
-	slf.OnConnectionClosedEvent(newGNetConn(c))
+	slf.OnConnectionClosedEvent(c.Context().(*Conn))
 	return
 }
 
@@ -37,7 +38,7 @@ func (slf *gNet) AfterWrite(c gnet.Conn, b []byte) {
 }
 
 func (slf *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	slf.Server.PushMessage(MessageTypePacket, newGNetConn(c), packet)
+	slf.Server.PushMessage(MessageTypePacket, c.Context().(*Conn), packet)
 	return nil, gnet.None
 }
 
