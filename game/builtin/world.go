@@ -12,7 +12,6 @@ import (
 func NewWorld[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...WorldOption[PlayerID, Player]) *World[PlayerID, Player] {
 	world := &World[PlayerID, Player]{
 		guid:         guid,
-		playersConn:  synchronization.NewMap[string, Player](),
 		players:      synchronization.NewMap[PlayerID, Player](),
 		playerActors: synchronization.NewMap[PlayerID, *synchronization.Map[int64, game.Actor]](),
 		owners:       synchronization.NewMap[int64, PlayerID](),
@@ -29,7 +28,6 @@ type World[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	guid         int64
 	actorGuid    atomic.Int64
 	playerLimit  int
-	playersConn  *synchronization.Map[string, Player]
 	players      *synchronization.Map[PlayerID, Player]
 	playerActors *synchronization.Map[PlayerID, *synchronization.Map[int64, game.Actor]]
 	owners       *synchronization.Map[int64, PlayerID]
@@ -52,10 +50,6 @@ func (slf *World[PlayerID, Player]) GetGuid() int64 {
 
 func (slf *World[PlayerID, Player]) GetPlayerLimit() int {
 	return slf.playerLimit
-}
-
-func (slf *World[PlayerID, Player]) GetPlayerWithConnID(id string) Player {
-	return slf.playersConn.Get(id)
 }
 
 func (slf *World[PlayerID, Player]) GetPlayer(id PlayerID) Player {
@@ -108,13 +102,12 @@ func (slf *World[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
 	}
-	log.Debug("World.Join", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
+	log.Debug("World.Join", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.players.Set(player.GetID(), player)
 	if actors := slf.playerActors.Get(player.GetID()); actors == nil {
 		actors = synchronization.NewMap[int64, game.Actor]()
 		slf.playerActors.Set(player.GetID(), actors)
 	}
-	slf.playersConn.Set(player.GetConnID(), player)
 	slf.OnPlayerJoinWorldEvent(player)
 	return nil
 }
@@ -124,7 +117,7 @@ func (slf *World[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
-	log.Debug("World.Leave", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
+	log.Debug("World.Leave", zap.Int64("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.OnPlayerLeaveWorldEvent(player)
 	slf.playerActors.Get(player.GetID()).Range(func(guid int64, actor game.Actor) {
 		slf.OnActorAnnihilationEvent(actor)
@@ -132,7 +125,6 @@ func (slf *World[PlayerID, Player]) Leave(id PlayerID) {
 	})
 	slf.playerActors.Delete(player.GetID())
 	slf.players.Delete(player.GetID())
-	slf.playersConn.Delete(player.GetConnID())
 }
 
 func (slf *World[PlayerID, Player]) AddActor(actor game.Actor) {
@@ -186,7 +178,6 @@ func (slf *World[PlayerID, Player]) Reset() {
 	slf.owners.Clear()
 	slf.actors.Clear()
 	slf.actorGuid.Store(0)
-	slf.playersConn.Clear()
 	slf.OnWorldResetEvent()
 }
 

@@ -54,15 +54,14 @@ type Server struct {
 	httpServer *http.Server // HTTP模式下的服务器
 	grpcServer *grpc.Server // GRPC模式下的服务器
 
-	connections        *synchronization.Map[string, *Conn] // 所有在线的连接
-	gServer            *gNet                               // TCP或UDP模式下的服务器
-	messagePool        *synchronization.Pool[*message]     // 消息池
-	messagePoolSize    int                                 // 消息池大小
-	messageChannel     chan *message                       // 消息管道
-	initMessageChannel bool                                // 消息管道是否已经初始化
-	multiple           bool                                // 是否为多服务器模式下运行
-	prod               bool                                // 是否为生产模式
-	core               int                                 // 消息处理核心数
+	gServer            *gNet                           // TCP或UDP模式下的服务器
+	messagePool        *synchronization.Pool[*message] // 消息池
+	messagePoolSize    int                             // 消息池大小
+	messageChannel     chan *message                   // 消息管道
+	initMessageChannel bool                            // 消息管道是否已经初始化
+	multiple           bool                            // 是否为多服务器模式下运行
+	prod               bool                            // 是否为生产模式
+	core               int                             // 消息处理核心数
 }
 
 // Run 使用特定地址运行服务器
@@ -85,7 +84,6 @@ func (slf *Server) Run(addr string) error {
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var connectionInitHandle = func(callback func()) {
-		slf.connections = synchronization.NewMap[string, *Conn]()
 		slf.initMessageChannel = true
 		if slf.messagePoolSize <= 0 {
 			slf.messagePoolSize = 1024
@@ -209,7 +207,7 @@ func (slf *Server) Run(addr string) error {
 				}
 			}
 
-			conn := newWebsocketConn(ws)
+			conn := newWebsocketConn(ws, ip)
 			slf.OnConnectionOpenedEvent(conn)
 
 			defer func() {
@@ -273,11 +271,6 @@ func (slf *Server) IsDev() bool {
 	return !slf.prod
 }
 
-// GetConnections 获取所有在线的连接
-func (slf *Server) GetConnections() synchronization.MapReadonly[string, *Conn] {
-	return slf.connections
-}
-
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	if slf.initMessageChannel {
@@ -288,9 +281,6 @@ func (slf *Server) Shutdown(err error) {
 				log.Error("Server", zap.Error(shutdownErr))
 			}
 		}
-		slf.connections.Range(func(connId string, conn *Conn) {
-			conn.Close()
-		})
 		close(slf.messageChannel)
 		slf.messagePool.Close()
 		slf.initMessageChannel = false

@@ -8,8 +8,6 @@ type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	GetGuid() int64
 	// GetPlayerLimit 获取玩家人数上限
 	GetPlayerLimit() int
-	// GetPlayerWithConnID 根据连接ID获取玩家
-	GetPlayerWithConnID(id string) P
 	// GetPlayer 根据玩家id获取玩家
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取房间中的所有玩家

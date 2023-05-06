@@ -9,9 +9,8 @@ import (
 
 func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64) *Room[PlayerID, Player] {
 	return &Room[PlayerID, Player]{
-		guid:        guid,
-		playersConn: synchronization.NewMap[string, Player](),
-		players:     synchronization.NewMap[PlayerID, Player](),
+		guid:    guid,
+		players: synchronization.NewMap[PlayerID, Player](),
 	}
 }
 
@@ -20,7 +19,6 @@ type Room[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	owner           PlayerID
 	noMaster        bool
 	playerLimit     int
-	playersConn     *synchronization.Map[string, Player]
 	players         *synchronization.Map[PlayerID, Player]
 	kickCheckHandle func(id, target PlayerID) error
 
@@ -35,10 +33,6 @@ func (slf *Room[PlayerID, Player]) GetGuid() int64 {
 
 func (slf *Room[PlayerID, Player]) GetPlayerLimit() int {
 	return slf.playerLimit
-}
-
-func (slf *Room[PlayerID, Player]) GetPlayerWithConnID(id string) Player {
-	return slf.playersConn.Get(id)
 }
 
 func (slf *Room[PlayerID, Player]) GetPlayer(id PlayerID) Player {
@@ -68,9 +62,8 @@ func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrWorldPlayerLimit
 	}
-	log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
+	log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.players.Set(player.GetID(), player)
-	slf.playersConn.Set(player.GetConnID(), player)
 	if slf.players.Size() == 1 && !slf.noMaster {
 		slf.owner = player.GetID()
 	}
@@ -83,10 +76,9 @@ func (slf *Room[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
-	log.Debug("Room.Leave", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()), zap.String("conn", player.GetConnID()))
+	log.Debug("Room.Leave", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.OnPlayerLeaveRoomEvent(player)
 	slf.players.Delete(player.GetID())
-	slf.playersConn.Delete(player.GetConnID())
 }
 
 func (slf *Room[PlayerID, Player]) KickOut(id, target PlayerID, reason string) error {

@@ -30,9 +30,9 @@ func newGNetConn(conn gnet.Conn) *Conn {
 }
 
 // newKcpConn 创建一个处理WebSocket的连接
-func newWebsocketConn(ws *websocket.Conn) *Conn {
+func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
 	return &Conn{
-		ip: ws.RemoteAddr().String(),
+		ip: ip,
 		ws: ws,
 		write: func(data []byte) error {
 			return ws.WriteMessage(websocket.BinaryMessage, data)
