@@ -1,5 +1,8 @@
 package builtin
 
+import "errors"
+
 var (
-	ErrItemCountException = "the number of items cannot be empty and must be a positive integer"
+	ErrItemInsufficientQuantityDeduction = errors.New("insufficient quantity deduction")
+	ErrItemStackLimit                    = errors.New("the number of items reaches the stacking limit")
 )
