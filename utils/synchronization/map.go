@@ -26,6 +26,16 @@ func (slf *Map[Key, Value]) Get(key Key) Value {
 	return slf.data[key]
 }
 
+// AtomGetSet 原子方式获取一个值并在之后进行赋值
+func (slf *Map[Key, Value]) AtomGetSet(key Key, handle func(value Value, exist bool) (newValue Value, isSet bool)) {
+	slf.lock.Lock()
+	defer slf.lock.Unlock()
+	value, exist := slf.data[key]
+	if newValue, isSet := handle(value, exist); isSet {
+		slf.data[key] = newValue
+	}
+}
+
 func (slf *Map[Key, Value]) Exist(key Key) bool {
 	slf.lock.RLock()
 	_, exist := slf.data[key]
