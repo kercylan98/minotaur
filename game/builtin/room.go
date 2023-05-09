@@ -43,6 +43,10 @@ func (slf *Room[PlayerID, Player]) GetPlayers() synchronization.MapReadonly[Play
 	return slf.players
 }
 
+func (slf *Room[PlayerID, Player]) GetPlayerCount() int {
+	return slf.players.Size()
+}
+
 func (slf *Room[PlayerID, Player]) IsExistPlayer(id PlayerID) bool {
 	return slf.players.Exist(id)
 }

@@ -12,6 +12,8 @@ type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取房间中的所有玩家
 	GetPlayers() synchronization.MapReadonly[PlayerID, P]
+	// GetPlayerCount 获取玩家数量
+	GetPlayerCount() int
 	// IsExistPlayer 检查房间中是否存在特定玩家
 	IsExistPlayer(id PlayerID) bool
 	// IsOwner 检查玩家是否是房主
