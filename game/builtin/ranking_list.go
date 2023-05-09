@@ -143,7 +143,11 @@ func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID)
 }
 
 func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
-	return slf.competitors.Keys()
+	var result []CompetitorID
+	for _, data := range slf.scores {
+		result = append(result, data[0])
+	}
+	return result
 }
 
 func (slf *RankingList[CompetitorID, Score]) Clear() {
