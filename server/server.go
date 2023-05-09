@@ -87,7 +87,7 @@ func (slf *Server) Run(addr string) error {
 	var connectionInitHandle = func(callback func()) {
 		slf.initMessageChannel = true
 		if slf.messagePoolSize <= 0 {
-			slf.messagePoolSize = 1024
+			slf.messagePoolSize = 4096 * 1024
 		}
 		slf.messagePool = synchronization.NewPool[*message](slf.messagePoolSize,
 			func() *message {
