@@ -52,6 +52,15 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 	}
 }
 
+func (slf *RankingList[CompetitorID, Score]) CompetitorIncrease(competitorId CompetitorID, score Score) {
+	oldScore, err := slf.GetScore(competitorId)
+	if err != nil {
+		slf.Competitor(competitorId, score)
+	} else {
+		slf.Competitor(competitorId, oldScore+score)
+	}
+}
+
 func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
 	if !slf.competitors.Exist(competitorId) {
 		return
