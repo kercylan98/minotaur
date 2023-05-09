@@ -44,7 +44,7 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 	} else {
 		if slf.rankCount > 0 && len(slf.scores) >= slf.rankCount {
 			last := slf.scores[len(slf.scores)-1]
-			if slf.Cmp(score, last[1]) <= 0 {
+			if slf.Cmp(score, last[1].(Score)) <= 0 {
 				return
 			}
 		}
@@ -72,6 +72,10 @@ func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId Compe
 	}
 	slf.scores = append(slf.scores[0:rank], slf.scores[rank+1:]...)
 	slf.competitors.Delete(competitorId)
+}
+
+func (slf *RankingList[CompetitorID, Score]) Size() int {
+	return slf.competitors.Size()
 }
 
 func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
@@ -113,7 +117,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitor(rank int) (competitor
 	if rank < 0 || rank >= len(slf.scores) {
 		return competitorId, ErrRankingListNonexistentRanking
 	}
-	return slf.scores[rank][0], nil
+	return slf.scores[rank][0].(CompetitorID), nil
 }
 
 func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
@@ -129,7 +133,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end i
 	}
 	var ids []CompetitorID
 	for _, data := range slf.scores[start-1 : end] {
-		ids = append(ids, data[0])
+		ids = append(ids, data[0].(CompetitorID))
 	}
 	return ids, nil
 }
@@ -145,7 +149,7 @@ func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID)
 func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	var result []CompetitorID
 	for _, data := range slf.scores {
-		result = append(result, data[0])
+		result = append(result, data[0].(CompetitorID))
 	}
 	return result
 }
@@ -175,13 +179,13 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 	for low <= high {
 		mid := (low + high) / 2
 		data := slf.scores[mid]
-		if slf.Cmp(data[1], score) == 0 {
+		if slf.Cmp(data[1].(Score), score) == 0 {
 			for low = mid + 1; low <= high; low++ {
-				if slf.Cmp(slf.scores[low][1], score) != 0 {
+				if slf.Cmp(slf.scores[low][1].(Score), score) != 0 {
 					break
 				}
 			}
-		} else if slf.Cmp(data[1], score) < 0 {
+		} else if slf.Cmp(data[1].(Score), score) < 0 {
 			high = mid - 1
 		} else {
 			low = mid + 1
@@ -215,6 +219,6 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 
 	count = len(slf.scores) - 1
 	scoreItem = slf.scores[count]
-	slf.competitors.Delete(scoreItem[0])
+	slf.competitors.Delete(scoreItem[0].(CompetitorID))
 	slf.scores = slf.scores[0:count]
 }

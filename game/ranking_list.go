@@ -10,6 +10,8 @@ type RankingList[CompetitorID comparable, Score comparable] interface {
 	CompetitorIncrease(competitorId CompetitorID, score Score)
 	// RemoveCompetitor 删除特定竞争者
 	RemoveCompetitor(competitorId CompetitorID)
+	// Size 获取竞争者数量
+	Size() int
 	// GetRank 获取竞争者排名
 	GetRank(competitorId CompetitorID) (int, error)
 	// GetCompetitor 获取特定排名的竞争者
