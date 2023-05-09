@@ -208,6 +208,13 @@ func (slf *Server) Run(addr string) error {
 			}
 
 			conn := newWebsocketConn(ws, ip)
+			for k, v := range request.URL.Query() {
+				if len(v) == 1 {
+					conn.SetData(k, v)
+				} else {
+					conn.SetData(k, v)
+				}
+			}
 			slf.OnConnectionOpenedEvent(conn)
 
 			defer func() {
