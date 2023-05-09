@@ -47,12 +47,13 @@ func New(network Network, options ...Option) *Server {
 // Server 网络服务器
 type Server struct {
 	*event
-	network    Network      // 网络类型
-	addr       string       // 侦听地址
-	options    []Option     // 选项
-	ginServer  *gin.Engine  // HTTP模式下的路由器
-	httpServer *http.Server // HTTP模式下的服务器
-	grpcServer *grpc.Server // GRPC模式下的服务器
+	network             Network      // 网络类型
+	addr                string       // 侦听地址
+	options             []Option     // 选项
+	ginServer           *gin.Engine  // HTTP模式下的路由器
+	httpServer          *http.Server // HTTP模式下的服务器
+	grpcServer          *grpc.Server // GRPC模式下的服务器
+	supportMessageTypes map[int]bool // websocket模式下支持的消息类型
 
 	gServer            *gNet                           // TCP或UDP模式下的服务器
 	messagePool        *synchronization.Pool[*message] // 消息池
@@ -228,12 +229,14 @@ func (slf *Server) Run(addr string) error {
 				if err := ws.SetReadDeadline(time.Now().Add(time.Second * 30)); err != nil {
 					panic(err)
 				}
-				_, packet, err := ws.ReadMessage()
+				messageType, packet, err := ws.ReadMessage()
 				if err != nil {
 					panic(err)
 				}
+				if !slf.supportMessageTypes[messageType] {
+					panic(ErrWebsocketIllegalMessageType)
+				}
 				slf.PushMessage(MessageTypePacket, conn, packet)
-
 			}
 		})
 		go func() {

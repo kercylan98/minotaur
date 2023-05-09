@@ -5,12 +5,45 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// WebsocketMessageTypeText 表示文本数据消息。文本消息负载被解释为 UTF-8 编码的文本数据
+	WebsocketMessageTypeText = 1
+	// WebsocketMessageTypeBinary 表示二进制数据消息
+	WebsocketMessageTypeBinary = 2
+	// WebsocketMessageTypeClose 表示关闭控制消息。可选消息负载包含数字代码和文本。使用 FormatCloseMessage 函数来格式化关闭消息负载
+	WebsocketMessageTypeClose = 8
+	// WebsocketMessageTypePing 表示 ping 控制消息。可选的消息负载是 UTF-8 编码的文本
+	WebsocketMessageTypePing = 9
+	// WebsocketMessageTypePong 表示一个 pong 控制消息。可选的消息负载是 UTF-8 编码的文本
+	WebsocketMessageTypePong = 10
+)
+
 type Option func(srv *Server)
 
 // WithProd 通过生产模式运行服务器
 func WithProd() Option {
 	return func(srv *Server) {
 		srv.prod = true
+	}
+}
+
+// WithWebsocketMessageType 设置仅支持特定类型的Websocket消息
+func WithWebsocketMessageType(messageTypes ...int) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkWebsocket {
+			log.Warn("WitchWebsocketMessageType", zap.String("Network", string(srv.network)), zap.Error(ErrNotWebsocketUseMessageType))
+			return
+		}
+		var supports = make(map[int]bool)
+		for _, messageType := range messageTypes {
+			switch messageType {
+			case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
+				supports[messageType] = true
+			default:
+				log.Warn("WitchWebsocketMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
+			}
+		}
+		srv.supportMessageTypes = supports
 	}
 }
 
