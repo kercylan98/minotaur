@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"encoding/json"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 )
@@ -21,7 +22,12 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] struct {
 	asc         bool
 	rankCount   int
 	competitors *synchronization.Map[CompetitorID, Score]
-	scores      [][2]any // CompetitorID, Score
+	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
+}
+
+type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
+	CompetitorId CompetitorID `json:"competitor_id,omitempty"`
+	Score        Score        `json:"score,omitempty"`
 }
 
 func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
@@ -44,7 +50,7 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 	} else {
 		if slf.rankCount > 0 && len(slf.scores) >= slf.rankCount {
 			last := slf.scores[len(slf.scores)-1]
-			if slf.Cmp(score, last[1].(Score)) <= 0 {
+			if slf.Cmp(score, last.Score) <= 0 {
 				return
 			}
 		}
@@ -88,19 +94,19 @@ func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) 
 	for low <= high {
 		mid := (low + high) / 2
 		data := slf.scores[mid]
-		id, score := data[0].(CompetitorID), data[1].(Score)
+		id, score := data.CompetitorId, data.Score
 		if id == competitorId {
 			return mid, nil
 		} else if slf.Cmp(score, competitorScore) == 0 {
 			for i := mid + 1; i <= high; i++ {
 				data := slf.scores[i]
-				if data[0].(CompetitorID) == competitorId {
+				if data.CompetitorId == competitorId {
 					return i, nil
 				}
 			}
 			for i := mid - 1; i >= low; i-- {
 				data := slf.scores[i]
-				if data[0].(CompetitorID) == competitorId {
+				if data.CompetitorId == competitorId {
 					return i, nil
 				}
 			}
@@ -117,7 +123,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitor(rank int) (competitor
 	if rank < 0 || rank >= len(slf.scores) {
 		return competitorId, ErrRankingListNonexistentRanking
 	}
-	return slf.scores[rank][0].(CompetitorID), nil
+	return slf.scores[rank].CompetitorId, nil
 }
 
 func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
@@ -133,7 +139,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end i
 	}
 	var ids []CompetitorID
 	for _, data := range slf.scores[start-1 : end] {
-		ids = append(ids, data[0].(CompetitorID))
+		ids = append(ids, data.CompetitorId)
 	}
 	return ids, nil
 }
@@ -149,14 +155,14 @@ func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID)
 func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	var result []CompetitorID
 	for _, data := range slf.scores {
-		result = append(result, data[0].(CompetitorID))
+		result = append(result, data.CompetitorId)
 	}
 	return result
 }
 
 func (slf *RankingList[CompetitorID, Score]) Clear() {
 	slf.competitors.Clear()
-	slf.scores = make([][2]any, 0)
+	slf.scores = make([]*scoreItem[CompetitorID, Score], 0)
 }
 
 func (slf *RankingList[CompetitorID, Score]) Cmp(s1, s2 Score) int {
@@ -179,13 +185,13 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 	for low <= high {
 		mid := (low + high) / 2
 		data := slf.scores[mid]
-		if slf.Cmp(data[1].(Score), score) == 0 {
+		if slf.Cmp(data.Score, score) == 0 {
 			for low = mid + 1; low <= high; low++ {
-				if slf.Cmp(slf.scores[low][1].(Score), score) != 0 {
+				if slf.Cmp(slf.scores[low].Score, score) != 0 {
 					break
 				}
 			}
-		} else if slf.Cmp(data[1].(Score), score) < 0 {
+		} else if slf.Cmp(data.Score, score) < 0 {
 			high = mid - 1
 		} else {
 			low = mid + 1
@@ -198,18 +204,18 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 			return
 		}
 
-		slf.scores = append(slf.scores, [2]any{competitorId, score})
+		slf.scores = append(slf.scores, &scoreItem[CompetitorID, Score]{CompetitorId: competitorId, Score: score})
 		slf.competitors.Set(competitorId, score)
 		return
 	}
 
-	scoreItem := [2]any{competitorId, score}
+	si := &scoreItem[CompetitorID, Score]{competitorId, score}
 
 	//队首
 	if low == 0 {
-		slf.scores = append([][2]any{scoreItem}, slf.scores...)
+		slf.scores = append([]*scoreItem[CompetitorID, Score]{si}, slf.scores...)
 	} else {
-		tmp := append([][2]any{scoreItem}, slf.scores[low:]...)
+		tmp := append([]*scoreItem[CompetitorID, Score]{si}, slf.scores[low:]...)
 		slf.scores = append(slf.scores[0:low], tmp...)
 	}
 	slf.competitors.Set(competitorId, score)
@@ -218,7 +224,32 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 	}
 
 	count = len(slf.scores) - 1
-	scoreItem = slf.scores[count]
-	slf.competitors.Delete(scoreItem[0].(CompetitorID))
+	si = slf.scores[count]
+	slf.competitors.Delete(si.CompetitorId)
 	slf.scores = slf.scores[0:count]
+}
+
+func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
+	var t struct {
+		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
+	}
+	t.Competitors = synchronization.NewMap[CompetitorID, Score]()
+	if err := json.Unmarshal(bytes, &t); err != nil {
+		return err
+	}
+	slf.competitors = t.Competitors
+	slf.scores = t.Scores
+	return nil
+}
+
+func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
+	var t struct {
+		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
+	}
+	t.Competitors = slf.competitors
+	t.Scores = slf.scores
+
+	return json.Marshal(&t)
 }

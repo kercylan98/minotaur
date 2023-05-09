@@ -1,6 +1,9 @@
 package synchronization
 
-import "sync"
+import (
+	"encoding/json"
+	"sync"
+)
 
 func NewMap[Key comparable, value any]() *Map[Key, value] {
 	return &Map[Key, value]{
@@ -193,4 +196,20 @@ func (slf *Map[Key, Value]) Size() int {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
 	return len(slf.data)
+}
+
+func (slf *Map[Key, Value]) MarshalJSON() ([]byte, error) {
+	m := slf.Map()
+	return json.Marshal(m)
+}
+
+func (slf *Map[Key, Value]) UnmarshalJSON(bytes []byte) error {
+	var m = make(map[Key]Value)
+	if err := json.Unmarshal(bytes, &m); err != nil {
+		return err
+	}
+	slf.lock.Lock()
+	slf.data = m
+	slf.lock.Unlock()
+	return nil
 }
