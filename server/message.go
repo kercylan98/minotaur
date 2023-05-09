@@ -48,6 +48,23 @@ func (slf MessageType) String() string {
 	return messageNames[slf]
 }
 
+func (slf MessageType) deconstructWebSocketPacket(attrs ...any) (conn *Conn, packet []byte, messageType int) {
+	if len(attrs) != 3 {
+		panic(ErrWebsocketMessageTypePacketAttrs)
+	}
+	var ok bool
+	if conn, ok = attrs[0].(*Conn); !ok {
+		panic(ErrWebsocketMessageTypePacketAttrs)
+	}
+	if packet, ok = attrs[1].([]byte); !ok {
+		panic(ErrWebsocketMessageTypePacketAttrs)
+	}
+	if messageType, ok = attrs[2].(int); !ok {
+		panic(ErrWebsocketMessageTypePacketAttrs)
+	}
+	return
+}
+
 func (slf MessageType) deconstructPacket(attrs ...any) (conn *Conn, packet []byte) {
 	if len(attrs) != 2 {
 		panic(ErrMessageTypePacketAttrs)

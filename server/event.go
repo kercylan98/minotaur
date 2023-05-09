@@ -10,16 +10,18 @@ import (
 type StartBeforeEventHandle func(srv *Server)
 type StartFinishEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
+type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, packet []byte, messageType int)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
 
 type event struct {
 	*Server
-	startBeforeEventHandles             []StartBeforeEventHandle
-	startFinishEventHandles             []StartFinishEventHandle
-	connectionReceivePacketEventHandles []ConnectionReceivePacketEventHandle
-	connectionOpenedEventHandles        []ConnectionOpenedEventHandle
-	connectionClosedEventHandles        []ConnectionClosedEventHandle
+	startBeforeEventHandles                      []StartBeforeEventHandle
+	startFinishEventHandles                      []StartFinishEventHandle
+	connectionReceivePacketEventHandles          []ConnectionReceivePacketEventHandle
+	connectionReceiveWebsocketPacketEventHandles []ConnectionReceiveWebsocketPacketEventHandle
+	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
+	connectionClosedEventHandles                 []ConnectionClosedEventHandle
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -83,6 +85,9 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
+	if slf.network == NetworkWebsocket {
+		panic(ErrPleaseUseWebsocketHandle)
+	}
 	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
 	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
@@ -90,6 +95,21 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 	for _, handle := range slf.connectionReceivePacketEventHandles {
 		handle(slf.Server, conn, packet)
+	}
+}
+
+// RegConnectionReceiveWebsocketPacketEvent 在接收到Websocket数据包时将立刻执行被注册的事件处理函数
+func (slf *event) RegConnectionReceiveWebsocketPacketEvent(handle ConnectionReceiveWebsocketPacketEventHandle) {
+	if slf.network != NetworkWebsocket {
+		panic(ErrPleaseUseOrdinaryPacketHandle)
+	}
+	slf.connectionReceiveWebsocketPacketEventHandles = append(slf.connectionReceiveWebsocketPacketEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnConnectionReceiveWebsocketPacketEvent(conn *Conn, packet []byte, messageType int) {
+	for _, handle := range slf.connectionReceiveWebsocketPacketEventHandles {
+		handle(slf.Server, conn, packet, messageType)
 	}
 }
 
