@@ -233,6 +233,7 @@ func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	var t struct {
 		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
+		Asc         bool                                      `json:"asc,omitempty"`
 	}
 	t.Competitors = synchronization.NewMap[CompetitorID, Score]()
 	if err := json.Unmarshal(bytes, &t); err != nil {
@@ -240,6 +241,7 @@ func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	}
 	slf.competitors = t.Competitors
 	slf.scores = t.Scores
+	slf.asc = t.Asc
 	return nil
 }
 
@@ -247,9 +249,11 @@ func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	var t struct {
 		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
+		Asc         bool                                      `json:"asc,omitempty"`
 	}
 	t.Competitors = slf.competitors
 	t.Scores = slf.scores
+	t.Asc = slf.asc
 
 	return json.Marshal(&t)
 }
