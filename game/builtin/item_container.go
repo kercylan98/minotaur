@@ -71,6 +71,10 @@ func (slf *ItemContainer[ItemID, Item]) GetItemsFull() []game.ItemContainerMembe
 			result[i] = slf.items[*guid]
 		}
 	}
+	sizeLimit := slf.GetSizeLimit()
+	for sizeLimit > 0 && len(result) > sizeLimit {
+		result = append(result, nil)
+	}
 	return result
 }
 
@@ -262,4 +266,48 @@ func (slf *ItemContainer[ItemID, Item]) CheckDeductItem(guid int64, count *huge.
 		}
 		return nil
 	}
+}
+
+func (slf *ItemContainer[ItemID, Item]) Remove(guid int64) {
+	member, exist := slf.items[guid]
+	if !exist {
+		return
+	}
+	delete(slf.items, guid)
+	delete(slf.itemIdGuidRef[member.GetID()], guid)
+	slf.sort[member.sort] = nil
+	slf.vacancy = append(slf.vacancy, member.sort)
+
+	sizeLimit := slf.GetSizeLimit()
+	for slf.sort[slf.maxSort] == nil && slf.maxSort > sizeLimit {
+		slf.sort = append(slf.sort[0:slf.maxSort], slf.sort[slf.maxSort+1:]...)
+		slf.maxSort--
+	}
+}
+
+func (slf *ItemContainer[ItemID, Item]) RemoveWithID(id ItemID) {
+	for guid := range slf.itemIdGuidRef[id] {
+		member, exist := slf.items[guid]
+		if !exist {
+			continue
+		}
+		delete(slf.items, guid)
+		slf.sort[member.sort] = nil
+		slf.vacancy = append(slf.vacancy, member.sort)
+	}
+	delete(slf.itemIdGuidRef, id)
+
+	sizeLimit := slf.GetSizeLimit()
+	for slf.sort[slf.maxSort] == nil && slf.maxSort > sizeLimit {
+		slf.sort = append(slf.sort[0:slf.maxSort], slf.sort[slf.maxSort+1:]...)
+		slf.maxSort--
+	}
+}
+
+func (slf *ItemContainer[ItemID, Item]) Clear() {
+	slf.items = map[int64]*ItemContainerMember[ItemID, Item]{}
+	slf.itemIdGuidRef = map[ItemID]map[int64]bool{}
+	slf.sort = nil
+	slf.maxSort = 0
+	slf.vacancy = nil
 }

@@ -38,4 +38,10 @@ type ItemContainer[ItemID comparable, I Item[ItemID]] interface {
 	CheckAllowAdd(item I, count *huge.Int) error
 	// CheckDeductItem 检查是否允许扣除特定物品
 	CheckDeductItem(guid int64, count *huge.Int) error
+	// Remove 移除特定guid的物品
+	Remove(guid int64)
+	// RemoveWithID 移除所有物品ID匹配的物品
+	RemoveWithID(id ItemID)
+	// Clear 清空物品容器
+	Clear()
 }
