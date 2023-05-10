@@ -296,7 +296,7 @@ func (slf *Server) Shutdown(err error) {
 		slf.initMessageChannel = false
 	}
 	if slf.grpcServer != nil {
-		slf.grpcServer.Stop()
+		slf.grpcServer.GracefulStop()
 	}
 	if slf.httpServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -313,6 +313,13 @@ func (slf *Server) Shutdown(err error) {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "normal"))
 	}
+}
+
+func (slf *Server) GRPCServer() *grpc.Server {
+	if slf.grpcServer == nil {
+		panic(ErrNetworkOnlySupportGRPC)
+	}
+	return slf.grpcServer
 }
 
 // HttpRouter 当网络类型为 NetworkHttp 时将被允许获取路由器进行路由注册，否则将会发生 panic

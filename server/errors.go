@@ -9,6 +9,7 @@ var (
 	ErrWebsocketMessageTypePacketAttrs = errors.New("MessageTypePacket must contain *Conn and []byte and int(MessageType)")
 	ErrMessageTypeErrorAttrs           = errors.New("MessageTypePacket must contain error and MessageErrorAction")
 	ErrNetworkOnlySupportHttp          = errors.New("the current network mode is not compatible with HttpRouter, only NetworkHttp is supported")
+	ErrNetworkOnlySupportGRPC          = errors.New("the current network mode is not compatible with RegGrpcServer, only NetworkGRPC is supported")
 	ErrNetworkIncompatibleHttp         = errors.New("the current network mode is not compatible with NetworkHttp")
 	ErrWebsocketMessageTypeException   = errors.New("unknown message type, will not work")
 	ErrNotWebsocketUseMessageType      = errors.New("message type filtering only supports websocket and does not take effect")
