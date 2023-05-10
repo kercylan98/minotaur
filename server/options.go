@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -19,6 +20,28 @@ const (
 )
 
 type Option func(srv *Server)
+
+// WithTLS 通过安全传输层协议TLS创建服务器
+//   - 支持：Http、Websocket
+func WithTLS(certFile, keyFile string) Option {
+	return func(srv *Server) {
+		switch srv.network {
+		case NetworkHttp, NetworkWebsocket, NetworkTCP, NetworkTCP4, NetworkTCP6:
+			srv.certFile = certFile
+			srv.keyFile = keyFile
+		}
+	}
+}
+
+// WithGRPCServerOptions 通过GRPC的可选项创建GRPC服务器
+func WithGRPCServerOptions(options ...grpc.ServerOption) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkGRPC {
+			return
+		}
+		srv.grpcServer = grpc.NewServer(options...)
+	}
+}
 
 // WithProd 通过生产模式运行服务器
 func WithProd() Option {

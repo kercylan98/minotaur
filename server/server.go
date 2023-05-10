@@ -54,6 +54,7 @@ type Server struct {
 	httpServer          *http.Server // HTTP模式下的服务器
 	grpcServer          *grpc.Server // GRPC模式下的服务器
 	supportMessageTypes map[int]bool // websocket模式下支持的消息类型
+	certFile, keyFile   string       // TLS文件
 
 	gServer            *gNet                           // TCP或UDP模式下的服务器
 	messagePool        *synchronization.Pool[*message] // 消息池
@@ -175,9 +176,16 @@ func (slf *Server) Run(addr string) error {
 		go func() {
 			slf.OnStartBeforeEvent()
 			slf.httpServer.Addr = slf.addr
-			if err := slf.httpServer.ListenAndServe(); err != nil {
-				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+			if len(slf.certFile)+len(slf.keyFile) > 0 {
+				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				}
+			} else {
+				if err := slf.httpServer.ListenAndServe(); err != nil {
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				}
 			}
+
 		}()
 	case NetworkWebsocket:
 		go connectionInitHandle(nil)
@@ -241,9 +249,16 @@ func (slf *Server) Run(addr string) error {
 		})
 		go func() {
 			slf.OnStartBeforeEvent()
-			if err := http.ListenAndServe(slf.addr, nil); err != nil {
-				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+			if len(slf.certFile)+len(slf.keyFile) > 0 {
+				if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				}
+			} else {
+				if err := http.ListenAndServe(slf.addr, nil); err != nil {
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				}
 			}
+
 		}()
 	default:
 		return ErrCanNotSupportNetwork
