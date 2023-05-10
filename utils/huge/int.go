@@ -90,22 +90,27 @@ func (slf *Int) Cmp(i *Int) int {
 	return slf.ToBigint().Cmp(i.ToBigint())
 }
 
+// GreaterThan 大于
 func (slf *Int) GreaterThan(i *Int) bool {
 	return slf.Cmp(i) > 0
 }
 
+// GreaterThanOrEqualTo 大于或等于
 func (slf *Int) GreaterThanOrEqualTo(i *Int) bool {
 	return slf.Cmp(i) >= 0
 }
 
+// LessThan 小于
 func (slf *Int) LessThan(i *Int) bool {
 	return slf.Cmp(i) < 0
 }
 
+// LessThanOrEqualTo 小于或等于
 func (slf *Int) LessThanOrEqualTo(i *Int) bool {
 	return slf.Cmp(i) <= 0
 }
 
+// EqualTo 等于
 func (slf *Int) EqualTo(i *Int) bool {
 	return slf.Cmp(i) == 0
 }
