@@ -78,7 +78,7 @@ func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) erro
 	for guid := range slf.itemIdGuidRef[item.GetID()] {
 		member := slf.items[guid]
 		if member.GetItem().IsSame(item) {
-			member.count = member.count.Add(count)
+			member.count.Add(count)
 			return nil
 		}
 	}
@@ -107,7 +107,7 @@ func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) 
 	}
 	member := slf.items[guid]
 	if member.count.GreaterThanOrEqualTo(count) {
-		member.count = member.count.Sub(count)
+		member.count.Sub(count)
 		if member.count.EqualTo(huge.IntZero) {
 			slf.size--
 			delete(slf.items, guid)
@@ -120,7 +120,7 @@ func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) 
 		for guid := range guids {
 			member := slf.items[guid]
 			if need.GreaterThanOrEqualTo(member.count) {
-				need = need.Sub(member.count)
+				need.Sub(member.count)
 				handles = append(handles, func() {
 					member.count = huge.IntZero.Copy()
 					slf.size--
@@ -131,7 +131,7 @@ func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) 
 					}
 				})
 			} else {
-				member.count = member.count.Sub(need)
+				member.count.Sub(need)
 				need = huge.IntZero
 			}
 		}
