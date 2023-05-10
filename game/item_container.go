@@ -12,20 +12,18 @@ type ItemContainer[ItemID comparable, I Item[ItemID]] interface {
 	SetExpandSize(size int)
 
 	// GetItem 获取物品
-	GetItem(id ItemID) (ItemContainerMember[ItemID], error)
-	// GetItemWithGuid 根据guid获取物品
-	GetItemWithGuid(id ItemID, guid int64) (ItemContainerMember[ItemID], error)
+	GetItem(guid int64) (ItemContainerMember[ItemID, I], error)
 	// GetItems 获取所有物品
-	GetItems() []ItemContainerMember[ItemID]
+	GetItems() []ItemContainerMember[ItemID, I]
+	// GetItemsMap 获取所有物品
+	GetItemsMap() map[int64]ItemContainerMember[ItemID, I]
+	// ExistItem 物品是否存在
+	ExistItem(guid int64) bool
+	// ExistItemWithID 是否存在特定ID的物品
+	ExistItemWithID(id ItemID) bool
 
 	// AddItem 添加物品
-	//  - 当物品guid相同时，如果相同物品id及guid的堆叠数量未达到上限，将增加数量，否则增加非堆叠数量
-	//  - 当物品guid不同时，堆叠将不可用，每次都将增加非堆叠数量
 	AddItem(item I, count *huge.Int) error
 	// DeductItem 扣除特定物品数量，当数量为0将被移除，数量不足时将不进行任何改变
-	//  - 将查找特定id的物品，无论guid是否相同，都有可能被扣除直到达到扣除数量
-	//  - 当count为负数时，由于负负得正，无论guid是否相同，都有可能被增加物品数量直到达到扣除数量
-	DeductItem(id ItemID, count *huge.Int) error
-	// DeductItemWithGuid 更为精准的扣除特定物品数量，可参考 DeductItem
-	DeductItemWithGuid(id ItemID, guid int64, count *huge.Int) error
+	DeductItem(guid int64, count *huge.Int) error
 }

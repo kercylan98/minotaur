@@ -3,12 +3,14 @@ package builtin
 import (
 	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/huge"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"sync/atomic"
 )
 
 func NewItemContainer[ItemID comparable, Item game.Item[ItemID]](options ...ItemContainerOption[ItemID, Item]) *ItemContainer[ItemID, Item] {
 	itemContainer := &ItemContainer[ItemID, Item]{
-		items: map[ItemID]map[int64]*ItemContainerMember[ItemID]{},
+		items:         map[int64]*ItemContainerMember[ItemID, Item]{},
+		itemIdGuidRef: map[ItemID]map[int64]bool{},
+		stackLimits:   map[ItemID]*huge.Int{},
 	}
 	for _, option := range options {
 		option(itemContainer)
@@ -17,137 +19,128 @@ func NewItemContainer[ItemID comparable, Item game.Item[ItemID]](options ...Item
 }
 
 type ItemContainer[ItemID comparable, Item game.Item[ItemID]] struct {
-	sizeLimit  int
-	size       int
-	expandSize int
-	items      map[ItemID]map[int64]*ItemContainerMember[ItemID]
-	sort       []*itemContainerSort[ItemID]
+	guid          atomic.Int64
+	sizeLimit     int
+	size          int
+	expandSize    int
+	items         map[int64]*ItemContainerMember[ItemID, Item]
+	itemIdGuidRef map[ItemID]map[int64]bool
+	sort          []*itemContainerSort[ItemID]
+	stackLimits   map[ItemID]*huge.Int
 }
 
 func (slf *ItemContainer[ItemID, Item]) GetSize() int {
-	return slf.size
+	return slf.size + slf.expandSize
+}
+
+func (slf *ItemContainer[ItemID, Item]) GetSizeLimit() int {
+	return slf.sizeLimit
 }
 
 func (slf *ItemContainer[ItemID, Item]) SetExpandSize(size int) {
 	slf.expandSize = size
 }
 
-func (slf *ItemContainer[ItemID, Item]) GetSizeLimit() int {
-	return slf.sizeLimit + slf.expandSize
-}
-
-func (slf *ItemContainer[ItemID, Item]) GetItem(id ItemID) (game.ItemContainerMember[ItemID], error) {
-	for _, member := range slf.items[id] {
-		return member, nil
-	}
-	return nil, ErrItemNotExist
-}
-
-func (slf *ItemContainer[ItemID, Item]) GetItemWithGuid(id ItemID, guid int64) (game.ItemContainerMember[ItemID], error) {
-	member, exist := slf.items[id][guid]
+func (slf *ItemContainer[ItemID, Item]) GetItem(guid int64) (game.ItemContainerMember[ItemID, Item], error) {
+	item, exist := slf.items[guid]
 	if !exist {
 		return nil, ErrItemNotExist
 	}
-	return member, nil
+	return item, nil
 }
 
-func (slf *ItemContainer[ItemID, Item]) GetItems() []game.ItemContainerMember[ItemID] {
-	var items []game.ItemContainerMember[ItemID]
-	for _, sort := range slf.sort {
-		items = append(items, slf.items[sort.id][sort.guid])
+func (slf *ItemContainer[ItemID, Item]) GetItems() []game.ItemContainerMember[ItemID, Item] {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (slf *ItemContainer[ItemID, Item]) GetItemsMap() map[int64]game.ItemContainerMember[ItemID, Item] {
+	var m = make(map[int64]game.ItemContainerMember[ItemID, Item])
+	for k, v := range slf.items {
+		m[k] = v
 	}
-	return items
+	return m
+}
+
+func (slf *ItemContainer[ItemID, Item]) ExistItem(guid int64) bool {
+	_, exist := slf.items[guid]
+	return exist
+}
+
+func (slf *ItemContainer[ItemID, Item]) ExistItemWithID(id ItemID) bool {
+	return len(slf.itemIdGuidRef[id]) > 0
 }
 
 func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) error {
 	if count.LessThanOrEqualTo(huge.IntZero) {
-		return ErrCannotAddNegativeItem
+		return ErrCannotAddNegativeOrZeroItem
 	}
-	members, exist := slf.items[item.GetID()]
-	if !exist {
-		members = map[int64]*ItemContainerMember[ItemID]{}
-		slf.items[item.GetID()] = members
-
-	}
-	member, exist := members[item.GetGUID()]
-	if !exist {
-		if slf.GetSizeLimit() >= slf.GetSize() {
-			return ErrItemContainerIsFull
+	for guid := range slf.itemIdGuidRef[item.GetID()] {
+		member := slf.items[guid]
+		if member.GetItem().IsSame(item) {
+			member.count = member.count.Add(count)
+			return nil
 		}
-		members[item.GetGUID()] = &ItemContainerMember[ItemID]{
-			sort:  len(slf.sort),
-			Item:  item,
-			count: count,
-		}
-		slf.sort = append(slf.sort, &itemContainerSort[ItemID]{
-			id:   item.GetID(),
-			guid: item.GetGUID(),
-		})
-		slf.size++
-	} else {
-		member.count = member.count.Add(count)
 	}
+	if slf.size >= slf.GetSizeLimit() {
+		return ErrItemContainerIsFull
+	}
+	guid := slf.guid.Add(1)
+	slf.items[guid] = &ItemContainerMember[ItemID, Item]{
+		item:  item,
+		guid:  guid,
+		count: count.Copy(),
+	}
+	guids, exist := slf.itemIdGuidRef[item.GetID()]
+	if !exist {
+		guids = map[int64]bool{}
+		slf.itemIdGuidRef[item.GetID()] = guids
+	}
+	guids[guid] = true
+	slf.size++
 	return nil
 }
 
-func (slf *ItemContainer[ItemID, Item]) DeductItem(id ItemID, count *huge.Int) error {
-	members, exist := slf.items[id]
-	if !exist || len(members) == 0 {
+func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) error {
+	if !slf.ExistItem(guid) {
 		return ErrItemNotExist
 	}
-
-	var backupMembers = make(map[int64]*ItemContainerMember[ItemID])
-	var pending = count.Copy()
-	var deductMembers []*ItemContainerMember[ItemID]
-	for guid, member := range members {
-		member.bakCount = member.count.Copy()
-		backupMembers[guid] = member
-
-		if pending.GreaterThanOrEqualTo(member.count) {
-			pending = pending.Sub(member.count)
-			member.count = huge.IntZero
-		} else {
-			member.count = member.count.Sub(pending)
-			pending = huge.IntZero
-		}
-
-		if member.count.EqualTo(huge.IntZero) {
-			delete(members, guid)
-			deductMembers = append(deductMembers, member)
-		}
-		if pending.EqualTo(huge.IntZero) {
-			break
-		}
-	}
-	if pending.GreaterThan(huge.IntZero) {
-		for guid, member := range backupMembers {
-			members[guid] = member
-			member.count = member.bakCount
-			member.bakCount = nil
-		}
-		return ErrItemInsufficientQuantity
-	}
-	slf.size -= len(deductMembers)
-	for _, member := range deductMembers {
-		slice.Del(&slf.sort, member.sort)
-	}
-	return nil
-}
-
-func (slf *ItemContainer[ItemID, Item]) DeductItemWithGuid(id ItemID, guid int64, count *huge.Int) error {
-	member, exist := slf.items[id][guid]
-	if !exist {
-		return ErrItemNotExist
-	}
-	if count.GreaterThan(member.count) {
-		return ErrItemInsufficientQuantity
-	} else {
+	member := slf.items[guid]
+	if member.count.GreaterThanOrEqualTo(count) {
 		member.count = member.count.Sub(count)
+		if member.count.EqualTo(huge.IntZero) {
+			slf.size--
+			delete(slf.items, guid)
+		}
+		return nil
+	} else {
+		var need = count.Copy()
+		var handles []func()
+		var guids = slf.itemIdGuidRef[member.GetID()]
+		for guid := range guids {
+			member := slf.items[guid]
+			if need.GreaterThanOrEqualTo(member.count) {
+				need = need.Sub(member.count)
+				handles = append(handles, func() {
+					member.count = huge.IntZero.Copy()
+					slf.size--
+					delete(guids, guid)
+					delete(slf.items, guid)
+					if len(guids) == 0 {
+						delete(slf.itemIdGuidRef, member.GetID())
+					}
+				})
+			} else {
+				member.count = member.count.Sub(need)
+				need = huge.IntZero
+			}
+		}
+		if need.GreaterThan(huge.IntZero) {
+			return ErrItemInsufficientQuantity
+		}
+		for _, handle := range handles {
+			handle()
+		}
+		return nil
 	}
-	if member.count.EqualTo(huge.IntZero) {
-		delete(slf.items[id], guid)
-		slice.Del(&slf.sort, member.sort)
-		slf.size--
-	}
-	return nil
 }

@@ -1,24 +1,22 @@
 package builtin
 
-func NewItem[ItemID comparable](id ItemID, options ...ItemOption[ItemID]) *Item[ItemID] {
+import "github.com/kercylan98/minotaur/game"
+
+func NewItem[ItemID comparable](id ItemID) *Item[ItemID] {
 	item := &Item[ItemID]{
 		id: id,
-	}
-	for _, option := range options {
-		option(item)
 	}
 	return item
 }
 
 type Item[ItemID comparable] struct {
-	id   ItemID
-	guid int64
+	id ItemID
 }
 
 func (slf *Item[ItemID]) GetID() ItemID {
 	return slf.id
 }
 
-func (slf *Item[ItemID]) GetGUID() int64 {
-	return slf.guid
+func (slf *Item[ItemID]) IsSame(item game.Item[ItemID]) bool {
+	return slf.id == item.GetID()
 }
