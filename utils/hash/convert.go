@@ -44,3 +44,12 @@ func ToSortMap[V any](slice []V) SortMap[int, V] {
 	}
 	return m
 }
+
+// Copy 复制一个map
+func Copy[K comparable, V any](m map[K]V) map[K]V {
+	var backup = make(map[K]V)
+	for k, v := range m {
+		backup[k] = v
+	}
+	return backup
+}
