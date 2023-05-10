@@ -7,4 +7,5 @@ var (
 	ErrItemNotExist                = errors.New("item not exist")
 	ErrItemInsufficientQuantity    = errors.New("item insufficient quantity")
 	ErrItemContainerIsFull         = errors.New("item container is full")
+	ErrItemContainerNotExist       = errors.New("item container not exist")
 )

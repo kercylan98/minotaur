@@ -91,9 +91,9 @@ func (slf *ItemContainer[ItemID, Item]) ExistItemWithID(id ItemID) bool {
 	return len(slf.itemIdGuidRef[id]) > 0
 }
 
-func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) error {
+func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) (guid int64, err error) {
 	if count.LessThanOrEqualTo(huge.IntZero) {
-		return ErrCannotAddNegativeOrZeroItem
+		return 0, ErrCannotAddNegativeOrZeroItem
 	}
 	for guid := range slf.itemIdGuidRef[item.GetID()] {
 		member := slf.items[guid]
@@ -102,13 +102,13 @@ func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) erro
 				continue
 			}
 			member.count.Add(count)
-			return nil
+			return guid, nil
 		}
 	}
 	if slf.size >= slf.GetSizeLimit() {
-		return ErrItemContainerIsFull
+		return 0, ErrItemContainerIsFull
 	}
-	guid := slf.guid.Add(1)
+	guid = slf.guid.Add(1)
 	slf.items[guid] = &ItemContainerMember[ItemID, Item]{
 		item:  item,
 		guid:  guid,
@@ -137,7 +137,7 @@ func (slf *ItemContainer[ItemID, Item]) AddItem(item Item, count *huge.Int) erro
 	}
 	guids[guid] = true
 	slf.size++
-	return nil
+	return guid, nil
 }
 
 func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) error {
@@ -193,6 +193,72 @@ func (slf *ItemContainer[ItemID, Item]) DeductItem(guid int64, count *huge.Int) 
 		}
 		for _, handle := range handles {
 			handle()
+		}
+		return nil
+	}
+}
+
+func (slf *ItemContainer[ItemID, Item]) TransferTo(guid int64, count *huge.Int, target game.ItemContainer[ItemID, Item]) error {
+	if target == nil {
+		return ErrItemContainerNotExist
+	}
+	if count.LessThanOrEqualTo(huge.IntZero) {
+		return ErrCannotAddNegativeOrZeroItem
+	}
+	member, err := slf.GetItem(guid)
+	if err != nil {
+		return err
+	}
+	if err = slf.CheckDeductItem(guid, count); err != nil {
+		return err
+	}
+	if err = target.CheckAllowAdd(member.GetItem(), count); err != nil {
+		return err
+	}
+	_ = slf.DeductItem(guid, count)
+	_, _ = target.AddItem(member.GetItem(), count)
+	return nil
+}
+
+func (slf *ItemContainer[ItemID, Item]) CheckAllowAdd(item Item, count *huge.Int) error {
+	if count.LessThanOrEqualTo(huge.IntZero) {
+		return ErrCannotAddNegativeOrZeroItem
+	}
+	for guid := range slf.itemIdGuidRef[item.GetID()] {
+		member := slf.items[guid]
+		if member.GetItem().IsSame(item) {
+			if stackLimit := slf.stackLimit[item.GetID()]; stackLimit != nil && member.count.Copy().Add(count).GreaterThan(stackLimit) {
+				continue
+			}
+			return nil
+		}
+	}
+	if slf.size >= slf.GetSizeLimit() {
+		return ErrItemContainerIsFull
+	}
+	return nil
+}
+
+func (slf *ItemContainer[ItemID, Item]) CheckDeductItem(guid int64, count *huge.Int) error {
+	if !slf.ExistItem(guid) {
+		return ErrItemNotExist
+	}
+	member := slf.items[guid]
+	if member.count.GreaterThanOrEqualTo(count) {
+		return nil
+	} else {
+		var need = count.Copy()
+		var guids = slf.itemIdGuidRef[member.GetID()]
+		for guid := range guids {
+			member := slf.items[guid]
+			if need.GreaterThanOrEqualTo(member.count) {
+				need.Sub(member.count)
+			} else {
+				need = huge.IntZero
+			}
+		}
+		if need.GreaterThan(huge.IntZero) {
+			return ErrItemInsufficientQuantity
 		}
 		return nil
 	}

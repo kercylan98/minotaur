@@ -29,7 +29,13 @@ type ItemContainer[ItemID comparable, I Item[ItemID]] interface {
 	// ExistItemWithID 是否存在特定ID的物品
 	ExistItemWithID(id ItemID) bool
 	// AddItem 添加物品
-	AddItem(item I, count *huge.Int) error
+	AddItem(item I, count *huge.Int) (guid int64, err error)
 	// DeductItem 扣除特定物品数量，当数量为0将被移除，数量不足时将不进行任何改变
 	DeductItem(guid int64, count *huge.Int) error
+	// TransferTo 转移特定物品到另一个容器中
+	TransferTo(guid int64, count *huge.Int, target ItemContainer[ItemID, I]) error
+	// CheckAllowAdd 检查是否允许添加特定物品
+	CheckAllowAdd(item I, count *huge.Int) error
+	// CheckDeductItem 检查是否允许扣除特定物品
+	CheckDeductItem(guid int64, count *huge.Int) error
 }
