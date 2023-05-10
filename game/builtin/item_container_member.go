@@ -13,11 +13,10 @@ func NewItemContainerMember[ItemID comparable, I game.Item[ItemID]](guid int64, 
 }
 
 type ItemContainerMember[ItemID comparable, I game.Item[ItemID]] struct {
-	item     I
-	guid     int64
-	sort     int
-	count    *huge.Int
-	bakCount *huge.Int
+	item  I
+	guid  int64
+	sort  int
+	count *huge.Int
 }
 
 func (slf *ItemContainerMember[ItemID, I]) GetID() ItemID {

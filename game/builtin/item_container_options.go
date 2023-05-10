@@ -1,6 +1,9 @@
 package builtin
 
-import "github.com/kercylan98/minotaur/game"
+import (
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/huge"
+)
 
 type ItemContainerOption[ItemID comparable, Item game.Item[ItemID]] func(container *ItemContainer[ItemID, Item])
 
@@ -11,5 +14,18 @@ func WithItemContainerSizeLimit[ItemID comparable, Item game.Item[ItemID]](sizeL
 			return
 		}
 		container.sizeLimit = sizeLimit
+	}
+}
+
+// WithItemContainerStackLimit 通过设置特定物品堆叠数量创建容器
+func WithItemContainerStackLimit[ItemID comparable, Item game.Item[ItemID]](id ItemID, stackLimit *huge.Int) ItemContainerOption[ItemID, Item] {
+	return func(container *ItemContainer[ItemID, Item]) {
+		if stackLimit.LessThanOrEqualTo(huge.IntZero) {
+			return
+		}
+		if container.stackLimit == nil {
+			container.stackLimit = map[ItemID]*huge.Int{}
+		}
+		container.stackLimit[id] = stackLimit
 	}
 }
