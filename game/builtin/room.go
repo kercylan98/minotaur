@@ -68,7 +68,7 @@ func (slf *Room[PlayerID, Player]) ChangeOwner(id PlayerID) {
 
 func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
-		return ErrWorldPlayerLimit
+		return ErrRoomPlayerLimit
 	}
 	log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.players.Set(player.GetID(), player)
