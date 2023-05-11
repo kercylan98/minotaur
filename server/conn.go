@@ -15,6 +15,7 @@ func newKcpConn(session *kcp.UDPSession) *Conn {
 			_, err := session.Write(data)
 			return err
 		},
+		data: map[any]any{},
 	}
 }
 
@@ -26,6 +27,7 @@ func newGNetConn(conn gnet.Conn) *Conn {
 		write: func(data []byte) error {
 			return conn.AsyncWrite(data)
 		},
+		data: map[any]any{},
 	}
 }
 
@@ -37,6 +39,7 @@ func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
 		write: func(data []byte) error {
 			return ws.WriteMessage(websocket.BinaryMessage, data)
 		},
+		data: map[any]any{},
 	}
 }
 
@@ -62,31 +65,30 @@ func (slf *Conn) Write(data []byte) error {
 // Close 关闭连接
 func (slf *Conn) Close() {
 	if slf.ws != nil {
-		slf.ws.Close()
+		_ = slf.ws.Close()
 	} else if slf.gn != nil {
-		slf.gn.Close()
+		_ = slf.gn.Close()
 	} else if slf.kcp != nil {
-		slf.kcp.Close()
+		_ = slf.kcp.Close()
 	}
 	slf.write = nil
 }
 
+// SetData 设置连接数据
 func (slf *Conn) SetData(key, value any) *Conn {
-	if slf.data == nil {
-		slf.data = map[any]any{}
-	}
 	slf.data[key] = value
 	return slf
 }
 
+// GetData 获取连接数据
 func (slf *Conn) GetData(key any) any {
 	return slf.data[key]
 }
 
+// ReleaseData 释放数据
 func (slf *Conn) ReleaseData() *Conn {
 	for k := range slf.data {
 		delete(slf.data, k)
 	}
-	slf.data = nil
 	return slf
 }
