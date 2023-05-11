@@ -7,11 +7,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64) *Room[PlayerID, Player] {
-	return &Room[PlayerID, Player]{
+func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...RoomOption[PlayerID, Player]) *Room[PlayerID, Player] {
+	room := &Room[PlayerID, Player]{
 		guid:    guid,
 		players: synchronization.NewMap[PlayerID, Player](),
 	}
+	for _, option := range options {
+		option(room)
+	}
+	return room
 }
 
 type Room[PlayerID comparable, Player game.Player[PlayerID]] struct {
