@@ -36,6 +36,15 @@ func ToMap[V any](slice []V) map[int]V {
 	return m
 }
 
+// ToMapBool 将切片转换为 map，value作为Key
+func ToMapBool[V comparable](slice []V) map[V]bool {
+	var m = make(map[V]bool)
+	for _, v := range slice {
+		m[v] = true
+	}
+	return m
+}
+
 // ToSortMap 将切片转换为 SortMap
 func ToSortMap[V any](slice []V) SortMap[int, V] {
 	var m SortMap[int, V]
