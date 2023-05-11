@@ -28,8 +28,3 @@ func (slf *Player[ID]) Send(packet []byte) error {
 func (slf *Player[ID]) Close() {
 	slf.conn.Close()
 }
-
-// Write 写入数据
-func (slf *Player[ID]) Write(packet []byte) error {
-	return slf.conn.Write(packet)
-}
