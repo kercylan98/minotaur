@@ -22,8 +22,10 @@ type Gameplay struct {
 }
 
 func (slf *Gameplay) GameStart(handle func() error) error {
-	if err := handle(); err != nil {
-		return err
+	if handle != nil {
+		if err := handle(); err != nil {
+			return err
+		}
 	}
 	slf.startTime = slf.Time.Now()
 	slf.OnGameplayStartEvent()
