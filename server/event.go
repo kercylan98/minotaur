@@ -117,8 +117,15 @@ func (slf *event) check() {
 	switch slf.network {
 	case NetworkHttp, NetworkGRPC:
 	default:
-		if len(slf.connectionReceivePacketEventHandles) == 0 {
-			log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "Invalid server, no packets processed"))
+		switch slf.network {
+		case NetworkWebsocket:
+			if len(slf.connectionReceiveWebsocketPacketEventHandles) == 0 {
+				log.Warn("Server", zap.String("ConnectionReceiveWebsocketPacketEvent", "Invalid server, no packets processed"))
+			}
+		default:
+			if len(slf.connectionReceivePacketEventHandles) == 0 {
+				log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "Invalid server, no packets processed"))
+			}
 		}
 	}
 
