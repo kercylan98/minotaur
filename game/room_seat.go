@@ -26,4 +26,12 @@ type RoomSeat[PlayerID comparable, P Player[PlayerID]] interface {
 	GetSeatInfoMapVacancy() map[int]*PlayerID
 	// GetSeatInfoWithPlayerIDMap 获取座位信息，将以玩家ID作为key
 	GetSeatInfoWithPlayerIDMap() map[PlayerID]int
+	// GetNextSeat 获取下一个座位号，空缺的位置将会被跳过
+	//  - 超出范围将返回-1
+	//  - 当没有下一个座位号时将始终返回本身
+	GetNextSeat(seat int) int
+	// GetNextSeatVacancy 获取下一个座位号，空缺的位置将被保留
+	//  - 超出范围将返回-1
+	//  - 当没有下一个座位号时将始终返回本身
+	GetNextSeatVacancy(seat int) int
 }

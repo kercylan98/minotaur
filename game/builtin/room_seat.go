@@ -172,6 +172,38 @@ func (slf *RoomSeat[PlayerID, Player]) GetSeatInfoWithPlayerIDMap() map[PlayerID
 	return slf.seatPS.Map()
 }
 
+func (slf *RoomSeat[PlayerID, Player]) GetNextSeat(seat int) int {
+	l := len(slf.seatSP)
+	if l == 0 || seat >= l || seat < 0 {
+		return -1
+	}
+	var target = seat
+	for {
+		target++
+		if target >= l {
+			target = 0
+		}
+		if target == seat {
+			return seat
+		}
+		if slf.seatSP[target] != nil {
+			return target
+		}
+	}
+}
+
+func (slf *RoomSeat[PlayerID, Player]) GetNextSeatVacancy(seat int) int {
+	l := len(slf.seatSP)
+	if l == 0 || seat >= l || seat < 0 {
+		return -1
+	}
+	seat++
+	if seat >= l {
+		seat = 0
+	}
+	return seat
+}
+
 func (slf *RoomSeat[PlayerID, Player]) onJoinRoom(room game.Room[PlayerID, Player], player Player) {
 	slf.AddSeat(player.GetID())
 }
