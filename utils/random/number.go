@@ -1,6 +1,9 @@
 package random
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
 
 // Int64 返回一个介于min和max之间的int64类型的随机数。
 func Int64(min int64, max int64) int64 {
@@ -10,6 +13,11 @@ func Int64(min int64, max int64) int64 {
 // Int 返回一个介于min和max之间的的int类型的随机数。
 func Int(min int, max int) int {
 	return int(Int64(int64(min), int64(max)))
+}
+
+// Duration 返回一个介于min和max之间的的Duration类型的随机数。
+func Duration(min int64, max int64) time.Duration {
+	return time.Duration(Int64(min, max))
 }
 
 // Float64 返回一个0~1的浮点数
