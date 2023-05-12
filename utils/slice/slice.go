@@ -11,6 +11,15 @@ func Del[V any](slice *[]V, index int) {
 	*slice = append(s[:index], s[index+1:]...)
 }
 
+// Copy 复制特定切片
+func Copy[V any](slice []V) []V {
+	var s = make([]V, len(slice), len(slice))
+	for i := 0; i < len(slice); i++ {
+		s[i] = slice[i]
+	}
+	return s
+}
+
 // Insert 在特定索引插入元素
 func Insert[V any](slice *[]V, index int, value V) {
 	s := *slice
