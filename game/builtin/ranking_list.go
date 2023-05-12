@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"encoding/json"
+	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 )
@@ -23,6 +24,8 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] struct {
 	rankCount   int
 	competitors *synchronization.Map[CompetitorID, Score]
 	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
+
+	rankChangeEventHandles []game.RankChangeEventHandle[CompetitorID, Score]
 }
 
 type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
@@ -256,4 +259,14 @@ func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	t.Asc = slf.asc
 
 	return json.Marshal(&t)
+}
+
+func (slf *RankingList[CompetitorID, Score]) RegRankChangeEvent(handle game.RankChangeEventHandle[CompetitorID, Score]) {
+	slf.rankChangeEventHandles = append(slf.rankChangeEventHandles, handle)
+}
+
+func (slf *RankingList[CompetitorID, Score]) OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score) {
+	for _, handle := range slf.rankChangeEventHandles {
+		handle(competitorId, oldRank, newRank, oldScore, newScore)
+	}
 }
