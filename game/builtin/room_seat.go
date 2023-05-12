@@ -172,6 +172,15 @@ func (slf *RoomSeat[PlayerID, Player]) GetSeatInfoWithPlayerIDMap() map[PlayerID
 	return slf.seatPS.Map()
 }
 
+func (slf *RoomSeat[PlayerID, Player]) GetFirstSeat() int {
+	for seat, playerId := range slf.seatSP {
+		if playerId != nil {
+			return seat
+		}
+	}
+	return -1
+}
+
 func (slf *RoomSeat[PlayerID, Player]) GetNextSeat(seat int) int {
 	l := len(slf.seatSP)
 	if l == 0 || seat >= l || seat < 0 {
