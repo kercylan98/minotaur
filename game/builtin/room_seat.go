@@ -13,8 +13,6 @@ func NewRoomSeat[PlayerID comparable, Player game.Player[PlayerID]](room game.Ro
 		Room:   room,
 		seatPS: synchronization.NewMap[PlayerID, int](),
 	}
-	room.RegPlayerJoinRoomEvent(roomSeat.onJoinRoom)
-	room.RegPlayerLeaveRoomEvent(roomSeat.onLeaveRoom)
 	for _, option := range options {
 		option(roomSeat)
 	}
@@ -23,28 +21,83 @@ func NewRoomSeat[PlayerID comparable, Player game.Player[PlayerID]](room game.Ro
 
 type RoomSeat[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	game.Room[PlayerID, Player]
-	mutex   sync.RWMutex
-	vacancy []int
-	seatPS  *synchronization.Map[PlayerID, int]
-	seatSP  []*PlayerID
+	mutex         sync.RWMutex
+	vacancy       []int
+	seatPS        *synchronization.Map[PlayerID, int]
+	seatSP        []*PlayerID
+	duplicateLock bool
+	fillIn        bool
+	autoMode      sync.Once
+}
 
-	fillIn bool
+func (slf *RoomSeat[PlayerID, Player]) AddSeat(id PlayerID) {
+	if slf.seatPS.Exist(id) {
+		return
+	}
+	slf.mutex.Lock()
+	defer slf.mutex.Unlock()
+	if len(slf.vacancy) > 0 {
+		seat := slf.vacancy[0]
+		slf.vacancy = slf.vacancy[1:]
+		slf.seatPS.Set(id, seat)
+		slf.seatSP[seat] = &id
+	} else {
+		slf.seatPS.Set(id, len(slf.seatSP))
+		slf.seatSP = append(slf.seatSP, &id)
+	}
+}
+
+func (slf *RoomSeat[PlayerID, Player]) AddSeatWithAssign(id PlayerID, seat int) {
+	slf.AddSeat(id)
+	_ = slf.SetSeat(id, seat)
+}
+
+func (slf *RoomSeat[PlayerID, Player]) RemovePlayerSeat(id PlayerID) {
+	if !slf.seatPS.Exist(id) {
+		return
+	}
+	slf.mutex.Lock()
+	defer slf.mutex.Unlock()
+	seat := slf.seatPS.DeleteGet(id)
+	if slf.fillIn {
+		slice.Del(&slf.seatSP, seat)
+		for i := seat; i < len(slf.seatSP); i++ {
+			slf.seatPS.Set(*slf.seatSP[i], i)
+		}
+		return
+	}
+	slf.seatSP[seat] = nil
+}
+
+func (slf *RoomSeat[PlayerID, Player]) RemoveSeat(seat int) {
+	if seat >= len(slf.seatSP) {
+		return
+	}
+	playerId := slf.seatSP[seat]
+	if playerId == nil {
+		return
+	}
+	slf.RemovePlayerSeat(*playerId)
 }
 
 func (slf *RoomSeat[PlayerID, Player]) SetSeat(id PlayerID, seat int) error {
 	slf.mutex.Lock()
-	defer slf.mutex.Unlock()
+	slf.duplicateLock = true
+	defer func() {
+		slf.mutex.Unlock()
+		slf.duplicateLock = false
+	}()
 	oldSeat, err := slf.GetSeat(id)
 	if err != nil {
 		return err
 	}
-	player, err := slf.GetPlayerWithSeat(seat)
+	playerId, err := slf.GetPlayerIDWithSeat(seat)
 	if err != nil {
 		ov := slf.seatSP[oldSeat]
 		slf.seatSP[oldSeat] = slf.seatSP[seat]
 		slf.seatSP[seat] = ov
 		slf.seatPS.Set(id, seat)
-		slf.seatPS.Set(player.GetID(), oldSeat)
+		slf.seatPS.Set(playerId, oldSeat)
 	} else {
 		maxSeat := len(slf.seatSP) - 1
 		if seat > maxSeat {
@@ -75,17 +128,19 @@ func (slf *RoomSeat[PlayerID, Player]) GetSeat(id PlayerID) (int, error) {
 	return seat, nil
 }
 
-func (slf *RoomSeat[PlayerID, Player]) GetPlayerWithSeat(seat int) (player Player, err error) {
-	slf.mutex.RLock()
-	defer slf.mutex.RUnlock()
+func (slf *RoomSeat[PlayerID, Player]) GetPlayerIDWithSeat(seat int) (playerId PlayerID, err error) {
+	if !slf.duplicateLock {
+		slf.mutex.RLock()
+		defer slf.mutex.RUnlock()
+	}
 	if seat > len(slf.seatSP)-1 {
-		return player, ErrRoomNotHasPlayer
+		return playerId, ErrRoomNotHasPlayer
 	}
 	id := slf.seatSP[seat]
 	if id == nil {
-		return player, ErrRoomNotHasPlayer
+		return playerId, ErrRoomNotHasPlayer
 	}
-	return slf.GetPlayer(*id), nil
+	return *id, nil
 }
 
 func (slf *RoomSeat[PlayerID, Player]) GetSeatInfo() []*PlayerID {
@@ -118,31 +173,9 @@ func (slf *RoomSeat[PlayerID, Player]) GetSeatInfoWithPlayerIDMap() map[PlayerID
 }
 
 func (slf *RoomSeat[PlayerID, Player]) onJoinRoom(room game.Room[PlayerID, Player], player Player) {
-	slf.mutex.Lock()
-	defer slf.mutex.Unlock()
-	playerId := player.GetID()
-	if len(slf.vacancy) > 0 {
-		seat := slf.vacancy[0]
-		slf.vacancy = slf.vacancy[1:]
-		slf.seatPS.Set(player.GetID(), seat)
-		slf.seatSP[seat] = &playerId
-	} else {
-		slf.seatPS.Set(player.GetID(), len(slf.seatSP))
-		slf.seatSP = append(slf.seatSP, &playerId)
-	}
+	slf.AddSeat(player.GetID())
 }
 
 func (slf *RoomSeat[PlayerID, Player]) onLeaveRoom(room game.Room[PlayerID, Player], player Player) {
-	slf.mutex.Lock()
-	defer slf.mutex.Unlock()
-	seat := slf.seatPS.DeleteGet(player.GetID())
-	if slf.fillIn {
-		slice.Del(&slf.seatSP, seat)
-		for i := seat; i < len(slf.seatSP); i++ {
-			slf.seatPS.Set(*slf.seatSP[i], i)
-		}
-		return
-	}
-	slf.seatSP[seat] = nil
-
+	slf.RemovePlayerSeat(player.GetID())
 }
