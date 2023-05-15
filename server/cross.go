@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// cross 跨服功能
+// cross 跨服功能 TODO: 跨服逻辑存在问题
 type cross struct {
 	server         *Server
 	messageChannel chan *crossMessage
