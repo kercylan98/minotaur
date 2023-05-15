@@ -65,7 +65,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		frames := slf.frames.Map()
 		for clientId, client := range slf.clients.Map() {
 			for i := slf.clientCurrentFrame[clientId]; i <= currentFrame; i++ {
-				if err := client.Send(slf.serialization(i, frames[i])); err != nil {
+				if err := client.SyncSend(slf.serialization(i, frames[i])); err != nil {
 					log.Error("Lockstep.StartBroadcast", zap.Any("ClientID", client.GetID()), zap.Int("Frame", i), zap.Error(err))
 					break
 				}

@@ -106,6 +106,29 @@ func (slf *Conn) Write(data []byte, messageType ...int) {
 	slf.mutex.Unlock()
 }
 
+func (slf *Conn) SyncWrite(data []byte, messageType ...int) error {
+	if slf.server.network == NetworkWebsocket {
+		if len(messageType) > 0 {
+			return slf.ws.WriteMessage(messageType[0], data)
+		} else {
+			return slf.ws.WriteMessage(slf.server.websocketWriteMessageType, data)
+		}
+	} else {
+		if slf.gn != nil {
+			switch slf.server.network {
+			case NetworkUdp, NetworkUdp4, NetworkUdp6:
+				return slf.gn.SendTo(data)
+			default:
+				return slf.gn.AsyncWrite(data)
+			}
+		} else if slf.kcp != nil {
+			_, err := slf.kcp.Write(data)
+			return err
+		}
+	}
+	return nil
+}
+
 // Close 关闭连接
 func (slf *Conn) Close() {
 	slf.mutex.Lock()
@@ -192,7 +215,13 @@ func (slf *Conn) writeLoop() {
 				err = slf.ws.WriteMessage(data.websocketMessageType, data.packet)
 			} else {
 				if slf.gn != nil {
-					err = slf.gn.AsyncWrite(data.packet)
+					switch slf.server.network {
+					case NetworkUdp, NetworkUdp4, NetworkUdp6:
+						err = slf.gn.SendTo(data.packet)
+					default:
+						err = slf.gn.AsyncWrite(data.packet)
+					}
+
 				} else if slf.kcp != nil {
 					_, err = slf.kcp.Write(data.packet)
 				}

@@ -24,6 +24,11 @@ func (slf *Player[ID]) Send(packet []byte, messageType ...int) {
 	slf.conn.Write(packet, messageType...)
 }
 
+// SyncSend 向该玩家同步发送数据
+func (slf *Player[ID]) SyncSend(packet []byte, messageType ...int) error {
+	return slf.conn.SyncWrite(packet, messageType...)
+}
+
 // Close 关闭玩家
 func (slf *Player[ID]) Close() {
 	slf.conn.Close()
