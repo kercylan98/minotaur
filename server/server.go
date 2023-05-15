@@ -27,11 +27,12 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		event:        &event{},
-		network:      network,
-		options:      options,
-		core:         1,
-		closeChannel: make(chan struct{}),
+		event:                     &event{},
+		network:                   network,
+		options:                   options,
+		core:                      1,
+		closeChannel:              make(chan struct{}),
+		websocketWriteMessageType: WebsocketMessageTypeBinary,
 	}
 	server.event.Server = server
 
@@ -63,16 +64,17 @@ type Server struct {
 	isShutdown          atomic.Bool   // 是否已关闭
 	closeChannel        chan struct{} // 关闭信号
 
-	gServer                  *gNet                           // TCP或UDP模式下的服务器
-	messagePool              *synchronization.Pool[*message] // 消息池
-	messagePoolSize          int                             // 消息池大小
-	messageChannel           chan *message                   // 消息管道
-	initMessageChannel       bool                            // 消息管道是否已经初始化
-	multiple                 bool                            // 是否为多服务器模式下运行
-	prod                     bool                            // 是否为生产模式
-	core                     int                             // 消息处理核心数
-	diversionMessageChannels []chan *message                 // 分流消息管道
-	diversionConsistency     *hash.Consistency               // 哈希一致性分流器
+	gServer                   *gNet                           // TCP或UDP模式下的服务器
+	messagePool               *synchronization.Pool[*message] // 消息池
+	messagePoolSize           int                             // 消息池大小
+	messageChannel            chan *message                   // 消息管道
+	initMessageChannel        bool                            // 消息管道是否已经初始化
+	multiple                  bool                            // 是否为多服务器模式下运行
+	prod                      bool                            // 是否为生产模式
+	core                      int                             // 消息处理核心数
+	diversionMessageChannels  []chan *message                 // 分流消息管道
+	diversionConsistency      *hash.Consistency               // 哈希一致性分流器
+	websocketWriteMessageType int                             // websocket写入的消息类型
 }
 
 // Run 使用特定地址运行服务器
@@ -165,7 +167,7 @@ func (slf *Server) Run(addr string) error {
 					continue
 				}
 
-				conn := newKcpConn(session)
+				conn := newKcpConn(slf, session)
 				slf.OnConnectionOpenedEvent(conn)
 
 				go func(conn *Conn) {
@@ -236,7 +238,7 @@ func (slf *Server) Run(addr string) error {
 					}
 				}
 
-				conn := newWebsocketConn(ws, ip)
+				conn := newWebsocketConn(slf, ws, ip)
 				for k, v := range request.URL.Query() {
 					if len(v) == 1 {
 						conn.SetData(k, v)
@@ -403,13 +405,31 @@ func (slf *Server) dispatchMessage(msg *message) {
 	case MessageTypePacket:
 		if slf.network == NetworkWebsocket {
 			conn, packet, messageType := msg.t.deconstructWebSocketPacket(msg.attrs...)
-			if slf.diversionConsistency != nil {
-				slf.diversionConsistency.PickNode(conn)
-			}
 			slf.OnConnectionReceiveWebsocketPacketEvent(conn, packet, messageType)
 		} else {
 			conn, packet := msg.t.deconstructPacket(msg.attrs...)
 			slf.OnConnectionReceivePacketEvent(conn, packet)
+		}
+	case MessageTypeWritePacket:
+		if slf.network == NetworkWebsocket {
+			conn, packet, messageType := msg.t.deconstructWebSocketWritePacket(msg.attrs...)
+			if messageType == -1 {
+				messageType = slf.websocketWriteMessageType
+			}
+			if err := conn.ws.WriteMessage(messageType, packet); err != nil {
+				log.Debug("Server", zap.String("ConnID", conn.GetID()), zap.Error(err))
+			}
+		} else {
+			var err error
+			conn, packet := msg.t.deconstructPacket(msg.attrs...)
+			if conn.gn != nil {
+				err = conn.gn.AsyncWrite(packet)
+			} else if conn.kcp != nil {
+				_, err = conn.kcp.Write(packet)
+			}
+			if err != nil {
+				log.Debug("Server", zap.String("ConnID", conn.GetID()), zap.Error(err))
+			}
 		}
 	case MessageTypeError:
 		err, action := msg.t.deconstructError(msg.attrs...)

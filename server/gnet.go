@@ -18,7 +18,7 @@ func (slf *gNet) OnShutdown(server gnet.Server) {
 }
 
 func (slf *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
-	conn := newGNetConn(c)
+	conn := newGNetConn(slf.Server, c)
 	c.SetContext(conn)
 	slf.OnConnectionOpenedEvent(conn)
 	return

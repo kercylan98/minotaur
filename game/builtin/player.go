@@ -20,8 +20,8 @@ func (slf *Player[ID]) GetID() ID {
 }
 
 // Send 向该玩家发送数据
-func (slf *Player[ID]) Send(packet []byte) error {
-	return slf.conn.Write(packet)
+func (slf *Player[ID]) Send(packet []byte, messageType ...int) {
+	slf.conn.Write(packet, messageType...)
 }
 
 // Close 关闭玩家

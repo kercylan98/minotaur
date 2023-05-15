@@ -6,6 +6,11 @@ const (
 	//  - []byte
 	MessageTypePacket MessageType = iota
 
+	// MessageTypeWritePacket 数据包消息类型：该类型的消息将对客户端进行写入
+	//  - *server.Conn
+	//  - []byte
+	MessageTypeWritePacket
+
 	// MessageTypeError 错误消息类型：根据不同的错误状态，将交由 Server 进行统一处理
 	//  - error
 	//  - server.MessageErrorAction
@@ -66,6 +71,38 @@ func (slf MessageType) deconstructWebSocketPacket(attrs ...any) (conn *Conn, pac
 }
 
 func (slf MessageType) deconstructPacket(attrs ...any) (conn *Conn, packet []byte) {
+	if len(attrs) != 2 {
+		panic(ErrMessageTypePacketAttrs)
+	}
+	var ok bool
+	if conn, ok = attrs[0].(*Conn); !ok {
+		panic(ErrMessageTypePacketAttrs)
+	}
+	if packet, ok = attrs[1].([]byte); !ok {
+		panic(ErrMessageTypePacketAttrs)
+	}
+	return
+}
+
+func (slf MessageType) deconstructWebSocketWritePacket(attrs ...any) (conn *Conn, packet []byte, messageType int) {
+	messageType = -1
+	if len(attrs) != 3 {
+		panic(ErrWebsocketMessageTypeWritePacketAttrs)
+	}
+	var ok bool
+	if conn, ok = attrs[0].(*Conn); !ok {
+		panic(ErrWebsocketMessageTypeWritePacketAttrs)
+	}
+	if packet, ok = attrs[1].([]byte); !ok {
+		panic(ErrWebsocketMessageTypeWritePacketAttrs)
+	}
+	if messageType, ok = attrs[2].(int); !ok {
+		panic(ErrWebsocketMessageTypeWritePacketAttrs)
+	}
+	return
+}
+
+func (slf MessageType) deconstructWritePacket(attrs ...any) (conn *Conn, packet []byte) {
 	if len(attrs) != 2 {
 		panic(ErrMessageTypePacketAttrs)
 	}

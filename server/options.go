@@ -70,6 +70,19 @@ func WithProd() Option {
 	}
 }
 
+// WithWebsocketWriteMessageType 设置客户端写入的Websocket消息类型
+//   - 默认： WebsocketMessageTypeBinary
+func WithWebsocketWriteMessageType(messageType int) Option {
+	return func(srv *Server) {
+		switch messageType {
+		case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
+			srv.websocketWriteMessageType = messageType
+		default:
+			log.Warn("WithWebsocketWriteMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
+		}
+	}
+}
+
 // WithWebsocketMessageType 设置仅支持特定类型的Websocket消息
 func WithWebsocketMessageType(messageTypes ...int) Option {
 	return func(srv *Server) {

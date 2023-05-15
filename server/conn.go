@@ -9,8 +9,9 @@ import (
 )
 
 // newKcpConn 创建一个处理KCP的连接
-func newKcpConn(session *kcp.UDPSession) *Conn {
+func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	c := &Conn{
+		server:     server,
 		remoteAddr: session.RemoteAddr(),
 		ip:         session.RemoteAddr().String(),
 		kcp:        session,
@@ -27,8 +28,9 @@ func newKcpConn(session *kcp.UDPSession) *Conn {
 }
 
 // newKcpConn 创建一个处理GNet的连接
-func newGNetConn(conn gnet.Conn) *Conn {
+func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	c := &Conn{
+		server:     server,
 		remoteAddr: conn.RemoteAddr(),
 		ip:         conn.RemoteAddr().String(),
 		gn:         conn,
@@ -44,8 +46,9 @@ func newGNetConn(conn gnet.Conn) *Conn {
 }
 
 // newKcpConn 创建一个处理WebSocket的连接
-func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
+func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	return &Conn{
+		server:     server,
 		remoteAddr: ws.RemoteAddr(),
 		ip:         ip,
 		ws:         ws,
@@ -58,6 +61,7 @@ func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
 
 // Conn 服务器连接
 type Conn struct {
+	server     *Server
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
@@ -80,8 +84,17 @@ func (slf *Conn) GetIP() string {
 }
 
 // Write 向连接中写入数据
-func (slf *Conn) Write(data []byte) error {
-	return slf.write(data)
+//   - messageType: websocket模式中指定消息类型
+func (slf *Conn) Write(data []byte, messageType ...int) {
+	if slf.IsWebsocket() {
+		if len(messageType) > 0 {
+			slf.server.PushMessage(MessageTypeWritePacket, slf, data, messageType[0])
+		} else {
+			slf.server.PushMessage(MessageTypeWritePacket, slf, data, -1)
+		}
+	} else {
+		slf.server.PushMessage(MessageTypeWritePacket, slf, data)
+	}
 }
 
 // Close 关闭连接
@@ -113,4 +126,9 @@ func (slf *Conn) ReleaseData() *Conn {
 		delete(slf.data, k)
 	}
 	return slf
+}
+
+// IsWebsocket 是否是websocket连接
+func (slf *Conn) IsWebsocket() bool {
+	return slf.server.network == NetworkWebsocket
 }
