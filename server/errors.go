@@ -16,4 +16,5 @@ var (
 	ErrWebsocketIllegalMessageType     = errors.New("illegal message type")
 	ErrPleaseUseWebsocketHandle        = errors.New("in Websocket mode, please use the RegConnectionReceiveWebsocketPacketEvent function to register")
 	ErrPleaseUseOrdinaryPacketHandle   = errors.New("non Websocket mode, please use the RegConnectionReceivePacketEvent function to register")
+	ErrOnlySupportSocket               = errors.New("only supports Socket programming")
 )

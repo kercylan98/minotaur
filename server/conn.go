@@ -4,38 +4,51 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
+	"net"
+	"strings"
 )
 
 // newKcpConn 创建一个处理KCP的连接
 func newKcpConn(session *kcp.UDPSession) *Conn {
-	return &Conn{
-		ip:  session.RemoteAddr().String(),
-		kcp: session,
+	c := &Conn{
+		remoteAddr: session.RemoteAddr(),
+		ip:         session.RemoteAddr().String(),
+		kcp:        session,
 		write: func(data []byte) error {
 			_, err := session.Write(data)
 			return err
 		},
 		data: map[any]any{},
 	}
+	if index := strings.LastIndex(c.ip, ":"); index != -1 {
+		c.ip = c.ip[0:index]
+	}
+	return c
 }
 
 // newKcpConn 创建一个处理GNet的连接
 func newGNetConn(conn gnet.Conn) *Conn {
-	return &Conn{
-		ip: conn.RemoteAddr().String(),
-		gn: conn,
+	c := &Conn{
+		remoteAddr: conn.RemoteAddr(),
+		ip:         conn.RemoteAddr().String(),
+		gn:         conn,
 		write: func(data []byte) error {
 			return conn.AsyncWrite(data)
 		},
 		data: map[any]any{},
 	}
+	if index := strings.LastIndex(c.ip, ":"); index != -1 {
+		c.ip = c.ip[0:index]
+	}
+	return c
 }
 
 // newKcpConn 创建一个处理WebSocket的连接
 func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
 	return &Conn{
-		ip: ip,
-		ws: ws,
+		remoteAddr: ws.RemoteAddr(),
+		ip:         ip,
+		ws:         ws,
 		write: func(data []byte) error {
 			return ws.WriteMessage(websocket.BinaryMessage, data)
 		},
@@ -45,15 +58,24 @@ func newWebsocketConn(ws *websocket.Conn, ip string) *Conn {
 
 // Conn 服务器连接
 type Conn struct {
-	ip    string
-	ws    *websocket.Conn
-	gn    gnet.Conn
-	kcp   *kcp.UDPSession
-	write func(data []byte) error
-	data  map[any]any
+	remoteAddr net.Addr
+	ip         string
+	ws         *websocket.Conn
+	gn         gnet.Conn
+	kcp        *kcp.UDPSession
+	write      func(data []byte) error
+	data       map[any]any
+}
+
+func (slf *Conn) RemoteAddr() net.Addr {
+	return slf.remoteAddr
 }
 
 func (slf *Conn) GetID() string {
+	return slf.remoteAddr.String()
+}
+
+func (slf *Conn) GetIP() string {
 	return slf.ip
 }
 

@@ -8,11 +8,17 @@ import (
 	"strings"
 )
 
+func NewConsistency(replicas int) *Consistency {
+	return &Consistency{
+		replicas: replicas,
+	}
+}
+
 // Consistency 一致性哈希生成
 //
 // https://blog.csdn.net/zhpCSDN921011/article/details/126845397
 type Consistency struct {
-	Replicas int         // 虚拟节点的数量
+	replicas int         // 虚拟节点的数量
 	keys     []int       // 所有虚拟节点的哈希值
 	hashMap  map[int]int // 虚拟节点的哈希值: 节点（虚拟节点映射到真实节点）
 }
@@ -22,11 +28,11 @@ func (slf *Consistency) AddNode(keys ...int) {
 	if slf.hashMap == nil {
 		slf.hashMap = map[int]int{}
 	}
-	if slf.Replicas == 0 {
-		slf.Replicas = 3
+	if slf.replicas == 0 {
+		slf.replicas = 3
 	}
 	for _, key := range keys {
-		for i := 0; i < slf.Replicas; i++ {
+		for i := 0; i < slf.replicas; i++ {
 			// 计算虚拟节点哈希值
 			hash := int(crc32.ChecksumIEEE([]byte(strconv.Itoa(i) + strconv.Itoa(key))))
 

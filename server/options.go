@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -20,6 +21,25 @@ const (
 )
 
 type Option func(srv *Server)
+
+// WithConnectPacketDiversion 通过连接数据包消息分流的方式创建服务器
+//   - 连接消息分流后数据包消息将会从其他消息类型中独立出来，并且由多个消息管道及协程进行处理
+//   - 默认不会进行消息分流
+//   - 需要注意并发编程
+func WithConnectPacketDiversion(diversionNumber, channelSize int) Option {
+	return func(srv *Server) {
+		if srv.network == NetworkHttp || srv.network == NetworkGRPC {
+			log.Warn("WithConnectPacketDiversion", zap.String("Network", string(srv.network)), zap.Error(ErrOnlySupportSocket))
+			return
+		}
+		srv.diversionMessageChannels = make([]chan *message, diversionNumber)
+		srv.diversionConsistency = hash.NewConsistency(3)
+		for i := 0; i < diversionNumber; i++ {
+			srv.diversionMessageChannels[i] = make(chan *message, channelSize)
+			srv.diversionConsistency.AddNode(i + 1)
+		}
+	}
+}
 
 // WithTLS 通过安全传输层协议TLS创建服务器
 //   - 支持：Http、Websocket

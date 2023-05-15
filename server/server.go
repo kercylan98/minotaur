@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/panjf2000/gnet"
@@ -62,14 +63,16 @@ type Server struct {
 	isShutdown          atomic.Bool   // 是否已关闭
 	closeChannel        chan struct{} // 关闭信号
 
-	gServer            *gNet                           // TCP或UDP模式下的服务器
-	messagePool        *synchronization.Pool[*message] // 消息池
-	messagePoolSize    int                             // 消息池大小
-	messageChannel     chan *message                   // 消息管道
-	initMessageChannel bool                            // 消息管道是否已经初始化
-	multiple           bool                            // 是否为多服务器模式下运行
-	prod               bool                            // 是否为生产模式
-	core               int                             // 消息处理核心数
+	gServer                  *gNet                           // TCP或UDP模式下的服务器
+	messagePool              *synchronization.Pool[*message] // 消息池
+	messagePoolSize          int                             // 消息池大小
+	messageChannel           chan *message                   // 消息管道
+	initMessageChannel       bool                            // 消息管道是否已经初始化
+	multiple                 bool                            // 是否为多服务器模式下运行
+	prod                     bool                            // 是否为生产模式
+	core                     int                             // 消息处理核心数
+	diversionMessageChannels []chan *message                 // 分流消息管道
+	diversionConsistency     *hash.Consistency               // 哈希一致性分流器
 }
 
 // Run 使用特定地址运行服务器
@@ -116,6 +119,15 @@ func (slf *Server) Run(addr string) error {
 			go func() {
 				for message := range slf.messageChannel {
 					slf.dispatchMessage(message)
+				}
+			}()
+			go func() {
+				for i := 0; i < len(slf.diversionMessageChannels); i++ {
+					go func(channel chan *message) {
+						for message := range channel {
+							slf.dispatchMessage(message)
+						}
+					}(slf.diversionMessageChannels[i])
 				}
 			}()
 		}
@@ -249,7 +261,7 @@ func (slf *Server) Run(addr string) error {
 					if err != nil {
 						panic(err)
 					}
-					if !slf.supportMessageTypes[messageType] {
+					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
 					}
 					slf.PushMessage(MessageTypePacket, conn, packet, messageType)
@@ -311,6 +323,11 @@ func (slf *Server) IsDev() bool {
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	slf.isShutdown.Store(true)
+	if len(slf.diversionMessageChannels) > 0 {
+		for i := 0; i < len(slf.diversionMessageChannels); i++ {
+			close(slf.diversionMessageChannels[i])
+		}
+	}
 	if slf.initMessageChannel {
 		if slf.gServer != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -364,7 +381,12 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	msg := slf.messagePool.Get()
 	msg.t = messageType
 	msg.attrs = attrs
-	slf.messageChannel <- msg
+	if messageType == MessageTypePacket && len(slf.diversionMessageChannels) > 0 {
+		conn := attrs[0].(*Conn)
+		slf.diversionMessageChannels[slf.diversionConsistency.PickNode(conn.ip)] <- msg
+	} else {
+		slf.messageChannel <- msg
+	}
 }
 
 // dispatchMessage 消息分发
@@ -381,6 +403,9 @@ func (slf *Server) dispatchMessage(msg *message) {
 	case MessageTypePacket:
 		if slf.network == NetworkWebsocket {
 			conn, packet, messageType := msg.t.deconstructWebSocketPacket(msg.attrs...)
+			if slf.diversionConsistency != nil {
+				slf.diversionConsistency.PickNode(conn)
+			}
 			slf.OnConnectionReceiveWebsocketPacketEvent(conn, packet, messageType)
 		} else {
 			conn, packet := msg.t.deconstructPacket(msg.attrs...)

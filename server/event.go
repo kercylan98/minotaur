@@ -74,7 +74,11 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
-	log.Debug("Server", zap.String("ConnectionOpened", conn.GetID()))
+	if len(slf.diversionMessageChannels) == 0 {
+		log.Debug("Server", zap.String("ConnectionOpened", conn.GetID()))
+	} else {
+		log.Debug("Server", zap.String("ConnectionOpened", conn.GetID()), zap.Int("Node", slf.diversionConsistency.PickNode(conn.GetID())))
+	}
 	for _, handle := range slf.connectionOpenedEventHandles {
 		handle(slf.Server, conn)
 	}
