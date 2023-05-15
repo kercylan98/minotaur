@@ -53,6 +53,8 @@ func New(network Network, options ...Option) *Server {
 // Server 网络服务器
 type Server struct {
 	*event
+	*cross
+	id                  *int64        // 服务器id
 	network             Network       // 网络类型
 	addr                string        // 侦听地址
 	options             []Option      // 选项
@@ -99,7 +101,7 @@ func (slf *Server) Run(addr string) error {
 	var connectionInitHandle = func(callback func()) {
 		slf.initMessageChannel = true
 		if slf.messagePoolSize <= 0 {
-			slf.messagePoolSize = 4096 * 1024
+			slf.messagePoolSize = 100
 		}
 		slf.messagePool = synchronization.NewPool[*message](slf.messagePoolSize,
 			func() *message {
@@ -322,6 +324,14 @@ func (slf *Server) IsDev() bool {
 	return !slf.prod
 }
 
+// GetID 获取服务器id
+func (slf *Server) GetID() int64 {
+	if slf.id == nil {
+		panic(ErrNoSupportGetID)
+	}
+	return *slf.id
+}
+
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	slf.isShutdown.Store(true)
@@ -421,6 +431,9 @@ func (slf *Server) dispatchMessage(msg *message) {
 		default:
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}
+	case MessageTypeCross:
+		serverId, queue, packet := msg.t.deconstructCross(msg.attrs...)
+		slf.OnReceiveCrossPacketEvent(serverId, queue, packet)
 	default:
 		log.Warn("Server", zap.String("not support message type", msg.t.String()))
 	}

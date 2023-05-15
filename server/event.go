@@ -13,6 +13,7 @@ type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []b
 type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, packet []byte, messageType int)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
+type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
 
 type event struct {
 	*Server
@@ -22,6 +23,7 @@ type event struct {
 	connectionReceiveWebsocketPacketEventHandles []ConnectionReceiveWebsocketPacketEventHandle
 	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
 	connectionClosedEventHandles                 []ConnectionClosedEventHandle
+	receiveCrossPacketEventHandles               map[CrossQueueName][]ReceiveCrossPacketEventHandle
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -117,6 +119,20 @@ func (slf *event) OnConnectionReceiveWebsocketPacketEvent(conn *Conn, packet []b
 	}
 }
 
+// RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
+func (slf *event) RegReceiveCrossPacketEvent(queue CrossQueueName, handle ReceiveCrossPacketEventHandle) {
+	if slf.receiveCrossPacketEventHandles == nil {
+		slf.receiveCrossPacketEventHandles = map[CrossQueueName][]ReceiveCrossPacketEventHandle{}
+	}
+	slf.receiveCrossPacketEventHandles[queue] = append(slf.receiveCrossPacketEventHandles[queue], handle)
+}
+
+func (slf *event) OnReceiveCrossPacketEvent(serverId int64, queue CrossQueueName, packet []byte) {
+	for _, handle := range slf.receiveCrossPacketEventHandles[queue] {
+		handle(slf.Server, serverId, packet)
+	}
+}
+
 func (slf *event) check() {
 	switch slf.network {
 	case NetworkHttp, NetworkGRPC:
@@ -124,13 +140,17 @@ func (slf *event) check() {
 		switch slf.network {
 		case NetworkWebsocket:
 			if len(slf.connectionReceiveWebsocketPacketEventHandles) == 0 {
-				log.Warn("Server", zap.String("ConnectionReceiveWebsocketPacketEvent", "Invalid server, no packets processed"))
+				log.Warn("Server", zap.String("ConnectionReceiveWebsocketPacketEvent", "invalid server, no packets processed"))
 			}
 		default:
 			if len(slf.connectionReceivePacketEventHandles) == 0 {
-				log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "Invalid server, no packets processed"))
+				log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
 			}
 		}
+	}
+
+	if len(slf.receiveCrossPacketEventHandles) > 0 && slf.id == nil {
+		log.Warn("Server", zap.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
 	}
 
 }

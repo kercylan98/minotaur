@@ -10,6 +10,11 @@ const (
 	//  - error
 	//  - server.MessageErrorAction
 	MessageTypeError
+
+	// MessageTypeCross 跨服消息类型：该类型的数据将被发送到对应服务器中进行处理
+	//  - int64(sender serverId)
+	//  - []byte
+	MessageTypeCross
 )
 
 var messageNames = map[MessageType]string{
@@ -89,6 +94,23 @@ func (slf MessageType) deconstructError(attrs ...any) (err error, action Message
 	}
 	if action, ok = attrs[1].(MessageErrorAction); !ok {
 		panic(ErrMessageTypeErrorAttrs)
+	}
+	return
+}
+
+func (slf MessageType) deconstructCross(attrs ...any) (serverId int64, queue CrossQueueName, packet []byte) {
+	if len(attrs) != 3 {
+		panic(ErrMessageTypeCrossErrorAttrs)
+	}
+	var ok bool
+	if serverId, ok = attrs[0].(int64); !ok {
+		panic(ErrMessageTypeCrossErrorAttrs)
+	}
+	if queue, ok = attrs[0].(CrossQueueName); !ok {
+		panic(ErrMessageTypeCrossErrorAttrs)
+	}
+	if packet, ok = attrs[1].([]byte); !ok {
+		panic(ErrMessageTypeCrossErrorAttrs)
 	}
 	return
 }

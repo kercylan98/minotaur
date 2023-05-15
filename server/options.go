@@ -3,8 +3,10 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"runtime/debug"
 )
 
 const (
@@ -21,6 +23,23 @@ const (
 )
 
 type Option func(srv *Server)
+type CrossRegisterHandle func(server *Server) error
+
+// WithCross 通过跨服的方式创建服务器
+//   - CrossQueue: 跨服队列是用于接收和发送跨服消息的队列接口
+func WithCross(serverId int64, queues ...CrossQueue) Option {
+	return func(srv *Server) {
+		srv.id = &serverId
+		srv.RegStartFinishEvent(func(srv *Server) {
+			srv.cross = new(cross)
+			if err := srv.cross.Run(srv, queues...); err != nil {
+				srv.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+				return
+			}
+			log.Info("Server", zap.Int64("CrossID", serverId))
+		})
+	}
+}
 
 // WithConnectPacketDiversion 通过连接数据包消息分流的方式创建服务器
 //   - 连接消息分流后数据包消息将会从其他消息类型中独立出来，并且由多个消息管道及协程进行处理
