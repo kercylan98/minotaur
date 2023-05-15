@@ -410,27 +410,6 @@ func (slf *Server) dispatchMessage(msg *message) {
 			conn, packet := msg.t.deconstructPacket(msg.attrs...)
 			slf.OnConnectionReceivePacketEvent(conn, packet)
 		}
-	case MessageTypeWritePacket:
-		if slf.network == NetworkWebsocket {
-			conn, packet, messageType := msg.t.deconstructWebSocketWritePacket(msg.attrs...)
-			if messageType == -1 {
-				messageType = slf.websocketWriteMessageType
-			}
-			if err := conn.ws.WriteMessage(messageType, packet); err != nil {
-				log.Debug("Server", zap.String("ConnID", conn.GetID()), zap.Error(err))
-			}
-		} else {
-			var err error
-			conn, packet := msg.t.deconstructPacket(msg.attrs...)
-			if conn.gn != nil {
-				err = conn.gn.AsyncWrite(packet)
-			} else if conn.kcp != nil {
-				_, err = conn.kcp.Write(packet)
-			}
-			if err != nil {
-				log.Debug("Server", zap.String("ConnID", conn.GetID()), zap.Error(err))
-			}
-		}
 	case MessageTypeError:
 		err, action := msg.t.deconstructError(msg.attrs...)
 		switch action {

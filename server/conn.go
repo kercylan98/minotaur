@@ -2,10 +2,13 @@ package server
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
 	"strings"
+	"sync"
+	"time"
 )
 
 // newKcpConn 创建一个处理KCP的连接
@@ -24,6 +27,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
+	go c.writeLoop()
 	return c
 }
 
@@ -42,12 +46,13 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
+	go c.writeLoop()
 	return c
 }
 
 // newKcpConn 创建一个处理WebSocket的连接
 func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
-	return &Conn{
+	c := &Conn{
 		server:     server,
 		remoteAddr: ws.RemoteAddr(),
 		ip:         ip,
@@ -57,6 +62,8 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 		},
 		data: map[any]any{},
 	}
+	go c.writeLoop()
+	return c
 }
 
 // Conn 服务器连接
@@ -69,6 +76,9 @@ type Conn struct {
 	kcp        *kcp.UDPSession
 	write      func(data []byte) error
 	data       map[any]any
+	mutex      sync.Mutex
+	packetPool *synchronization.Pool[*connPacket]
+	packets    []*connPacket
 }
 
 func (slf *Conn) RemoteAddr() net.Addr {
@@ -86,19 +96,20 @@ func (slf *Conn) GetIP() string {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(data []byte, messageType ...int) {
-	if slf.IsWebsocket() {
-		if len(messageType) > 0 {
-			slf.server.PushMessage(MessageTypeWritePacket, slf, data, messageType[0])
-		} else {
-			slf.server.PushMessage(MessageTypeWritePacket, slf, data, -1)
-		}
-	} else {
-		slf.server.PushMessage(MessageTypeWritePacket, slf, data)
+	cp := slf.packetPool.Get()
+	if len(messageType) > 0 {
+		cp.websocketMessageType = messageType[0]
 	}
+	cp.packet = data
+	slf.mutex.Lock()
+	slf.packets = append(slf.packets, cp)
+	slf.mutex.Unlock()
 }
 
 // Close 关闭连接
 func (slf *Conn) Close() {
+	slf.mutex.Lock()
+	defer slf.mutex.Unlock()
 	if slf.ws != nil {
 		_ = slf.ws.Close()
 	} else if slf.gn != nil {
@@ -107,6 +118,9 @@ func (slf *Conn) Close() {
 		_ = slf.kcp.Close()
 	}
 	slf.write = nil
+	slf.packetPool.Close()
+	slf.packetPool = nil
+	slf.packets = nil
 }
 
 // SetData 设置连接数据
@@ -131,4 +145,62 @@ func (slf *Conn) ReleaseData() *Conn {
 // IsWebsocket 是否是websocket连接
 func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
+}
+
+// writeLoop 写循环
+func (slf *Conn) writeLoop() {
+	slf.packetPool = synchronization.NewPool[*connPacket](64,
+		func() *connPacket {
+			return &connPacket{}
+		}, func(data *connPacket) {
+			data.packet = nil
+			data.websocketMessageType = -1
+		},
+	)
+	defer func() {
+		if err := recover(); err != nil {
+			slf.Close()
+		}
+	}()
+	for {
+		slf.mutex.Lock()
+		if slf.packetPool == nil {
+			return
+		}
+		if len(slf.packets) == 0 {
+			slf.mutex.Unlock()
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+		packets := slf.packets[0:]
+		slf.packets = slf.packets[:0]
+		slf.mutex.Unlock()
+		for _, data := range packets {
+			data := data
+			if len(data.packet) == 0 {
+				for _, packet := range packets {
+					slf.packetPool.Release(packet)
+				}
+				slf.Close()
+				return
+			}
+			var err error
+			if slf.IsWebsocket() {
+				if data.websocketMessageType == -1 {
+					data.websocketMessageType = slf.server.websocketWriteMessageType
+				}
+				err = slf.ws.WriteMessage(data.websocketMessageType, data.packet)
+			} else {
+				if slf.gn != nil {
+					err = slf.gn.AsyncWrite(data.packet)
+				} else if slf.kcp != nil {
+					_, err = slf.kcp.Write(data.packet)
+				}
+			}
+			slf.packetPool.Release(data)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
 }
