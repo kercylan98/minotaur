@@ -1,8 +1,6 @@
 package synchronization
 
 import (
-	"github.com/kercylan98/minotaur/utils/log"
-	"go.uber.org/zap"
 	"sync"
 )
 
@@ -39,7 +37,7 @@ func (slf *Pool[T]) Get() T {
 		return data
 	}
 	slf.mutex.Unlock()
-	log.Warn("Pool", zap.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"))
+	//log.Warn("Pool", zap.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"))
 	return slf.generator()
 }
 

@@ -167,6 +167,10 @@ func (slf *Map[Key, Value]) RangeSkip(handle func(key Key, value Value) bool) {
 }
 
 func (slf *Map[Key, Value]) RangeBreakout(handle func(key Key, value Value) bool) {
+	slf.rangeBreakout(handle)
+}
+
+func (slf *Map[Key, Value]) rangeBreakout(handle func(key Key, value Value) bool) bool {
 	if !slf.atom {
 		slf.lock.RLock()
 		defer slf.lock.RUnlock()
@@ -174,12 +178,17 @@ func (slf *Map[Key, Value]) RangeBreakout(handle func(key Key, value Value) bool
 	for k, v := range slf.data {
 		key, value := k, v
 		if !handle(key, value) {
-			break
+			return true
 		}
 	}
+	return false
 }
 
 func (slf *Map[Key, Value]) RangeFree(handle func(key Key, value Value, skip func(), breakout func())) {
+	slf.rangeFree(handle)
+}
+
+func (slf *Map[Key, Value]) rangeFree(handle func(key Key, value Value, skip func(), breakout func())) bool {
 	var skipExec, breakoutExec bool
 	var skip = func() {
 		skipExec = true
@@ -201,6 +210,7 @@ func (slf *Map[Key, Value]) RangeFree(handle func(key Key, value Value, skip fun
 			break
 		}
 	}
+	return breakoutExec
 }
 
 func (slf *Map[Key, Value]) Keys() []Key {
