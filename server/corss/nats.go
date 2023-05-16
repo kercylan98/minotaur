@@ -10,11 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewNats(url string, options ...nats.Option) *Nats {
-	return &Nats{
+func NewNats(url string, options ...NatsOption) *Nats {
+	n := &Nats{
 		url:     url,
 		subject: "MINOTAUR_CROSS",
-		options: options,
 		messagePool: synchronization.NewPool[*Message](1024*100, func() *Message {
 			return new(Message)
 		}, func(data *Message) {
@@ -22,11 +21,9 @@ func NewNats(url string, options ...nats.Option) *Nats {
 			data.Packet = nil
 		}),
 	}
-}
-
-func NewNatsWithSubject(url, subject string, options ...nats.Option) *Nats {
-	n := NewNats(url, options...)
-	n.subject = subject
+	for _, option := range options {
+		option(n)
+	}
 	return n
 }
 
@@ -39,9 +36,11 @@ type Nats struct {
 }
 
 func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, packet []byte)) (err error) {
-	slf.conn, err = nats.Connect(slf.url, slf.options...)
-	if err != nil {
-		return err
+	if slf.conn == nil {
+		slf.conn, err = nats.Connect(slf.url, slf.options...)
+		if err != nil {
+			return err
+		}
 	}
 	_, err = slf.conn.Subscribe(fmt.Sprintf("%s_%d", slf.subject, server.GetID()), func(msg *nats.Msg) {
 		message := slf.messagePool.Get()
