@@ -21,4 +21,5 @@ var (
 	ErrOnlySupportSocket               = errors.New("only supports Socket programming")
 	ErrNoSupportCross                  = errors.New("the server does not support GetID or PushCrossMessage, please use the WithCross option to create the server")
 	ErrNoSupportTicker                 = errors.New("the server does not support Ticker, please use the WithTicker option to create the server")
+	ErrUnregisteredCrossName           = errors.New("unregistered cross name, please use the WithCross option to create the server")
 )

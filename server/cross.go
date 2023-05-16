@@ -9,4 +9,6 @@ type Cross interface {
 	// PushMessage 推送跨服消息
 	//  - serverId: 目标服务器id
 	PushMessage(serverId int64, packet []byte) error
+	// Release 释放资源
+	Release()
 }

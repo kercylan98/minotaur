@@ -40,11 +40,16 @@ func WithTicker(size int, autonomy bool) Option {
 }
 
 // WithCross 通过跨服的方式创建服务器
-func WithCross(serverId int64, cross Cross) Option {
+//   - 推送跨服消息时，将推送到对应crossName的跨服中间件中，crossName可以满足不同功能采用不同的跨服/消息中间件
+//   - 通常情况下crossName仅需一个即可
+func WithCross(crossName string, serverId int64, cross Cross) Option {
 	return func(srv *Server) {
 		srv.id = serverId
-		srv.cross = cross
-		err := srv.cross.Init(srv, func(serverId int64, packet []byte) {
+		if srv.cross == nil {
+			srv.cross = map[string]Cross{}
+		}
+		srv.cross[crossName] = cross
+		err := cross.Init(srv, func(serverId int64, packet []byte) {
 			srv.PushMessage(MessageTypeCross, serverId, packet)
 		})
 		if err != nil {

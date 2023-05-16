@@ -53,19 +53,19 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                            // 事件
-	cross               Cross         // 跨服
-	id                  int64         // 服务器id
-	network             Network       // 网络类型
-	addr                string        // 侦听地址
-	options             []Option      // 选项
-	ginServer           *gin.Engine   // HTTP模式下的路由器
-	httpServer          *http.Server  // HTTP模式下的服务器
-	grpcServer          *grpc.Server  // GRPC模式下的服务器
-	supportMessageTypes map[int]bool  // websocket模式下支持的消息类型
-	certFile, keyFile   string        // TLS文件
-	isShutdown          atomic.Bool   // 是否已关闭
-	closeChannel        chan struct{} // 关闭信号
+	*event                               // 事件
+	cross               map[string]Cross // 跨服
+	id                  int64            // 服务器id
+	network             Network          // 网络类型
+	addr                string           // 侦听地址
+	options             []Option         // 选项
+	ginServer           *gin.Engine      // HTTP模式下的路由器
+	httpServer          *http.Server     // HTTP模式下的服务器
+	grpcServer          *grpc.Server     // GRPC模式下的服务器
+	supportMessageTypes map[int]bool     // websocket模式下支持的消息类型
+	certFile, keyFile   string           // TLS文件
+	isShutdown          atomic.Bool      // 是否已关闭
+	closeChannel        chan struct{}    // 关闭信号
 
 	gServer                   *gNet                           // TCP或UDP模式下的服务器
 	messagePool               *synchronization.Pool[*message] // 消息池
@@ -345,6 +345,12 @@ func (slf *Server) Ticker() *timer.Ticker {
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	slf.isShutdown.Store(true)
+	if slf.ticker != nil {
+		slf.ticker.Release()
+	}
+	for _, cross := range slf.cross {
+		cross.Release()
+	}
 	if len(slf.diversionMessageChannels) > 0 {
 		for i := 0; i < len(slf.diversionMessageChannels); i++ {
 			close(slf.diversionMessageChannels[i])
@@ -411,12 +417,16 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	}
 }
 
-// PushCrossMessage 推送跨服消息
-func (slf *Server) PushCrossMessage(serverId int64, packet []byte) error {
-	if slf.cross == nil {
+// PushCrossMessage 推送跨服消息到特定跨服的服务器中
+func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []byte) error {
+	if len(slf.cross) == 0 {
 		return ErrNoSupportCross
 	}
-	return slf.cross.PushMessage(serverId, packet)
+	cross, exist := slf.cross[crossName]
+	if !exist {
+		return ErrUnregisteredCrossName
+	}
+	return cross.PushMessage(serverId, packet)
 }
 
 // dispatchMessage 消息分发

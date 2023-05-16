@@ -65,3 +65,7 @@ func (slf *Nats) PushMessage(serverId int64, packet []byte) error {
 	}
 	return slf.conn.Publish(fmt.Sprintf("%s_%d", slf.subject, serverId), data)
 }
+
+func (slf *Nats) Release() {
+	slf.conn.Close()
+}
