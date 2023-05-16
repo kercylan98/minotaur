@@ -34,18 +34,16 @@ type Nats struct {
 	conn        *nats.Conn
 	url         string
 	subject     string
-	realSubject string
 	options     []nats.Option
 	messagePool *synchronization.Pool[*Message]
 }
 
 func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, packet []byte)) (err error) {
-	slf.realSubject = fmt.Sprintf("%s_%d", slf.subject, server.GetID())
 	slf.conn, err = nats.Connect(slf.url, slf.options...)
 	if err != nil {
 		return err
 	}
-	_, err = slf.conn.Subscribe(slf.realSubject, func(msg *nats.Msg) {
+	_, err = slf.conn.Subscribe(fmt.Sprintf("%s_%d", slf.subject, server.GetID()), func(msg *nats.Msg) {
 		message := slf.messagePool.Get()
 		defer slf.messagePool.Release(message)
 		if err := json.Unmarshal(msg.Data, &message); err != nil {
@@ -66,5 +64,5 @@ func (slf *Nats) PushMessage(serverId int64, packet []byte) error {
 	if err != nil {
 		return err
 	}
-	return slf.conn.Publish(slf.realSubject, data)
+	return slf.conn.Publish(fmt.Sprintf("%s_%d", slf.subject, serverId), data)
 }
