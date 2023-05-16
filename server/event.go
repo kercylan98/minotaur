@@ -23,7 +23,7 @@ type event struct {
 	connectionReceiveWebsocketPacketEventHandles []ConnectionReceiveWebsocketPacketEventHandle
 	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
 	connectionClosedEventHandles                 []ConnectionClosedEventHandle
-	receiveCrossPacketEventHandles               map[CrossQueueName][]ReceiveCrossPacketEventHandle
+	receiveCrossPacketEventHandles               []ReceiveCrossPacketEventHandle
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -120,15 +120,12 @@ func (slf *event) OnConnectionReceiveWebsocketPacketEvent(conn *Conn, packet []b
 }
 
 // RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
-func (slf *event) RegReceiveCrossPacketEvent(queue CrossQueueName, handle ReceiveCrossPacketEventHandle) {
-	if slf.receiveCrossPacketEventHandles == nil {
-		slf.receiveCrossPacketEventHandles = map[CrossQueueName][]ReceiveCrossPacketEventHandle{}
-	}
-	slf.receiveCrossPacketEventHandles[queue] = append(slf.receiveCrossPacketEventHandles[queue], handle)
+func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle) {
+	slf.receiveCrossPacketEventHandles = append(slf.receiveCrossPacketEventHandles, handle)
 }
 
-func (slf *event) OnReceiveCrossPacketEvent(serverId int64, queue CrossQueueName, packet []byte) {
-	for _, handle := range slf.receiveCrossPacketEventHandles[queue] {
+func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
+	for _, handle := range slf.receiveCrossPacketEventHandles {
 		handle(slf.Server, serverId, packet)
 	}
 }
@@ -149,7 +146,7 @@ func (slf *event) check() {
 		}
 	}
 
-	if len(slf.receiveCrossPacketEventHandles) > 0 && slf.id == nil {
+	if len(slf.receiveCrossPacketEventHandles) > 0 && slf.cross == nil {
 		log.Warn("Server", zap.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
 	}
 

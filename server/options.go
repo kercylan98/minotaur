@@ -3,10 +3,8 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"runtime/debug"
 )
 
 const (
@@ -26,17 +24,12 @@ type Option func(srv *Server)
 type CrossRegisterHandle func(server *Server) error
 
 // WithCross 通过跨服的方式创建服务器
-//   - CrossQueue: 跨服队列是用于接收和发送跨服消息的队列接口
-func WithCross(serverId int64, queues ...CrossQueue) Option {
+func WithCross(serverId int64, cross Cross) Option {
 	return func(srv *Server) {
-		srv.id = &serverId
-		srv.RegStartFinishEvent(func(srv *Server) {
-			srv.cross = new(cross)
-			if err := srv.cross.Run(srv, queues...); err != nil {
-				srv.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
-				return
-			}
-			log.Info("Server", zap.Int64("CrossID", serverId))
+		srv.id = serverId
+		srv.cross = cross
+		srv.cross.Init(serverId, func(serverId int64, packet []byte) {
+			srv.PushMessage(MessageTypeCross, serverId, packet)
 		})
 	}
 }

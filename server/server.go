@@ -52,9 +52,9 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event
-	*cross
-	id                  *int64        // 服务器id
+	*event                            // 事件
+	cross               Cross         // 跨服
+	id                  int64         // 服务器id
 	network             Network       // 网络类型
 	addr                string        // 侦听地址
 	options             []Option      // 选项
@@ -326,10 +326,10 @@ func (slf *Server) IsDev() bool {
 
 // GetID 获取服务器id
 func (slf *Server) GetID() int64 {
-	if slf.id == nil {
-		panic(ErrNoSupportGetID)
+	if slf.cross == nil {
+		panic(ErrNoSupportCross)
 	}
-	return *slf.id
+	return slf.id
 }
 
 // Shutdown 停止运行服务器
@@ -401,6 +401,14 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	}
 }
 
+// PushCrossMessage 推送跨服消息
+func (slf *Server) PushCrossMessage(serverId int64, packet []byte) error {
+	if slf.cross == nil {
+		return ErrNoSupportCross
+	}
+	return slf.cross.PushMessage(serverId, packet)
+}
+
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *message) {
 	defer func() {
@@ -432,8 +440,8 @@ func (slf *Server) dispatchMessage(msg *message) {
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}
 	case MessageTypeCross:
-		serverId, queue, packet := msg.t.deconstructCross(msg.attrs...)
-		slf.OnReceiveCrossPacketEvent(serverId, queue, packet)
+		serverId, packet := msg.t.deconstructCross(msg.attrs...)
+		slf.OnReceiveCrossPacketEvent(serverId, packet)
 	default:
 		log.Warn("Server", zap.String("not support message type", msg.t.String()))
 	}
