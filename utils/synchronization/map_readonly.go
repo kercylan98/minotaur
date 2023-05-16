@@ -14,4 +14,5 @@ type MapReadonly[Key comparable, Value any] interface {
 	Slice() []Value
 	Map() map[Key]Value
 	Size() int
+	GetOne() (value Value)
 }

@@ -247,6 +247,18 @@ func (slf *Map[Key, Value]) Size() int {
 	return len(slf.data)
 }
 
+// GetOne 获取一个
+func (slf *Map[Key, Value]) GetOne() (value Value) {
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
+	for _, v := range slf.data {
+		return v
+	}
+	return value
+}
+
 func (slf *Map[Key, Value]) MarshalJSON() ([]byte, error) {
 	m := slf.Map()
 	return json.Marshal(m)
