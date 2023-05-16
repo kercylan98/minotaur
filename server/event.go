@@ -122,6 +122,7 @@ func (slf *event) OnConnectionReceiveWebsocketPacketEvent(conn *Conn, packet []b
 // RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
 func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle) {
 	slf.receiveCrossPacketEventHandles = append(slf.receiveCrossPacketEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {

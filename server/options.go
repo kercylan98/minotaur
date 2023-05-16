@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"reflect"
 )
 
 const (
@@ -28,9 +29,13 @@ func WithCross(serverId int64, cross Cross) Option {
 	return func(srv *Server) {
 		srv.id = serverId
 		srv.cross = cross
-		srv.cross.Init(serverId, func(serverId int64, packet []byte) {
+		err := srv.cross.Init(srv, func(serverId int64, packet []byte) {
 			srv.PushMessage(MessageTypeCross, serverId, packet)
 		})
+		if err != nil {
+			log.Error("WithCross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
+			panic(err)
+		}
 	}
 }
 
