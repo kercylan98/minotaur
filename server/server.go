@@ -8,6 +8,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/gnet"
 	"github.com/pkg/errors"
 	"github.com/xtaci/kcp-go/v5"
@@ -77,6 +78,7 @@ type Server struct {
 	diversionMessageChannels  []chan *message                 // 分流消息管道
 	diversionConsistency      *hash.Consistency               // 哈希一致性分流器
 	websocketWriteMessageType int                             // websocket写入的消息类型
+	ticker                    *timer.Ticker                   // 定时器
 }
 
 // Run 使用特定地址运行服务器
@@ -332,6 +334,14 @@ func (slf *Server) GetID() int64 {
 	return slf.id
 }
 
+// Ticker 获取服务器定时器
+func (slf *Server) Ticker() *timer.Ticker {
+	if slf.ticker == nil {
+		panic(ErrNoSupportTicker)
+	}
+	return slf.ticker
+}
+
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error) {
 	slf.isShutdown.Store(true)
@@ -442,6 +452,9 @@ func (slf *Server) dispatchMessage(msg *message) {
 	case MessageTypeCross:
 		serverId, packet := msg.t.deconstructCross(msg.attrs...)
 		slf.OnReceiveCrossPacketEvent(serverId, packet)
+	case MessageTypeTicker:
+		caller := msg.t.deconstructTicker(msg.attrs...)
+		caller()
 	default:
 		log.Warn("Server", zap.String("not support message type", msg.t.String()))
 	}

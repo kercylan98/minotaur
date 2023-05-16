@@ -15,6 +15,10 @@ const (
 	//  - int64(serverId)
 	//  - []byte
 	MessageTypeCross
+
+	// MessageTypeTicker 定时器消息类型
+	//  - func()
+	MessageTypeTicker
 )
 
 var messageNames = map[MessageType]string{
@@ -108,6 +112,17 @@ func (slf MessageType) deconstructCross(attrs ...any) (serverId int64, packet []
 	}
 	if packet, ok = attrs[1].([]byte); !ok {
 		panic(ErrMessageTypeCrossErrorAttrs)
+	}
+	return
+}
+
+func (slf MessageType) deconstructTicker(attrs ...any) (caller func()) {
+	if len(attrs) != 1 {
+		panic(ErrMessageTypeTickerErrorAttrs)
+	}
+	var ok bool
+	if caller, ok = attrs[0].(func()); !ok {
+		panic(ErrMessageTypeTickerErrorAttrs)
 	}
 	return
 }

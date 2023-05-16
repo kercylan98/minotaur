@@ -9,6 +9,7 @@ var (
 	ErrWebsocketMessageTypePacketAttrs = errors.New("MessageTypePacket must contain *Conn and []byte and int(MessageType)")
 	ErrMessageTypeErrorAttrs           = errors.New("MessageTypePacket must contain error and MessageErrorAction")
 	ErrMessageTypeCrossErrorAttrs      = errors.New("MessageTypeCross must contain int64(server id) and []byte")
+	ErrMessageTypeTickerErrorAttrs     = errors.New("MessageTypeTicker must contain func()")
 	ErrNetworkOnlySupportHttp          = errors.New("the current network mode is not compatible with HttpRouter, only NetworkHttp is supported")
 	ErrNetworkOnlySupportGRPC          = errors.New("the current network mode is not compatible with RegGrpcServer, only NetworkGRPC is supported")
 	ErrNetworkIncompatibleHttp         = errors.New("the current network mode is not compatible with NetworkHttp")
@@ -19,4 +20,5 @@ var (
 	ErrPleaseUseOrdinaryPacketHandle   = errors.New("non Websocket mode, please use the RegConnectionReceivePacketEvent function to register")
 	ErrOnlySupportSocket               = errors.New("only supports Socket programming")
 	ErrNoSupportCross                  = errors.New("the server does not support GetID or PushCrossMessage, please use the WithCross option to create the server")
+	ErrNoSupportTicker                 = errors.New("the server does not support Ticker, please use the WithTicker option to create the server")
 )
