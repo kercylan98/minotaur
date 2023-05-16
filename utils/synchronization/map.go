@@ -15,94 +15,127 @@ func NewMap[Key comparable, value any]() *Map[Key, value] {
 type Map[Key comparable, Value any] struct {
 	lock sync.RWMutex
 	data map[Key]Value
+	atom bool
 }
 
 func (slf *Map[Key, Value]) Set(key Key, value Value) {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	slf.data[key] = value
 }
 
 func (slf *Map[Key, Value]) Get(key Key) Value {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	return slf.data[key]
 }
 
 // AtomGetSet 原子方式获取一个值并在之后进行赋值
 func (slf *Map[Key, Value]) AtomGetSet(key Key, handle func(value Value, exist bool) (newValue Value, isSet bool)) {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	value, exist := slf.data[key]
 	if newValue, isSet := handle(value, exist); isSet {
 		slf.data[key] = newValue
 	}
 }
 
+// Atom 原子操作
+func (slf *Map[Key, Value]) Atom(handle func(m *Map[Key, Value])) {
+	slf.lock.Lock()
+	slf.atom = true
+	handle(slf)
+	slf.atom = false
+	slf.lock.Unlock()
+}
+
 func (slf *Map[Key, Value]) Exist(key Key) bool {
-	slf.lock.RLock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	_, exist := slf.data[key]
-	slf.lock.RUnlock()
 	return exist
 }
 
 func (slf *Map[Key, Value]) GetExist(key Key) (Value, bool) {
-	slf.lock.RLock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	value, exist := slf.data[key]
-	slf.lock.RUnlock()
 	return value, exist
 }
 
 func (slf *Map[Key, Value]) Length() int {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	return len(slf.data)
 }
 
 func (slf *Map[Key, Value]) Delete(key Key) {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	delete(slf.data, key)
 }
 
 func (slf *Map[Key, Value]) DeleteGet(key Key) Value {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	v := slf.data[key]
 	delete(slf.data, key)
 	return v
 }
 
 func (slf *Map[Key, Value]) DeleteGetExist(key Key) (Value, bool) {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	v, exist := slf.data[key]
 	delete(slf.data, key)
 	return v, exist
 }
 
 func (slf *Map[Key, Value]) DeleteExist(key Key) bool {
-	slf.lock.Lock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	if _, exist := slf.data[key]; !exist {
-		slf.lock.Unlock()
 		return exist
 	}
 	delete(slf.data, key)
-	slf.lock.Unlock()
 	return true
 }
 
 func (slf *Map[Key, Value]) Clear() {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	for k := range slf.data {
 		delete(slf.data, k)
 	}
 }
 
 func (slf *Map[Key, Value]) ClearHandle(handle func(key Key, value Value)) {
-	slf.lock.Lock()
-	defer slf.lock.Unlock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	for k, v := range slf.data {
 		handle(k, v)
 		delete(slf.data, k)
@@ -110,8 +143,10 @@ func (slf *Map[Key, Value]) ClearHandle(handle func(key Key, value Value)) {
 }
 
 func (slf *Map[Key, Value]) Range(handle func(key Key, value Value)) {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	for k, v := range slf.data {
 		key, value := k, v
 		handle(key, value)
@@ -119,8 +154,10 @@ func (slf *Map[Key, Value]) Range(handle func(key Key, value Value)) {
 }
 
 func (slf *Map[Key, Value]) RangeSkip(handle func(key Key, value Value) bool) {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	for k, v := range slf.data {
 		key, value := k, v
 		if !handle(key, value) {
@@ -130,8 +167,10 @@ func (slf *Map[Key, Value]) RangeSkip(handle func(key Key, value Value) bool) {
 }
 
 func (slf *Map[Key, Value]) RangeBreakout(handle func(key Key, value Value) bool) {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	for k, v := range slf.data {
 		key, value := k, v
 		if !handle(key, value) {
@@ -148,8 +187,10 @@ func (slf *Map[Key, Value]) RangeFree(handle func(key Key, value Value, skip fun
 	var breakout = func() {
 		breakoutExec = true
 	}
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	for k, v := range slf.data {
 		key, value := k, v
 		handle(key, value, skip, breakout)
@@ -163,38 +204,46 @@ func (slf *Map[Key, Value]) RangeFree(handle func(key Key, value Value, skip fun
 }
 
 func (slf *Map[Key, Value]) Keys() []Key {
-	slf.lock.RLock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	var s = make([]Key, 0, len(slf.data))
 	for k, _ := range slf.data {
 		s = append(s, k)
 	}
-	slf.lock.RUnlock()
 	return s
 }
 
 func (slf *Map[Key, Value]) Slice() []Value {
-	slf.lock.RLock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	var s = make([]Value, 0, len(slf.data))
 	for _, v := range slf.data {
 		s = append(s, v)
 	}
-	slf.lock.RUnlock()
 	return s
 }
 
 func (slf *Map[Key, Value]) Map() map[Key]Value {
 	var m = make(map[Key]Value)
-	slf.lock.RLock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	for k, v := range slf.data {
 		m[k] = v
 	}
-	slf.lock.RUnlock()
 	return m
 }
 
 func (slf *Map[Key, Value]) Size() int {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
+	if !slf.atom {
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+	}
 	return len(slf.data)
 }
 
@@ -208,8 +257,10 @@ func (slf *Map[Key, Value]) UnmarshalJSON(bytes []byte) error {
 	if err := json.Unmarshal(bytes, &m); err != nil {
 		return err
 	}
-	slf.lock.Lock()
+	if !slf.atom {
+		slf.lock.Lock()
+		defer slf.lock.Unlock()
+	}
 	slf.data = m
-	slf.lock.Unlock()
 	return nil
 }
