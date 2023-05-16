@@ -8,6 +8,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
+	"time"
 )
 
 func NewNats(url string, options ...NatsOption) *Nats {
@@ -37,6 +38,18 @@ type Nats struct {
 
 func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, packet []byte)) (err error) {
 	if slf.conn == nil {
+		if len(slf.options) == 0 {
+			slf.options = append(slf.options,
+				nats.ReconnectWait(time.Second*5),
+				nats.MaxReconnects(-1),
+				nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
+					log.Error("Cross.Nats", zap.String("info", "disconnect"), zap.Error(err))
+				}),
+				nats.ReconnectHandler(func(conn *nats.Conn) {
+					log.Info("Cross.Nats", zap.String("info", "reconnect"))
+				}),
+			)
+		}
 		slf.conn, err = nats.Connect(slf.url, slf.options...)
 		if err != nil {
 			return err
