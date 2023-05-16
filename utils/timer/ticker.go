@@ -14,6 +14,7 @@ type Ticker struct {
 	wheel  *timingwheel.TimingWheel
 	timers map[string]*Scheduler
 	lock   sync.RWMutex
+	handle func(name string, caller func())
 }
 
 // Release 释放管理器，并将管理器重新放回 Timer 池中
@@ -27,7 +28,7 @@ func (slf *Ticker) Release() {
 		scheduler.close()
 		delete(slf.timers, name)
 	}
-
+	slf.handle = nil
 	slf.lock.Unlock()
 
 	slf.timer.tickers = append(slf.timer.tickers, slf)
@@ -98,6 +99,12 @@ func (slf *Ticker) Loop(name string, after, interval time.Duration, times int, h
 
 	slf.lock.Lock()
 	slf.timers[name] = scheduler
-	scheduler.timer = slf.wheel.ScheduleFunc(scheduler, scheduler.caller)
+	if slf.handle != nil {
+		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, func() {
+			slf.handle(scheduler.Name(), scheduler.Caller)
+		})
+	} else {
+		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, scheduler.Caller)
+	}
 	slf.lock.Unlock()
 }

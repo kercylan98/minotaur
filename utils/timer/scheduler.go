@@ -47,12 +47,6 @@ func (slf *Scheduler) Next(prev time.Time) time.Time {
 	return prev.Add(slf.interval)
 }
 
-// 实际执行的任务
-func (slf *Scheduler) caller() {
-	// TODO: 直接调用可能会导致更高的并发复杂度
-	slf.Caller()
-}
-
 // Caller 可由外部发起调用的执行函数
 func (slf *Scheduler) Caller() {
 	slf.lock.Lock()

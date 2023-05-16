@@ -8,8 +8,12 @@ import (
 
 var timer = new(Timer)
 
-func GetTicker(size int) *Ticker {
-	return timer.NewTicker(size)
+func GetTicker(size int, options ...Option) *Ticker {
+	ticker := timer.NewTicker(size)
+	for _, option := range options {
+		option(ticker)
+	}
+	return ticker
 }
 
 type Timer struct {
