@@ -1,18 +1,15 @@
-package main
+package configxport
 
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/planner/configexport/internal"
 	"github.com/kercylan98/minotaur/utils/file"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/tealeg/xlsx"
-	"go.uber.org/zap"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
-	"sync"
+	"strings"
 )
 
 func New(xlsxPath string) *ConfigExport {
@@ -22,7 +19,9 @@ func New(xlsxPath string) *ConfigExport {
 		panic(err)
 	}
 	for i := 0; i < len(xlsxFile.Sheets); i++ {
-		ce.configs = append(ce.configs, internal.NewConfig(xlsxFile.Sheets[i]))
+		if config := internal.NewConfig(xlsxFile.Sheets[i]); config != nil {
+			ce.configs = append(ce.configs, config)
+		}
 	}
 	return ce
 }
@@ -33,31 +32,14 @@ type ConfigExport struct {
 }
 
 func (slf *ConfigExport) ExportJSON(outputDir string) {
-	var errors []func()
-	var wait sync.WaitGroup
 	for _, config := range slf.configs {
 		config := config
-		go func() {
-			wait.Add(1)
-			defer func() {
-				if err := recover(); err != nil {
-					errors = append(errors, func() {
-						log.Error("导出失败", zap.String("名称", slf.xlsxPath), zap.String("Sheet", config.GetName()), zap.Any("err", err))
-						fmt.Println(debug.Stack())
-					})
-				}
-			}()
-			if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.json", config.GetName())), config.GetJSON()); err != nil {
-				panic(err)
-			}
-			wait.Done()
-		}()
-	}
-
-	wait.Wait()
-
-	for _, f := range errors {
-		f()
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.json", config.GetName())), config.GetJSON()); err != nil {
+			panic(err)
+		}
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.client.json", config.GetName())), config.GetJSONC()); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -69,13 +51,21 @@ func (slf *ConfigExport) ExportGo(packageName string, outputDir string) {
 	for _, config := range slf.configs {
 		v := config.GetVariable()
 		vars += fmt.Sprintf("var %s %s\nvar _%sReady %s\n", str.FirstUpper(config.GetName()), v, str.FirstUpper(config.GetName()), v)
-		varsMake += fmt.Sprintf("_%sReady = make(%s)"+`
+		if config.GetIndexCount() == 0 {
+			varsMake += fmt.Sprintf("_%sReady = new(%s)"+`
+	if err := handle("%s.json", &_%sReady); err != nil {
+		panic(err)
+	}
+`, str.FirstUpper(config.GetName()), strings.TrimPrefix(v, "*"), str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
+		} else {
+			varsMake += fmt.Sprintf("_%sReady = make(%s)"+`
 	if err := handle("%s.json", &_%sReady); err != nil {
 		panic(err)
 	}
 `, str.FirstUpper(config.GetName()), v, str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
+		}
 		types += fmt.Sprintf("%s\n", config.GetStruct())
-		varsReplace += fmt.Sprintf("%s = _%sReady", str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
+		varsReplace += fmt.Sprintf("%s = _%sReady\n", str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
 	}
 
 	_ = os.MkdirAll(outputDir, 0666)
