@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"go.uber.org/zap"
@@ -43,7 +44,7 @@ func (slf *Room[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 	return slf.players.Get(id)
 }
 
-func (slf *Room[PlayerID, Player]) GetPlayers() synchronization.MapReadonly[PlayerID, Player] {
+func (slf *Room[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
 	return slf.players
 }
 

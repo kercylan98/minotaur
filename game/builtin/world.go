@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"go.uber.org/zap"
@@ -56,7 +57,7 @@ func (slf *World[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 	return slf.players.Get(id)
 }
 
-func (slf *World[PlayerID, Player]) GetPlayers() synchronization.MapReadonly[PlayerID, Player] {
+func (slf *World[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
 	return slf.players
 }
 
@@ -64,7 +65,7 @@ func (slf *World[PlayerID, Player]) GetActor(guid int64) game.Actor {
 	return slf.actors.Get(guid)
 }
 
-func (slf *World[PlayerID, Player]) GetActors() synchronization.MapReadonly[int64, game.Actor] {
+func (slf *World[PlayerID, Player]) GetActors() hash.MapReadonly[int64, game.Actor] {
 	return slf.actors
 }
 
@@ -75,7 +76,7 @@ func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game
 	return nil
 }
 
-func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) synchronization.MapReadonly[int64, game.Actor] {
+func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) hash.MapReadonly[int64, game.Actor] {
 	return slf.playerActors.Get(id)
 }
 

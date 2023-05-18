@@ -1,4 +1,4 @@
-package synchronization
+package hash
 
 // MapReadonly 并发安全的只读字典接口
 type MapReadonly[Key comparable, Value any] interface {

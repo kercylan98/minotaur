@@ -1,6 +1,8 @@
 package game
 
-import "github.com/kercylan98/minotaur/utils/synchronization"
+import (
+	"github.com/kercylan98/minotaur/utils/hash"
+)
 
 // Room 房间类似于简版的游戏世界，不过没有游戏实体
 type Room[PlayerID comparable, P Player[PlayerID]] interface {
@@ -11,7 +13,7 @@ type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetPlayer 根据玩家id获取玩家
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取房间中的所有玩家
-	GetPlayers() synchronization.MapReadonly[PlayerID, P]
+	GetPlayers() hash.MapReadonly[PlayerID, P]
 	// GetPlayerCount 获取玩家数量
 	GetPlayerCount() int
 	// IsExistPlayer 检查房间中是否存在特定玩家
