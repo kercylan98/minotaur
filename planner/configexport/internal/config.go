@@ -27,6 +27,7 @@ func NewConfig(sheet *xlsx.Sheet) (*Config, error) {
 }
 
 type Config struct {
+	Prefix      string
 	DisplayName string
 	Name        string
 	Describe    string
@@ -118,27 +119,31 @@ func (slf *Config) initField(sheet *xlsx.Sheet) error {
 		var (
 			describe, fieldName, fieldType, exportParam string
 		)
-
+		var skip bool
 		if value := slf.matrix.Get(dx, dy); value == nil {
-			return ErrReadConfigFailedWithFieldPosition
+			skip = true
 		} else {
 			describe = value.String()
 		}
 		if value := slf.matrix.Get(nx, ny); value == nil {
-			return ErrReadConfigFailedWithFieldPosition
+			skip = true
 		} else {
 			fieldName = str.FirstUpper(strings.TrimSpace(value.String()))
 		}
 		if value := slf.matrix.Get(tx, ty); value == nil {
-			return ErrReadConfigFailedWithFieldPosition
+			skip = true
 		} else {
 			fieldType = strings.TrimSpace(value.String())
 		}
 		if value := slf.matrix.Get(ex, ey); value == nil {
-			return ErrReadConfigFailedWithFieldPosition
+			skip = true
 		} else {
 			exportParam = strings.ToLower(strings.TrimSpace(value.String()))
 		}
+		if len(strings.TrimSpace(fieldName))+len(strings.TrimSpace(fieldType))+len(strings.TrimSpace(exportParam)) < 3 {
+			skip = true
+		}
+
 		var field = NewField(slf.Name, fieldName, fieldType)
 		field.Describe = describe
 		field.ExportParam = exportParam
@@ -159,38 +164,41 @@ func (slf *Config) initField(sheet *xlsx.Sheet) error {
 			ey++
 		}
 
-		field.Ignore = slf.excludeFields[len(slf.Fields)]
-		if !field.Ignore {
-			if strings.HasPrefix(field.Describe, slf.ignore) {
-				field.Ignore = true
-			} else if strings.HasPrefix(field.Name, slf.ignore) {
-				field.Ignore = true
-			} else if strings.HasPrefix(field.Type, slf.ignore) {
-				field.Ignore = true
-			} else if strings.HasPrefix(field.ExportParam, slf.ignore) {
-				field.Ignore = true
-			}
-		}
-		if !field.Ignore {
-			switch exportParam {
-			case "s", "c", "sc", "cs":
-			default:
-				return ErrReadConfigFailedWithExportParamException
-			}
-		}
+		if !skip {
 
-		if fields[field.Name] && !field.Ignore {
-			return ErrReadConfigFailedWithNameDuplicate
-		}
-		if index > 0 && !field.Ignore {
-			if _, exist := basicTypeName[field.Type]; !exist {
-				return ErrReadConfigFailedWithIndexTypeException
+			field.Ignore = slf.excludeFields[len(slf.Fields)]
+			if !field.Ignore {
+				if strings.HasPrefix(field.Describe, slf.ignore) {
+					field.Ignore = true
+				} else if strings.HasPrefix(field.Name, slf.ignore) {
+					field.Ignore = true
+				} else if strings.HasPrefix(field.Type, slf.ignore) {
+					field.Ignore = true
+				} else if strings.HasPrefix(field.ExportParam, slf.ignore) {
+					field.Ignore = true
+				}
 			}
-			index--
-		}
+			if !field.Ignore {
+				switch exportParam {
+				case "s", "c", "sc", "cs":
+				default:
+					continue
+				}
+			}
 
-		fields[field.Name] = true
-		slf.Fields = append(slf.Fields, field)
+			if fields[field.Name] && !field.Ignore {
+				return ErrReadConfigFailedWithNameDuplicate
+			}
+			if index > 0 && !field.Ignore {
+				if _, exist := basicTypeName[field.Type]; !exist {
+					return ErrReadConfigFailedWithIndexTypeException
+				}
+				index--
+			}
+
+			fields[field.Name] = true
+			slf.Fields = append(slf.Fields, field)
+		}
 
 		if horizontal {
 			if dx >= slf.matrix.GetWidth() {
@@ -223,17 +231,39 @@ func (slf *Config) initData() error {
 
 		var lineServer = map[any]any{}
 		var lineClient = map[any]any{}
+		var skip bool
+		var offset int
 		for i := 0; i < len(slf.Fields); i++ {
 			if slf.excludeFields[i] {
+				if c := slf.matrix.Get(x+i, y); c != nil && strings.HasPrefix(c.String(), "#") {
+					skip = true
+					break
+				}
 				continue
 			}
 
 			field := slf.Fields[i]
+			if field.Ignore {
+				continue
+			}
 			var value any
 			if slf.horizontal {
-				value = getValueWithType(field.SourceType, slf.matrix.Get(x+i, y).String())
+				c := slf.matrix.Get(x+i, y)
+				if c == nil || (currentIndex < slf.IndexCount && len(c.String()) == 0) {
+					skip = true
+					break
+				}
+				value = getValueWithType(field.SourceType, c.String())
 			} else {
-				value = getValueWithType(field.SourceType, slf.matrix.Get(x, y+i).String())
+				c := slf.matrix.Get(x, y+i+offset)
+				for c == nil {
+					offset++
+					c = slf.matrix.Get(x, y+i+offset)
+					if y+i+offset >= slf.matrix.GetHeight() {
+						break
+					}
+				}
+				value = getValueWithType(field.SourceType, c.String())
 			}
 			switch field.ExportParam {
 			case "s":
@@ -280,12 +310,11 @@ func (slf *Config) initData() error {
 				break
 			}
 		} else {
-			x++
-			if x >= slf.matrix.GetWidth() {
+			if !skip {
 				slf.dataServer = lineServer
 				slf.dataClient = lineClient
-				break
 			}
+			break
 		}
 	}
 	if slf.horizontal {

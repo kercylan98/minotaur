@@ -14,8 +14,8 @@ var (
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
-	handle("XXConfig.json", &gameXXConfig)
-	handle("UNConfig.json", &gameUNConfig)
+	handle("server.XXConfig.json", &gameXXConfig)
+	handle("server.UNConfig.json", &gameUNConfig)
 }
 
 func Refresh() {
