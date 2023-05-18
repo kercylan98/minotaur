@@ -375,3 +375,10 @@ func (slf *Config) GetVariable() string {
 	}
 	return fmt.Sprintf("%s*%s", result, slf.Name)
 }
+
+func (slf *Config) GetVariableGen() string {
+	if slf.IndexCount == 0 {
+		return fmt.Sprintf("new(%s)", strings.TrimPrefix(slf.GetVariable(), "*"))
+	}
+	return fmt.Sprintf("make(%s)", slf.GetVariable())
+}

@@ -7,20 +7,22 @@ import (
 
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
 var (
-	 GameXXConfig map[int]map[string]*XXConfig
-	 gameXXConfig map[int]map[string]*XXConfig
-	 GameUNConfig *UNConfig
-	 gameUNConfig *UNConfig
+	 GameIndexConfig map[int]map[string]*IndexConfig
+	 gameIndexConfig map[int]map[string]*IndexConfig
+	 GameEasyConfig *EasyConfig
+	 gameEasyConfig *EasyConfig
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
-	handle("server.XXConfig.json", &gameXXConfig)
-	handle("server.UNConfig.json", &gameUNConfig)
+	gameIndexConfig = make(map[int]map[string]*IndexConfig)
+	handle("server.IndexConfig.json", &gameIndexConfig)
+	gameEasyConfig = new(EasyConfig)
+	handle("server.EasyConfig.json", gameEasyConfig)
 }
 
 func Refresh() {
-	GameXXConfig = gameXXConfig
-	GameUNConfig = gameUNConfig
+	GameIndexConfig = gameIndexConfig
+	GameEasyConfig = gameEasyConfig
 }
 
 func DefaultLoad(filepath string) {

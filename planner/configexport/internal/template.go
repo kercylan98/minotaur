@@ -42,7 +42,12 @@ var (
 
 func LoadConfig(handle func(filename string, config any) error) {
 {{range $index, $config := .Configs}}
+	game{{$config.Name}} = {{$config.GetVariableGen}}
+{{if eq $config.IndexCount 0}}
+	handle("{{$config.Prefix}}{{$config.Name}}.json", game{{$config.Name}})
+{{else}}
 	handle("{{$config.Prefix}}{{$config.Name}}.json", &game{{$config.Name}})
+{{end}}
 {{end}}
 }
 
