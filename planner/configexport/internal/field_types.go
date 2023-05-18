@@ -7,29 +7,6 @@ import (
 	"strings"
 )
 
-var basicType = map[string]func(fieldValue string) any{
-	"string":  withStringType,
-	"int":     withIntType,
-	"int8":    withInt8Type,
-	"int16":   withInt16Type,
-	"int32":   withInt32Type,
-	"int64":   withInt64Type,
-	"uint":    withUintType,
-	"uint8":   withUint8Type,
-	"uint16":  withUint16Type,
-	"uint32":  withUint32Type,
-	"uint64":  withUint64Type,
-	"float32": withFloat32Type,
-	"float64": withFloat64Type,
-	"float":   withFloat64Type,
-	"double":  withFloat64Type,
-	"number":  withFloat64Type,
-	"byte":    withByteType,
-	"rune":    withRuneType,
-	"bool":    withBoolType,
-	"boolean": withBoolType,
-}
-
 var basicTypeName = map[string]string{
 	"string":  "string",
 	"int":     "int",
@@ -51,6 +28,29 @@ var basicTypeName = map[string]string{
 	"rune":    "rune",
 	"bool":    "bool",
 	"boolean": "bool",
+}
+
+var basicType = map[string]func(fieldValue string) any{
+	"string":  withStringType,
+	"int":     withIntType,
+	"int8":    withInt8Type,
+	"int16":   withInt16Type,
+	"int32":   withInt32Type,
+	"int64":   withInt64Type,
+	"uint":    withUintType,
+	"uint8":   withUint8Type,
+	"uint16":  withUint16Type,
+	"uint32":  withUint32Type,
+	"uint64":  withUint64Type,
+	"float32": withFloat32Type,
+	"float64": withFloat64Type,
+	"float":   withFloat64Type,
+	"double":  withFloat64Type,
+	"number":  withFloat64Type,
+	"byte":    withByteType,
+	"rune":    withRuneType,
+	"bool":    withBoolType,
+	"boolean": withBoolType,
 }
 
 func getValueWithType(fieldType string, fieldValue string) any {

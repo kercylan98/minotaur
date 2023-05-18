@@ -1,15 +1,15 @@
-package configxport
+package configexport
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/kercylan98/minotaur/planner/configexport/internal"
 	"github.com/kercylan98/minotaur/utils/file"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/tealeg/xlsx"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 func New(xlsxPath string) *ConfigExport {
@@ -19,7 +19,9 @@ func New(xlsxPath string) *ConfigExport {
 		panic(err)
 	}
 	for i := 0; i < len(xlsxFile.Sheets); i++ {
-		if config := internal.NewConfig(xlsxFile.Sheets[i]); config != nil {
+		if config, err := internal.NewConfig(xlsxFile.Sheets[i]); err != nil {
+			panic(err)
+		} else {
 			ce.configs = append(ce.configs, config)
 		}
 	}
@@ -31,58 +33,99 @@ type ConfigExport struct {
 	configs  []*internal.Config
 }
 
-func (slf *ConfigExport) ExportJSON(outputDir string) {
+func (slf *ConfigExport) ExportClient(prefix, outputDir string) {
 	for _, config := range slf.configs {
 		config := config
-		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.json", config.GetName())), config.GetJSON()); err != nil {
-			panic(err)
-		}
-		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.client.json", config.GetName())), config.GetJSONC()); err != nil {
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.%s.json", prefix, config.Name)), config.JsonClient()); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func (slf *ConfigExport) ExportGo(packageName string, outputDir string) {
-	var vars string
-	var varsMake string
-	var types string
-	var varsReplace string
+func (slf *ConfigExport) ExportServer(prefix, outputDir string) {
 	for _, config := range slf.configs {
-		v := config.GetVariable()
-		vars += fmt.Sprintf("var %s %s\nvar _%sReady %s\n", str.FirstUpper(config.GetName()), v, str.FirstUpper(config.GetName()), v)
-		if config.GetIndexCount() == 0 {
-			varsMake += fmt.Sprintf("_%sReady = new(%s)"+`
-	if err := handle("%s.json", &_%sReady); err != nil {
-		panic(err)
-	}
-`, str.FirstUpper(config.GetName()), strings.TrimPrefix(v, "*"), str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
-		} else {
-			varsMake += fmt.Sprintf("_%sReady = make(%s)"+`
-	if err := handle("%s.json", &_%sReady); err != nil {
-		panic(err)
-	}
-`, str.FirstUpper(config.GetName()), v, str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
+		config := config
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.%s.json", prefix, config.Name)), config.JsonServer()); err != nil {
+			panic(err)
 		}
-		types += fmt.Sprintf("%s\n", config.GetStruct())
-		varsReplace += fmt.Sprintf("%s = _%sReady\n", str.FirstUpper(config.GetName()), str.FirstUpper(config.GetName()))
+	}
+}
+
+func (slf *ConfigExport) ExportGo(outputDir string) {
+	slf.exportGoConfig(outputDir)
+	slf.exportGoDefine(outputDir)
+}
+
+func (slf *ConfigExport) exportGoConfig(outputDir string) {
+	var v struct {
+		Package string
+		Configs []*internal.Config
+	}
+	v.Package = filepath.Base(outputDir)
+
+	for _, config := range slf.configs {
+		v.Configs = append(v.Configs, config)
 	}
 
-	_ = os.MkdirAll(outputDir, 0666)
-	if err := file.WriterFile(filepath.Join(outputDir, "config.struct.go"), []byte(fmt.Sprintf(internal.TemplateStructGo, packageName, types))); err != nil {
+	tmpl, err := template.New("struct").Parse(internal.GenerateGoConfigTemplate)
+	if err != nil {
 		panic(err)
 	}
-	if err := file.WriterFile(filepath.Join(outputDir, "config.go"), []byte(fmt.Sprintf(internal.TemplateGo, packageName, vars, varsMake, varsReplace))); err != nil {
+
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, &v); err != nil {
 		panic(err)
 	}
-	cmd := exec.Command("gofmt", "-w", filepath.Join(outputDir, "config.struct.go"))
-	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
+	var result string
+	_ = str.RangeLine(buf.String(), func(index int, line string) error {
+		if len(strings.TrimSpace(line)) == 0 {
+			return nil
+		}
+		result += fmt.Sprintf("%s\n", strings.ReplaceAll(line, "\t\t", "\t"))
+		if len(strings.TrimSpace(line)) == 1 {
+			result += "\n"
+		}
+		return nil
+	})
+
+	if err := file.WriterFile(filepath.Join(outputDir, "config.go"), []byte(result)); err != nil {
+		panic(err)
+	}
+}
+
+func (slf *ConfigExport) exportGoDefine(outputDir string) {
+	var v struct {
+		Package string
+		Configs []*internal.Config
+	}
+	v.Package = filepath.Base(outputDir)
+
+	for _, config := range slf.configs {
+		v.Configs = append(v.Configs, config)
 	}
 
-	cmd = exec.Command("gofmt", "-w", filepath.Join(outputDir, "config.go"))
-	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
+	tmpl, err := template.New("struct").Parse(internal.GenerateGoDefineTemplate)
+	if err != nil {
+		panic(err)
 	}
 
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, &v); err != nil {
+		panic(err)
+	}
+	var result string
+	_ = str.RangeLine(buf.String(), func(index int, line string) error {
+		if len(strings.TrimSpace(line)) == 0 {
+			return nil
+		}
+		result += fmt.Sprintf("%s\n", strings.ReplaceAll(line, "\t\t", "\t"))
+		if len(strings.TrimSpace(line)) == 1 {
+			result += "\n"
+		}
+		return nil
+	})
+
+	if err := file.WriterFile(filepath.Join(outputDir, "config.define.go"), []byte(result)); err != nil {
+		panic(err)
+	}
 }

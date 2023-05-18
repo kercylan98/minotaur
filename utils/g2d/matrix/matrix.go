@@ -34,7 +34,10 @@ func (slf *Matrix[T]) GetMatrix() [][]T {
 }
 
 // Get 获取特定坐标的内容
-func (slf *Matrix[T]) Get(x, y int) T {
+func (slf *Matrix[T]) Get(x, y int) (value T) {
+	if x >= slf.w || x < 0 || y >= slf.h || y < 0 {
+		return value
+	}
 	return slf.m[x][y]
 }
 

@@ -1,376 +1,348 @@
 package internal
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	jsonIter "github.com/json-iterator/go"
+	"github.com/kercylan98/minotaur/utils/g2d/matrix"
 	"github.com/kercylan98/minotaur/utils/str"
+	"github.com/kercylan98/minotaur/utils/xlsxtool"
 	"github.com/tealeg/xlsx"
+	"strconv"
 	"strings"
+	"text/template"
 )
 
-func NewConfig(sheet *xlsx.Sheet) *Config {
+// NewConfig 定位为空将读取Sheet名称
+//   - 表格中需要严格遵守 描述、名称、类型、导出参数、数据列的顺序
+func NewConfig(sheet *xlsx.Sheet) (*Config, error) {
 	config := &Config{
-		Sheet: sheet,
+		ignore:        "#",
+		excludeFields: map[int]bool{0: true},
 	}
-
-	if len(config.Sheet.Rows) < 2 || len(config.Sheet.Rows[1].Cells) < 2 {
-		return nil
+	if err := config.initField(sheet); err != nil {
+		return nil, err
 	}
-
-	if config.GetIndexCount() > 0 && len(config.Sheet.Rows) < 7 {
-		return nil
-	}
-
-	if config.GetIndexCount() > 0 {
-		var (
-			skipField       = make(map[int]bool)
-			describeLine    = config.Sheet.Rows[3]
-			nameLine        = config.Sheet.Rows[4]
-			typeLine        = config.Sheet.Rows[5]
-			exportParamLine = config.Sheet.Rows[6]
-		)
-		// 分析数据
-		{
-			for i := 1; i < len(describeLine.Cells); i++ {
-				describe := strings.TrimSpace(nameLine.Cells[i].String())
-				if strings.HasPrefix(describe, "#") {
-					skipField[i] = true
-					continue
-				}
-				typ := strings.TrimSpace(typeLine.Cells[i].String())
-				if strings.HasPrefix(typ, "#") || len(typ) == 0 {
-					skipField[i] = true
-					continue
-				}
-				exportParam := strings.TrimSpace(exportParamLine.Cells[i].String())
-				if strings.HasPrefix(exportParam, "#") || len(exportParam) == 0 {
-					skipField[i] = true
-					continue
-				}
-			}
-			if len(nameLine.Cells)-1-len(skipField) < config.GetIndexCount() {
-				panic(errors.New("index count must greater or equal to field count"))
-			}
-		}
-
-		config.skipField = skipField
-		config.describeLine = describeLine
-		config.nameLine = nameLine
-		config.typeLine = typeLine
-		config.exportParamLine = exportParamLine
-
-		// 整理数据
-		var (
-			dataLine  = make([]map[any]any, len(config.Sheet.Rows))
-			dataLineC = make([]map[any]any, len(config.Sheet.Rows))
-		)
-		for i := 1; i < len(config.describeLine.Cells); i++ {
-			if skipField[i] {
-				continue
-			}
-
-			var (
-				//describe    = strings.TrimSpace(describeLine.Cells[i].String())
-				name = strings.TrimSpace(nameLine.Cells[i].String())
-				//typ         = strings.TrimSpace(typeLine.Cells[i].String())
-				exportParam = strings.TrimSpace(exportParamLine.Cells[i].String())
-			)
-
-			for row := 7; row < len(config.Sheet.Rows); row++ {
-				//value := slf.Sheet.Rows[row].Cells[i].String()
-				var value = getValueWithType(typeLine.Cells[i].String(), config.Sheet.Rows[row].Cells[i].String())
-
-				var needC, needS bool
-				switch strings.ToLower(exportParam) {
-				case "c":
-					needC = true
-				case "s":
-					needS = true
-				case "sc", "cs":
-					needS = true
-					needC = true
-				}
-
-				if needC {
-					line := dataLineC[row]
-					if line == nil {
-						line = map[any]any{}
-						dataLineC[row] = line
-					}
-					line[name] = value
-				}
-
-				if needS {
-					line := dataLine[row]
-					if line == nil {
-						line = map[any]any{}
-						dataLine[row] = line
-					}
-					line[name] = value
-				}
-
-			}
-		}
-
-		// 索引
-		var dataSource = make(map[any]any)
-		var data = dataSource
-		var dataSourceC = make(map[any]any)
-		var dataC = dataSourceC
-		var index = config.GetIndexCount()
-		var currentIndex = 0
-		for row := 7; row < len(config.Sheet.Rows); row++ {
-			for i, cell := range config.Sheet.Rows[row].Cells {
-				if i == 0 {
-					if strings.HasPrefix(typeLine.Cells[i].String(), "#") {
-						break
-					}
-					continue
-				}
-				if skipField[i] {
-					continue
-				}
-				var value = getValueWithType(typeLine.Cells[i].String(), cell.String())
-
-				if currentIndex < index {
-					currentIndex++
-					m, exist := data[value]
-					if !exist {
-						if currentIndex == index {
-							data[value] = dataLine[row]
-						} else {
-							m = map[any]any{}
-							data[value] = m
-						}
-					}
-					if currentIndex < index {
-						data = m.(map[any]any)
-					}
-
-					m, exist = dataC[value]
-					if !exist {
-						if currentIndex == index {
-							dataC[value] = dataLineC[row]
-						} else {
-							m = map[any]any{}
-							dataC[value] = m
-						}
-					}
-					if currentIndex < index {
-						dataC = m.(map[any]any)
-					}
-				}
-			}
-			data = dataSource
-			dataC = dataSourceC
-			currentIndex = 0
-		}
-		config.data = dataSource
-		config.dataC = dataSourceC
-	} else {
-		config.data = map[any]any{}
-		config.dataC = map[any]any{}
-		for i := 4; i < len(config.Rows); i++ {
-			row := config.Sheet.Rows[i]
-
-			desc := row.Cells[0].String()
-			if strings.HasPrefix(desc, "#") {
-				continue
-			}
-			name := row.Cells[1].String()
-			typ := row.Cells[2].String()
-			exportParam := row.Cells[3].String()
-			value := row.Cells[4].String()
-
-			switch strings.ToLower(exportParam) {
-			case "c":
-				config.dataC[name] = getValueWithType(typ, value)
-			case "s":
-				config.data[name] = getValueWithType(typ, value)
-			case "sc", "cs":
-				config.dataC[name] = getValueWithType(typ, value)
-				config.data[name] = getValueWithType(typ, value)
-			}
-		}
-	}
-	return config
+	return config, nil
 }
 
 type Config struct {
-	*xlsx.Sheet
-	skipField       map[int]bool
-	describeLine    *xlsx.Row
-	nameLine        *xlsx.Row
-	typeLine        *xlsx.Row
-	exportParamLine *xlsx.Row
-	data            map[any]any
-	dataC           map[any]any
+	DisplayName string
+	Name        string
+	Describe    string
+	ExportParam string
+	IndexCount  int
+	Fields      []*Field
+
+	matrix        *matrix.Matrix[*xlsx.Cell]
+	excludeFields map[int]bool // 排除的字段
+	ignore        string
+	horizontal    bool
+	dataStart     int
+
+	dataServer map[any]any
+	dataClient map[any]any
 }
 
-// GetDisplayName 获取显示名称
-func (slf *Config) GetDisplayName() string {
-	return slf.Name
-}
-
-// GetName 获取配置名称
-func (slf *Config) GetName() string {
-	return str.FirstUpper(slf.Sheet.Rows[0].Cells[1].String())
-}
-
-// GetIndexCount 获取索引数量
-func (slf *Config) GetIndexCount() int {
-	index, err := slf.Sheet.Rows[1].Cells[1].Int()
-	if err != nil {
-		panic(err)
+func (slf *Config) initField(sheet *xlsx.Sheet) error {
+	slf.matrix = xlsxtool.GetSheetMatrix(sheet)
+	var displayName *Position
+	name, indexCount := NewPosition(1, 0), NewPosition(1, 1)
+	if displayName == nil {
+		slf.DisplayName = sheet.Name
+	} else {
+		if value := slf.matrix.Get(displayName.X, displayName.Y); value == nil {
+			return ErrReadConfigFailedWithDisplayName
+		} else {
+			slf.DisplayName = strings.TrimSpace(value.String())
+		}
 	}
-	return index
-}
 
-// GetData 获取数据
-func (slf *Config) GetData() map[any]any {
-	return slf.data
-}
-
-// GetJSON 获取JSON类型数据
-func (slf *Config) GetJSON() []byte {
-	bytes, err := jsonIter.MarshalIndent(slf.GetData(), "", "  ")
-	if err != nil {
-		panic(err)
+	if name == nil {
+		slf.Name = sheet.Name
+	} else {
+		if value := slf.matrix.Get(name.X, name.Y); value == nil {
+			return ErrReadConfigFailedWithName
+		} else {
+			slf.Name = str.FirstUpper(strings.TrimSpace(value.String()))
+		}
 	}
-	return bytes
+
+	if indexCount == nil {
+		slf.IndexCount, _ = strconv.Atoi(sheet.Name)
+	} else {
+		if value := slf.matrix.Get(indexCount.X, indexCount.Y); value == nil {
+			return ErrReadConfigFailedWithIndexCount
+		} else {
+			indexCount, err := value.Int()
+			if err != nil {
+				return err
+			}
+			if indexCount < 0 {
+				return ErrReadConfigFailedWithIndexCountLessThanZero
+			}
+			slf.IndexCount = indexCount
+		}
+	}
+
+	var (
+		describeStart                  int
+		horizontal                     bool
+		fields                         = make(map[string]bool)
+		dx, dy, nx, ny, tx, ty, ex, ey int
+	)
+	horizontal = slf.IndexCount > 0
+	slf.horizontal = horizontal
+
+	if horizontal {
+		describeStart = 3
+		dy = describeStart
+		ny = dy + 1
+		ty = ny + 1
+		ey = ty + 1
+		slf.dataStart = ey + 1
+	} else {
+		delete(slf.excludeFields, 0)
+		describeStart = 4
+		dy = describeStart
+		ny = dy
+		ty = dy
+		ey = dy
+		nx = dx + 1
+		tx = nx + 1
+		ex = tx + 1
+		slf.dataStart = ey + 1
+	}
+	var index = slf.IndexCount
+	for {
+		var (
+			describe, fieldName, fieldType, exportParam string
+		)
+
+		if value := slf.matrix.Get(dx, dy); value == nil {
+			return ErrReadConfigFailedWithFieldPosition
+		} else {
+			describe = value.String()
+		}
+		if value := slf.matrix.Get(nx, ny); value == nil {
+			return ErrReadConfigFailedWithFieldPosition
+		} else {
+			fieldName = str.FirstUpper(strings.TrimSpace(value.String()))
+		}
+		if value := slf.matrix.Get(tx, ty); value == nil {
+			return ErrReadConfigFailedWithFieldPosition
+		} else {
+			fieldType = strings.TrimSpace(value.String())
+		}
+		if value := slf.matrix.Get(ex, ey); value == nil {
+			return ErrReadConfigFailedWithFieldPosition
+		} else {
+			exportParam = strings.ToLower(strings.TrimSpace(value.String()))
+		}
+		var field = NewField(slf.Name, fieldName, fieldType)
+		field.Describe = describe
+		field.ExportParam = exportParam
+		switch field.ExportParam {
+		case "s", "sc", "cs":
+			field.Server = true
+		}
+
+		if horizontal {
+			dx++
+			nx++
+			tx++
+			ex++
+		} else {
+			dy++
+			ny++
+			ty++
+			ey++
+		}
+
+		field.Ignore = slf.excludeFields[len(slf.Fields)]
+		if !field.Ignore {
+			if strings.HasPrefix(field.Describe, slf.ignore) {
+				field.Ignore = true
+			} else if strings.HasPrefix(field.Name, slf.ignore) {
+				field.Ignore = true
+			} else if strings.HasPrefix(field.Type, slf.ignore) {
+				field.Ignore = true
+			} else if strings.HasPrefix(field.ExportParam, slf.ignore) {
+				field.Ignore = true
+			}
+		}
+		if !field.Ignore {
+			switch exportParam {
+			case "s", "c", "sc", "cs":
+			default:
+				return ErrReadConfigFailedWithExportParamException
+			}
+		}
+
+		if fields[field.Name] && !field.Ignore {
+			return ErrReadConfigFailedWithNameDuplicate
+		}
+		if index > 0 && !field.Ignore {
+			if _, exist := basicTypeName[field.Type]; !exist {
+				return ErrReadConfigFailedWithIndexTypeException
+			}
+			index--
+		}
+
+		fields[field.Name] = true
+		slf.Fields = append(slf.Fields, field)
+
+		if horizontal {
+			if dx >= slf.matrix.GetWidth() {
+				break
+			}
+		} else {
+			if dy >= slf.matrix.GetHeight() {
+				break
+			}
+		}
+	}
+
+	return slf.initData()
 }
 
-// GetJSONC 获取JSON类型数据
-func (slf *Config) GetJSONC() []byte {
-	bytes, err := jsonIter.MarshalIndent(slf.dataC, "", "  ")
-	if err != nil {
-		panic(err)
+func (slf *Config) initData() error {
+	var x, y int
+	if slf.horizontal {
+		y = slf.dataStart
+	} else {
+		x = 4
+		y = 4
 	}
-	return bytes
+	var dataSourceServer = make(map[any]any)
+	var dataSourceClient = make(map[any]any)
+	for {
+		var dataServer = dataSourceServer
+		var dataClient = dataSourceClient
+		var currentIndex = 0
+
+		var lineServer = map[any]any{}
+		var lineClient = map[any]any{}
+		for i := 0; i < len(slf.Fields); i++ {
+			if slf.excludeFields[i] {
+				continue
+			}
+
+			field := slf.Fields[i]
+			var value any
+			if slf.horizontal {
+				value = getValueWithType(field.SourceType, slf.matrix.Get(x+i, y).String())
+			} else {
+				value = getValueWithType(field.SourceType, slf.matrix.Get(x, y+i).String())
+			}
+			switch field.ExportParam {
+			case "s":
+				lineServer[field.Name] = value
+			case "c":
+				lineClient[field.Name] = value
+			case "sc", "cs":
+				lineServer[field.Name] = value
+				lineClient[field.Name] = value
+			}
+
+			if currentIndex < slf.IndexCount {
+				currentIndex++
+				m, exist := dataServer[value]
+				if !exist {
+					if currentIndex == slf.IndexCount {
+						dataServer[value] = lineServer
+					} else {
+						m = map[any]any{}
+						dataServer[value] = m
+					}
+				}
+				if currentIndex < slf.IndexCount {
+					dataServer = m.(map[any]any)
+				}
+
+				m, exist = dataClient[value]
+				if !exist {
+					if currentIndex == slf.IndexCount {
+						dataClient[value] = lineClient
+					} else {
+						m = map[any]any{}
+						dataClient[value] = m
+					}
+				}
+				if currentIndex < slf.IndexCount {
+					dataClient = m.(map[any]any)
+				}
+			}
+		}
+		if slf.horizontal {
+			y++
+			if y >= slf.matrix.GetHeight() {
+				break
+			}
+		} else {
+			x++
+			if x >= slf.matrix.GetWidth() {
+				slf.dataServer = lineServer
+				slf.dataClient = lineClient
+				break
+			}
+		}
+	}
+	if slf.horizontal {
+		slf.dataServer = dataSourceServer
+		slf.dataClient = dataSourceClient
+	}
+	return nil
+}
+
+func (slf *Config) String() string {
+	tmpl, err := template.New("struct").Parse(generateConfigTemplate)
+	if err != nil {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, slf); err != nil {
+		return ""
+	}
+	var result string
+	_ = str.RangeLine(buf.String(), func(index int, line string) error {
+		if len(strings.TrimSpace(line)) == 0 {
+			return nil
+		}
+		result += fmt.Sprintf("%s\n", strings.ReplaceAll(line, "\t\t", "\t"))
+		if len(strings.TrimSpace(line)) == 1 {
+			result += "\n"
+		}
+		return nil
+	})
+	return result
+}
+
+func (slf *Config) JsonServer() []byte {
+	d, _ := jsonIter.MarshalIndent(slf.dataServer, "", "  ")
+	return d
+}
+
+func (slf *Config) JsonClient() []byte {
+	d, _ := jsonIter.MarshalIndent(slf.dataClient, "", "  ")
+	return d
 }
 
 func (slf *Config) GetVariable() string {
-	var index = slf.GetIndexCount()
-	if index <= 0 {
-		return fmt.Sprintf("*_%s", slf.GetName())
-	}
-	var mapStr = "map[%s]%s"
-	for i := 1; i < len(slf.typeLine.Cells); i++ {
-		if slf.skipField[i] {
-			continue
-		}
-		typ := slf.typeLine.Cells[i].String()
-		if index > 0 {
-			index--
-			if index == 0 {
-				mapStr = fmt.Sprintf(mapStr, typ, "%s")
-			} else {
-				mapStr = fmt.Sprintf(mapStr, typ, "map[%s]%s")
-			}
-		} else {
-			mapStr = fmt.Sprintf(mapStr, "*_"+str.FirstUpper(slf.GetName()))
-			break
-		}
-	}
-	return fmt.Sprintf("%s", mapStr)
-}
-
-func (slf *Config) GetStruct() string {
 	var result string
-	if slf.GetIndexCount() <= 0 {
-		for i := 4; i < len(slf.Rows); i++ {
-			row := slf.Sheet.Rows[i]
-
-			desc := row.Cells[0].String()
-			if strings.HasPrefix(desc, "#") {
+	var count int
+	if slf.IndexCount > 0 {
+		for _, field := range slf.Fields {
+			if field.Ignore {
 				continue
 			}
-			name := row.Cells[1].String()
-			typ := row.Cells[2].String()
-			exportParam := row.Cells[3].String()
-			switch strings.ToLower(exportParam) {
-			case "s", "sc", "cs":
-				result += fmt.Sprintf("%s %s\n", str.FirstUpper(name), slf.GetType(typ))
-			case "c":
-				continue
+			result += fmt.Sprintf("map[%s]", field.Type)
+			count++
+			if count >= slf.IndexCount {
+				break
 			}
 		}
-
-		return fmt.Sprintf("type _%s struct{\n%s}", slf.GetName(), result)
 	}
-	for i := 1; i < len(slf.typeLine.Cells); i++ {
-		if slf.skipField[i] {
-			continue
-		}
-		typ := slf.typeLine.Cells[i].String()
-		name := slf.nameLine.Cells[i].String()
-		exportParam := slf.exportParamLine.Cells[i].String()
-		switch strings.ToLower(exportParam) {
-		case "s", "sc", "cs":
-			name = str.FirstUpper(name)
-			result += fmt.Sprintf("%s %s\n", name, slf.GetType(typ))
-		case "c":
-			continue
-		}
-	}
-	return fmt.Sprintf("type _%s struct{\n%s}", str.FirstUpper(slf.GetName()), result)
-}
-
-func (slf *Config) GetType(fieldType string) string {
-	if name, exist := basicTypeName[fieldType]; exist {
-		return name
-	} else if strings.HasPrefix(fieldType, "[]") {
-		s := strings.TrimPrefix(fieldType, "[]")
-		if name, exist := basicTypeName[s]; exist {
-			return fmt.Sprintf("map[int]%s", name)
-		} else {
-			return slf.GetType(s)
-		}
-	}
-
-	var s = strings.TrimSuffix(strings.TrimPrefix(fieldType, "{"), "}")
-	var fields []string
-	var field string
-	var leftBrackets []int
-	for i, c := range s {
-		switch c {
-		case ',':
-			if len(leftBrackets) == 0 {
-				fields = append(fields, field)
-				field = ""
-			} else {
-				field += string(c)
-			}
-		case '{':
-			leftBrackets = append(leftBrackets, i)
-			field += string(c)
-		case '}':
-			leftBrackets = leftBrackets[:len(leftBrackets)-1]
-			field += string(c)
-			if len(leftBrackets) == 0 {
-				fields = append(fields, field)
-				field = ""
-			}
-		default:
-			field += string(c)
-		}
-	}
-	if len(field) > 0 {
-		fields = append(fields, field)
-	}
-
-	var result = "*struct {\n%s}"
-	var fieldStr string
-	for _, fieldInfo := range fields {
-		fieldName, fieldType := str.KV(strings.TrimSpace(fieldInfo), ":")
-		n, exist := basicTypeName[fieldType]
-		if exist {
-			fieldStr += fmt.Sprintf("%s %s\n", str.FirstUpper(fieldName), n)
-		} else {
-			fieldStr += fmt.Sprintf("%s %s\n", str.FirstUpper(fieldName), slf.GetType(fieldType))
-		}
-	}
-
-	return fmt.Sprintf(result, fieldStr)
+	return fmt.Sprintf("%s*%s", result, slf.Name)
 }
