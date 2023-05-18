@@ -2,15 +2,15 @@
   "Id": 1,
   "Count": "a",
   "Info": {
+    "id": 1,
     "name": "小明",
     "info": {
+      "lv": 1,
       "exp": {
         "mux": 10,
         "count": 100
-      },
-      "lv": 1
-    },
-    "id": 1
+      }
+    }
   },
   "Other": {
     "0": {
