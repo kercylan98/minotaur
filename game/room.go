@@ -4,7 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/hash"
 )
 
-// Room 房间类似于简版的游戏世界，不过没有游戏实体
+// Room 房间类似于简版的游戏世界(World)，不过没有游戏实体
 type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetGuid 获取房间的唯一标识符
 	GetGuid() int64
