@@ -16,6 +16,8 @@ type Command struct {
 	Data string
 }
 
+// 访问：http://www.websocket-test.com/
+//   - 使用多个页面连接到服务器后，任一页面发送start即可开启帧同步
 func main() {
 	players := synchronization.NewMap[string, *Player]()
 
