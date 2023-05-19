@@ -28,6 +28,8 @@ package {{.Package}}
 
 import (
 	jsonIter "github.com/json-iterator/go"
+	"github.com/kercylan98/minotaur/utils/log"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -41,12 +43,17 @@ var (
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
+	var err error
 {{range $index, $config := .Configs}}
 	game{{$config.Name}} = {{$config.GetVariableGen}}
 {{if eq $config.IndexCount 0}}
-	handle("{{$config.Prefix}}{{$config.Name}}.json", game{{$config.Name}})
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", game{{$config.Name}}); err != nil {
+			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
+	}
 {{else}}
-	handle("{{$config.Prefix}}{{$config.Name}}.json", &game{{$config.Name}})
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &game{{$config.Name}}); err != nil {
+			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
+	}
 {{end}}
 {{end}}
 }

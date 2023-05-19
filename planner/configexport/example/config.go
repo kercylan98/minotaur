@@ -2,6 +2,8 @@
 package example
 import (
 	jsonIter "github.com/json-iterator/go"
+	"github.com/kercylan98/minotaur/utils/log"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -14,10 +16,17 @@ var (
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
+	var err error
 	gameIndexConfig = make(map[int]map[string]*IndexConfig)
-	handle("server.IndexConfig.json", &gameIndexConfig)
+	if err = handle("server.IndexConfig.json", &gameIndexConfig); err != nil {
+		log.Error("Config", zap.String("Name", "IndexConfig"), zap.Bool("Invalid", true), zap.Error(err))
+	}
+
 	gameEasyConfig = new(EasyConfig)
-	handle("server.EasyConfig.json", gameEasyConfig)
+	if err = handle("server.EasyConfig.json", gameEasyConfig); err != nil {
+		log.Error("Config", zap.String("Name", "EasyConfig"), zap.Bool("Invalid", true), zap.Error(err))
+	}
+
 }
 
 func Refresh() {
