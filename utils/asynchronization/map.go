@@ -2,6 +2,7 @@ package asynchronization
 
 import (
 	"encoding/json"
+	"github.com/kercylan98/minotaur/utils/hash"
 )
 
 func NewMap[Key comparable, value any]() *Map[Key, value] {
@@ -33,7 +34,7 @@ func (slf *Map[Key, Value]) AtomGetSet(key Key, handle func(value Value, exist b
 }
 
 // Atom 原子操作
-func (slf *Map[Key, Value]) Atom(handle func(m *Map[Key, Value])) {
+func (slf *Map[Key, Value]) Atom(handle func(m hash.Map[Key, Value])) {
 	handle(slf)
 }
 

@@ -2,6 +2,7 @@ package synchronization
 
 import (
 	"encoding/json"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"sync"
 )
 
@@ -47,7 +48,7 @@ func (slf *Map[Key, Value]) AtomGetSet(key Key, handle func(value Value, exist b
 }
 
 // Atom 原子操作
-func (slf *Map[Key, Value]) Atom(handle func(m *Map[Key, Value])) {
+func (slf *Map[Key, Value]) Atom(handle func(m hash.Map[Key, Value])) {
 	slf.lock.Lock()
 	slf.atom = true
 	handle(slf)

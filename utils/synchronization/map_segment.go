@@ -28,6 +28,10 @@ type MapSegment[Key comparable, Value any] struct {
 	lock        sync.RWMutex
 }
 
+func (slf *MapSegment[Key, Value]) Atom(handle func(m hash.Map[Key, Value])) {
+	panic("this function is currently not supported")
+}
+
 func (slf *MapSegment[Key, Value]) Set(key Key, value Value) {
 	slf.lock.RLock()
 	s, exist := slf.cache[key]
