@@ -105,7 +105,9 @@ func (slf *Conn) Close() {
 		_ = slf.kcp.Close()
 	}
 	slf.write = nil
-	slf.packetPool.Close()
+	if slf.packetPool != nil {
+		slf.packetPool.Close()
+	}
 	slf.packetPool = nil
 	slf.packets = nil
 }
@@ -137,6 +139,9 @@ func (slf *Conn) IsWebsocket() bool {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(data []byte, messageType ...int) {
+	if slf.packetPool == nil {
+		return
+	}
 	cp := slf.packetPool.Get()
 	if len(messageType) > 0 {
 		cp.websocketMessageType = messageType[0]
@@ -149,7 +154,7 @@ func (slf *Conn) Write(data []byte, messageType ...int) {
 
 // writeLoop 写循环
 func (slf *Conn) writeLoop() {
-	slf.packetPool = synchronization.NewPool[*connPacket](64,
+	slf.packetPool = synchronization.NewPool[*connPacket](10*1024,
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {
