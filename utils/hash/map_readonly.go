@@ -1,6 +1,6 @@
 package hash
 
-// MapReadonly 并发安全的只读字典接口
+// MapReadonly 只读字典接口
 type MapReadonly[Key comparable, Value any] interface {
 	Get(key Key) Value
 	Exist(key Key) bool
