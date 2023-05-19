@@ -93,42 +93,6 @@ func (slf *Conn) GetIP() string {
 	return slf.ip
 }
 
-// Write 向连接中写入数据
-//   - messageType: websocket模式中指定消息类型
-func (slf *Conn) Write(data []byte, messageType ...int) {
-	cp := slf.packetPool.Get()
-	if len(messageType) > 0 {
-		cp.websocketMessageType = messageType[0]
-	}
-	cp.packet = data
-	slf.mutex.Lock()
-	slf.packets = append(slf.packets, cp)
-	slf.mutex.Unlock()
-}
-
-func (slf *Conn) SyncWrite(data []byte, messageType ...int) error {
-	if slf.server.network == NetworkWebsocket {
-		if len(messageType) > 0 {
-			return slf.ws.WriteMessage(messageType[0], data)
-		} else {
-			return slf.ws.WriteMessage(slf.server.websocketWriteMessageType, data)
-		}
-	} else {
-		if slf.gn != nil {
-			switch slf.server.network {
-			case NetworkUdp, NetworkUdp4, NetworkUdp6:
-				return slf.gn.SendTo(data)
-			default:
-				return slf.gn.AsyncWrite(data)
-			}
-		} else if slf.kcp != nil {
-			_, err := slf.kcp.Write(data)
-			return err
-		}
-	}
-	return nil
-}
-
 // Close 关闭连接
 func (slf *Conn) Close() {
 	slf.mutex.Lock()
@@ -170,6 +134,19 @@ func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
 }
 
+// Write 向连接中写入数据
+//   - messageType: websocket模式中指定消息类型
+func (slf *Conn) Write(data []byte, messageType ...int) {
+	cp := slf.packetPool.Get()
+	if len(messageType) > 0 {
+		cp.websocketMessageType = messageType[0]
+	}
+	cp.packet = data
+	slf.mutex.Lock()
+	slf.packets = append(slf.packets, cp)
+	slf.mutex.Unlock()
+}
+
 // writeLoop 写循环
 func (slf *Conn) writeLoop() {
 	slf.packetPool = synchronization.NewPool[*connPacket](64,
@@ -196,10 +173,10 @@ func (slf *Conn) writeLoop() {
 			continue
 		}
 		packets := slf.packets[0:]
-		slf.packets = slf.packets[:0]
+		slf.packets = slf.packets[0:0]
 		slf.mutex.Unlock()
-		for _, data := range packets {
-			data := data
+		for i := 0; i < len(packets); i++ {
+			data := packets[i]
 			if len(data.packet) == 0 {
 				for _, packet := range packets {
 					slf.packetPool.Release(packet)
