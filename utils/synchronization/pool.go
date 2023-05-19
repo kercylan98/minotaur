@@ -28,6 +28,7 @@ type Pool[T any] struct {
 	bufferSize int
 	generator  func() T
 	releaser   func(data T)
+	warn       int
 }
 
 func (slf *Pool[T]) Get() T {
@@ -39,7 +40,11 @@ func (slf *Pool[T]) Get() T {
 		return data
 	}
 	slf.mutex.Unlock()
-	log.Warn("Pool", zap.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"))
+	slf.warn++
+	if slf.warn >= 100 {
+		log.Warn("Pool", zap.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"))
+		slf.warn = 0
+	}
 	return slf.generator()
 }
 
@@ -54,6 +59,7 @@ func (slf *Pool[T]) Close() {
 	slf.bufferSize = 0
 	slf.generator = nil
 	slf.releaser = nil
+	slf.warn = 0
 	slf.mutex.Unlock()
 }
 
