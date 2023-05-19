@@ -292,7 +292,6 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	if !slf.multiple {
-		time.Sleep(500 * time.Millisecond)
 		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
 		log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
 			zap.Any("network", slf.network),
@@ -383,7 +382,6 @@ func (slf *Server) Shutdown(err error) {
 		log.Error("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 		slf.closeChannel <- struct{}{}
-		panic(err)
 	} else {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "normal"))
