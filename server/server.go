@@ -263,9 +263,9 @@ func (slf *Server) Run(addr string) error {
 					if err := ws.SetReadDeadline(time.Now().Add(time.Second * 30)); err != nil {
 						panic(err)
 					}
-					messageType, packet, err := ws.ReadMessage()
-					if err != nil {
-						panic(err)
+					messageType, packet, readErr := ws.ReadMessage()
+					if readErr != nil {
+						panic(readErr)
 					}
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
@@ -383,6 +383,7 @@ func (slf *Server) Shutdown(err error) {
 		log.Error("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 		slf.closeChannel <- struct{}{}
+		panic(err)
 	} else {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "normal"))

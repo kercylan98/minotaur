@@ -177,7 +177,7 @@ func (slf *Conn) writeLoop() {
 			return &connPacket{}
 		}, func(data *connPacket) {
 			data.packet = nil
-			data.websocketMessageType = -1
+			data.websocketMessageType = 0
 		},
 	)
 	defer func() {
@@ -209,7 +209,7 @@ func (slf *Conn) writeLoop() {
 			}
 			var err error
 			if slf.IsWebsocket() {
-				if data.websocketMessageType == -1 {
+				if data.websocketMessageType <= 0 {
 					data.websocketMessageType = slf.server.websocketWriteMessageType
 				}
 				err = slf.ws.WriteMessage(data.websocketMessageType, data.packet)
