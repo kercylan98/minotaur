@@ -64,6 +64,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn) {
 	for _, handle := range slf.connectionClosedEventHandles {
 		handle(slf.Server, conn)
 	}
+	conn.Close()
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
