@@ -14,7 +14,7 @@ func NewWorld[PlayerID comparable, Player game.Player[PlayerID]](guid int64, opt
 	world := &World[PlayerID, Player]{
 		guid:         guid,
 		players:      synchronization.NewMap[PlayerID, Player](),
-		playerActors: synchronization.NewMap[PlayerID, *synchronization.Map[int64, game.Actor]](),
+		playerActors: synchronization.NewMap[PlayerID, hash.Map[int64, game.Actor]](),
 		owners:       synchronization.NewMap[int64, PlayerID](),
 		actors:       synchronization.NewMap[int64, game.Actor](),
 	}
@@ -29,10 +29,10 @@ type World[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	guid         int64
 	actorGuid    atomic.Int64
 	playerLimit  int
-	players      *synchronization.Map[PlayerID, Player]
-	playerActors *synchronization.Map[PlayerID, *synchronization.Map[int64, game.Actor]]
-	owners       *synchronization.Map[int64, PlayerID]
-	actors       *synchronization.Map[int64, game.Actor]
+	players      hash.Map[PlayerID, Player]
+	playerActors hash.Map[PlayerID, hash.Map[int64, game.Actor]]
+	owners       hash.Map[int64, PlayerID]
+	actors       hash.Map[int64, game.Actor]
 
 	playerJoinWorldEventHandles   []game.PlayerJoinWorldEventHandle[PlayerID, Player]
 	playerLeaveWorldEventHandles  []game.PlayerLeaveWorldEventHandle[PlayerID, Player]
@@ -58,7 +58,7 @@ func (slf *World[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 }
 
 func (slf *World[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
-	return slf.players
+	return slf.players.(hash.MapReadonly[PlayerID, Player])
 }
 
 func (slf *World[PlayerID, Player]) GetActor(guid int64) game.Actor {
@@ -66,7 +66,7 @@ func (slf *World[PlayerID, Player]) GetActor(guid int64) game.Actor {
 }
 
 func (slf *World[PlayerID, Player]) GetActors() hash.MapReadonly[int64, game.Actor] {
-	return slf.actors
+	return slf.actors.(hash.MapReadonly[int64, game.Actor])
 }
 
 func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game.Actor {
@@ -77,7 +77,7 @@ func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game
 }
 
 func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) hash.MapReadonly[int64, game.Actor] {
-	return slf.playerActors.Get(id)
+	return slf.playerActors.Get(id).(hash.MapReadonly[int64, game.Actor])
 }
 
 func (slf *World[PlayerID, Player]) IsExistPlayer(id PlayerID) bool {
@@ -172,7 +172,7 @@ func (slf *World[PlayerID, Player]) RemoveActorOwner(guid int64) {
 func (slf *World[PlayerID, Player]) Reset() {
 	log.Debug("World", zap.Int64("Reset", slf.guid))
 	slf.players.Clear()
-	slf.playerActors.Range(func(id PlayerID, actors *synchronization.Map[int64, game.Actor]) {
+	slf.playerActors.Range(func(id PlayerID, actors hash.Map[int64, game.Actor]) {
 		actors.Clear()
 	})
 	slf.playerActors.Clear()
