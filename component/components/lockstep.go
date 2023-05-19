@@ -23,7 +23,7 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 			data, _ := json.Marshal(frameStruct)
 			return data
 		},
-		clientCurrentFrame: map[ClientID]int{},
+		clientCurrentFrame: synchronization.NewMap[ClientID, int](),
 	}
 	for _, option := range options {
 		option(lockstep)
@@ -37,7 +37,7 @@ type Lockstep[ClientID comparable, Command any] struct {
 	ticker             *timer.Ticker                                                      // 定时器
 	frameMutex         sync.Mutex                                                         // 帧锁
 	currentFrame       int                                                                // 当前帧
-	clientCurrentFrame map[ClientID]int                                                   // 客户端当前帧数
+	clientCurrentFrame *synchronization.Map[ClientID, int]                                // 客户端当前帧数
 
 	frameRate     int                                        // 帧率（每秒N帧）
 	serialization func(frame int, commands []Command) []byte // 序列化函数
@@ -47,9 +47,17 @@ func (slf *Lockstep[ClientID, Command]) JoinClient(client component.LockstepClie
 	slf.clients.Set(client.GetID(), client)
 }
 
+func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client component.LockstepClient[ClientID], frameIndex int) {
+	slf.clients.Set(client.GetID(), client)
+	if frameIndex > slf.currentFrame {
+		frameIndex = slf.currentFrame
+	}
+	slf.clientCurrentFrame.Set(client.GetID(), frameIndex)
+}
+
 func (slf *Lockstep[ClientID, Command]) LeaveClient(clientId ClientID) {
 	slf.clients.Delete(clientId)
-	delete(slf.clientCurrentFrame, clientId)
+	slf.clientCurrentFrame.Delete(clientId)
 }
 
 func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
@@ -62,11 +70,11 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 
 		frames := slf.frames.Map()
 		for clientId, client := range slf.clients.Map() {
-			var i = slf.clientCurrentFrame[clientId]
+			var i = slf.clientCurrentFrame.Get(clientId)
 			for ; i < currentFrame; i++ {
 				client.Send(slf.serialization(i, frames[i]))
 			}
-			slf.clientCurrentFrame[clientId] = i
+			slf.clientCurrentFrame.Set(clientId, i)
 
 		}
 	})
@@ -76,9 +84,7 @@ func (slf *Lockstep[ClientID, Command]) Stop() {
 	slf.ticker.StopTimer("lockstep")
 	slf.frameMutex.Lock()
 	slf.currentFrame = 0
-	for key := range slf.clientCurrentFrame {
-		delete(slf.clientCurrentFrame, key)
-	}
+	slf.clientCurrentFrame.Clear()
 	slf.frames.Clear()
 	slf.frameMutex.Unlock()
 }
