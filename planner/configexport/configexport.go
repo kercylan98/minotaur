@@ -39,7 +39,7 @@ func (slf *ConfigExport) ExportClient(prefix, outputDir string) {
 		if len(prefix) > 0 {
 			config.Prefix = fmt.Sprintf("%s.", prefix)
 		}
-		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.%s.json", prefix, config.Name)), config.JsonClient()); err != nil {
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s%s.json", prefix, config.Name)), config.JsonClient()); err != nil {
 			panic(err)
 		}
 	}
@@ -51,7 +51,7 @@ func (slf *ConfigExport) ExportServer(prefix, outputDir string) {
 		if len(prefix) > 0 {
 			config.Prefix = fmt.Sprintf("%s.", prefix)
 		}
-		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s.%s.json", prefix, config.Name)), config.JsonServer()); err != nil {
+		if err := file.WriterFile(filepath.Join(outputDir, fmt.Sprintf("%s%s.json", prefix, config.Name)), config.JsonServer()); err != nil {
 			panic(err)
 		}
 	}

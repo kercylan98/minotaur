@@ -9,29 +9,29 @@ import (
 
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
 var (
-	 GameIndexConfig map[int]map[string]*IndexConfig
-	 gameIndexConfig map[int]map[string]*IndexConfig
-	 GameEasyConfig *EasyConfig
-	 gameEasyConfig *EasyConfig
+	 IIndexConfig map[int]map[string]*IndexConfig
+	 iIndexConfig map[int]map[string]*IndexConfig
+	 IEasyConfig *EasyConfig
+	 iEasyConfig *EasyConfig
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
 	var err error
-	gameIndexConfig = make(map[int]map[string]*IndexConfig)
-	if err = handle("server.IndexConfig.json", &gameIndexConfig); err != nil {
+	iIndexConfig = make(map[int]map[string]*IndexConfig)
+	if err = handle("server.IndexConfig.json", &iIndexConfig); err != nil {
 		log.Error("Config", zap.String("Name", "IndexConfig"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 
-	gameEasyConfig = new(EasyConfig)
-	if err = handle("server.EasyConfig.json", gameEasyConfig); err != nil {
+	iEasyConfig = new(EasyConfig)
+	if err = handle("server.EasyConfig.json", iEasyConfig); err != nil {
 		log.Error("Config", zap.String("Name", "EasyConfig"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 
 }
 
 func Refresh() {
-	GameIndexConfig = gameIndexConfig
-	GameEasyConfig = gameEasyConfig
+	IIndexConfig = iIndexConfig
+	IEasyConfig = iEasyConfig
 }
 
 func DefaultLoad(filepath string) {

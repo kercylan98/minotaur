@@ -37,21 +37,21 @@ var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 var (
 {{range $index, $config := .Configs}}
-	 Game{{$config.Name}} {{$config.GetVariable}}
-	 game{{$config.Name}} {{$config.GetVariable}}
+	 I{{$config.Name}} {{$config.GetVariable}}
+	 i{{$config.Name}} {{$config.GetVariable}}
 {{end}}
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
 	var err error
 {{range $index, $config := .Configs}}
-	game{{$config.Name}} = {{$config.GetVariableGen}}
+	i{{$config.Name}} = {{$config.GetVariableGen}}
 {{if eq $config.IndexCount 0}}
-	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", game{{$config.Name}}); err != nil {
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", i{{$config.Name}}); err != nil {
 			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 {{else}}
-	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &game{{$config.Name}}); err != nil {
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &i{{$config.Name}}); err != nil {
 			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 {{end}}
@@ -60,7 +60,7 @@ func LoadConfig(handle func(filename string, config any) error) {
 
 func Refresh() {
 {{range $index, $config := .Configs}}
-	Game{{$config.Name}} = game{{$config.Name}}
+	I{{$config.Name}} = i{{$config.Name}}
 {{end}}
 }
 
