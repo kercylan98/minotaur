@@ -2,16 +2,16 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/asynchronization"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 	"go.uber.org/zap"
 )
 
 func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...RoomOption[PlayerID, Player]) *Room[PlayerID, Player] {
 	room := &Room[PlayerID, Player]{
 		guid:    guid,
-		players: synchronization.NewMap[PlayerID, Player](),
+		players: asynchronization.NewMap[PlayerID, Player](),
 	}
 	for _, option := range options {
 		option(room)
@@ -24,7 +24,7 @@ type Room[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	owner           PlayerID
 	noMaster        bool
 	playerLimit     int
-	players         *synchronization.Map[PlayerID, Player]
+	players         hash.Map[PlayerID, Player]
 	kickCheckHandle func(id, target PlayerID) error
 
 	playerJoinRoomEventHandles  []game.PlayerJoinRoomEventHandle[PlayerID, Player]
@@ -45,7 +45,7 @@ func (slf *Room[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 }
 
 func (slf *Room[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
-	return slf.players
+	return slf.players.(hash.MapReadonly[PlayerID, Player])
 }
 
 func (slf *Room[PlayerID, Player]) GetPlayerCount() int {

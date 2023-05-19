@@ -1,9 +1,19 @@
 package builtin
 
-import "github.com/kercylan98/minotaur/game"
+import (
+	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/synchronization"
+)
 
 // RoomOption 房间构建可选项
 type RoomOption[PlayerID comparable, Player game.Player[PlayerID]] func(room *Room[PlayerID, Player])
+
+// WithRoomSync 通过线程安全的方式创建房间
+func WithRoomSync[PlayerID comparable, Player game.Player[PlayerID]]() RoomOption[PlayerID, Player] {
+	return func(room *Room[PlayerID, Player]) {
+		room.players = synchronization.NewMap[PlayerID, Player]()
+	}
+}
 
 // WithRoomPlayerLimit 限制房间的玩家数量上限
 func WithRoomPlayerLimit[PlayerID comparable, Player game.Player[PlayerID]](playerLimit int) RoomOption[PlayerID, Player] {
