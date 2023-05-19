@@ -3,10 +3,8 @@ package components
 import (
 	"encoding/json"
 	"github.com/kercylan98/minotaur/component"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -64,15 +62,25 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 
 		frames := slf.frames.Map()
 		for clientId, client := range slf.clients.Map() {
-			for i := slf.clientCurrentFrame[clientId]; i <= currentFrame; i++ {
-				if err := client.SyncSend(slf.serialization(i, frames[i])); err != nil {
-					log.Error("Lockstep.StartBroadcast", zap.Any("ClientID", client.GetID()), zap.Int("Frame", i), zap.Error(err))
-					break
-				}
-				slf.clientCurrentFrame[clientId] = i
+			var i = slf.clientCurrentFrame[clientId]
+			for ; i < currentFrame; i++ {
+				client.Send(slf.serialization(i, frames[i]))
 			}
+			slf.clientCurrentFrame[clientId] = i
+
 		}
 	})
+}
+
+func (slf *Lockstep[ClientID, Command]) Stop() {
+	slf.ticker.StopTimer("lockstep")
+	slf.frameMutex.Lock()
+	slf.currentFrame = 0
+	for key := range slf.clientCurrentFrame {
+		delete(slf.clientCurrentFrame, key)
+	}
+	slf.frames.Clear()
+	slf.frameMutex.Unlock()
 }
 
 func (slf *Lockstep[ClientID, Command]) AddCommand(command Command) {
