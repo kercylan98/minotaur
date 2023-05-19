@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -75,8 +74,6 @@ type Server struct {
 	multiple                  bool                            // 是否为多服务器模式下运行
 	prod                      bool                            // 是否为生产模式
 	core                      int                             // 消息处理核心数
-	diversionMessageChannels  []chan *message                 // 分流消息管道
-	diversionConsistency      *hash.Consistency               // 哈希一致性分流器
 	websocketWriteMessageType int                             // websocket写入的消息类型
 	ticker                    *timer.Ticker                   // 定时器
 }
@@ -125,15 +122,6 @@ func (slf *Server) Run(addr string) error {
 			go func() {
 				for message := range slf.messageChannel {
 					slf.dispatchMessage(message)
-				}
-			}()
-			go func() {
-				for i := 0; i < len(slf.diversionMessageChannels); i++ {
-					go func(channel chan *message) {
-						for message := range channel {
-							slf.dispatchMessage(message)
-						}
-					}(slf.diversionMessageChannels[i])
 				}
 			}()
 		}
@@ -350,11 +338,6 @@ func (slf *Server) Shutdown(err error) {
 	for _, cross := range slf.cross {
 		cross.Release()
 	}
-	if len(slf.diversionMessageChannels) > 0 {
-		for i := 0; i < len(slf.diversionMessageChannels); i++ {
-			close(slf.diversionMessageChannels[i])
-		}
-	}
 	if slf.initMessageChannel {
 		if slf.gServer != nil {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -408,12 +391,7 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	msg := slf.messagePool.Get()
 	msg.t = messageType
 	msg.attrs = attrs
-	if messageType == MessageTypePacket && len(slf.diversionMessageChannels) > 0 {
-		conn := attrs[0].(*Conn)
-		slf.diversionMessageChannels[slf.diversionConsistency.PickNode(conn.ip)] <- msg
-	} else {
-		slf.messageChannel <- msg
-	}
+	slf.messageChannel <- msg
 }
 
 // PushCrossMessage 推送跨服消息到特定跨服的服务器中
