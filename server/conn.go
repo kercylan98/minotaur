@@ -136,6 +136,12 @@ func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
 }
 
+// WriteString 向连接中写入字符串
+//   - 通过转换为[]byte调用 *Conn.Write
+func (slf *Conn) WriteString(data string, messageType ...int) {
+	slf.Write([]byte(data), messageType...)
+}
+
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(data []byte, messageType ...int) {
