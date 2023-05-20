@@ -103,6 +103,17 @@ func Error(msg string, fields ...zap.Field) {
 	fmt.Println(string(debug.Stack()))
 }
 
+// ErrorWithStack 通过额外的堆栈信息打印错误日志
+func ErrorWithStack(msg, stack string, fields ...zap.Field) {
+	logger.Error(msg, fields...)
+	var stackMerge string
+	if len(stack) > 0 {
+		stackMerge = stack
+	}
+	stackMerge += string(debug.Stack())
+	fmt.Println(stackMerge)
+}
+
 func SetProd() {
 	prod = true
 }

@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -330,7 +331,7 @@ func (slf *Server) Ticker() *timer.Ticker {
 }
 
 // Shutdown 停止运行服务器
-func (slf *Server) Shutdown(err error) {
+func (slf *Server) Shutdown(err error, stack ...string) {
 	slf.isShutdown.Store(true)
 	if slf.ticker != nil {
 		slf.ticker.Release()
@@ -364,7 +365,11 @@ func (slf *Server) Shutdown(err error) {
 	}
 
 	if err != nil {
-		log.Error("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
+		var s string
+		if len(stack) > 0 {
+			s = stack[0]
+		}
+		log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 		slf.closeChannel <- struct{}{}
 	} else {
@@ -393,6 +398,9 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	msg := slf.messagePool.Get()
 	msg.t = messageType
 	msg.attrs = attrs
+	if msg.t == MessageTypeError {
+		msg.attrs = append(msg.attrs, string(debug.Stack()))
+	}
 	for _, channel := range slf.messageChannel {
 		channel <- msg
 		break
@@ -437,12 +445,12 @@ func (slf *Server) dispatchMessage(msg *message) {
 			slf.OnConnectionReceivePacketEvent(conn, packet)
 		}
 	case MessageTypeError:
-		err, action := msg.t.deconstructError(msg.attrs...)
+		err, action, stack := msg.t.deconstructError(msg.attrs...)
 		switch action {
 		case MessageErrorActionNone:
-			log.Error("Server", zap.Error(err))
+			log.ErrorWithStack("Server", stack, zap.Error(err))
 		case MessageErrorActionShutdown:
-			slf.Shutdown(err)
+			slf.Shutdown(err, stack)
 		default:
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}

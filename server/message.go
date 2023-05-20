@@ -90,8 +90,8 @@ func (slf MessageType) deconstructPacket(attrs ...any) (conn *Conn, packet []byt
 	return
 }
 
-func (slf MessageType) deconstructError(attrs ...any) (err error, action MessageErrorAction) {
-	if len(attrs) != 2 {
+func (slf MessageType) deconstructError(attrs ...any) (err error, action MessageErrorAction, stack string) {
+	if len(attrs) != 3 {
 		panic(ErrMessageTypeErrorAttrs)
 	}
 	var ok bool
@@ -101,6 +101,7 @@ func (slf MessageType) deconstructError(attrs ...any) (err error, action Message
 	if action, ok = attrs[1].(MessageErrorAction); !ok {
 		panic(ErrMessageTypeErrorAttrs)
 	}
+	stack = attrs[2].(string)
 	return
 }
 
