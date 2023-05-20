@@ -13,4 +13,20 @@ type Lockstep[ClientID comparable, Command any] interface {
 	Stop()
 	// AddCommand 增加指令
 	AddCommand(command Command)
+	// GetCurrentFrame 获取当前帧
+	GetCurrentFrame() int
+	// GetClientCurrentFrame 获取客户端当前帧
+	GetClientCurrentFrame(clientId ClientID) int
+	// GetFrameLimit 获取帧上限
+	GetFrameLimit() int
+	// GetFrames 获取所有帧数据
+	GetFrames() [][]Command
+
+	// RegLockstepStoppedEvent 当停止广播时将立即执行被注册的事件处理函数
+	RegLockstepStoppedEvent(handle LockstepStoppedEventHandle[ClientID, Command])
+	OnLockstepStoppedEvent()
 }
+
+type (
+	LockstepStoppedEventHandle[ClientID comparable, Command any] func(lockstep Lockstep[ClientID, Command])
+)
