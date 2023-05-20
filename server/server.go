@@ -66,9 +66,9 @@ type Server struct {
 	closeChannel        chan struct{}    // 关闭信号
 
 	gServer                   *gNet                           // TCP或UDP模式下的服务器
-	messagePool               *synchronization.Pool[*message] // 消息池
+	messagePool               *synchronization.Pool[*Message] // 消息池
 	messagePoolSize           int                             // 消息池大小
-	messageChannel            map[int]chan *message           // 消息管道
+	messageChannel            map[int]chan *Message           // 消息管道
 	initMessageChannel        bool                            // 消息管道是否已经初始化
 	multiple                  bool                            // 是否为多服务器模式下运行
 	prod                      bool                            // 是否为生产模式
@@ -101,18 +101,18 @@ func (slf *Server) Run(addr string) error {
 		if slf.messagePoolSize <= 0 {
 			slf.messagePoolSize = 100
 		}
-		slf.messagePool = synchronization.NewPool[*message](slf.messagePoolSize,
-			func() *message {
-				return &message{}
+		slf.messagePool = synchronization.NewPool[*Message](slf.messagePoolSize,
+			func() *Message {
+				return &Message{}
 			},
-			func(data *message) {
+			func(data *Message) {
 				data.t = 0
 				data.attrs = nil
 			},
 		)
-		slf.messageChannel = map[int]chan *message{}
+		slf.messageChannel = map[int]chan *Message{}
 		for i := 0; i < slf.core; i++ {
-			slf.messageChannel[i] = make(chan *message, 4096*1000)
+			slf.messageChannel[i] = make(chan *Message, 4096*1000)
 		}
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket {
 			slf.gServer = &gNet{Server: slf}
@@ -420,15 +420,19 @@ func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []b
 }
 
 // dispatchMessage 消息分发
-func (slf *Server) dispatchMessage(msg *message) {
+func (slf *Server) dispatchMessage(msg *Message) {
 	present := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err))
+			if e, ok := err.(error); ok {
+				slf.OnMessageErrorEvent(msg, e)
+			}
 		}
 
 		if cost := time.Since(present); cost > time.Millisecond*100 {
 			log.Warn("Server", zap.String("MessageType", messageNames[msg.t]), zap.String("LowExecCost", cost.String()), zap.Any("MessageAttrs", msg.attrs))
+			slf.OnMessageLowExecEvent(msg, cost)
 		}
 
 		if !slf.isShutdown.Load() {

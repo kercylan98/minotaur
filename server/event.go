@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"go.uber.org/zap"
 	"reflect"
+	"time"
 )
 
 type StartBeforeEventHandle func(srv *Server)
@@ -14,6 +15,8 @@ type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, p
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
 type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
+type MessageErrorEventHandle func(srv *Server, message *Message, err error)
+type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 
 type event struct {
 	*Server
@@ -24,6 +27,8 @@ type event struct {
 	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
 	connectionClosedEventHandles                 []ConnectionClosedEventHandle
 	receiveCrossPacketEventHandles               []ReceiveCrossPacketEventHandle
+	messageErrorEventHandles                     []MessageErrorEventHandle
+	messageLowExecEventHandles                   []MessageLowExecEventHandle
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -125,6 +130,30 @@ func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandl
 func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
 	for _, handle := range slf.receiveCrossPacketEventHandles {
 		handle(slf.Server, serverId, packet)
+	}
+}
+
+// RegMessageErrorEvent 在处理消息发生错误时将立即执行被注册的事件处理函数
+func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle) {
+	slf.messageErrorEventHandles = append(slf.messageErrorEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnMessageErrorEvent(message *Message, err error) {
+	for _, handle := range slf.messageErrorEventHandles {
+		handle(slf.Server, message, err)
+	}
+}
+
+// RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
+func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle) {
+	slf.messageLowExecEventHandles = append(slf.messageLowExecEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
+	for _, handle := range slf.messageLowExecEventHandles {
+		handle(slf.Server, message, cost)
 	}
 }
 

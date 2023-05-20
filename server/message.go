@@ -50,7 +50,7 @@ func (slf MessageErrorAction) String() string {
 	return messageErrorActionNames[slf]
 }
 
-type message struct {
+type Message struct {
 	t     MessageType
 	attrs []any
 }
