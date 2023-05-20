@@ -56,6 +56,8 @@ func (slf *Lockstep[ClientID, Command]) JoinClient(client component.LockstepClie
 }
 
 // JoinClientWithFrame 加入客户端到广播队列中，并从特定帧开始追帧
+//   - 可用于重连及状态同步、帧同步混用的情况
+//   - 混用：服务端记录指令时同时做一次状态计算，新客户端加入时直接同步当前状态，之后从特定帧开始广播
 func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client component.LockstepClient[ClientID], frameIndex int) {
 	slf.clients.Set(client.GetID(), client)
 	if frameIndex > slf.currentFrame {
