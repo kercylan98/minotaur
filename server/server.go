@@ -9,7 +9,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/gnet"
-	"github.com/pkg/errors"
 	"github.com/xtaci/kcp-go/v5"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -17,7 +16,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -140,14 +138,14 @@ func (slf *Server) Run(addr string) error {
 		go func() {
 			slf.OnStartBeforeEvent()
 			if err := slf.grpcServer.Serve(listener); err != nil {
-				slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		}()
 	case NetworkTCP, NetworkTCP4, NetworkTCP6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
 		go connectionInitHandle(func() {
 			slf.OnStartBeforeEvent()
 			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
-				slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		})
 	case NetworkKcp:
@@ -194,11 +192,11 @@ func (slf *Server) Run(addr string) error {
 			slf.httpServer.Addr = slf.addr
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
-					slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
 			} else {
 				if err := slf.httpServer.ListenAndServe(); err != nil {
-					slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
 			}
 
@@ -267,11 +265,11 @@ func (slf *Server) Run(addr string) error {
 				slf.OnStartBeforeEvent()
 				if len(slf.certFile)+len(slf.keyFile) > 0 {
 					if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
-						slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 					}
 				} else {
 					if err := http.ListenAndServe(slf.addr, nil); err != nil {
-						slf.PushMessage(MessageTypeError, errors.WithMessage(err, string(debug.Stack())), MessageErrorActionShutdown)
+						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 					}
 				}
 
@@ -439,7 +437,6 @@ func (slf *Server) dispatchMessage(msg *message) {
 			log.Error("Server", zap.Error(err))
 		case MessageErrorActionShutdown:
 			slf.Shutdown(err)
-			fmt.Println(err)
 		default:
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}
