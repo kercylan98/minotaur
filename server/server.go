@@ -413,12 +413,18 @@ func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []b
 
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *message) {
+	present := time.Now()
 	defer func() {
-		if !slf.isShutdown.Load() {
-			slf.messagePool.Release(msg)
-		}
 		if err := recover(); err != nil {
 			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err))
+		}
+
+		if cost := time.Since(present); cost > time.Millisecond*100 {
+			log.Warn("Server", zap.String("MessageType", messageNames[msg.t]), zap.String("LowExecCost", cost.String()), zap.Any("MessageAttrs", msg.attrs))
+		}
+
+		if !slf.isShutdown.Load() {
+			slf.messagePool.Release(msg)
 		}
 	}()
 	switch msg.t {

@@ -24,6 +24,8 @@ const (
 var messageNames = map[MessageType]string{
 	MessageTypePacket: "MessageTypePacket",
 	MessageTypeError:  "MessageTypeError",
+	MessageTypeCross:  "MessageTypeCross",
+	MessageTypeTicker: "MessageTypeTicker",
 }
 
 const (
