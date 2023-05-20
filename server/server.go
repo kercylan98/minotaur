@@ -78,12 +78,12 @@ type Server struct {
 
 // Run 使用特定地址运行服务器
 //
-//	server.NetworkTCP (addr:":8888")
-//	server.NetworkTCP4 (addr:":8888")
-//	server.NetworkTCP6 (addr:":8888")
-//	server.NetworkUDP (addr:":8888")
-//	server.NetworkUDP4 (addr:":8888")
-//	server.NetworkUDP6 (addr:":8888")
+//	server.NetworkTcp (addr:":8888")
+//	server.NetworkTcp4 (addr:":8888")
+//	server.NetworkTcp6 (addr:":8888")
+//	server.NetworkUdp (addr:":8888")
+//	server.NetworkUdp4 (addr:":8888")
+//	server.NetworkUdp6 (addr:":8888")
 //	server.NetworkUnix (addr:"socketPath")
 //	server.NetworkHttp (addr:":8888")
 //	server.NetworkWebsocket (addr:":8888/ws")
@@ -131,7 +131,7 @@ func (slf *Server) Run(addr string) error {
 
 	switch slf.network {
 	case NetworkGRPC:
-		listener, err := net.Listen(string(NetworkTCP), slf.addr)
+		listener, err := net.Listen(string(NetworkTcp), slf.addr)
 		if err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ func (slf *Server) Run(addr string) error {
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		}()
-	case NetworkTCP, NetworkTCP4, NetworkTCP6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
+	case NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
 		go connectionInitHandle(func() {
 			slf.OnStartBeforeEvent()
 			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {

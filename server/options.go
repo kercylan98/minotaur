@@ -63,7 +63,7 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 func WithTLS(certFile, keyFile string) Option {
 	return func(srv *Server) {
 		switch srv.network {
-		case NetworkHttp, NetworkWebsocket, NetworkTCP, NetworkTCP4, NetworkTCP6:
+		case NetworkHttp, NetworkWebsocket, NetworkTcp, NetworkTcp4, NetworkTcp6:
 			srv.certFile = certFile
 			srv.keyFile = keyFile
 		}

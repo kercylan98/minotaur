@@ -3,9 +3,9 @@ package server
 type Network string
 
 const (
-	NetworkTCP  Network = "tcp"
-	NetworkTCP4 Network = "tcp4"
-	NetworkTCP6 Network = "tcp6"
+	NetworkTcp  Network = "tcp"
+	NetworkTcp4 Network = "tcp4"
+	NetworkTcp6 Network = "tcp6"
 	NetworkUdp  Network = "udp"
 	NetworkUdp4 Network = "udp4"
 	NetworkUdp6 Network = "udp6"
