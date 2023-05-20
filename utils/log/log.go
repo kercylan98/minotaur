@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"io"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
@@ -99,6 +100,7 @@ func Debug(msg string, fields ...zap.Field) {
 
 func Error(msg string, fields ...zap.Field) {
 	logger.Error(msg, fields...)
+	fmt.Println(string(debug.Stack()))
 }
 
 func SetProd() {
