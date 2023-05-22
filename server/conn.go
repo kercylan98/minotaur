@@ -18,11 +18,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 		remoteAddr: session.RemoteAddr(),
 		ip:         session.RemoteAddr().String(),
 		kcp:        session,
-		write: func(data []byte) error {
-			_, err := session.Write(data)
-			return err
-		},
-		data: map[any]any{},
+		data:       map[any]any{},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
@@ -38,10 +34,7 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 		remoteAddr: conn.RemoteAddr(),
 		ip:         conn.RemoteAddr().String(),
 		gn:         conn,
-		write: func(data []byte) error {
-			return conn.AsyncWrite(data)
-		},
-		data: map[any]any{},
+		data:       map[any]any{},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
@@ -57,10 +50,7 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 		remoteAddr: ws.RemoteAddr(),
 		ip:         ip,
 		ws:         ws,
-		write: func(data []byte) error {
-			return ws.WriteMessage(websocket.BinaryMessage, data)
-		},
-		data: map[any]any{},
+		data:       map[any]any{},
 	}
 	go c.writeLoop()
 	return c
@@ -74,7 +64,6 @@ type Conn struct {
 	ws         *websocket.Conn
 	gn         gnet.Conn
 	kcp        *kcp.UDPSession
-	write      func(data []byte) error
 	data       map[any]any
 	mutex      sync.Mutex
 	packetPool *synchronization.Pool[*connPacket]
@@ -104,7 +93,6 @@ func (slf *Conn) Close() {
 	} else if slf.kcp != nil {
 		_ = slf.kcp.Close()
 	}
-	slf.write = nil
 	if slf.packetPool != nil {
 		slf.packetPool.Close()
 	}
