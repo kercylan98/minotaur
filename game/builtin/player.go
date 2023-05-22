@@ -19,6 +19,16 @@ func (slf *Player[ID]) GetID() ID {
 	return slf.id
 }
 
+func (slf *Player[ID]) UseConn(conn *server.Conn) {
+	if conn == nil {
+		return
+	}
+	if slf.conn != nil {
+		slf.conn.Close()
+	}
+	slf.conn = conn
+}
+
 // Send 向该玩家发送数据
 func (slf *Player[ID]) Send(packet []byte, messageType ...int) {
 	slf.conn.Write(packet, messageType...)
