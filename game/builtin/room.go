@@ -83,15 +83,18 @@ func (slf *Room[PlayerID, Player]) ChangeOwner(id PlayerID) {
 
 // Join 控制玩家加入到该房间
 func (slf *Room[PlayerID, Player]) Join(player Player) error {
-	if slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
+	exist := slf.players.Exist(player.GetID())
+	if !exist && slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrRoomPlayerLimit
 	}
-	log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
 	slf.players.Set(player.GetID(), player)
-	if slf.players.Size() == 1 && !slf.noMaster {
-		slf.owner = player.GetID()
+	if !exist {
+		log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
+		if slf.players.Size() == 1 && !slf.noMaster {
+			slf.owner = player.GetID()
+		}
+		slf.OnPlayerJoinRoomEvent(player)
 	}
-	slf.OnPlayerJoinRoomEvent(player)
 	return nil
 }
 
