@@ -48,21 +48,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 			for {
 				var input string
 				_, _ = fmt.Scanln(&input)
-				handles, exist := slf.consoleCommandEventHandles[input]
-				if !exist {
-					switch input {
-					case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
-						log.Info("Console", zap.String("Receive", input), zap.String("Action", "Shutdown"))
-						slf.Server.Shutdown(nil)
-						return
-					}
-					log.Warn("Server", zap.String("Command", "unregistered"))
-				} else {
-					for _, handle := range handles {
-						handle(slf.Server)
-					}
-				}
-
+				slf.OnConsoleCommandEvent(input)
 			}
 		}()
 	})
@@ -82,9 +68,20 @@ func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
 	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnStartBeforeEvent() {
-	for _, handle := range slf.startBeforeEventHandles {
-		handle(slf.Server)
+func (slf *event) OnStartBeforeEvent(command string) {
+	handles, exist := slf.consoleCommandEventHandles[command]
+	if !exist {
+		switch command {
+		case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
+			log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
+			slf.Server.Shutdown(nil)
+			return
+		}
+		log.Warn("Server", zap.String("Command", "unregistered"))
+	} else {
+		for _, handle := range handles {
+			handle(slf.Server)
+		}
 	}
 }
 
