@@ -3,11 +3,6 @@ package slice
 // Del 删除特定索引的元素
 func Del[V any](slice *[]V, index int) {
 	s := *slice
-	if index < 0 {
-		index = 0
-	} else if index >= len(*slice) {
-		index = len(*slice) - 1
-	}
 	*slice = append(s[:index], s[index+1:]...)
 }
 
