@@ -51,7 +51,7 @@ type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// RegWorldResetEvent 世界被重置后将立即执行被注册的事件处理函数
 	RegWorldResetEvent(handle WorldResetEventHandle[PlayerID, P])
 	OnWorldResetEvent()
-	// RegWorldReleaseEvent 直接被释放前将立即执行被注册的事件处理函数，此刻世界仍然可用
+	// RegWorldReleaseEvent 世界被释放前将立即执行被注册的事件处理函数，此刻世界仍然可用
 	RegWorldReleaseEvent(handle WorldReleaseEventHandle[PlayerID, P])
 	OnWorldReleaseEvent()
 	// RegPlayerJoinWorldEvent 玩家进入世界时将立即执行被注册的事件处理函数
