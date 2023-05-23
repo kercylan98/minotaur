@@ -57,18 +57,6 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 }
 
 func (slf *event) OnConsoleCommandEvent(command string) {
-	for _, handle := range slf.consoleCommandEventHandles[command] {
-		handle(slf.Server)
-	}
-}
-
-// RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
-func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
-	slf.startBeforeEventHandles = append(slf.startBeforeEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
-}
-
-func (slf *event) OnStartBeforeEvent(command string) {
 	handles, exist := slf.consoleCommandEventHandles[command]
 	if !exist {
 		switch command {
@@ -82,6 +70,18 @@ func (slf *event) OnStartBeforeEvent(command string) {
 		for _, handle := range handles {
 			handle(slf.Server)
 		}
+	}
+}
+
+// RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
+func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
+	slf.startBeforeEventHandles = append(slf.startBeforeEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnStartBeforeEvent() {
+	for _, handle := range slf.startBeforeEventHandles {
+		handle(slf.Server)
 	}
 }
 
