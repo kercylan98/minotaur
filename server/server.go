@@ -371,11 +371,11 @@ func (slf *Server) Shutdown(err error, stack ...string) {
 		}
 		log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
-		slf.closeChannel <- struct{}{}
 	} else {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "normal"))
 	}
+	slf.closeChannel <- struct{}{}
 }
 
 func (slf *Server) GRPCServer() *grpc.Server {
