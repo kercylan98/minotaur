@@ -1,10 +1,12 @@
 package server
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"go.uber.org/zap"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -17,6 +19,7 @@ type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
 type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
+type ConsoleCommandEventHandle func(srv *Server)
 
 type event struct {
 	*Server
@@ -29,6 +32,46 @@ type event struct {
 	receiveCrossPacketEventHandles               []ReceiveCrossPacketEventHandle
 	messageErrorEventHandles                     []MessageErrorEventHandle
 	messageLowExecEventHandles                   []MessageLowExecEventHandle
+
+	consoleCommandEventHandles map[string][]ConsoleCommandEventHandle
+
+	consoleCommandEventHandleInitOnce sync.Once
+}
+
+// RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
+func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle) {
+	slf.consoleCommandEventHandleInitOnce.Do(func() {
+		slf.consoleCommandEventHandles = map[string][]ConsoleCommandEventHandle{}
+		go func() {
+			for {
+				var input string
+				_, _ = fmt.Scanln(&input)
+				handles, exist := slf.consoleCommandEventHandles[input]
+				if !exist {
+					switch input {
+					case "exit", "quit", "close", "shutdown":
+						log.Info("Console", zap.String("Receive", input), zap.String("Action", "Shutdown"))
+						slf.Server.Shutdown(nil)
+						return
+					}
+					log.Error("Server", zap.String("Command", "unregistered"))
+				} else {
+					for _, handle := range handles {
+						handle(slf.Server)
+					}
+				}
+
+			}
+		}()
+	})
+	slf.consoleCommandEventHandles[command] = append(slf.consoleCommandEventHandles[command], handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnConsoleCommandEvent(command string) {
+	for _, handle := range slf.consoleCommandEventHandles[command] {
+		handle(slf.Server)
+	}
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
