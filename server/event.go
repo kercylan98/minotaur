@@ -56,7 +56,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 						slf.Server.Shutdown(nil)
 						return
 					}
-					log.Error("Server", zap.String("Command", "unregistered"))
+					log.Warn("Server", zap.String("Command", "unregistered"))
 				} else {
 					for _, handle := range handles {
 						handle(slf.Server)
