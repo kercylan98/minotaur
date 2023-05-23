@@ -39,6 +39,8 @@ type event struct {
 }
 
 // RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
+//   - 默认将注册 "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN" 指令作为关闭服务器的指令
+//   - 可通过注册默认指令进行默认行为的覆盖
 func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle) {
 	slf.consoleCommandEventHandleInitOnce.Do(func() {
 		slf.consoleCommandEventHandles = map[string][]ConsoleCommandEventHandle{}
@@ -49,7 +51,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 				handles, exist := slf.consoleCommandEventHandles[input]
 				if !exist {
 					switch input {
-					case "exit", "quit", "close", "shutdown":
+					case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
 						log.Info("Console", zap.String("Receive", input), zap.String("Action", "Shutdown"))
 						slf.Server.Shutdown(nil)
 						return
