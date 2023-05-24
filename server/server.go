@@ -52,6 +52,7 @@ func New(network Network, options ...Option) *Server {
 // Server 网络服务器
 type Server struct {
 	*event                               // 事件
+	monitor             *monitor         // 监控
 	cross               map[string]Cross // 跨服
 	id                  int64            // 服务器id
 	network             Network          // 网络类型
@@ -330,6 +331,14 @@ func (slf *Server) Ticker() *timer.Ticker {
 	return slf.ticker
 }
 
+// GetMonitor 获取服务器监控信息
+func (slf *Server) GetMonitor() Monitor {
+	if slf.monitor == nil {
+		panic(ErrNoSupportMonitor)
+	}
+	return slf.monitor
+}
+
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error, stack ...string) {
 	slf.isShutdown.Store(true)
@@ -362,6 +371,10 @@ func (slf *Server) Shutdown(err error, stack ...string) {
 		if shutdownErr := slf.httpServer.Shutdown(ctx); shutdownErr != nil {
 			log.Error("Server", zap.Error(shutdownErr))
 		}
+	}
+	if slf.monitor != nil {
+		slf.monitor.close()
+		slf.monitor = nil
 	}
 
 	if err != nil {
@@ -430,15 +443,22 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			}
 		}
 
-		if cost := time.Since(present); cost > time.Millisecond*100 {
+		cost := time.Since(present)
+		if cost > time.Millisecond*100 {
 			log.Warn("Server", zap.String("MessageType", messageNames[msg.t]), zap.String("LowExecCost", cost.String()), zap.Any("MessageAttrs", msg.attrs))
 			slf.OnMessageLowExecEvent(msg, cost)
 		}
 
 		if !slf.isShutdown.Load() {
+			if slf.monitor != nil {
+				slf.monitor.messageDone(msg, cost)
+			}
 			slf.messagePool.Release(msg)
 		}
 	}()
+	if slf.monitor != nil {
+		slf.monitor.messageRun(msg)
+	}
 	switch msg.t {
 	case MessageTypePacket:
 		if slf.network == NetworkWebsocket {
