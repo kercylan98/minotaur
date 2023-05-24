@@ -32,6 +32,11 @@ func WeekDay(t time.Time) int {
 	return week
 }
 
+// GetNextDayInterval 获取一个时间到下一天间隔多少秒
+func GetNextDayInterval(t time.Time) time.Duration {
+	return time.Duration(GetToday(t.AddDate(0, 0, 1)).Unix()-t.Unix()) * time.Second
+}
+
 // GetToday 获取一个时间的今天
 func GetToday(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
