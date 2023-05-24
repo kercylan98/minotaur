@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
 	"time"
@@ -84,102 +83,61 @@ type monitor struct {
 	tickerMessageTopQPS  int64         // 定时器消息最高QPS
 }
 
-func (slf *monitor) String() string {
-	m := slf.Map()
-	bytes, _ := json.Marshal(m)
-	return string(bytes)
-}
-
-func (slf *monitor) Map() map[string]any {
-	var m = make(map[string]any)
-	m["messageTotal"] = slf.messageTotal
-	m["packetMessageTotal"] = slf.packetMessageTotal
-	m["errorMessageTotal"] = slf.errorMessageTotal
-	m["crossMessageTotal"] = slf.crossMessageTotal
-	m["tickerMessageTotal"] = slf.tickerMessageTotal
-	m["messageSecond"] = slf.messageSecond
-	m["packetMessageSecond"] = slf.packetMessageSecond
-	m["errorMessageSecond"] = slf.errorMessageSecond
-	m["crossMessageSecond"] = slf.crossMessageSecond
-	m["tickerMessageSecond"] = slf.tickerMessageSecond
-	m["messageCost"] = slf.messageCost
-	m["packetMessageCost"] = slf.packetMessageCost
-	m["errorMessageCost"] = slf.errorMessageCost
-	m["crossMessageCost"] = slf.crossMessageCost
-	m["tickerMessageCost"] = slf.tickerMessageCost
-	m["messageDoneAvg"] = slf.messageDoneAvg
-	m["packetMessageDoneAvg"] = slf.packetMessageDoneAvg
-	m["errorMessageDoneAvg"] = slf.errorMessageDoneAvg
-	m["crossMessageDoneAvg"] = slf.crossMessageDoneAvg
-	m["tickerMessageDoneAvg"] = slf.tickerMessageDoneAvg
-	m["messageQPS"] = slf.messageQPS
-	m["packetMessageQPS"] = slf.packetMessageQPS
-	m["errorMessageQPS"] = slf.errorMessageQPS
-	m["crossMessageQPS"] = slf.crossMessageQPS
-	m["tickerMessageQPS"] = slf.tickerMessageQPS
-	m["messageTopQPS"] = slf.messageTopQPS
-	m["packetMessageTopQPS"] = slf.packetMessageTopQPS
-	m["errorMessageTopQPS"] = slf.errorMessageTopQPS
-	m["crossMessageTopQPS"] = slf.crossMessageTopQPS
-	m["tickerMessageTopQPS"] = slf.tickerMessageTopQPS
-	return m
-}
-
 func (slf *monitor) tick() {
 	slf.rwMutex.Lock()
 
 	// 秒平均响应时间
-	if nanoseconds := slf.messageCost.Nanoseconds(); nanoseconds == 0 {
+	if slf.messageSecond == 0 {
 		slf.messageDoneAvg = 0
 	} else {
-		slf.messageDoneAvg = time.Duration(nanoseconds / slf.messageSecond)
+		slf.messageDoneAvg = time.Duration(slf.messageCost.Nanoseconds() / slf.messageSecond)
 	}
-	if nanoseconds := slf.packetMessageCost.Nanoseconds(); nanoseconds == 0 {
+	if slf.packetMessageSecond == 0 {
 		slf.packetMessageDoneAvg = 0
 	} else {
-		slf.packetMessageDoneAvg = time.Duration(nanoseconds / slf.packetMessageSecond)
+		slf.packetMessageDoneAvg = time.Duration(slf.packetMessageCost.Nanoseconds() / slf.packetMessageSecond)
 	}
-	if nanoseconds := slf.errorMessageCost.Nanoseconds(); nanoseconds == 0 {
+	if slf.errorMessageSecond == 0 {
 		slf.errorMessageDoneAvg = 0
 	} else {
-		slf.errorMessageDoneAvg = time.Duration(nanoseconds / slf.errorMessageSecond)
+		slf.errorMessageDoneAvg = time.Duration(slf.errorMessageCost.Nanoseconds() / slf.errorMessageSecond)
 	}
-	if nanoseconds := slf.crossMessageCost.Nanoseconds(); nanoseconds == 0 {
+	if slf.crossMessageSecond == 0 {
 		slf.crossMessageDoneAvg = 0
 	} else {
-		slf.crossMessageDoneAvg = time.Duration(nanoseconds / slf.crossMessageSecond)
+		slf.crossMessageDoneAvg = time.Duration(slf.crossMessageCost.Nanoseconds() / slf.crossMessageSecond)
 	}
-	if nanoseconds := slf.tickerMessageCost.Nanoseconds(); nanoseconds == 0 {
+	if slf.tickerMessageSecond == 0 {
 		slf.tickerMessageDoneAvg = 0
 	} else {
-		slf.tickerMessageDoneAvg = time.Duration(nanoseconds / slf.tickerMessageSecond)
+		slf.tickerMessageDoneAvg = time.Duration(slf.tickerMessageCost.Nanoseconds() / slf.tickerMessageSecond)
 	}
 
 	// 秒 QPS
-	if slf.messageSecond == 0 {
+	if nanoseconds := slf.messageDoneAvg.Nanoseconds(); nanoseconds == 0 {
 		slf.messageQPS = 0
 	} else {
-		slf.messageQPS = slf.messageSecond / slf.messageDoneAvg.Nanoseconds()
+		slf.messageQPS = slf.messageSecond / nanoseconds
 	}
-	if slf.packetMessageSecond == 0 {
+	if nanoseconds := slf.packetMessageDoneAvg.Nanoseconds(); nanoseconds == 0 {
 		slf.packetMessageQPS = 0
 	} else {
-		slf.packetMessageQPS = slf.packetMessageSecond / slf.packetMessageDoneAvg.Nanoseconds()
+		slf.packetMessageQPS = slf.packetMessageSecond / nanoseconds
 	}
-	if slf.errorMessageSecond == 0 {
+	if nanoseconds := slf.errorMessageDoneAvg.Nanoseconds(); nanoseconds == 0 {
 		slf.errorMessageQPS = 0
 	} else {
-		slf.errorMessageQPS = slf.errorMessageSecond / slf.errorMessageDoneAvg.Nanoseconds()
+		slf.errorMessageQPS = slf.errorMessageSecond / nanoseconds
 	}
-	if slf.crossMessageSecond == 0 {
+	if nanoseconds := slf.crossMessageDoneAvg.Nanoseconds(); nanoseconds == 0 {
 		slf.crossMessageQPS = 0
 	} else {
-		slf.crossMessageQPS = slf.crossMessageSecond / slf.crossMessageDoneAvg.Nanoseconds()
+		slf.crossMessageQPS = slf.crossMessageSecond / nanoseconds
 	}
-	if slf.tickerMessageSecond == 0 {
+	if nanoseconds := slf.tickerMessageDoneAvg.Nanoseconds(); nanoseconds == 0 {
 		slf.tickerMessageQPS = 0
 	} else {
-		slf.tickerMessageQPS = slf.tickerMessageSecond / slf.tickerMessageDoneAvg.Nanoseconds()
+		slf.tickerMessageQPS = slf.tickerMessageSecond / nanoseconds
 	}
 
 	// Top QPS
