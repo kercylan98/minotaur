@@ -19,7 +19,6 @@ var (
 	ErrPleaseUseWebsocketHandle        = errors.New("in Websocket mode, please use the RegConnectionReceiveWebsocketPacketEvent function to register")
 	ErrPleaseUseOrdinaryPacketHandle   = errors.New("non Websocket mode, please use the RegConnectionReceivePacketEvent function to register")
 	ErrNoSupportCross                  = errors.New("the server does not support GetID or PushCrossMessage, please use the WithCross option to create the server")
-	ErrNoSupportMonitor                = errors.New("the server does not support GetMonitor, please use the WithMonitor option to create the server")
 	ErrNoSupportTicker                 = errors.New("the server does not support Ticker, please use the WithTicker option to create the server")
 	ErrUnregisteredCrossName           = errors.New("unregistered cross name, please use the WithCross option to create the server")
 )

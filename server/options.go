@@ -23,16 +23,6 @@ const (
 
 type Option func(srv *Server)
 
-// WithMonitor 通过监控的方式创建服务器
-//   - 需要注意在消息被转为异步处理时会导致部分指标不可信
-func WithMonitor() Option {
-	return func(srv *Server) {
-		if srv.monitor == nil {
-			srv.monitor = newMonitor()
-		}
-	}
-}
-
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
 //   - 多核与分流情况下需要考虑是否有必要 autonomy
