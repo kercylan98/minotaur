@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/game/builtin"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"go.uber.org/zap"
@@ -32,47 +33,47 @@ func main() {
 	)
 	lockstep := components.NewLockstep[string, *Command]()
 	srv.RegStartFinishEvent(func(srv *server.Server) {
-		srv.Ticker().Loop("monitor", timer.Instantly, time.Second, timer.Forever, func() {
+		srv.Ticker().Loop("monitor", timer.Instantly, time.Second/2, timer.Forever, func() {
 			m := srv.GetMonitor()
 			log.Info("Monitor.Message",
-				zap.Any("MessageTotal", m.MessageTotal()),
-				zap.Any("MessageSecond", m.MessageSecond()),
-				zap.Any("MessageCost", m.MessageCost()),
-				zap.Any("MessageDoneAvg", m.MessageDoneAvg()),
-				zap.Any("MessageQPS", m.MessageQPS()),
-				zap.Any("MessageTopQPS", m.MessageTopQPS()),
+				zap.Any("Total", m.MessageTotal()),
+				zap.Any("Second", m.MessageSecond()),
+				zap.Any("Cost", m.MessageCost()),
+				zap.Any("DoneAvg", m.MessageDoneAvg()),
+				zap.Any("QPS", m.MessageQPS()),
+				zap.Any("TopQPS", m.MessageTopQPS()),
 			)
 			log.Info("Monitor.Cross",
-				zap.Any("CrossMessageTotal", m.CrossMessageTotal()),
-				zap.Any("CrossMessageSecond", m.CrossMessageSecond()),
-				zap.Any("CrossMessageCost", m.CrossMessageCost()),
-				zap.Any("CrossMessageDoneAvg", m.CrossMessageDoneAvg()),
-				zap.Any("CrossMessageQPS", m.MessageQPS()),
-				zap.Any("CrossMessageTopQPS", m.CrossMessageTopQPS()),
+				zap.Any("Total", m.CrossMessageTotal()),
+				zap.Any("Second", m.CrossMessageSecond()),
+				zap.Any("Cost", m.CrossMessageCost()),
+				zap.Any("DoneAvg", m.CrossMessageDoneAvg()),
+				zap.Any("QPS", m.MessageQPS()),
+				zap.Any("TopQPS", m.CrossMessageTopQPS()),
 			)
 			log.Info("Monitor.Packet",
-				zap.Any("PacketMessageTotal", m.PacketMessageTotal()),
-				zap.Any("PacketMessageSecond", m.PacketMessageSecond()),
-				zap.Any("PacketMessageCost", m.PacketMessageCost()),
-				zap.Any("PacketMessageDoneAvg", m.PacketMessageDoneAvg()),
-				zap.Any("PacketMessageQPS", m.PacketMessageQPS()),
-				zap.Any("PacketMessageTopQPS", m.PacketMessageTopQPS()),
+				zap.Any("Total", m.PacketMessageTotal()),
+				zap.Any("Second", m.PacketMessageSecond()),
+				zap.Any("Cost", m.PacketMessageCost()),
+				zap.Any("DoneAvg", m.PacketMessageDoneAvg()),
+				zap.Any("QPS", m.PacketMessageQPS()),
+				zap.Any("TopQPS", m.PacketMessageTopQPS()),
 			)
 			log.Info("Monitor.Ticker",
-				zap.Any("TickerMessageTotal", m.TickerMessageTotal()),
-				zap.Any("TickerMessageSecond", m.TickerMessageSecond()),
-				zap.Any("TickerMessageCost", m.TickerMessageCost()),
-				zap.Any("TickerMessageDoneAvg", m.TickerMessageDoneAvg()),
-				zap.Any("TickerMessageQPS", m.TickerMessageQPS()),
-				zap.Any("TickerMessageTopQPS", m.TickerMessageTopQPS()),
+				zap.Any("Total", m.TickerMessageTotal()),
+				zap.Any("Second", m.TickerMessageSecond()),
+				zap.Any("Cost", m.TickerMessageCost()),
+				zap.Any("DoneAvg", m.TickerMessageDoneAvg()),
+				zap.Any("QPS", m.TickerMessageQPS()),
+				zap.Any("TopQPS", m.TickerMessageTopQPS()),
 			)
 			log.Info("Monitor.Error",
-				zap.Any("ErrorMessageTotal", m.ErrorMessageTotal()),
-				zap.Any("ErrorMessageSecond", m.ErrorMessageSecond()),
-				zap.Any("ErrorMessageCost", m.ErrorMessageCost()),
-				zap.Any("ErrorMessageDoneAvg", m.ErrorMessageDoneAvg()),
-				zap.Any("ErrorMessageQPS", m.ErrorMessageQPS()),
-				zap.Any("ErrorMessageTopQPS", m.ErrorMessageTopQPS()),
+				zap.Any("Total", m.ErrorMessageTotal()),
+				zap.Any("Second", m.ErrorMessageSecond()),
+				zap.Any("Cost", m.ErrorMessageCost()),
+				zap.Any("DoneAvg", m.ErrorMessageDoneAvg()),
+				zap.Any("QPS", m.ErrorMessageQPS()),
+				zap.Any("TopQPS", m.ErrorMessageTopQPS()),
 			)
 		})
 	})
@@ -93,6 +94,7 @@ func main() {
 		case "start":
 			lockstep.StartBroadcast()
 		default:
+			time.Sleep(random.Duration(1, 3) * time.Second)
 			lockstep.AddCommand(&Command{CMD: 1, Data: string(packet)})
 		}
 	})

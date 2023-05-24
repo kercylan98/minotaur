@@ -30,7 +30,7 @@ func New(network Network, options ...Option) *Server {
 		network:                   network,
 		options:                   options,
 		core:                      1,
-		closeChannel:              make(chan struct{}),
+		closeChannel:              make(chan struct{}, 1),
 		websocketWriteMessageType: WebsocketMessageTypeBinary,
 	}
 	server.event.Server = server
@@ -294,9 +294,11 @@ func (slf *Server) Run(addr string) error {
 		select {
 		case <-systemSignal:
 			slf.Shutdown(nil)
+		}
+
+		select {
 		case <-slf.closeChannel:
 			close(slf.closeChannel)
-			break
 		}
 	} else {
 		slf.OnStartFinishEvent()
