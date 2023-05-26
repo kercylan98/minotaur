@@ -45,7 +45,7 @@ func Load() {
 				return err
 			}
 			if err = json.Unmarshal(bytes, &config); err == nil {
-				log.Error("Config", zap.String("Name", filename), zap.Bool("LoadSuccess", true))
+				log.Info("Config", zap.String("Name", filename), zap.Bool("LoadSuccess", true))
 			}
 			return err
 		})
