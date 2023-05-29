@@ -5,6 +5,25 @@
 Minotaur 是一个基于Golang 1.20 编写的服务端开发支持库，其中采用了大量泛型设计，用于游戏服务器开发。
 > 未经严格测试，开发阶段，生产慎用！
 
+## 目录结构概况
+```mermaid
+mindmap
+  root((Minotaur))
+    /component 通用组件接口定义
+      /components 通用组件内置实现
+    /config 针对配置导表的配置加载
+    /game 游戏通用功能接口定义
+      /builtin 游戏通用功能内置实现
+    /notify 通知功能接口定义
+    /planner 策划相关工具目录
+      /configexport 配置导表功能实现
+    /server 网络服务器支持
+      /cross 内置跨服功能实现
+      /router 内置路由器功能实现
+    /tools 第三方工具
+    /utils 常用辅助函数包
+```
+
 ## Server 架构预览
 ![server-gdi.jpg](.github/images/server-gdi.jpg)
 
@@ -108,23 +127,4 @@ func main() {
 	server.New(server.NetworkHttp)
 	server.New(server.NetworkGRPC)
 }
-```
-
-## 目录结构预览
-```mermaid
-mindmap
-  root((Minotaur))
-    /component 通用组件接口定义
-      /components 通用组件内置实现
-    /config 针对配置导表的配置加载
-    /game 游戏通用功能接口定义
-      /builtin 游戏通用功能内置实现
-    /notify 通知功能接口定义
-    /planner 策划相关工具目录
-      /configexport 配置导表功能实现
-    /server 网络服务器支持
-      /cross 内置跨服功能实现
-      /router 内置路由器功能实现
-    /tools 第三方工具
-    /utils 常用辅助函数包
 ```
