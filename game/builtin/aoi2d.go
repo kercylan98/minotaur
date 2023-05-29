@@ -133,9 +133,9 @@ func (slf *AOI2D) setAreaSize(width, height int) {
 	slf.areaHeight = float64(height)
 	slf.areaWidthLimit = int(math.Ceil(slf.width / slf.areaWidth))
 	slf.areaHeightLimit = int(math.Ceil(slf.height / slf.areaHeight))
-	areas := make([][]map[int64]game.AOIEntity2D, slf.areaWidthLimit)
+	areas := make([][]map[int64]game.AOIEntity2D, slf.areaWidthLimit+1)
 	for i := 0; i < len(areas); i++ {
-		entities := make([]map[int64]game.AOIEntity2D, slf.areaHeightLimit)
+		entities := make([]map[int64]game.AOIEntity2D, slf.areaHeightLimit+1)
 		for e := 0; e < len(entities); e++ {
 			entities[e] = map[int64]game.AOIEntity2D{}
 		}
@@ -161,7 +161,6 @@ func (slf *AOI2D) addEntity(entity game.AOIEntity2D) {
 	heightArea := int(y / slf.areaHeight)
 	guid := entity.GetGuid()
 	slf.areas[widthArea][heightArea][guid] = entity
-
 	focus := map[int64]game.AOIEntity2D{}
 	slf.focus[guid] = focus
 	slf.rangeVisionAreaEntities(entity, func(eg int64, e game.AOIEntity2D) {
@@ -207,14 +206,26 @@ func (slf *AOI2D) rangeVisionAreaEntities(entity game.AOIEntity2D, handle func(g
 	} else if sw > slf.areaWidthLimit {
 		sw = slf.areaWidthLimit
 	}
-	for w := sw; w <= widthArea+widthSpan; w++ {
+	ew := widthArea - widthSpan
+	if ew < sw {
+		ew = sw
+	} else if ew > slf.areaWidthLimit {
+		ew = slf.areaWidthLimit
+	}
+	for w := sw; w < ew; w++ {
 		sh := heightArea - heightSpan
 		if sh < 0 {
 			sh = 0
 		} else if sh > slf.areaHeightLimit {
 			sh = slf.areaHeightLimit
 		}
-		for h := sh; h <= heightArea+heightSpan; h++ {
+		eh := widthArea - widthSpan
+		if eh < sh {
+			eh = sh
+		} else if eh > slf.areaHeightLimit {
+			eh = slf.areaHeightLimit
+		}
+		for h := sh; h < eh; h++ {
 			var areaX, areaY float64
 			if w < widthArea {
 				tempW := w + 1
