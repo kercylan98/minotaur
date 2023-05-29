@@ -11,8 +11,6 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/nats-io/nats.go v1.25.0
 	github.com/panjf2000/gnet v1.6.6
-	github.com/pkg/errors v0.9.1
-	github.com/smartystreets/goconvey v1.8.0
 	github.com/sony/sonyflake v1.1.0
 	github.com/tealeg/xlsx v1.0.5
 	github.com/tidwall/gjson v1.14.4
@@ -30,9 +28,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jonboulle/clockwork v0.3.0 // indirect
-	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/klauspost/cpuid/v2 v2.2.2 // indirect
 	github.com/klauspost/reedsolomon v1.11.7 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -45,7 +41,7 @@ require (
 	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
-	github.com/smartystreets/assertions v1.13.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/templexxx/cpu v0.0.9 // indirect
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -58,8 +54,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
