@@ -29,6 +29,9 @@ type AOI2D struct {
 	areas            [][]map[int64]game.AOIEntity2D
 	focus            map[int64]map[int64]game.AOIEntity2D
 	repartitionQueue []func()
+
+	entityJoinVisionEventHandles  []game.EntityJoinVisionEventHandle
+	entityLeaveVisionEventHandles []game.EntityLeaveVisionEventHandle
 }
 
 func (slf *AOI2D) AddEntity(entity game.AOIEntity2D) {
@@ -75,6 +78,26 @@ func (slf *AOI2D) SetAreaSize(width, height int) {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
 	slf.setAreaSize(width, height)
+}
+
+func (slf *AOI2D) RegEntityJoinVisionEvent(handle game.EntityJoinVisionEventHandle) {
+	slf.entityJoinVisionEventHandles = append(slf.entityJoinVisionEventHandles, handle)
+}
+
+func (slf *AOI2D) OnEntityJoinVisionEvent(entity, target game.AOIEntity2D) {
+	for _, handle := range slf.entityJoinVisionEventHandles {
+		handle(entity, target)
+	}
+}
+
+func (slf *AOI2D) RegEntityLeaveVisionEvent(handle game.EntityLeaveVisionEventHandle) {
+	slf.entityLeaveVisionEventHandles = append(slf.entityLeaveVisionEventHandles, handle)
+}
+
+func (slf *AOI2D) OnEntityLeaveVisionEvent(entity, target game.AOIEntity2D) {
+	for _, handle := range slf.entityLeaveVisionEventHandles {
+		handle(entity, target)
+	}
 }
 
 func (slf *AOI2D) setAreaSize(width, height int) {
@@ -143,6 +166,7 @@ func (slf *AOI2D) addEntity(entity game.AOIEntity2D) {
 	slf.focus[guid] = focus
 	slf.rangeVisionAreaEntities(entity, func(eg int64, e game.AOIEntity2D) {
 		focus[eg] = e
+		slf.OnEntityJoinVisionEvent(entity, e)
 		slf.refresh(e)
 	})
 }
@@ -160,9 +184,10 @@ func (slf *AOI2D) refresh(entity game.AOIEntity2D) {
 		}
 	}
 
-	slf.rangeVisionAreaEntities(entity, func(guid int64, entity game.AOIEntity2D) {
+	slf.rangeVisionAreaEntities(entity, func(guid int64, e game.AOIEntity2D) {
 		if _, exist := focus[guid]; !exist {
-			focus[guid] = entity
+			focus[guid] = e
+			slf.OnEntityJoinVisionEvent(entity, e)
 		}
 	})
 }
@@ -192,7 +217,6 @@ func (slf *AOI2D) rangeVisionAreaEntities(entity game.AOIEntity2D, handle func(g
 		for h := sh; h <= heightArea+heightSpan; h++ {
 			var areaX, areaY float64
 			if w < widthArea {
-				// H同理，直接使用 float64((w + 1) * 100) 会导致 h 的值被加1（why？）
 				tempW := w + 1
 				areaX = float64(tempW * int(slf.areaWidth))
 			} else if w > widthArea {
@@ -229,10 +253,12 @@ func (slf *AOI2D) deleteEntity(entity game.AOIEntity2D) {
 	widthArea := int(x / slf.areaWidth)
 	heightArea := int(y / slf.areaHeight)
 	guid := entity.GetGuid()
-	delete(slf.areas[widthArea][heightArea], guid)
 	focus := slf.focus[guid]
-	for g := range focus {
+	for g, e := range focus {
+		slf.OnEntityLeaveVisionEvent(entity, e)
+		slf.OnEntityLeaveVisionEvent(e, entity)
 		delete(slf.focus[g], guid)
 	}
 	delete(slf.focus, guid)
+	delete(slf.areas[widthArea][heightArea], guid)
 }

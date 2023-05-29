@@ -16,4 +16,16 @@ type AOI2D interface {
 	// SetAreaSize 设置区域大小
 	//  - 将会导致区域的重新划分
 	SetAreaSize(width, height int)
+
+	// RegEntityJoinVisionEvent 在新对象进入视野时将会立刻执行被注册的事件处理函数
+	RegEntityJoinVisionEvent(handle EntityJoinVisionEventHandle)
+	OnEntityJoinVisionEvent(entity, target AOIEntity2D)
+	// RegEntityLeaveVisionEvent 在对象离开视野时将会立刻执行被注册的事件处理函数
+	RegEntityLeaveVisionEvent(handle EntityLeaveVisionEventHandle)
+	OnEntityLeaveVisionEvent(entity, target AOIEntity2D)
 }
+
+type (
+	EntityJoinVisionEventHandle  func(entity, target AOIEntity2D)
+	EntityLeaveVisionEventHandle func(entity, target AOIEntity2D)
+)
