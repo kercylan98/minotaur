@@ -86,7 +86,7 @@ func main() {
 ```
 其他的一些支持事件的结构体（非所有）：
  - `game.Room` 游戏房间实现
- - `synchronization` 并发安全的`Map`实现
+ - `synchronization.Map` 并发安全的`Map`实现
  - ...
 ### 可选项
 大部分的 `New` 函数均可使用可选项进行创建，具体函数前缀通常为 `With`。
