@@ -28,7 +28,7 @@ mindmap
 ![server-gdi.jpg](.github/images/server-gdi.jpg)
 
 ## 安装
-注意：依赖于 **[Go](https://go.dev/) 1.18 +**
+注意：依赖于 **[Go](https://go.dev/) 1.20 +**
 
 运行以下 Go 命令来安装软件包：`minotaur`
 ```sh
