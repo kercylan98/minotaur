@@ -1,5 +1,6 @@
 package component
 
+// Lockstep 帧同步组件接口定义
 type Lockstep[ClientID comparable, Command any] interface {
 	// JoinClient 加入客户端
 	JoinClient(client LockstepClient[ClientID])
@@ -28,5 +29,6 @@ type Lockstep[ClientID comparable, Command any] interface {
 }
 
 type (
+	// LockstepStoppedEventHandle 帧同步停止广播事件处理函数
 	LockstepStoppedEventHandle[ClientID comparable, Command any] func(lockstep Lockstep[ClientID, Command])
 )

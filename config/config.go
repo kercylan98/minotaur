@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
+// LoadHandle 配置加载处理函数
 type LoadHandle func(handle func(filename string, config any) error)
+
+// RefreshHandle 配置刷新处理函数
 type RefreshHandle func()
 
 const (
@@ -28,12 +31,14 @@ var (
 	mutex          sync.Mutex
 )
 
+// Init 配置初始化
 func Init(loadDir string, loadHandle LoadHandle, refreshHandle RefreshHandle) {
 	cLoadDir = loadDir
 	cLoadHandle = loadHandle
 	cRefreshHandle = refreshHandle
 }
 
+// Load 加载配置
 func Load() {
 	mutex.Lock()
 	if cTicker != nil {
@@ -53,6 +58,7 @@ func Load() {
 	mutex.Unlock()
 }
 
+// WithTickerLoad 通过定时器加载配置
 func WithTickerLoad(ticker *timer.Ticker, interval time.Duration) {
 	if ticker != cTicker && cTicker != nil {
 		cTicker.StopTimer(tickerLoadRefresh)
@@ -65,12 +71,14 @@ func WithTickerLoad(ticker *timer.Ticker, interval time.Duration) {
 	})
 }
 
+// StopTickerLoad 停止通过定时器加载配置
 func StopTickerLoad() {
 	if cTicker != nil {
 		cTicker.StopTimer(tickerLoadRefresh)
 	}
 }
 
+// Refresh 刷新配置
 func Refresh() {
 	mutex.Lock()
 	cRefreshHandle()
