@@ -50,6 +50,13 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 		} else {
 			slf.competitor(competitorId, score, rank, len(slf.scores)-1)
 		}
+		if len(slf.rankChangeEventHandles) > 0 {
+			newRank, err := slf.GetRank(competitorId)
+			if err != nil {
+				panic(err)
+			}
+			slf.OnRankChangeEvent(competitorId, rank, newRank, v, score)
+		}
 	} else {
 		if slf.rankCount > 0 && len(slf.scores) >= slf.rankCount {
 			last := slf.scores[len(slf.scores)-1]
@@ -58,6 +65,13 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 			}
 		}
 		slf.competitor(competitorId, score, 0, len(slf.scores)-1)
+		if len(slf.rankChangeEventHandles) > 0 {
+			newRank, err := slf.GetRank(competitorId)
+			if err != nil {
+				panic(err)
+			}
+			slf.OnRankChangeEvent(competitorId, newRank, newRank, score, score)
+		}
 	}
 }
 

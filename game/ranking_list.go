@@ -29,6 +29,7 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] interface {
 	Clear()
 
 	// RegRankChangeEvent 排名改变时将立即执行注册的事件处理函数
+	//  - 当竞争者为新加入时，oldRank 和 oldScore 均与 newRank 和 newScore 相同
 	RegRankChangeEvent(handle RankChangeEventHandle[CompetitorID, Score])
 	OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
 }
