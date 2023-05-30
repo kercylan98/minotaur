@@ -34,6 +34,13 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 }
 
 // Lockstep 锁步（帧）同步默认实现
+//   - 支持最大帧上限 WithLockstepFrameLimit
+//   - 自定逻辑帧频率，默认为每秒15帧(帧/66ms) WithLockstepFrameRate
+//   - 自定帧序列化方式 WithLockstepSerialization
+//   - 从特定帧开始追帧
+//   - 兼容各种基于TCP/UDP/Unix的网络类型，可通过客户端实现其他网络类型同步
+//
+// 可在 examples 目录下找到示例，示例项目：simple-server-lockstep
 type Lockstep[ClientID comparable, Command any] struct {
 	clients            *synchronization.Map[ClientID, component.LockstepClient[ClientID]] // 接受广播的客户端
 	frames             *synchronization.Map[int, []Command]                               // 所有帧指令
@@ -73,6 +80,8 @@ func (slf *Lockstep[ClientID, Command]) LeaveClient(clientId ClientID) {
 }
 
 // StartBroadcast 开始广播
+//   - 在开始广播后将持续按照设定的帧率进行帧数推进，并在每一帧推进时向客户端进行同步，需提前将客户端加入广播队列 JoinClient
+//   - 广播过程中使用 AddCommand 将该帧数据追加到当前帧中
 func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 	if slf.running.Swap(true) {
 		return
@@ -82,7 +91,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		slf.frameMutex.Lock()
 		currentFrame := slf.currentFrame
 		if slf.frameLimit > 0 && currentFrame >= slf.frameLimit {
-			slf.Stop()
+			slf.StopBroadcast()
 			return
 		}
 		slf.currentFrame++
@@ -100,8 +109,8 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 	})
 }
 
-// Stop 停止广播
-func (slf *Lockstep[ClientID, Command]) Stop() {
+// StopBroadcast 停止广播
+func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 	if !slf.running.Swap(false) {
 		return
 	}

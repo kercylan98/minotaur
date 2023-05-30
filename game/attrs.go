@@ -2,7 +2,8 @@ package game
 
 import "github.com/kercylan98/minotaur/utils/huge"
 
-// Attrs 属性
+// Attrs 游戏属性接口定义
+//   - 属性通常为直接读取配置，是否合理暂不清晰，目前不推荐使用
 type Attrs interface {
 	SetAttrInt(id int, value int)
 	SetAttrInt8(id int, value int8)

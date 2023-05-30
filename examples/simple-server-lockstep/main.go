@@ -33,7 +33,7 @@ func main() {
 		players.Delete(conn.GetID())
 		lockstep.LeaveClient(conn.GetID())
 		if players.Size() == 0 {
-			lockstep.Stop()
+			lockstep.StopBroadcast()
 		}
 	})
 	srv.RegConnectionReceiveWebsocketPacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte, messageType int) {

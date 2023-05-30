@@ -41,6 +41,32 @@ $ go get -u github.com/kercylan98/minotaur
 - 更多的 **[示例](./examples)** 参考可在 [examples](./examples) 目录查阅；
 - 项目文档可访问 **[pkg.go.dev](https://pkg.go.dev/github.com/kercylan98/minotaur)** 进行查阅；
 
+### 本地文档
+可使用 `godoc` 搭建本地文档服务器
+#### 安装 godoc
+```shell
+git clone golang.org/x/tools
+cd tools/cmd
+go install ...
+```
+#### 使用 `godoc` 启动本地文档服务器
+```shell
+godoc -http=:9998 -play
+```
+#### Windows
+```shell
+.\local-doc.bat
+```
+
+#### Linux or MacOS
+```shell
+chmod 777 ./local-doc.sh
+./local-doc.sh
+```
+
+#### 文档地址
+**[http://localhost:9998/pkg/github.com/kercylan98/minotaur/](http://localhost:9998/pkg/github.com/kercylan98/minotaur/)**
+
 ### 简单示例
 创建一个基于Websocket的回响服务器。
 ```go
