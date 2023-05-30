@@ -55,6 +55,7 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 			log.Error("WithCross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
 			panic(err)
 		}
+		log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
 	}
 }
 
