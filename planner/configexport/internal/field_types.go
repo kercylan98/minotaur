@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/tidwall/gjson"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -147,16 +148,31 @@ func withIntType(fieldValue string) any {
 
 func withInt8Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return int8(0)
+	} else if value > math.MaxInt8 {
+		return int8(math.MaxInt8)
+	}
 	return int8(value)
 }
 
 func withInt16Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return int16(0)
+	} else if value > math.MaxInt16 {
+		return int16(math.MaxInt16)
+	}
 	return int16(value)
 }
 
 func withInt32Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return int32(0)
+	} else if value > math.MaxInt32 {
+		return int32(math.MaxInt32)
+	}
 	return int32(value)
 }
 
@@ -167,21 +183,41 @@ func withInt64Type(fieldValue string) any {
 
 func withUintType(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return uint(0)
+	} else if value > math.MaxUint {
+		return uint(math.MaxUint)
+	}
 	return uint(value)
 }
 
 func withUint8Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return uint8(0)
+	} else if value > math.MaxUint8 {
+		return uint8(math.MaxUint8)
+	}
 	return uint8(value)
 }
 
 func withUint16Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return uint16(0)
+	} else if value > math.MaxUint16 {
+		return uint16(math.MaxUint16)
+	}
 	return uint16(value)
 }
 
 func withUint32Type(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return uint32(0)
+	} else if value > math.MaxUint32 {
+		return uint32(math.MaxUint32)
+	}
 	return uint32(value)
 }
 
@@ -202,11 +238,21 @@ func withFloat64Type(fieldValue string) any {
 
 func withByteType(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < 0 {
+		return byte(0)
+	} else if value > math.MaxUint8 {
+		return byte(math.MaxInt8)
+	}
 	return byte(value)
 }
 
 func withRuneType(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
+	if value < math.MinInt32 {
+		return rune(0)
+	} else if value > math.MaxInt32 {
+		return rune(math.MaxInt32)
+	}
 	return rune(value)
 }
 
