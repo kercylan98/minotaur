@@ -29,11 +29,15 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] interface {
 	Clear()
 
 	// RegRankChangeEvent 排名改变时将立即执行注册的事件处理函数
-	//  - 当竞争者为新加入时，oldRank 和 oldScore 均与 newRank 和 newScore 相同
+	//  - 排名为-1时表示未上榜
 	RegRankChangeEvent(handle RankChangeEventHandle[CompetitorID, Score])
 	OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
+	// RegRankClearBeforeEvent 在排行榜被清空前执行被注册的事件处理函数
+	RegRankClearBeforeEvent(handle RankClearBeforeEventHandle[CompetitorID, Score])
+	OnRankClearBeforeEvent()
 }
 
 type (
-	RankChangeEventHandle[CompetitorID comparable, Score generic.Ordered] func(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
+	RankChangeEventHandle[CompetitorID comparable, Score generic.Ordered]      func(rankingList RankingList[CompetitorID, Score], competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
+	RankClearBeforeEventHandle[CompetitorID comparable, Score generic.Ordered] func(rankingList RankingList[CompetitorID, Score])
 )
