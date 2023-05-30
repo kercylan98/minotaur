@@ -16,13 +16,19 @@ var (
 	prod   bool
 )
 
+var (
+	logPath string
+)
+
 const (
-	logPath = "./logs"
 	logTime = 7
 )
 
 func init() {
 	logger = newLogger()
+	if prod && len(logPath) == 0 {
+		Warn("Logger", zap.String("Tip", "in production mode, if the log file output directory is not set, only the console will be output"))
+	}
 }
 
 func newLogger() *zap.Logger {
@@ -47,7 +53,7 @@ func newLogger() *zap.Logger {
 	debugLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl <= zapcore.FatalLevel
 	})
-	warnLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+	errorLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.ErrorLevel
 	})
 
@@ -58,23 +64,27 @@ func newLogger() *zap.Logger {
 			zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
 		)
 	} else {
-		infoWriter := getWriter(fmt.Sprintf("%s/info.log", logPath), logTime)
-		warnWriter := getWriter(fmt.Sprintf("%s/error.log", logPath), logTime)
-		cores = zapcore.NewTee(
-			zapcore.NewCore(encoder, zapcore.AddSync(infoWriter), infoLevel),
-			zapcore.NewCore(encoder, zapcore.AddSync(warnWriter), warnLevel),
-		)
+		if len(logPath) == 0 {
+			cores = zapcore.NewTee(
+				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
+			)
+		} else {
+			infoWriter := getWriter(fmt.Sprintf("%s/info.log", logPath), logTime)
+			errorWriter := getWriter(fmt.Sprintf("%s/error.log", logPath), logTime)
+			cores = zapcore.NewTee(
+				zapcore.NewCore(encoder, zapcore.AddSync(infoWriter), infoLevel),
+				zapcore.NewCore(encoder, zapcore.AddSync(errorWriter), errorLevel),
+				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), errorLevel),
+			)
+		}
 	}
 
 	return zap.New(cores, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
 func getWriter(filename string, times int32) io.Writer {
-	// 生成rotatelogs的Logger 实际生成的文件名 demo.log.YYmmddHH
-	// demo.log是指向最新日志的链接
-	// //保存7天内的日志，每天分割一次日志
 	hook, err := rotatelogs.New(
-		filename+".%Y%m%d", // 没有使用go风格反人类的format格式
+		filename+".%Y%m%d",
 		rotatelogs.WithLinkName(filename),
 		rotatelogs.WithMaxAge(time.Hour*24*7),
 		rotatelogs.WithRotationTime(time.Hour*time.Duration(times)),
@@ -116,4 +126,16 @@ func ErrorWithStack(msg, stack string, fields ...zap.Field) {
 
 func SetProd() {
 	prod = true
+	if logger != nil {
+		_ = logger.Sync()
+		logger = newLogger()
+	}
+}
+
+func SetLogDir(dir string) {
+	logPath = dir
+	if logger != nil {
+		_ = logger.Sync()
+		logger = newLogger()
+	}
 }
