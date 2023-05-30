@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"reflect"
+	"time"
 )
 
 const (
@@ -43,19 +44,23 @@ func WithTicker(size int, autonomy bool) Option {
 //   - 通常情况下crossName仅需一个即可
 func WithCross(crossName string, serverId int64, cross Cross) Option {
 	return func(srv *Server) {
-		srv.id = serverId
-		if srv.cross == nil {
-			srv.cross = map[string]Cross{}
+	start:
+		{
+			srv.id = serverId
+			if srv.cross == nil {
+				srv.cross = map[string]Cross{}
+			}
+			srv.cross[crossName] = cross
+			err := cross.Init(srv, func(serverId int64, packet []byte) {
+				srv.PushMessage(MessageTypeCross, serverId, packet)
+			})
+			if err != nil {
+				log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()), zap.String("State", "WaitNatsRun"))
+				time.Sleep(1 * time.Second)
+				goto start
+			}
+			log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
 		}
-		srv.cross[crossName] = cross
-		err := cross.Init(srv, func(serverId int64, packet []byte) {
-			srv.PushMessage(MessageTypeCross, serverId, packet)
-		})
-		if err != nil {
-			log.Error("WithCross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
-			panic(err)
-		}
-		log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
 	}
 }
 

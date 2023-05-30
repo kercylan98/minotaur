@@ -113,6 +113,10 @@ func Error(msg string, fields ...zap.Field) {
 	fmt.Println(string(debug.Stack()))
 }
 
+func ErrorHideStack(msg string, fields ...zap.Field) {
+	logger.Error(msg, fields...)
+}
+
 // ErrorWithStack 通过额外的堆栈信息打印错误日志
 func ErrorWithStack(msg, stack string, fields ...zap.Field) {
 	logger.Error(msg, fields...)
