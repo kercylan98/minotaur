@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"github.com/panjf2000/gnet"
 	"time"
 )
@@ -38,7 +39,7 @@ func (slf *gNet) AfterWrite(c gnet.Conn, b []byte) {
 }
 
 func (slf *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	slf.Server.PushMessage(MessageTypePacket, c.Context().(*Conn), packet)
+	slf.Server.PushMessage(MessageTypePacket, c.Context().(*Conn), bytes.Clone(packet))
 	return nil, gnet.None
 }
 
