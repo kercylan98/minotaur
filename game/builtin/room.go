@@ -83,15 +83,16 @@ func (slf *Room[PlayerID, Player]) ChangeOwner(id PlayerID) {
 
 // Join 控制玩家加入到该房间
 func (slf *Room[PlayerID, Player]) Join(player Player) error {
-	exist := slf.players.Exist(player.GetID())
+	playerId := player.GetID()
+	exist := slf.players.Exist(playerId)
 	if !exist && slf.players.Size() >= slf.playerLimit && slf.playerLimit > 0 {
 		return ErrRoomPlayerLimit
 	}
-	slf.players.Set(player.GetID(), player)
+	slf.players.Set(playerId, player)
 	if !exist {
-		log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
+		log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", playerId))
 		if slf.players.Size() == 1 && !slf.noMaster {
-			slf.owner = player.GetID()
+			slf.owner = playerId
 		}
 		slf.OnPlayerJoinRoomEvent(player)
 	}
@@ -104,9 +105,9 @@ func (slf *Room[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
-	log.Debug("Room.Leave", zap.Any("guid", slf.GetGuid()), zap.Any("player", player.GetID()))
+	log.Debug("Room.Leave", zap.Any("guid", slf.GetGuid()), zap.Any("player", id))
 	slf.OnPlayerLeaveRoomEvent(player)
-	slf.players.Delete(player.GetID())
+	slf.players.Delete(id)
 }
 
 // KickOut 以某种原因踢出特定玩家
