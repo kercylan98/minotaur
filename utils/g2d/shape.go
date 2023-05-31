@@ -4,13 +4,13 @@ import (
 	"github.com/kercylan98/minotaur/utils/g2d/shape"
 )
 
-type MatrixShapeSearchResult struct {
-	Shape  *shape.Shape
+type MatrixShapeSearchResult[Mark any] struct {
+	Shape  *shape.Shape[Mark]
 	Points []shape.Point
 }
 
 // MatrixShapeSearchWithYX 二维矩阵形状搜索
-func MatrixShapeSearchWithYX[T any](matrix [][]T, shapes []*shape.Shape, checkMatchHandle func(val T) bool) []MatrixShapeSearchResult {
+func MatrixShapeSearchWithYX[T any, Mark any](matrix [][]T, shapes []*shape.Shape[Mark], checkMatchHandle func(val T) bool) []MatrixShapeSearchResult[Mark] {
 	record := map[int]map[int]bool{}
 	width := len(matrix[0])
 	height := len(matrix)
@@ -20,7 +20,7 @@ func MatrixShapeSearchWithYX[T any](matrix [][]T, shapes []*shape.Shape, checkMa
 		}
 	}
 
-	var result []MatrixShapeSearchResult
+	var result []MatrixShapeSearchResult[Mark]
 
 	for _, s := range shapes {
 		points := s.GetPoints()
@@ -48,7 +48,7 @@ func MatrixShapeSearchWithYX[T any](matrix [][]T, shapes []*shape.Shape, checkMa
 				}
 			}
 			if count == len(points) {
-				target := MatrixShapeSearchResult{
+				target := MatrixShapeSearchResult[Mark]{
 					Shape: s,
 				}
 				for _, point := range points {
@@ -72,7 +72,7 @@ func MatrixShapeSearchWithYX[T any](matrix [][]T, shapes []*shape.Shape, checkMa
 }
 
 // MatrixShapeSearchWithXY 二维矩阵形状搜索
-func MatrixShapeSearchWithXY[T any](matrix [][]T, shapes []*shape.Shape, checkMatchHandle func(val T) bool) []MatrixShapeSearchResult {
+func MatrixShapeSearchWithXY[T any, Mark any](matrix [][]T, shapes []*shape.Shape[Mark], checkMatchHandle func(val T) bool) []MatrixShapeSearchResult[Mark] {
 	record := map[int]map[int]bool{}
 	width := len(matrix)
 	height := len(matrix[0])
@@ -82,7 +82,7 @@ func MatrixShapeSearchWithXY[T any](matrix [][]T, shapes []*shape.Shape, checkMa
 		}
 	}
 
-	var result []MatrixShapeSearchResult
+	var result []MatrixShapeSearchResult[Mark]
 
 	for _, s := range shapes {
 		points := s.GetPoints()
@@ -110,7 +110,7 @@ func MatrixShapeSearchWithXY[T any](matrix [][]T, shapes []*shape.Shape, checkMa
 				}
 			}
 			if count == len(points) {
-				target := MatrixShapeSearchResult{
+				target := MatrixShapeSearchResult[Mark]{
 					Shape: s,
 				}
 				for _, point := range points {

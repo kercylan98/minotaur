@@ -1,28 +1,31 @@
 package shape
 
-func NewShape() *Shape {
-	shape := &Shape{
+func NewShape[Mark any](mark Mark, points ...Point) *Shape[Mark] {
+	shape := &Shape[Mark]{
 		maxX:   -1,
 		maxY:   -1,
 		points: map[int]map[int]Point{},
+		mark:   mark,
 	}
+	shape.AddPoints(points...)
 	return shape
 }
 
 // Shape 2D形状定义
-type Shape struct {
+type Shape[Mark any] struct {
 	maxX   int
 	maxY   int
 	points map[int]map[int]Point
+	mark   Mark
 }
 
-func (slf *Shape) AddPoints(points ...Point) {
+func (slf *Shape[Mark]) AddPoints(points ...Point) {
 	for _, point := range points {
 		slf.AddPoint(point)
 	}
 }
 
-func (slf *Shape) AddPoint(point Point) {
+func (slf *Shape[Mark]) AddPoint(point Point) {
 	x, y := point.GetXY()
 	if x < 0 || y < 0 {
 		panic("only positive integers are allowed for shape point positions")
@@ -41,7 +44,7 @@ func (slf *Shape) AddPoint(point Point) {
 	ys[y] = point
 }
 
-func (slf *Shape) GetPoints() []Point {
+func (slf *Shape[Mark]) GetPoints() []Point {
 	var points []Point
 	for _, m := range slf.points {
 		for _, point := range m {
@@ -51,19 +54,23 @@ func (slf *Shape) GetPoints() []Point {
 	return points
 }
 
-func (slf *Shape) GetMaxX() int {
+func (slf *Shape[Mark]) GetMaxX() int {
 	return slf.maxX
 }
 
-func (slf *Shape) GetMaxY() int {
+func (slf *Shape[Mark]) GetMaxY() int {
 	return slf.maxY
 }
 
-func (slf *Shape) GetMaxXY() (int, int) {
+func (slf *Shape[Mark]) GetMaxXY() (int, int) {
 	return slf.maxX, slf.maxY
 }
 
-func (slf *Shape) String() string {
+func (slf *Shape[Mark]) GetMark() Mark {
+	return slf.mark
+}
+
+func (slf *Shape[Mark]) String() string {
 	var str string
 	for y := 0; y <= slf.maxY; y++ {
 		for x := 0; x <= slf.maxX; x++ {
