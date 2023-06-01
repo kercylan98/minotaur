@@ -19,6 +19,7 @@ mindmap
     /notify 通知功能接口定义
     /planner 策划相关工具目录
       /configexport 配置导表功能实现
+    /report 数据埋点及上报功能
     /server 网络服务器支持
       /cross 内置跨服功能实现
       /router 内置路由器功能实现
