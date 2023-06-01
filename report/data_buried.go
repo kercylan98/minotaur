@@ -6,8 +6,9 @@ import (
 )
 
 // NewDataBuried 创建一个数据埋点
-func NewDataBuried[DataID comparable, Data any](hitLogic HitLogic[Data], options ...DataBuriedOption[DataID, Data]) *DataBuried[DataID, Data] {
+func NewDataBuried[DataID comparable, Data any](name string, hitLogic HitLogic[Data], options ...DataBuriedOption[DataID, Data]) *DataBuried[DataID, Data] {
 	buried := &DataBuried[DataID, Data]{
+		name:     name,
 		data:     asynchronization.NewMap[DataID, Data](),
 		hitLogic: hitLogic,
 	}
@@ -26,10 +27,16 @@ func NewDataBuried[DataID comparable, Data any](hitLogic HitLogic[Data], options
 // DataBuried 数据埋点
 //   - 数据埋点通常用于统计不同类型的数据，例如用户数据、商城数据等
 type DataBuried[DataID comparable, Data any] struct {
+	name     string
 	data     hash.Map[DataID, Data]
 	hitLogic HitLogic[Data]
 	getData  func(DataID) Data
 	setData  func(id DataID, data Data)
+}
+
+// GetName 获取名称
+func (slf *DataBuried[DataID, Data]) GetName() string {
+	return slf.name
 }
 
 // Hit 命中数据埋点
