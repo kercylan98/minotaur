@@ -3,6 +3,7 @@ package report
 import (
 	"github.com/kercylan98/minotaur/utils/asynchronization"
 	"github.com/kercylan98/minotaur/utils/hash"
+	"sync"
 )
 
 // NewDataBuried 创建一个数据埋点
@@ -32,6 +33,7 @@ type DataBuried[DataID comparable, Data any] struct {
 	hitLogic HitLogic[Data]
 	getData  func(DataID) Data
 	setData  func(id DataID, data Data)
+	rw       sync.RWMutex
 }
 
 // GetName 获取名称
@@ -41,11 +43,15 @@ func (slf *DataBuried[DataID, Data]) GetName() string {
 
 // Hit 命中数据埋点
 func (slf *DataBuried[DataID, Data]) Hit(id DataID, data Data) {
+	slf.rw.Lock()
+	defer slf.rw.Unlock()
 	slf.setData(id, slf.hitLogic(slf.getData(id), data))
 }
 
 // GetData 获取数据
 func (slf *DataBuried[DataID, Data]) GetData(id DataID) Data {
+	slf.rw.RLock()
+	defer slf.rw.RUnlock()
 	return slf.getData(id)
 }
 

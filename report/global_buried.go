@@ -1,5 +1,7 @@
 package report
 
+import "sync"
+
 // NewGlobalBuried 创建一个全局埋点
 func NewGlobalBuried[Data any](name string, hitLogic HitLogic[Data], options ...GlobalBuriedOption[Data]) *GlobalBuried[Data] {
 	buried := &GlobalBuried[Data]{
@@ -26,6 +28,7 @@ type GlobalBuried[Data any] struct {
 	hitLogic HitLogic[Data]
 	getData  func() Data
 	setData  func(data Data)
+	rw       sync.RWMutex
 }
 
 // GetName 获取名称
@@ -35,10 +38,14 @@ func (slf *GlobalBuried[Data]) GetName() string {
 
 // Hit 命中数据埋点
 func (slf *GlobalBuried[Data]) Hit(data Data) {
+	slf.rw.Lock()
+	defer slf.rw.Unlock()
 	slf.setData(slf.hitLogic(slf.getData(), data))
 }
 
 // GetData 获取数据
 func (slf *GlobalBuried[Data]) GetData() Data {
+	slf.rw.RLock()
+	defer slf.rw.RUnlock()
 	return slf.getData()
 }
