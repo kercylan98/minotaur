@@ -11,6 +11,12 @@ func NewDataBuried[DataID comparable, Data any](hitLogic HitLogic[Data], options
 		data:     asynchronization.NewMap[DataID, Data](),
 		hitLogic: hitLogic,
 	}
+	buried.setData = func(id DataID, data Data) {
+		buried.data.Set(id, data)
+	}
+	buried.getData = func(id DataID) Data {
+		return buried.data.Get(id)
+	}
 	for _, option := range options {
 		option(buried)
 	}
@@ -22,18 +28,18 @@ func NewDataBuried[DataID comparable, Data any](hitLogic HitLogic[Data], options
 type DataBuried[DataID comparable, Data any] struct {
 	data     hash.Map[DataID, Data]
 	hitLogic HitLogic[Data]
+	getData  func(DataID) Data
+	setData  func(id DataID, data Data)
 }
 
 // Hit 命中数据埋点
 func (slf *DataBuried[DataID, Data]) Hit(id DataID, data Data) {
-	slf.data.Atom(func(m hash.Map[DataID, Data]) {
-		m.Set(id, slf.hitLogic(m.Get(id), data))
-	})
+	slf.setData(id, slf.hitLogic(slf.getData(id), data))
 }
 
 // GetData 获取数据
 func (slf *DataBuried[DataID, Data]) GetData(id DataID) Data {
-	return slf.data.Get(id)
+	return slf.getData(id)
 }
 
 // GetSize 获取已触发该埋点的id数量
