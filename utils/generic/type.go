@@ -4,6 +4,10 @@ type Ordered interface {
 	Integer | Float | ~string
 }
 
+type Number interface {
+	Integer | Float
+}
+
 type Integer interface {
 	Signed | Unsigned
 }
