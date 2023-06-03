@@ -12,17 +12,12 @@ func NewMoving2D(options ...Moving2DOption) *Moving2D {
 		entities: map[int64]*moving2DTarget{},
 		timeUnit: float64(time.Millisecond),
 		idle:     time.Millisecond * 100,
-		event:    make(chan func(), 1000),
+		interval: time.Millisecond * 100,
 	}
 	for _, option := range options {
 		option(moving2D)
 	}
 	go moving2D.handle()
-	go func() {
-		for event := range moving2D.event {
-			event()
-		}
-	}()
 	return moving2D
 }
 
@@ -31,6 +26,7 @@ type Moving2D struct {
 	entities map[int64]*moving2DTarget
 	timeUnit float64
 	idle     time.Duration
+	interval time.Duration
 	event    chan func()
 	close    bool
 
@@ -114,25 +110,25 @@ func (slf *Moving2D) handle() {
 			angle := g2d.CalcAngle(x, y, entity.x, entity.y)
 			moveTime := time.Now().UnixMilli()
 			interval := float64(moveTime - entity.lastMoveTime)
+			if interval == 0 {
+				continue
+			}
 			distance := g2d.CalcDistance(x, y, entity.x, entity.y)
-			moveDistance := interval * entity.GetSpeed() / slf.timeUnit
-			if moveDistance > distance || (x == entity.x && y == entity.y) {
+			moveDistance := interval * (entity.GetSpeed() / (slf.timeUnit / 1000 / 1000))
+			if moveDistance >= distance || (x == entity.x && y == entity.y) {
 				entity.SetPosition(entity.x, entity.y)
 				delete(slf.entities, guid)
-				slf.event <- func() {
-					slf.OnPosition2DDestinationEvent(entity)
-				}
-				return
+				slf.OnPosition2DDestinationEvent(entity)
+				continue
 			} else {
-				nx, ny := g2d.CalculateNewCoordinate(x, y, angle, distance)
+				nx, ny := g2d.CalculateNewCoordinate(x, y, angle, moveDistance)
 				entity.SetPosition(nx, ny)
 				entity.lastMoveTime = moveTime
-				slf.event <- func() {
-					slf.OnPosition2DChangeEvent(entity, x, y)
-				}
+				slf.OnPosition2DChangeEvent(entity, x, y)
 			}
 		}
 
+		time.Sleep(slf.interval)
 		if len(slf.entities) == 0 {
 			slf.rw.Unlock()
 			time.Sleep(slf.idle)
