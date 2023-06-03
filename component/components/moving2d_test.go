@@ -1,8 +1,8 @@
-package builtin
+package components
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/component"
 	"sync"
 	"testing"
 	"time"
@@ -43,11 +43,11 @@ func NewEntity(guid int64, speed float64) *MoveEntity {
 func TestMoving2D_MoveTo(t *testing.T) {
 	moving := NewMoving2D(WithMoving2DTimeUnit(time.Second))
 	var wait sync.WaitGroup
-	moving.RegPosition2DDestinationEvent(func(moving game.Moving2D, entity game.Moving2DEntity) {
+	moving.RegPosition2DDestinationEvent(func(moving component.Moving2D, entity component.Moving2DEntity) {
 		wait.Done()
 	})
 	var res []string
-	moving.RegPosition2DChangeEvent(func(moving game.Moving2D, entity game.Moving2DEntity, oldX, oldY float64) {
+	moving.RegPosition2DChangeEvent(func(moving component.Moving2D, entity component.Moving2DEntity, oldX, oldY float64) {
 		x, y := entity.GetPosition()
 		res = append(res, fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetGuid(), time.Now().UnixMilli(), oldX, oldY, x, y))
 	})

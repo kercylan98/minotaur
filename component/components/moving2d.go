@@ -1,7 +1,7 @@
-package builtin
+package components
 
 import (
-	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/component"
 	"github.com/kercylan98/minotaur/utils/g2d"
 	"sync"
 	"time"
@@ -35,12 +35,12 @@ type Moving2D struct {
 	event    chan func()
 	close    bool
 
-	position2DChangeEventHandles      []game.Position2DChangeEventHandle
-	position2DDestinationEventHandles []game.Position2DDestinationEventHandle
+	position2DChangeEventHandles      []component.Position2DChangeEventHandle
+	position2DDestinationEventHandles []component.Position2DDestinationEventHandle
 }
 
 // MoveTo 设置对象移动到特定位置
-func (slf *Moving2D) MoveTo(entity game.Moving2DEntity, x float64, y float64) {
+func (slf *Moving2D) MoveTo(entity component.Moving2DEntity, x float64, y float64) {
 	guid := entity.GetGuid()
 	current := time.Now().UnixMilli()
 	slf.rw.Lock()
@@ -72,29 +72,29 @@ func (slf *Moving2D) StopMove(guid int64) {
 }
 
 // RegPosition2DChangeEvent 在对象位置改变时将执行注册的事件处理函数
-func (slf *Moving2D) RegPosition2DChangeEvent(handle game.Position2DChangeEventHandle) {
+func (slf *Moving2D) RegPosition2DChangeEvent(handle component.Position2DChangeEventHandle) {
 	slf.position2DChangeEventHandles = append(slf.position2DChangeEventHandles, handle)
 }
 
-func (slf *Moving2D) OnPosition2DChangeEvent(entity game.Moving2DEntity, oldX, oldY float64) {
+func (slf *Moving2D) OnPosition2DChangeEvent(entity component.Moving2DEntity, oldX, oldY float64) {
 	for _, handle := range slf.position2DChangeEventHandles {
 		handle(slf, entity, oldX, oldY)
 	}
 }
 
 // RegPosition2DDestinationEvent 在对象到达终点时将执行被注册的事件处理函数
-func (slf *Moving2D) RegPosition2DDestinationEvent(handle game.Position2DDestinationEventHandle) {
+func (slf *Moving2D) RegPosition2DDestinationEvent(handle component.Position2DDestinationEventHandle) {
 	slf.position2DDestinationEventHandles = append(slf.position2DDestinationEventHandles, handle)
 }
 
-func (slf *Moving2D) OnPosition2DDestinationEvent(entity game.Moving2DEntity) {
+func (slf *Moving2D) OnPosition2DDestinationEvent(entity component.Moving2DEntity) {
 	for _, handle := range slf.position2DDestinationEventHandles {
 		handle(slf, entity)
 	}
 }
 
 type moving2DTarget struct {
-	game.Moving2DEntity
+	component.Moving2DEntity
 	x, y         float64
 	lastMoveTime int64
 }

@@ -1,4 +1,4 @@
-package game
+package component
 
 // Moving2D 2D移动功能接口定义
 type Moving2D interface {
