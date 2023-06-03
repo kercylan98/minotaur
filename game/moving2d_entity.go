@@ -1,5 +1,6 @@
 package game
 
+// Moving2DEntity 2D移动对象接口定义
 type Moving2DEntity interface {
 	Actor
 	Position2D

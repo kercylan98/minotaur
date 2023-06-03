@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// NewMoving2D 创建一个用于2D对象移动的实例(Moving2D)
 func NewMoving2D(options ...Moving2DOption) *Moving2D {
 	moving2D := &Moving2D{
 		entities: map[int64]*moving2DTarget{},
@@ -21,6 +22,10 @@ func NewMoving2D(options ...Moving2DOption) *Moving2D {
 	return moving2D
 }
 
+// Moving2D 用于2D对象移动的数据结构
+//   - 通过对象调用 MoveTo 方法后将开始执行该对象的移动
+//   - 移动将在根据设置的每次移动间隔时间(WithMoving2DInterval)进行移动，当无对象移动需要移动时将会进入短暂的休眠
+//   - 当对象移动速度永久为0时，将会导致永久无法完成的移动
 type Moving2D struct {
 	rw       sync.RWMutex
 	entities map[int64]*moving2DTarget
@@ -34,6 +39,7 @@ type Moving2D struct {
 	position2DDestinationEventHandles []game.Position2DDestinationEventHandle
 }
 
+// MoveTo 设置对象移动到特定位置
 func (slf *Moving2D) MoveTo(entity game.Moving2DEntity, x float64, y float64) {
 	guid := entity.GetGuid()
 	current := time.Now().UnixMilli()
@@ -58,12 +64,14 @@ func (slf *Moving2D) MoveTo(entity game.Moving2DEntity, x float64, y float64) {
 	entityTarget.lastMoveTime = current
 }
 
+// StopMove 停止特定对象的移动
 func (slf *Moving2D) StopMove(guid int64) {
 	slf.rw.Lock()
 	delete(slf.entities, guid)
 	slf.rw.Unlock()
 }
 
+// RegPosition2DChangeEvent 在对象位置改变时将执行注册的事件处理函数
 func (slf *Moving2D) RegPosition2DChangeEvent(handle game.Position2DChangeEventHandle) {
 	slf.position2DChangeEventHandles = append(slf.position2DChangeEventHandles, handle)
 }
@@ -74,6 +82,7 @@ func (slf *Moving2D) OnPosition2DChangeEvent(entity game.Moving2DEntity, oldX, o
 	}
 }
 
+// RegPosition2DDestinationEvent 在对象到达终点时将执行被注册的事件处理函数
 func (slf *Moving2D) RegPosition2DDestinationEvent(handle game.Position2DDestinationEventHandle) {
 	slf.position2DDestinationEventHandles = append(slf.position2DDestinationEventHandles, handle)
 }
@@ -90,6 +99,7 @@ type moving2DTarget struct {
 	lastMoveTime int64
 }
 
+// Release 释放对象移动对象所占用的资源
 func (slf *Moving2D) Release() {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
