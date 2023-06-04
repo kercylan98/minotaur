@@ -1,6 +1,7 @@
 package matrix
 
 // NewMatrix 生成特定宽高的二维矩阵
+//   - 该矩阵为XY，而非YX
 func NewMatrix[T any](width, height int) *Matrix[T] {
 	matrix := &Matrix[T]{
 		w: width, h: height,
@@ -26,6 +27,11 @@ func (slf *Matrix[T]) GetWidth() int {
 // GetHeight 获取二维矩阵高度
 func (slf *Matrix[T]) GetHeight() int {
 	return slf.h
+}
+
+// GetWidth2Height 获取二维矩阵的宽度和高度
+func (slf *Matrix[T]) GetWidth2Height() (width, height int) {
+	return slf.w, slf.h
 }
 
 // GetMatrix 获取二维矩阵
@@ -58,5 +64,14 @@ func (slf *Matrix[T]) TrySwap(x1, y1, x2, y2 int, expressionHandle func(matrix *
 	slf.m[x1][y1], slf.m[x2][y2] = b, a
 	if !expressionHandle(slf) {
 		slf.m[x1][y1], slf.m[x2][y2] = a, b
+	}
+}
+
+// FillFull 根据提供的生成器填充整个矩阵
+func (slf *Matrix[T]) FillFull(generateHandle func(x, y int) T) {
+	for x := 0; x < slf.w; x++ {
+		for y := 0; y < slf.h; y++ {
+			slf.m[x][y] = generateHandle(x, y)
+		}
 	}
 }
