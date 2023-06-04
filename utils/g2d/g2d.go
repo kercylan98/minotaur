@@ -10,6 +10,7 @@ func PositionArrayToXY(position [2]int) (x, y int) {
 	return position[0], position[1]
 }
 
+// PositionClone 克隆一个坐标数组
 func PositionClone(position [2]int) [2]int {
 	return [2]int{position[0], position[1]}
 }
