@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/g2d"
 	"github.com/kercylan98/minotaur/utils/random"
 	"testing"
+	"time"
 )
 
 type Item[Type comparable] struct {
@@ -65,6 +66,7 @@ func TestMatch3(t *testing.T) {
 		fmt.Println()
 	}
 
+	var now = time.Now()
 	var xys [][2]int
 	for guid := range links {
 		xys = append(xys, match3.positions[guid])
@@ -73,4 +75,15 @@ func TestMatch3(t *testing.T) {
 	for _, rect := range g2d.SearchNotRepeatFullRectangle(xys...) {
 		fmt.Println(fmt.Sprintf("找到矩形: TopLeft: (%d, %d), BottomRight: (%d, %d)", rect[0][0], rect[0][1], rect[1][0], rect[1][1]))
 	}
+	fmt.Println("耗时", time.Since(now))
+
+	now = time.Now()
+	for _, rect := range g2d.SearchNotRepeatCross(xys...) {
+		fmt.Print("找到十字：")
+		for _, points := range rect {
+			fmt.Print(fmt.Sprintf("{%d, %d}", points[0], points[1]))
+		}
+		fmt.Println()
+	}
+	fmt.Println("耗时", time.Since(now))
 }

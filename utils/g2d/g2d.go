@@ -24,15 +24,16 @@ func CoverageAreaBoundless(l, r, t, b int) (left, right, top, bottom int) {
 
 // GetShapeCoverageArea 获取一个图形覆盖的范围
 func GetShapeCoverageArea(xys ...[2]int) (left, right, top, bottom int) {
+	left, top = -1, -1
 	for _, xy := range xys {
 		x, y := PositionArrayToXY(xy)
-		if x < left {
+		if x < left || left == -1 {
 			left = x
 		}
 		if x > right {
 			right = x
 		}
-		if y < top {
+		if y < top || top == -1 {
 			top = y
 		}
 		if y > bottom {

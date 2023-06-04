@@ -73,9 +73,9 @@ func MatrixShapeSearchWithYX[T any, Mark any](matrix [][]T, shapes []*shape.Shap
 
 // MatrixShapeSearchWithXY 二维矩阵形状搜索
 func MatrixShapeSearchWithXY[T any, Mark any](matrix [][]T, shapes []*shape.Shape[Mark], checkMatchHandle func(val T) bool) []MatrixShapeSearchResult[Mark] {
-	record := map[int]map[int]bool{}
 	width := len(matrix)
 	height := len(matrix[0])
+	record := map[int]map[int]bool{}
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			record[x] = map[int]bool{y: true}
@@ -131,6 +131,79 @@ func MatrixShapeSearchWithXY[T any, Mark any](matrix [][]T, shapes []*shape.Shap
 	}
 
 	return result
+}
+
+// SearchNotRepeatCross 在一组二维坐标中从大到小搜索不重复交叉（十字）线
+//   - 不重复指一个位置被使用后将不会被其他交叉线（十字）使用
+func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{y: true}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var records [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if record[sx][y] || !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+			records = append(records, [2]int{sx, y})
+		}
+		if !find[1] {
+			continue
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if record[sx][y] || !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+			records = append(records, [2]int{sx, y})
+		}
+		if !find[2] {
+			continue
+		}
+		for sy := y - 1; sy >= 0; sy-- {
+			if record[x][sy] || !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+			records = append(records, [2]int{x, sy})
+		}
+		if !find[3] {
+			continue
+		}
+		for sy := y + 1; sy <= len(rectangleShape[0]); sy++ {
+			if record[x][sy] || !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+			records = append(records, [2]int{x, sy})
+		}
+		if !find[4] {
+			continue
+		}
+		for _, point := range records {
+			record[point[0]][point[1]] = true
+		}
+		result = append(result, append(points, [2]int{x + left, y + top}))
+	}
+
+	return
 }
 
 // SearchNotRepeatFullRectangle 在一组二维坐标中从大到小搜索不重复的填充满的矩形
@@ -234,7 +307,8 @@ func GetExpressibleRectangleBySize(width, height, minWidth, minHeight int) (resu
 //   - 这个形状将被在一个刚好能容纳形状的矩形中表示
 //   - 为true的位置表示了形状的每一个点
 func GenerateShape(xys ...[2]int) [][]bool {
-	_, right, _, bottom := CoverageAreaBoundless(GetShapeCoverageArea(xys...))
+	left, r, top, b := GetShapeCoverageArea(xys...)
+	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
 	w, h := right+1, bottom+1
 	m := make([][]bool, w)
 	for x := 0; x < w; x++ {
@@ -242,7 +316,7 @@ func GenerateShape(xys ...[2]int) [][]bool {
 	}
 	for _, xy := range xys {
 		x, y := PositionArrayToXY(xy)
-		m[x][y] = true
+		m[x-(r-right)][y-(b-bottom)] = true
 	}
 	return m
 }
