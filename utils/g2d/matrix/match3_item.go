@@ -8,4 +8,6 @@ type Match3Item[Type comparable] interface {
 	GetGuid() int64
 	// GetType 获取成员类型
 	GetType() Type
+	// Clone 克隆
+	Clone() Match3Item[Type]
 }

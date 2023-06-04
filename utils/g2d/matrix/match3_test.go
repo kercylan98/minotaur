@@ -25,6 +25,13 @@ func (slf *Item[Type]) GetType() Type {
 	return slf.t
 }
 
+func (slf *Item[Type]) Clone() Match3Item[Type] {
+	return &Item[Type]{
+		guid: slf.guid,
+		t:    slf.t,
+	}
+}
+
 func TestMatch3(t *testing.T) {
 	var options []Match3Option[int, *Item[int]]
 	for i := 0; i < 7; i++ {

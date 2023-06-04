@@ -1,17 +1,20 @@
 package matrix
 
 import (
+	"github.com/kercylan98/minotaur/utils/g2d"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"sync"
 )
 
 func NewMatch3[ItemType comparable, Item Match3Item[ItemType]](width, height int, options ...Match3Option[ItemType, Item]) *Match3[ItemType, Item] {
 	match3 := &Match3[ItemType, Item]{
-		matrix:     NewMatrix[Item](width, height),
-		generators: map[ItemType]func() Item{},
-		links:      synchronization.NewMap[int64, map[int64]bool](),
-		positions:  map[int64][2]int{},
-		notNil:     map[int]map[int]bool{},
+		matrix:                     NewMatrix[Item](width, height),
+		generators:                 map[ItemType]func() Item{},
+		links:                      synchronization.NewMap[int64, map[int64]bool](),
+		positions:                  map[int64][2]int{},
+		notNil:                     map[int]map[int]bool{},
+		matchStrategy:              map[int]func(matrix [][]Item) [][]Item{},
+		generateNotMatchRetryCount: 3,
 	}
 	for x := 0; x < width; x++ {
 		match3.notNil[x] = map[int]bool{}
@@ -19,19 +22,28 @@ func NewMatch3[ItemType comparable, Item Match3Item[ItemType]](width, height int
 	for _, option := range options {
 		option(match3)
 	}
+	if len(match3.generators) == 0 {
+		panic("please use WithMatch3Generator set at least one generation strategy")
+	}
+	if len(match3.matchStrategy) == 0 {
+		panic("please use WithMatch3Strategy set at least one match strategy")
+	}
 	return match3
 }
 
 // Match3 基于三消类游戏的二维矩阵
 //   - 提供了适合三消类游戏的功能
 type Match3[ItemType comparable, Item Match3Item[ItemType]] struct {
-	matrix     *Matrix[Item]
-	guid       int64                                       // 成员guid
-	generators map[ItemType]func() Item                    // 成员生成器
-	revokes    []func()                                    // 撤销记录
-	links      *synchronization.Map[int64, map[int64]bool] // 成员类型相同且相连的链接
-	positions  map[int64][2]int                            // 根据成员guid记录的成员位置
-	notNil     map[int]map[int]bool                        // 特定位置是否不为空
+	matrix *Matrix[Item]
+
+	guid      int64                                       // 成员guid
+	links     *synchronization.Map[int64, map[int64]bool] // 成员类型相同且相连的链接
+	positions map[int64][2]int                            // 根据成员guid记录的成员位置
+	notNil    map[int]map[int]bool                        // 特定位置是否不为空
+
+	generators                 map[ItemType]func() Item               // 成员生成器
+	matchStrategy              map[int]func(matrix [][]Item) [][]Item // 匹配策略
+	generateNotMatchRetryCount int                                    // 生成不匹配类型重试次数
 }
 
 // GetHeight 获取高度
@@ -44,40 +56,82 @@ func (slf *Match3[ItemType, Item]) GetWidth() int {
 	return slf.matrix.w
 }
 
-// Revoke 撤销特定步数
-func (slf *Match3[ItemType, Item]) Revoke(step int) {
-	if step <= 0 {
-		return
-	}
-	if step > len(slf.revokes) {
-		step = len(slf.revokes)
-	}
-	for i := 0; i < step; i++ {
-		slf.revokes[i]()
-	}
-	slf.revokes = slf.revokes[step:]
-}
-
-// RevokeAll 撤销全部
-func (slf *Match3[ItemType, Item]) RevokeAll() {
-	slf.Revoke(len(slf.revokes))
-}
-
-// RevokeClear 清除所有撤销记录
-func (slf *Match3[ItemType, Item]) RevokeClear() {
-	slf.revokes = slf.revokes[:0]
-}
-
 // GenerateItem 在特定位置生成特定类型的成员
 func (slf *Match3[ItemType, Item]) GenerateItem(x, y int, itemType ItemType) Item {
-	slf.addRevoke(func() {
-		item := slf.matrix.m[x][y]
-		slf.set(x, y, item)
-	})
 	item := slf.generators[itemType]()
 	item.SetGuid(slf.getNextGuid())
 	slf.set(x, y, item)
 	return item
+}
+
+// Predict 预言
+func (slf *Match3[ItemType, Item]) Predict() {
+	// TODO
+}
+
+// GenerateItemsByNotMatch 生成一批在特定位置不会触发任何匹配规则的成员类型
+//   - 这一批成员不会被加入到矩阵中，索引与位置索引相对应
+//   - 无解的策略下会导致死循环
+func (slf *Match3[ItemType, Item]) GenerateItemsByNotMatch(xys ...[2]int) (result []ItemType) {
+	result = make([]ItemType, 0, len(xys))
+	lastIndex := len(xys) - 1
+	retry := 0
+	backup := NewBackup(slf)
+start:
+	{
+		for i, xy := range xys {
+			x, y := g2d.PositionArrayToXY(xy)
+			var match bool
+			for _, f := range slf.generators {
+				slf.set(x, y, f())
+				for i := 1; i <= len(slf.matchStrategy); i++ {
+					if len(slf.matchStrategy[i](slf.matrix.m)) > 0 {
+						match = true
+						break
+					}
+				}
+				if !match {
+					break
+				}
+			}
+			if match {
+				if i == lastIndex {
+					if retry < slf.generateNotMatchRetryCount {
+						retry++
+						result = result[:0]
+						backup.Restore()
+						goto start
+					} else {
+						panic("no solution, the matrix rule is wrong or there are matching members.")
+					}
+				} else {
+					result = result[:0]
+					backup.Restore()
+					goto start
+				}
+			}
+			result = append(result, slf.matrix.m[x][y].GetType())
+		}
+	}
+	return
+}
+
+// GetMatch 获取二维矩阵
+//   - 该矩阵为克隆的，意味着任何修改都不会影响原有内容
+func (slf *Match3[ItemType, Item]) GetMatch() [][]Item {
+	var (
+		width  = slf.GetWidth()
+		height = slf.GetHeight()
+		clone  = make([][]Item[ItemType], width)
+	)
+	for x := 0; x < width; x++ {
+		ys := make([]Item, height)
+		for y := 0; y < height; y++ {
+			ys[y] = slf.matrix.m[x][y].Clone().(Item)
+		}
+		clone[x] = ys
+	}
+	return clone
 }
 
 // 设置特定位置的成员
@@ -165,14 +219,6 @@ func (slf *Match3[ItemType, Item]) searchNeighbour(x, y int, filter *synchroniza
 
 // 获取下一个guid
 func (slf *Match3[ItemType, Item]) getNextGuid() int64 {
-	slf.addRevoke(func() {
-		slf.guid--
-	})
 	slf.guid++
 	return slf.guid
-}
-
-// 添加撤销记录
-func (slf *Match3[ItemType, Item]) addRevoke(revoke func()) {
-	slf.revokes = append([]func(){revoke}, slf.revokes...)
 }
