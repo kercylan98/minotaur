@@ -221,6 +221,89 @@ func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
 	return notRepeat
 }
 
+// SearchNotRepeatT 在一组二维坐标中从大到小搜索不重复T型（T）线
+func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
+	if minLength < 4 {
+		return nil
+	}
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if len(find) != 3 {
+			continue
+		}
+		result = append(result, append(points, [2]int{x + left, y + top}))
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return len(result[i]) > len(result[j])
+	})
+
+	var notRepeat [][][2]int
+	for _, points := range result {
+		if len(points) < minLength {
+			continue
+		}
+		var match = true
+		for _, point := range points {
+			x, y := PositionArrayToXY(point)
+			x = x + (0 - left)
+			y = y + (0 - top)
+			if record[x][y] {
+				match = false
+				break
+			}
+			record[x][y] = true
+		}
+		if match {
+			notRepeat = append(notRepeat, points)
+		}
+	}
+
+	return notRepeat
+}
+
 // SearchNotRepeatRightAngle 在一组二维坐标中从大到小搜索不重复的直角（L）线
 func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int) {
 	if minLength < 3 {
@@ -283,6 +366,9 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 		}
 	end:
 		{
+			if len(find) != 2 {
+				continue
+			}
 			result = append(result, append(points, [2]int{x + left, y + top}))
 		}
 	}

@@ -96,4 +96,14 @@ func TestMatch3(t *testing.T) {
 		fmt.Println()
 	}
 	fmt.Println("耗时", time.Since(now))
+
+	now = time.Now()
+	for _, rect := range g2d.SearchNotRepeatT(4, xys...) {
+		fmt.Print("找到T形：")
+		for _, points := range rect {
+			fmt.Print(fmt.Sprintf("{%d, %d}", points[0], points[1]))
+		}
+		fmt.Println()
+	}
+	fmt.Println("耗时", time.Since(now))
 }
