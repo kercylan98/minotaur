@@ -2,6 +2,7 @@ package g2d
 
 import (
 	"github.com/kercylan98/minotaur/utils/g2d/shape"
+	"sort"
 )
 
 type MatrixShapeSearchResult[Mark any] struct {
@@ -141,75 +142,183 @@ func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
 	record := map[int]map[int]bool{}
 	for x := 0; x < len(rectangleShape); x++ {
 		for y := 0; y < len(rectangleShape[0]); y++ {
-			record[x] = map[int]bool{y: true}
+			record[x] = map[int]bool{}
 		}
 	}
 
 	for _, xy := range xys {
 		var points [][2]int
-		var records [][2]int
 		var find = map[int]bool{}
 		x, y := PositionArrayToXY(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
 		for sx := x - 1; sx >= 0; sx-- {
-			if record[sx][y] || !rectangleShape[sx][y] {
+			if !rectangleShape[sx][y] {
 				break
 			}
 			find[1] = true
 			points = append(points, [2]int{sx + left, y + top})
-			records = append(records, [2]int{sx, y})
 		}
 		if !find[1] {
 			continue
 		}
 		for sx := x + 1; sx < len(rectangleShape); sx++ {
-			if record[sx][y] || !rectangleShape[sx][y] {
+			if !rectangleShape[sx][y] {
 				break
 			}
 			find[2] = true
 			points = append(points, [2]int{sx + left, y + top})
-			records = append(records, [2]int{sx, y})
 		}
 		if !find[2] {
 			continue
 		}
 		for sy := y - 1; sy >= 0; sy-- {
-			if record[x][sy] || !rectangleShape[x][sy] {
+			if !rectangleShape[x][sy] {
 				break
 			}
 			find[3] = true
 			points = append(points, [2]int{x + left, sy + top})
-			records = append(records, [2]int{x, sy})
 		}
 		if !find[3] {
 			continue
 		}
-		for sy := y + 1; sy <= len(rectangleShape[0]); sy++ {
-			if record[x][sy] || !rectangleShape[x][sy] {
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
 				break
 			}
 			find[4] = true
 			points = append(points, [2]int{x + left, sy + top})
-			records = append(records, [2]int{x, sy})
 		}
 		if !find[4] {
 			continue
 		}
-		for _, point := range records {
-			record[point[0]][point[1]] = true
-		}
 		result = append(result, append(points, [2]int{x + left, y + top}))
 	}
 
-	return
+	sort.Slice(result, func(i, j int) bool {
+		return len(result[i]) > len(result[j])
+	})
+
+	var notRepeat [][][2]int
+	for _, points := range result {
+		var match = true
+		for _, point := range points {
+			x, y := PositionArrayToXY(point)
+			x = x + (0 - left)
+			y = y + (0 - top)
+			if record[x][y] {
+				match = false
+				break
+			}
+			record[x][y] = true
+		}
+		if match {
+			notRepeat = append(notRepeat, points)
+		}
+	}
+
+	return notRepeat
+}
+
+// SearchNotRepeatRightAngle 在一组二维坐标中从大到小搜索不重复的直角（L）线
+func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int) {
+	if minLength < 3 {
+		return nil
+	}
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		if find[1] {
+			goto up
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+	up:
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if find[3] {
+			goto end
+		}
+		// down
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if !find[4] {
+			continue
+		}
+	end:
+		{
+			result = append(result, append(points, [2]int{x + left, y + top}))
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return len(result[i]) > len(result[j])
+	})
+
+	var notRepeat [][][2]int
+	for _, points := range result {
+		if len(points) < minLength {
+			continue
+		}
+		var match = true
+		for _, point := range points {
+			x, y := PositionArrayToXY(point)
+			x = x + (0 - left)
+			y = y + (0 - top)
+			if record[x][y] {
+				match = false
+				break
+			}
+			record[x][y] = true
+		}
+		if match {
+			notRepeat = append(notRepeat, points)
+		}
+	}
+
+	return notRepeat
 }
 
 // SearchNotRepeatFullRectangle 在一组二维坐标中从大到小搜索不重复的填充满的矩形
 //   - 不重复指一个位置被使用后将不会被其他矩形使用
 //   - 返回值表示了匹配的形状的左上角和右下角的点坐标
-func SearchNotRepeatFullRectangle(xys ...[2]int) (result [][2][2]int) {
+func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (result [][2][2]int) {
 	left, _, top, _ := GetShapeCoverageArea(xys...)
 	rectangleShape := GenerateShape(xys...)
 	record := map[int]map[int]bool{}
@@ -221,7 +330,7 @@ func SearchNotRepeatFullRectangle(xys ...[2]int) (result [][2][2]int) {
 		}
 	}
 
-	shapes := GetExpressibleRectangleBySize(width, height, 2, 2)
+	shapes := GetExpressibleRectangleBySize(width, height, minWidth, minHeight)
 	for _, s := range shapes {
 		x, y := 0, 0
 		for {
@@ -282,6 +391,9 @@ func GetExpressibleRectangle(width, height int) (result [][2]int) {
 //   - 矩形尺寸由大到小
 func GetExpressibleRectangleBySize(width, height, minWidth, minHeight int) (result [][2]int) {
 	if width == 0 || height == 0 {
+		return nil
+	}
+	if width < minWidth || height < minHeight {
 		return nil
 	}
 	width--

@@ -33,7 +33,7 @@ func TestMatch3(t *testing.T) {
 			return &Item[int]{t: t}
 		}))
 	}
-	var match3 = NewMatch3[int, *Item[int]](9, 9,
+	var match3 = NewMatch3[int, *Item[int]](3, 3,
 		options...,
 	)
 
@@ -50,9 +50,9 @@ func TestMatch3(t *testing.T) {
 		fmt.Println()
 	}
 	fmt.Println()
-	links := match3.links.Get(40)
-	linkItem := match3.matrix.m[match3.positions[40][0]][match3.positions[40][1]]
-	fmt.Println("LINK", linkItem.t, match3.positions[40])
+	links := match3.links.Get(4)
+	linkItem := match3.matrix.m[match3.positions[4][0]][match3.positions[4][1]]
+	fmt.Println("LINK", linkItem.t, match3.positions[4])
 
 	for y := 0; y < match3.GetHeight(); y++ {
 		for x := 0; x < match3.GetWidth(); x++ {
@@ -72,7 +72,7 @@ func TestMatch3(t *testing.T) {
 		xys = append(xys, match3.positions[guid])
 	}
 
-	for _, rect := range g2d.SearchNotRepeatFullRectangle(xys...) {
+	for _, rect := range g2d.SearchNotRepeatFullRectangle(2, 2, xys...) {
 		fmt.Println(fmt.Sprintf("找到矩形: TopLeft: (%d, %d), BottomRight: (%d, %d)", rect[0][0], rect[0][1], rect[1][0], rect[1][1]))
 	}
 	fmt.Println("耗时", time.Since(now))
@@ -80,6 +80,16 @@ func TestMatch3(t *testing.T) {
 	now = time.Now()
 	for _, rect := range g2d.SearchNotRepeatCross(xys...) {
 		fmt.Print("找到十字：")
+		for _, points := range rect {
+			fmt.Print(fmt.Sprintf("{%d, %d}", points[0], points[1]))
+		}
+		fmt.Println()
+	}
+	fmt.Println("耗时", time.Since(now))
+
+	now = time.Now()
+	for _, rect := range g2d.SearchNotRepeatRightAngle(4, xys...) {
+		fmt.Print("找到L形：")
 		for _, points := range rect {
 			fmt.Print(fmt.Sprintf("{%d, %d}", points[0], points[1]))
 		}
