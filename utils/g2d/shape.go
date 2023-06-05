@@ -562,6 +562,17 @@ func GetRectangleFullPoints(width, height int) (result [][2]int) {
 	return
 }
 
+// GetRectangleFullPointsByXY 通过开始结束坐标获取一个矩形包含的所有点
+//   - 例如 1,1 到 2,2 的矩形结果为 1,1 2,1 1,2 2,2
+func GetRectangleFullPointsByXY(startX, startY, endX, endY int) (result [][2]int) {
+	for x := startX; x <= endX; x++ {
+		for y := startY; y <= endY; y++ {
+			result = append(result, [2]int{x, y})
+		}
+	}
+	return
+}
+
 // GetExpressibleRectangle 获取一个宽高可表达的所有矩形形状
 //   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
 //   - 矩形尺寸由大到小
