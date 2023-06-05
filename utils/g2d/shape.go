@@ -259,7 +259,7 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 		}
 		if len(find) == 0 {
 			points = nil
-		} else if len(points) >= minLength {
+		} else if len(points) >= minLength-1 {
 			goto end
 		} else {
 			points = nil
