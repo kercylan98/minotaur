@@ -15,6 +15,19 @@ func Copy[V any](slice []V) []V {
 	return s
 }
 
+// CopyMatrix 复制二维数组
+func CopyMatrix[V any](slice [][]V) [][]V {
+	var s = make([][]V, len(slice), len(slice))
+	for i := 0; i < len(slice); i++ {
+		is := make([]V, len(slice[0]))
+		for j := 0; j < len(slice[0]); j++ {
+			is[j] = slice[i][j]
+		}
+		s[i] = is
+	}
+	return s
+}
+
 // Insert 在特定索引插入元素
 func Insert[V any](slice *[]V, index int, value V) {
 	s := *slice
