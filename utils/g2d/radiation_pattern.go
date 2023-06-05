@@ -43,6 +43,21 @@ func (slf *RadiationPattern[ItemType, Item]) GetLinks(guid int64) []int64 {
 	return hash.KeyToSlice(slf.links.Get(guid))
 }
 
+// GetLinkPositions 获取特定成员能够辐射到的所有成员位置
+func (slf *RadiationPattern[ItemType, Item]) GetLinkPositions(guid int64) [][2]int {
+	links := slf.links.Get(guid)
+	var result = make([][2]int, 0, len(links))
+	for g := range links {
+		result = append(result, slf.positions[g])
+	}
+	return result
+}
+
+// GetPosition 获取特定成员的位置
+func (slf *RadiationPattern[ItemType, Item]) GetPosition(guid int64) [2]int {
+	return slf.positions[guid]
+}
+
 // Refresh 刷新特定位置成员并且更新其辐射信息
 func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
 	old := slf.matrix[x][y]
