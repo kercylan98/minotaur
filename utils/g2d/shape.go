@@ -283,7 +283,7 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 		}
 	end:
 		{
-			if len(find) != 2 {
+			if len(points) < minLength-1 {
 				continue
 			}
 			result = append(result, append(points, [2]int{x + left, y + top}))
