@@ -250,9 +250,6 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 			find[1] = true
 			points = append(points, [2]int{sx + left, y + top})
 		}
-		if !find[1] {
-			goto up
-		}
 		for sx := x + 1; sx < len(rectangleShape); sx++ {
 			if !rectangleShape[sx][y] {
 				break
@@ -260,19 +257,17 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 			find[2] = true
 			points = append(points, [2]int{sx + left, y + top})
 		}
-		if !find[2] {
+		if len(find) == 2 {
+			goto end
+		} else {
 			points = nil
 		}
-	up:
 		for sy := y - 1; sy >= 0; sy-- {
 			if !rectangleShape[x][sy] {
 				break
 			}
 			find[3] = true
 			points = append(points, [2]int{x + left, sy + top})
-		}
-		if !find[3] {
-			continue
 		}
 		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
 			if !rectangleShape[x][sy] {
@@ -281,13 +276,16 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 			find[4] = true
 			points = append(points, [2]int{x + left, sy + top})
 		}
-		if !find[4] {
+		if !find[3] && !find[4] {
 			continue
 		}
-		if len(find) != 2 {
-			continue
+	end:
+		{
+			if len(find) != 2 {
+				continue
+			}
+			result = append(result, append(points, [2]int{x + left, y + top}))
 		}
-		result = append(result, append(points, [2]int{x + left, y + top}))
 	}
 
 	sort.Slice(result, func(i, j int) bool {
