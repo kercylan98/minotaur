@@ -28,12 +28,12 @@ func SlideDropXY[T any](matrix [][]T, x, y int, isStop func(start T, x, y int, d
 }
 
 // SlideDropX 侧滑掉落一整列
-//   - 返回每一个成员的y轴新坐标
-func SlideDropX[T any](matrix [][]T, x int, isStop func(start T, x, y int, data T) bool) (result []int, change bool) {
-	result = make([]int, len(matrix[x]))
+//   - 返回每一个成员的x、y轴新坐标
+func SlideDropX[T any](matrix [][]T, x int, isStop func(start T, x, y int, data T) bool) (result [][2]int, change bool) {
+	result = make([][2]int, len(matrix[x]))
 	for y := len(matrix[x]) - 1; y >= 0; y-- {
-		_, dropY := SlideDropXY(matrix, x, y, isStop)
-		result[y] = dropY
+		dropX, dropY := SlideDropXY(matrix, x, y, isStop)
+		result[y] = PositionToArray(dropX, dropY)
 		if y != dropY {
 			change = true
 		}
@@ -42,12 +42,12 @@ func SlideDropX[T any](matrix [][]T, x int, isStop func(start T, x, y int, data 
 }
 
 // SlideDropY 侧滑掉落一整行
-//   - 返回每一个成员的x轴新坐标
-func SlideDropY[T any](matrix [][]T, y int, isStop func(start T, x, y int, data T) bool) (result []int, change bool) {
-	result = make([]int, len(matrix))
+//   - 返回每一个成员的x、y轴新坐标
+func SlideDropY[T any](matrix [][]T, y int, isStop func(start T, x, y int, data T) bool) (result [][2]int, change bool) {
+	result = make([][2]int, len(matrix))
 	for x := 0; x < len(matrix); x++ {
-		dropX, _ := SlideDropXY(matrix, x, y, isStop)
-		result[x] = dropX
+		dropX, dropY := SlideDropXY(matrix, x, y, isStop)
+		result[x] = PositionToArray(dropX, dropY)
 		if x != dropX {
 			change = true
 		}
@@ -60,10 +60,10 @@ func SlideDrop[T any](matrix [][]T, isStop func(start T, x, y int, data T) bool)
 	result = make([][][2]int, len(matrix))
 	for x := 0; x < len(matrix); x++ {
 		ys := make([][2]int, len(matrix[x]))
-		var dropYs []int
+		var dropYs [][2]int
 		dropYs, change = SlideDropX(matrix, x, isStop)
-		for y, positionY := range dropYs {
-			ys[y] = PositionToArray(x, positionY)
+		for y, position := range dropYs {
+			ys[y] = position
 		}
 		result[x] = ys
 	}
