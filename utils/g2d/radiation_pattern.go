@@ -1,7 +1,6 @@
 package g2d
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"sync"
@@ -20,6 +19,10 @@ func NewRadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType
 		matrix:    clone,
 		links:     synchronization.NewMap[int64, map[int64]bool](),
 		positions: map[int64][2]int{},
+		nils:      map[int]map[int]bool{},
+	}
+	for x := 0; x < len(matrix); x++ {
+		rp.nils[x] = map[int]bool{}
 	}
 	for x := 0; x < len(matrix); x++ {
 		for y := 0; y < len(matrix[0]); y++ {
@@ -37,6 +40,7 @@ type RadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType]] 
 	matrix    [][]Item
 	links     *synchronization.Map[int64, map[int64]bool] // 成员类型相同且相连的链接
 	positions map[int64][2]int                            // 根据成员guid记录的成员位置
+	nils      map[int]map[int]bool                        // 空位置
 }
 
 // GetLinks 获取特定成员能够辐射到的所有成员
@@ -69,12 +73,14 @@ func (slf *RadiationPattern[ItemType, Item]) Remove(x, y int) {
 	}
 	slf.links.Delete(oldGuid)
 	delete(slf.positions, oldGuid)
+	slf.nils[x][y] = true
 }
 
 // Refresh 刷新特定位置成员并且更新其辐射信息
 func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
 	slf.Remove(x, y)
 
+	slf.nils[x][y] = false
 	slf.matrix[x][y] = item
 	slf.positions[item.GetGuid()] = PositionToArray(x, y)
 	slf.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
@@ -89,6 +95,7 @@ func (slf *RadiationPattern[ItemType, Item]) RefreshBySwap(x1, y1, x2, y2 int, i
 	}
 	for i, item := range []Item{item1, item2} {
 		x, y := PositionArrayToXY(xys[i])
+		slf.nils[x][y] = false
 		slf.matrix[x][y] = item
 		slf.positions[item.GetGuid()] = PositionToArray(x, y)
 		slf.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
@@ -105,7 +112,7 @@ func (slf *RadiationPattern[ItemType, Item]) searchNeighbour(x, y int, filter *s
 		itemGuid       = item.GetGuid()
 		handle         = func(x, y int) bool {
 			neighbour := slf.matrix[x][y]
-			if neighbour.GetType() != itemType {
+			if neighbour.GetType() != itemType || slf.nils[x][y] {
 				return false
 			}
 			neighbourGuid := neighbour.GetGuid()
@@ -159,17 +166,4 @@ func (slf *RadiationPattern[ItemType, Item]) searchNeighbour(x, y int, filter *s
 		neighbours[key] = value
 	})
 	slf.links.Set(itemGuid, neighbours)
-}
-
-func (slf *RadiationPattern[ItemType, Item]) String() string {
-	var g string
-	for y := 0; y < len(slf.matrix[0]); y++ {
-		for x := 0; x < len(slf.matrix); x++ {
-			item := slf.matrix[x][y]
-			g += fmt.Sprintf("%v\t\t", item.GetType())
-		}
-		g += "\r\n"
-	}
-	g += "\r\n"
-	return g
 }
