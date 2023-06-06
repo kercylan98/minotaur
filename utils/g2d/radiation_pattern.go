@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func NewRadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType]](matrix [][]Item) *RadiationPattern[ItemType, Item] {
+func NewRadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType]](matrix [][]Item, options ...RadiationPatternOption[ItemType, Item]) *RadiationPattern[ItemType, Item] {
 	var clone = make([][]Item, len(matrix))
 	for x := 0; x < len(matrix); x++ {
 		ys := make([]Item, len(matrix[0]))
@@ -21,12 +21,18 @@ func NewRadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType
 		positions: map[int64][2]int{},
 		nils:      map[int]map[int]bool{},
 	}
+	for _, option := range options {
+		option(rp)
+	}
 	for x := 0; x < len(matrix); x++ {
 		rp.nils[x] = map[int]bool{}
 	}
 	for x := 0; x < len(matrix); x++ {
 		for y := 0; y < len(matrix[0]); y++ {
 			item := matrix[x][y]
+			if rp.excludes[item.GetType()] {
+				continue
+			}
 			rp.positions[item.GetGuid()] = PositionToArray(x, y)
 			rp.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
 		}
@@ -41,6 +47,7 @@ type RadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType]] 
 	links     *synchronization.Map[int64, map[int64]bool] // 成员类型相同且相连的链接
 	positions map[int64][2]int                            // 根据成员guid记录的成员位置
 	nils      map[int]map[int]bool                        // 空位置
+	excludes  map[ItemType]bool                           // 排除建立关系的类型
 }
 
 // GetLinks 获取特定成员能够辐射到的所有成员
@@ -78,6 +85,9 @@ func (slf *RadiationPattern[ItemType, Item]) Remove(x, y int) {
 
 // Refresh 刷新特定位置成员并且更新其辐射信息
 func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
+	if slf.excludes[item.GetType()] {
+		return
+	}
 	slf.Remove(x, y)
 
 	slf.nils[x][y] = false
@@ -94,6 +104,9 @@ func (slf *RadiationPattern[ItemType, Item]) RefreshBySwap(x1, y1, x2, y2 int, i
 		slf.Remove(x, y)
 	}
 	for i, item := range []Item{item1, item2} {
+		if slf.excludes[item.GetType()] {
+			continue
+		}
 		x, y := PositionArrayToXY(xys[i])
 		slf.nils[x][y] = false
 		slf.matrix[x][y] = item
@@ -103,8 +116,11 @@ func (slf *RadiationPattern[ItemType, Item]) RefreshBySwap(x1, y1, x2, y2 int, i
 }
 
 func (slf *RadiationPattern[ItemType, Item]) searchNeighbour(x, y int, filter *synchronization.Map[int64, bool], childrenLinks *synchronization.Map[int64, bool]) {
+	var item = slf.matrix[x][y]
+	if slf.excludes[item.GetType()] {
+		return
+	}
 	var (
-		item           = slf.matrix[x][y]
 		neighboursLock sync.Mutex
 		neighbours     = map[int64]bool{}
 		itemType       = item.GetType()
@@ -112,7 +128,8 @@ func (slf *RadiationPattern[ItemType, Item]) searchNeighbour(x, y int, filter *s
 		itemGuid       = item.GetGuid()
 		handle         = func(x, y int) bool {
 			neighbour := slf.matrix[x][y]
-			if neighbour.GetType() != itemType || slf.nils[x][y] {
+			nt := neighbour.GetType()
+			if slf.excludes[nt] || nt != itemType || slf.nils[x][y] {
 				return false
 			}
 			neighbourGuid := neighbour.GetGuid()
