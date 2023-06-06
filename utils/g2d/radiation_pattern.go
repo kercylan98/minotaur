@@ -58,8 +58,8 @@ func (slf *RadiationPattern[ItemType, Item]) GetPosition(guid int64) [2]int {
 	return slf.positions[guid]
 }
 
-// Refresh 刷新特定位置成员并且更新其辐射信息
-func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
+// Remove 移除特定位置的辐射信息
+func (slf *RadiationPattern[ItemType, Item]) Remove(x, y int) {
 	old := slf.matrix[x][y]
 	oldGuid := old.GetGuid()
 	for linkGuid := range slf.links.Get(oldGuid) {
@@ -68,6 +68,11 @@ func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
 	}
 	slf.links.Delete(oldGuid)
 	delete(slf.positions, oldGuid)
+}
+
+// Refresh 刷新特定位置成员并且更新其辐射信息
+func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
+	slf.Remove(x, y)
 
 	slf.matrix[x][y] = item
 	slf.positions[item.GetGuid()] = PositionToArray(x, y)
@@ -79,14 +84,7 @@ func (slf *RadiationPattern[ItemType, Item]) RefreshBySwap(x1, y1, x2, y2 int, i
 	var xys = [][2]int{PositionToArray(x1, y1), PositionToArray(x2, y2)}
 	for _, xy := range xys {
 		x, y := PositionArrayToXY(xy)
-		old := slf.matrix[x][y]
-		oldGuid := old.GetGuid()
-		for linkGuid := range slf.links.Get(oldGuid) {
-			xy := slf.positions[linkGuid]
-			slf.searchNeighbour(xy[0], xy[1], synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
-		}
-		slf.links.Delete(oldGuid)
-		delete(slf.positions, oldGuid)
+		slf.Remove(x, y)
 	}
 	for i, item := range []Item{item1, item2} {
 		x, y := PositionArrayToXY(xys[i])
