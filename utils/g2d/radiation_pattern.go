@@ -1,6 +1,7 @@
 package g2d
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"sync"
@@ -158,4 +159,17 @@ func (slf *RadiationPattern[ItemType, Item]) searchNeighbour(x, y int, filter *s
 		neighbours[key] = value
 	})
 	slf.links.Set(itemGuid, neighbours)
+}
+
+func (slf *RadiationPattern[ItemType, Item]) String() string {
+	var g string
+	for y := 0; y < len(slf.matrix[0]); y++ {
+		for x := 0; x < len(slf.matrix); x++ {
+			item := slf.matrix[x][y]
+			g += fmt.Sprintf("%v\t\t", item.GetType())
+		}
+		g += "\r\n"
+	}
+	g += "\r\n"
+	return g
 }
