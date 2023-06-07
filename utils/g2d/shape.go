@@ -1,6 +1,7 @@
 package g2d
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/g2d/shape"
 	"sort"
 )
@@ -529,6 +530,10 @@ func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (resul
 			for _, point := range points {
 				px, py := PositionArrayToXY(point)
 				ox, oy := px+x, py+y
+				if ox >= len(rectangleShape) || oy >= len(rectangleShape[0]) {
+					rectangleShape := GenerateShape(xys...)
+					fmt.Println(rectangleShape)
+				}
 				if record[ox][oy] || !rectangleShape[ox][oy] {
 					find = 0
 					break
@@ -584,6 +589,7 @@ func GetExpressibleRectangle(width, height int) (result [][2]int) {
 //   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
 //   - 矩形尺寸由大到小
 func GetExpressibleRectangleBySize(width, height, minWidth, minHeight int) (result [][2]int) {
+	sourceWidth := width
 	if width == 0 || height == 0 {
 		return nil
 	}
@@ -601,8 +607,12 @@ func GetExpressibleRectangleBySize(width, height, minWidth, minHeight int) (resu
 		if width == height {
 			width--
 		} else if width < height {
-			width++
-			height--
+			if width+1 == sourceWidth {
+				height--
+			} else {
+				width++
+				height--
+			}
 		} else if width > height {
 			width--
 		}
