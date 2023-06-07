@@ -14,3 +14,21 @@ func PositionArrayToXY(position [2]int) (x, y int) {
 func PositionClone(position [2]int) [2]int {
 	return [2]int{position[0], position[1]}
 }
+
+// GetAdjacentPositions 获取一个矩阵中，特定位置相邻的最多四个方向的位置
+func GetAdjacentPositions[T any](matrix [][]T, x, y int) (result [][2]int) {
+	width, height := len(matrix), len(matrix[0])
+	if tx := x - 1; tx >= 0 {
+		result = append(result, PositionToArray(tx, y))
+	}
+	if tx := x + 1; tx < width {
+		result = append(result, PositionToArray(tx, y))
+	}
+	if ty := y - 1; ty >= 0 {
+		result = append(result, PositionToArray(x, ty))
+	}
+	if ty := y + 1; ty < height {
+		result = append(result, PositionToArray(x, ty))
+	}
+	return
+}
