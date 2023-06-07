@@ -1,7 +1,6 @@
 package g2d
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/utils/g2d/shape"
 	"sort"
 )
@@ -530,10 +529,6 @@ func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (resul
 			for _, point := range points {
 				px, py := PositionArrayToXY(point)
 				ox, oy := px+x, py+y
-				if ox >= len(rectangleShape) || oy >= len(rectangleShape[0]) {
-					rectangleShape := GenerateShape(xys...)
-					fmt.Println(rectangleShape)
-				}
 				if record[ox][oy] || !rectangleShape[ox][oy] {
 					find = 0
 					break
