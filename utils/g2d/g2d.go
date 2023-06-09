@@ -66,7 +66,7 @@ func PositionToIntWithArray(width int, xy [2]int) int {
 func PositionsToIntWithArray(width int, xys ...[2]int) []int {
 	var result = make([]int, len(xys), len(xys))
 	for i := 0; i < len(xys); i++ {
-		result[i] = PositionToIntWithArray(width, xys[1])
+		result[i] = PositionToIntWithArray(width, xys[i])
 	}
 	return result
 }
