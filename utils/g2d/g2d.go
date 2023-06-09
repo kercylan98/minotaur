@@ -40,7 +40,7 @@ func GetAdjacentPositionsWithContinuousPosition[T any](matrix []T, width, pos in
 		result = append(result, up)
 	}
 	if down := pos + width; down < size {
-		result = append(result, size)
+		result = append(result, down)
 	}
 	if left := pos - 1; pos >= 0 {
 		result = append(result, left)
