@@ -52,6 +52,7 @@ func GetAdjacentPositionsWithContinuousPosition[T any](matrix []T, width, pos in
 }
 
 // PositionToInt 将坐标转换为二维数组的顺序位置
+//   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
 func PositionToInt(width, x, y int) int {
 	return y*width + x
 }
