@@ -32,3 +32,43 @@ func GetAdjacentPositions[T any](matrix [][]T, x, y int) (result [][2]int) {
 	}
 	return
 }
+
+// GetAdjacentPositionsWithContinuousPosition 获取一个连续位置的矩阵中，特定位置相邻的最多四个方向的位置
+func GetAdjacentPositionsWithContinuousPosition[T any](matrix []T, width, pos int) (result []int) {
+	size := len(matrix)
+	if up := pos - width; up >= 0 {
+		result = append(result, up)
+	}
+	if down := pos + width; down < size {
+		result = append(result, size)
+	}
+	if left := pos - 1; pos >= 0 {
+		result = append(result, left)
+	}
+	if right := pos + 1; right < size {
+		result = append(result, right)
+	}
+	return
+}
+
+// PositionToInt 将坐标转换为二维数组的顺序位置
+func PositionToInt(width, x, y int) int {
+	return y*width + x
+}
+
+// PositionIntToXY 通过宽度将一个二维数组的顺序位置转换为xy坐标
+func PositionIntToXY(width, pos int) (x, y int) {
+	x = pos % width
+	y = pos / width
+	return x, y
+}
+
+// PositionIntGetX 通过宽度将一个二维数组的顺序位置转换为X坐标
+func PositionIntGetX(width, pos int) int {
+	return pos % width
+}
+
+// PositionIntGetY 通过宽度将一个二维数组的顺序位置转换为Y坐标
+func PositionIntGetY(width, pos int) int {
+	return pos / width
+}
