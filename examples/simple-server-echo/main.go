@@ -1,3 +1,4 @@
+// 该案例中实现了一个简单的回响服务器
 package main
 
 import (

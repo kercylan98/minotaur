@@ -1,12 +1,13 @@
 package g2d
 
+// Direction 方向
 type Direction uint8
 
 const (
-	DirectionUp = Direction(iota)
-	DirectionDown
-	DirectionLeft
-	DirectionRight
+	DirectionUp    = Direction(iota) // 上方
+	DirectionDown                    // 下方
+	DirectionLeft                    // 左方
+	DirectionRight                   // 右方
 )
 
 // CalcDirection 计算点2位于点1的方向
