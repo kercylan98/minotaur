@@ -57,12 +57,14 @@ func PositionToInt(width, x, y int) int {
 	return y*width + x
 }
 
-// PositionToIntWithArray 将坐标转换为数字
+// PositionToIntWithArray 将坐标转换为二维数组的顺序位置
+//   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
 func PositionToIntWithArray(width int, xy [2]int) int {
 	return PositionToInt(width, xy[0], xy[1])
 }
 
-// PositionsToIntWithArray 将一组坐标转换为数字
+// PositionsToIntWithArray 将一组坐标转换为二维数组的顺序位置
+//   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
 func PositionsToIntWithArray(width int, xys ...[2]int) []int {
 	var result = make([]int, len(xys), len(xys))
 	for i := 0; i < len(xys); i++ {
