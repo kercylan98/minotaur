@@ -221,6 +221,70 @@ func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
 	return notRepeat
 }
 
+// SearchContainCross 在一组二维坐标中查找是否存在交叉（十字）线
+func SearchContainCross(xys ...[2]int) bool {
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		if !find[1] {
+			continue
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		if !find[2] {
+			continue
+		}
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if !find[3] {
+			continue
+		}
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if !find[4] {
+			continue
+		}
+		return true
+	}
+
+	return false
+}
+
 // SearchNotRepeatStraightLine 在一组二维坐标中从大到小搜索不重复的直线
 //   - 最低需要长度为3
 func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]int) {
@@ -296,9 +360,6 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 
 	var notRepeat [][][2]int
 	for _, points := range result {
-		if len(points) < minLength {
-			continue
-		}
 		var match = true
 		for _, point := range points {
 			x, y := PositionArrayToXY(point)
@@ -316,6 +377,77 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 	}
 
 	return notRepeat
+}
+
+// SearchContainStraightLine 在一组二维坐标中查找是否存在直线
+func SearchContainStraightLine(minLength int, xys ...[2]int) bool {
+	if minLength < 3 {
+		return false
+	}
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		if len(find) == 0 {
+			points = nil
+		} else if len(points) >= minLength-1 {
+			goto end
+		} else {
+			points = nil
+		}
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if !find[3] && !find[4] {
+			continue
+		}
+	end:
+		{
+			if len(points) < minLength-1 {
+				continue
+			}
+			return true
+		}
+	}
+
+	return false
 }
 
 // SearchNotRepeatT 在一组二维坐标中从大到小搜索不重复T型（T）线
@@ -367,7 +499,7 @@ func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
 			find[4] = true
 			points = append(points, [2]int{x + left, sy + top})
 		}
-		if len(find) != 3 {
+		if len(find) != 3 || len(points) < minLength {
 			continue
 		}
 		result = append(result, append(points, [2]int{x + left, y + top}))
@@ -379,9 +511,6 @@ func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
 
 	var notRepeat [][][2]int
 	for _, points := range result {
-		if len(points) < minLength {
-			continue
-		}
 		var match = true
 		for _, point := range points {
 			x, y := PositionArrayToXY(point)
@@ -399,6 +528,64 @@ func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
 	}
 
 	return notRepeat
+}
+
+// SearchContainT 在一组二维坐标中查找是否存在T型（T）线
+func SearchContainT(minLength int, xys ...[2]int) bool {
+	if minLength < 4 {
+		return false
+	}
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if len(find) != 3 || len(points) < minLength-1 {
+			continue
+		}
+		return true
+	}
+
+	return false
 }
 
 // SearchNotRepeatRightAngle 在一组二维坐标中从大到小搜索不重复的直角（L）线
@@ -463,7 +650,7 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 		}
 	end:
 		{
-			if len(find) != 2 {
+			if len(find) != 2 || len(points) < minLength-1 {
 				continue
 			}
 			result = append(result, append(points, [2]int{x + left, y + top}))
@@ -476,9 +663,6 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 
 	var notRepeat [][][2]int
 	for _, points := range result {
-		if len(points) < minLength {
-			continue
-		}
 		var match = true
 		for _, point := range points {
 			x, y := PositionArrayToXY(point)
@@ -496,6 +680,78 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 	}
 
 	return notRepeat
+}
+
+// SearchContainRightAngle 在一组二维坐标中查找是否存在直角（L）线
+func SearchContainRightAngle(minLength int, xys ...[2]int) bool {
+	if minLength < 3 {
+		return false
+	}
+	left, _, top, _ := GetShapeCoverageArea(xys...)
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	for x := 0; x < len(rectangleShape); x++ {
+		for y := 0; y < len(rectangleShape[0]); y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	for _, xy := range xys {
+		var points [][2]int
+		var find = map[int]bool{}
+		x, y := PositionArrayToXY(xy)
+		x = x + (0 - left)
+		y = y + (0 - top)
+		// 搜索四个方向
+		for sx := x - 1; sx >= 0; sx-- {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[1] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+		if find[1] {
+			goto up
+		}
+		for sx := x + 1; sx < len(rectangleShape); sx++ {
+			if !rectangleShape[sx][y] {
+				break
+			}
+			find[2] = true
+			points = append(points, [2]int{sx + left, y + top})
+		}
+	up:
+		for sy := y - 1; sy >= 0; sy-- {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[3] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if find[3] {
+			goto end
+		}
+		// down
+		for sy := y + 1; sy < len(rectangleShape[0]); sy++ {
+			if !rectangleShape[x][sy] {
+				break
+			}
+			find[4] = true
+			points = append(points, [2]int{x + left, sy + top})
+		}
+		if !find[4] {
+			continue
+		}
+	end:
+		{
+			if len(find) != 2 || len(points) < minLength-1 {
+				continue
+			}
+			return true
+		}
+	}
+
+	return false
 }
 
 // SearchNotRepeatFullRectangle 在一组二维坐标中从大到小搜索不重复的填充满的矩形
@@ -550,6 +806,55 @@ func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (resul
 	}
 
 	return result
+}
+
+// SearchContainFullRectangle 在一组二维坐标中查找是否存在填充满的矩形
+func SearchContainFullRectangle(minWidth, minHeight int, xys ...[2]int) bool {
+	rectangleShape := GenerateShape(xys...)
+	record := map[int]map[int]bool{}
+	width := len(rectangleShape)
+	height := len(rectangleShape[0])
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			record[x] = map[int]bool{}
+		}
+	}
+
+	shapes := GetExpressibleRectangleBySize(width, height, minWidth, minHeight)
+	for _, s := range shapes {
+		x, y := 0, 0
+		for {
+			if x+s[0] >= width {
+				x = 0
+				y++
+			}
+			if y+s[1] >= height {
+				break
+			}
+			points := GetRectangleFullPoints(s[0]+1, s[1]+1)
+			find := 0
+			for _, point := range points {
+				px, py := PositionArrayToXY(point)
+				ox, oy := px+x, py+y
+				if record[ox][oy] || !rectangleShape[ox][oy] {
+					find = 0
+					break
+				}
+				find++
+			}
+			if find == len(points) {
+				for _, point := range points {
+					px, py := PositionArrayToXY(point)
+					record[px+x][py+y] = true
+				}
+				return true
+			}
+
+			x++
+		}
+	}
+
+	return false
 }
 
 // GetRectangleFullPoints 获取一个矩形包含的所有点
