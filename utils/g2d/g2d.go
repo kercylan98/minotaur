@@ -36,16 +36,17 @@ func GetAdjacentPositions[T any](matrix [][]T, x, y int) (result [][2]int) {
 // GetAdjacentPositionsWithContinuousPosition 获取一个连续位置的矩阵中，特定位置相邻的最多四个方向的位置
 func GetAdjacentPositionsWithContinuousPosition[T any](matrix []T, width, pos int) (result []int) {
 	size := len(matrix)
+	currentRow := pos / width
 	if up := pos - width; up >= 0 {
 		result = append(result, up)
 	}
 	if down := pos + width; down < size {
 		result = append(result, down)
 	}
-	if left := pos - 1; pos >= 0 {
+	if left := pos - 1; left >= 0 && currentRow == (left/width) {
 		result = append(result, left)
 	}
-	if right := pos + 1; right < size {
+	if right := pos + 1; right < size && currentRow == (right/width) {
 		result = append(result, right)
 	}
 	return
