@@ -36,6 +36,7 @@ func NewManager(senders ...Sender) *Manager {
 	return manager
 }
 
+// Manager 通知管理器，可用于将通知同时发送至多个渠道
 type Manager struct {
 	senders       []Sender
 	notifyChannel chan Notify
@@ -47,6 +48,7 @@ func (slf *Manager) PushNotify(notify Notify) {
 	slf.notifyChannel <- notify
 }
 
+// Release 释放通知管理器
 func (slf *Manager) Release() {
 	slf.closeChannel <- struct{}{}
 }

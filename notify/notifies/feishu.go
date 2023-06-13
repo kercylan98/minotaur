@@ -2,34 +2,22 @@ package notifies
 
 import "encoding/json"
 
-const (
-	FeiShuMsgTypeText        = "text"        // 文本
-	FeiShuMsgTypeRichText    = "post"        // 富文本
-	FeiShuMsgTypeImage       = "image"       // 图片
-	FeiShuMsgTypeInteractive = "interactive" // 消息卡片
-	FeiShuMsgTypeShareChat   = "share_chat"  // 分享群名片
-	FeiShuMsgTypeShareUser   = "share_user"  // 分享个人名片
-	FeiShuMsgTypeAudio       = "audio"       // 音频
-	FeiShuMsgTypeMedia       = "media"       // 视频
-	FeiShuMsgTypeFile        = "file"        // 文件
-	FeiShuMsgTypeSticker     = "sticker"     // 表情包
-
-)
-
-func NewFeiShu(msgType, receiveId, content string) *FeiShu {
-	return &FeiShu{
-		ReceiveId: receiveId,
-		Content:   content,
-		MsgType:   msgType,
+// NewFeiShu 创建飞书通知消息
+func NewFeiShu(message FeiShuMessage) *FeiShu {
+	feishu := &FeiShu{
+		Content: map[string]any{},
 	}
+	message(feishu)
+	return feishu
 }
 
+// FeiShu 飞书通知消息
 type FeiShu struct {
-	ReceiveId string `json:"receive_id"`
-	Content   string `json:"content"`
-	MsgType   string `json:"msg_type"`
+	Content any    `json:"content"`
+	MsgType string `json:"msg_type"`
 }
 
+// Format 格式化通知内容
 func (slf *FeiShu) Format() (string, error) {
 	data, err := json.Marshal(slf)
 	if err != nil {
