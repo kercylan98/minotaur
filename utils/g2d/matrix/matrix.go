@@ -41,7 +41,7 @@ func (slf *Matrix[T]) GetMatrix() [][]T {
 	for x := 0; x < slf.w; x++ {
 		ys := make([]T, slf.h)
 		for y := 0; y < slf.h; y++ {
-			ys[y] = slf.m[g2d.PositionToInt(slf.w, x, y)]
+			ys[y] = slf.m[g2d.CoordinateToPos(slf.w, x, y)]
 		}
 		result[x] = ys
 	}
@@ -55,7 +55,7 @@ func (slf *Matrix[T]) GetMatrixWithPos() []T {
 
 // Get 获取特定坐标的内容
 func (slf *Matrix[T]) Get(x, y int) (value T) {
-	return slf.m[g2d.PositionToInt(slf.w, x, y)]
+	return slf.m[g2d.CoordinateToPos(slf.w, x, y)]
 }
 
 // GetWithPos 获取特定坐标的内容
@@ -65,7 +65,7 @@ func (slf *Matrix[T]) GetWithPos(pos int) (value T) {
 
 // Set 设置特定坐标的内容
 func (slf *Matrix[T]) Set(x, y int, data T) {
-	slf.m[g2d.PositionToInt(slf.w, x, y)] = data
+	slf.m[g2d.CoordinateToPos(slf.w, x, y)] = data
 }
 
 // SetWithPos 设置特定坐标的内容
@@ -76,7 +76,7 @@ func (slf *Matrix[T]) SetWithPos(pos int, data T) {
 // Swap 交换两个位置的内容
 func (slf *Matrix[T]) Swap(x1, y1, x2, y2 int) {
 	a, b := slf.Get(x1, y1), slf.Get(x2, y2)
-	slf.m[g2d.PositionToInt(slf.w, x1, y1)], slf.m[g2d.PositionToInt(slf.w, x2, y2)] = b, a
+	slf.m[g2d.CoordinateToPos(slf.w, x1, y1)], slf.m[g2d.CoordinateToPos(slf.w, x2, y2)] = b, a
 }
 
 // SwapWithPos 交换两个位置的内容
@@ -87,8 +87,8 @@ func (slf *Matrix[T]) SwapWithPos(pos1, pos2 int) {
 
 // TrySwap 尝试交换两个位置的内容，交换后不满足表达式时进行撤销
 func (slf *Matrix[T]) TrySwap(x1, y1, x2, y2 int, expressionHandle func(matrix *Matrix[T]) bool) {
-	pos1 := g2d.PositionToInt(slf.w, x1, y1)
-	pos2 := g2d.PositionToInt(slf.w, x2, y2)
+	pos1 := g2d.CoordinateToPos(slf.w, x1, y1)
+	pos2 := g2d.CoordinateToPos(slf.w, x2, y2)
 	a, b := slf.Get(x1, y1), slf.Get(x2, y2)
 	slf.m[pos1], slf.m[pos2] = b, a
 	if !expressionHandle(slf) {
@@ -109,7 +109,7 @@ func (slf *Matrix[T]) TrySwapWithPos(pos1, pos2 int, expressionHandle func(matri
 func (slf *Matrix[T]) FillFull(generateHandle func(x, y int) T) {
 	for x := 0; x < slf.w; x++ {
 		for y := 0; y < slf.h; y++ {
-			slf.m[g2d.PositionToInt(slf.w, x, y)] = generateHandle(x, y)
+			slf.m[g2d.CoordinateToPos(slf.w, x, y)] = generateHandle(x, y)
 		}
 	}
 }

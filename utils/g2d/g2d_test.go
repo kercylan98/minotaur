@@ -6,11 +6,11 @@ import (
 )
 
 func TestPositionIntToXY(t *testing.T) {
-	pos := PositionToInt(9, 7, 8)
+	pos := CoordinateToPos(9, 7, 8)
 	fmt.Println(pos)
-	fmt.Println(PositionIntToXY(9, pos))
+	fmt.Println(PosToCoordinate(9, pos))
 
-	fmt.Println(PositionToInt(65000, 61411, 158266))
-	fmt.Println(PositionIntToXY(65000, 10287351411))
+	fmt.Println(CoordinateToPos(65000, 61411, 158266))
+	fmt.Println(PosToCoordinate(65000, 10287351411))
 
 }

@@ -149,7 +149,7 @@ func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -204,7 +204,7 @@ func SearchNotRepeatCross(xys ...[2]int) (result [][][2]int) {
 	for _, points := range result {
 		var match = true
 		for _, point := range points {
-			x, y := PositionArrayToXY(point)
+			x, y := CoordinateArrayToCoordinate(point)
 			x = x + (0 - left)
 			y = y + (0 - top)
 			if record[x][y] {
@@ -235,7 +235,7 @@ func SearchContainCross(xys ...[2]int) bool {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -303,7 +303,7 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -362,7 +362,7 @@ func SearchNotRepeatStraightLine(minLength int, xys ...[2]int) (result [][][2]in
 	for _, points := range result {
 		var match = true
 		for _, point := range points {
-			x, y := PositionArrayToXY(point)
+			x, y := CoordinateArrayToCoordinate(point)
 			x = x + (0 - left)
 			y = y + (0 - top)
 			if record[x][y] {
@@ -396,7 +396,7 @@ func SearchContainStraightLine(minLength int, xys ...[2]int) bool {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -467,7 +467,7 @@ func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -513,7 +513,7 @@ func SearchNotRepeatT(minLength int, xys ...[2]int) (result [][][2]int) {
 	for _, points := range result {
 		var match = true
 		for _, point := range points {
-			x, y := PositionArrayToXY(point)
+			x, y := CoordinateArrayToCoordinate(point)
 			x = x + (0 - left)
 			y = y + (0 - top)
 			if record[x][y] {
@@ -547,7 +547,7 @@ func SearchContainT(minLength int, xys ...[2]int) bool {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -605,7 +605,7 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -665,7 +665,7 @@ func SearchNotRepeatRightAngle(minLength int, xys ...[2]int) (result [][][2]int)
 	for _, points := range result {
 		var match = true
 		for _, point := range points {
-			x, y := PositionArrayToXY(point)
+			x, y := CoordinateArrayToCoordinate(point)
 			x = x + (0 - left)
 			y = y + (0 - top)
 			if record[x][y] {
@@ -699,7 +699,7 @@ func SearchContainRightAngle(minLength int, xys ...[2]int) bool {
 	for _, xy := range xys {
 		var points [][2]int
 		var find = map[int]bool{}
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		x = x + (0 - left)
 		y = y + (0 - top)
 		// 搜索四个方向
@@ -783,7 +783,7 @@ func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (resul
 			points := GetRectangleFullPoints(s[0]+1, s[1]+1)
 			find := 0
 			for _, point := range points {
-				px, py := PositionArrayToXY(point)
+				px, py := CoordinateArrayToCoordinate(point)
 				ox, oy := px+x, py+y
 				if record[ox][oy] || !rectangleShape[ox][oy] {
 					find = 0
@@ -793,7 +793,7 @@ func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (resul
 			}
 			if find == len(points) {
 				for _, point := range points {
-					px, py := PositionArrayToXY(point)
+					px, py := CoordinateArrayToCoordinate(point)
 					record[px+x][py+y] = true
 				}
 				result = append(result, [2][2]int{
@@ -834,7 +834,7 @@ func SearchContainFullRectangle(minWidth, minHeight int, xys ...[2]int) bool {
 			points := GetRectangleFullPoints(s[0]+1, s[1]+1)
 			find := 0
 			for _, point := range points {
-				px, py := PositionArrayToXY(point)
+				px, py := CoordinateArrayToCoordinate(point)
 				ox, oy := px+x, py+y
 				if record[ox][oy] || !rectangleShape[ox][oy] {
 					find = 0
@@ -844,7 +844,7 @@ func SearchContainFullRectangle(minWidth, minHeight int, xys ...[2]int) bool {
 			}
 			if find == len(points) {
 				for _, point := range points {
-					px, py := PositionArrayToXY(point)
+					px, py := CoordinateArrayToCoordinate(point)
 					record[px+x][py+y] = true
 				}
 				return true
@@ -931,7 +931,7 @@ func GenerateShape(xys ...[2]int) [][]bool {
 		m[x] = make([]bool, h)
 	}
 	for _, xy := range xys {
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		m[x-(r-right)][y-(b-bottom)] = true
 	}
 	return m
@@ -953,7 +953,7 @@ func CoverageAreaBoundless(l, r, t, b int) (left, right, top, bottom int) {
 func GetShapeCoverageArea(xys ...[2]int) (left, right, top, bottom int) {
 	left, top = -1, -1
 	for _, xy := range xys {
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		if x < left || left == -1 {
 			left = x
 		}

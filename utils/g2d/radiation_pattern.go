@@ -33,7 +33,7 @@ func NewRadiationPattern[ItemType comparable, Item RadiationPatternItem[ItemType
 			if rp.excludes[item.GetType()] {
 				continue
 			}
-			rp.positions[item.GetGuid()] = PositionToArray(x, y)
+			rp.positions[item.GetGuid()] = CoordinateToCoordinateArray(x, y)
 			rp.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
 		}
 	}
@@ -92,25 +92,25 @@ func (slf *RadiationPattern[ItemType, Item]) Refresh(x, y int, item Item) {
 
 	slf.nils[x][y] = false
 	slf.matrix[x][y] = item
-	slf.positions[item.GetGuid()] = PositionToArray(x, y)
+	slf.positions[item.GetGuid()] = CoordinateToCoordinateArray(x, y)
 	slf.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
 }
 
 // RefreshBySwap 通过交换的方式刷新两个成员的辐射信息
 func (slf *RadiationPattern[ItemType, Item]) RefreshBySwap(x1, y1, x2, y2 int, item1, item2 Item) {
-	var xys = [][2]int{PositionToArray(x1, y1), PositionToArray(x2, y2)}
+	var xys = [][2]int{CoordinateToCoordinateArray(x1, y1), CoordinateToCoordinateArray(x2, y2)}
 	for _, xy := range xys {
-		x, y := PositionArrayToXY(xy)
+		x, y := CoordinateArrayToCoordinate(xy)
 		slf.Remove(x, y)
 	}
 	for i, item := range []Item{item1, item2} {
 		if slf.excludes[item.GetType()] {
 			continue
 		}
-		x, y := PositionArrayToXY(xys[i])
+		x, y := CoordinateArrayToCoordinate(xys[i])
 		slf.nils[x][y] = false
 		slf.matrix[x][y] = item
-		slf.positions[item.GetGuid()] = PositionToArray(x, y)
+		slf.positions[item.GetGuid()] = CoordinateToCoordinateArray(x, y)
 		slf.searchNeighbour(x, y, synchronization.NewMap[int64, bool](), synchronization.NewMap[int64, bool]())
 	}
 }
