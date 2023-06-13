@@ -21,6 +21,24 @@ type DistributionPattern[Item any] struct {
 	usePos               bool
 }
 
+// GetLinks 获取关联的成员
+//   - 其中包含传入的 pos 成员
+func (slf *DistributionPattern[Item]) GetLinks(pos int) (result []Link[Item]) {
+	for pos, item := range slf.links[pos] {
+		result = append(result, Link[Item]{Pos: pos, Item: item})
+	}
+	return
+}
+
+// HasLink 检查一个位置是否包含除它本身外的其他关联成员
+func (slf *DistributionPattern[Item]) HasLink(pos int) bool {
+	links, exist := slf.links[pos]
+	if !exist {
+		return false
+	}
+	return len(links) > 1
+}
+
 // LoadMatrix 通过二维矩阵加载分布图
 //   - 通过该函数加载的分布图使用的矩阵是复制后的矩阵，因此无法直接通过刷新(Refresh)来更新分布关系
 //   - 需要通过直接刷新的方式请使用 LoadMatrixWithPos
