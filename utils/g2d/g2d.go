@@ -90,3 +90,16 @@ func PosToCoordinateX(width, pos int) int {
 func PosToCoordinateY(width, pos int) int {
 	return pos / width
 }
+
+// MatrixToPosMatrix 将二维矩阵转换为顺序的二维矩阵
+func MatrixToPosMatrix[V any](matrix [][]V) (width int, posMatrix []V) {
+	width = len(matrix)
+	height := len(matrix[0])
+	posMatrix = make([]V, width*height)
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			posMatrix[CoordinateToPos(width, x, y)] = matrix[x][y]
+		}
+	}
+	return
+}
