@@ -2,7 +2,6 @@ package dp
 
 import (
 	"github.com/kercylan98/minotaur/utils/g2d"
-	"github.com/kercylan98/minotaur/utils/hash"
 )
 
 // NewDistributionPattern 构建一个分布图实例
@@ -55,12 +54,13 @@ func (slf *DistributionPattern[Item]) Refresh(pos int) {
 		slf.buildRelationships(pos, slf.matrix[pos])
 		return
 	}
-	temp := hash.Copy(links)
+	var positions []int
 	for tp := range links {
+		positions = append(positions, tp)
 		delete(slf.links, tp)
 	}
-	for tp, target := range temp {
-		slf.buildRelationships(tp, target)
+	for _, tp := range positions {
+		slf.buildRelationships(tp, slf.matrix[tp])
 	}
 }
 
@@ -78,12 +78,13 @@ func (slf *DistributionPattern[Item]) RefreshWithItem(pos int, item Item) {
 		slf.buildRelationships(pos, slf.matrix[pos])
 		return
 	}
-	temp := hash.Copy(links)
+	var positions []int
 	for tp := range links {
+		positions = append(positions, tp)
 		delete(slf.links, tp)
 	}
-	for tp, target := range temp {
-		slf.buildRelationships(tp, target)
+	for _, tp := range positions {
+		slf.buildRelationships(tp, slf.matrix[tp])
 	}
 }
 

@@ -17,4 +17,12 @@ func TestNewDistributionPattern(t *testing.T) {
 	for pos, link := range dp.links {
 		fmt.Println(pos, link, fmt.Sprintf("%p", link))
 	}
+
+	fmt.Println()
+
+	matrix[6] = 2
+	dp.Refresh(6)
+	for pos, link := range dp.links {
+		fmt.Println(pos, link, fmt.Sprintf("%p", link))
+	}
 }
