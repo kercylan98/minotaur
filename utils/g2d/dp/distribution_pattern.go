@@ -114,7 +114,7 @@ func (slf *DistributionPattern[Item]) buildRelationships(pos int, item Item) {
 		slf.links[pos] = links
 	}
 
-	for _, tp := range g2d.GetAdjacentCoordinatesWithPos(slf.matrix, slf.width, pos) {
+	for _, tp := range g2d.GetAdjacentTranslatePos(slf.matrix, slf.width, pos) {
 		target := slf.matrix[tp]
 		if _, exist := links[tp]; exist || !slf.sameKindVerifyHandle(item, target) {
 			continue
