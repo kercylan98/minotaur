@@ -33,8 +33,8 @@ func GetAdjacentCoordinates[T any](matrix [][]T, x, y int) (result [][2]int) {
 	return
 }
 
-// GetAdjacentCoordinatesWithPos 获取一个连续位置的矩阵中，特定位置相邻的最多四个方向的坐标
-func GetAdjacentCoordinatesWithPos[T any](matrix []T, width, pos int) (result []int) {
+// GetAdjacentTranslatePos 获取一个连续位置的矩阵中，特定位置相邻的最多四个平移方向（上下左右）的位置
+func GetAdjacentTranslatePos[T any](matrix []T, width, pos int) (result []int) {
 	size := len(matrix)
 	currentRow := pos / width
 	if up := pos - width; up >= 0 {
@@ -50,6 +50,30 @@ func GetAdjacentCoordinatesWithPos[T any](matrix []T, width, pos int) (result []
 		result = append(result, right)
 	}
 	return
+}
+
+// GetAdjacentDiagonalsPos 获取一个连续位置的矩阵中，特定位置相邻的对角线最多四个方向的位置
+func GetAdjacentDiagonalsPos[T any](matrix []T, width, pos int) (result []int) {
+	size := len(matrix)
+	currentRow := pos / width
+	if topLeft := pos - width - 1; topLeft >= 0 && currentRow-1 == (topLeft/width) {
+		result = append(result, topLeft)
+	}
+	if topRight := pos - width + 1; topRight >= 0 && currentRow-1 == (topRight/width) {
+		result = append(result, topRight)
+	}
+	if bottomLeft := pos + width - 1; bottomLeft < size && currentRow+1 == (bottomLeft/width) {
+		result = append(result, bottomLeft)
+	}
+	if bottomRight := pos + width + 1; bottomRight < size && currentRow+1 == (bottomRight/width) {
+		result = append(result, bottomRight)
+	}
+	return
+}
+
+// GetAdjacentPos 获取一个连续位置的矩阵中，特定位置相邻的最多八个方向的位置
+func GetAdjacentPos[T any](matrix []T, width, pos int) (result []int) {
+	return append(GetAdjacentTranslatePos(matrix, width, pos), GetAdjacentDiagonalsPos(matrix, width, pos)...)
 }
 
 // CoordinateToPos 将坐标转换为二维数组的顺序位置坐标
