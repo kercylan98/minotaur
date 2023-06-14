@@ -1,3 +1,0 @@
-package component
-
-// TODO
