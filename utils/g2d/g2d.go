@@ -1,5 +1,7 @@
 package g2d
 
+import "github.com/kercylan98/minotaur/utils/generic"
+
 // CoordinateToCoordinateArray 将坐标转换为x、y的坐标数组
 func CoordinateToCoordinateArray(x, y int) [2]int {
 	return [2]int{x, y}
@@ -126,4 +128,13 @@ func MatrixToPosMatrix[V any](matrix [][]V) (width int, posMatrix []V) {
 		}
 	}
 	return
+}
+
+// PointOnLine 接受六个参数 top、bottom、left、right 和 x、y，分别表示一个矩形位置尺寸和一个点的横纵坐标，判断这个点是否在一条线段上。
+//   - 首先计算点 (x, y) 与线段起点 (left, top) 之间的斜率即 (x - left) / (y - top)。
+//   - 然后计算线段起点 (left, top) 与线段终点 (right, bottom) 之间的斜率，即 (right - left) / (bottom - top)。
+//   - 如果这两个斜率等，那么点 (x, y) 就在这条线段上。为了避免除法可能导致的浮点数误差，我们可以将两个斜率的计算转换为乘法形式，即比较 (x - left) * (bottom - top) 是否等于 (right - left) * y - top)。
+//   - 如果上述等式成立，说明点 (x, y) 在线段上，函数返回 true；否则，返回 false。
+func PointOnLine[V generic.Number](top, bottom, left, right, x, y V) bool {
+	return (x-left)*(bottom-top) == (right-left)*(y-top)
 }
