@@ -1,7 +1,7 @@
 package path
 
 import (
-	"github.com/kercylan98/minotaur/utils/g2d"
+	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
 func NewLandform(pos int, features ...*LandformFeature) *Landform {
@@ -29,7 +29,7 @@ type Landform struct {
 // GetCoordinate 获取这个路径地貌指向的 x 和 y 坐标
 //   - 建议通过 GetPos 来进行获取，这样可以避免一次转换
 func (slf *Landform) GetCoordinate() (x, y int) {
-	return g2d.PosToCoordinate(slf.width, slf.pos)
+	return geometry.PosToCoordinate(slf.width, slf.pos)
 }
 
 // GetPos 获取这个路径地貌指向的 pos 位置

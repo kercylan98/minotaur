@@ -2,7 +2,7 @@ package path
 
 import (
 	"container/heap"
-	"github.com/kercylan98/minotaur/utils/g2d"
+	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
 // NewTerrain 返回一个大小为 width 和 height 的新的路径覆盖信息，landformWidth 和 landformHeight 将对每
@@ -49,7 +49,7 @@ type Terrain struct {
 // Get 返回 x 和 y 指向的地貌信息
 //   - 通常更建议使用 GetWithPos 进行获取，因为这样可以减少一次转换
 func (slf *Terrain) Get(x, y int) *Landform {
-	return slf.matrix[g2d.CoordinateToPos(slf.width, x, y)]
+	return slf.matrix[geometry.CoordinateToPos(slf.width, x, y)]
 }
 
 // GetWithPos 返回 pos 指向的地貌信息
@@ -105,7 +105,7 @@ func (slf *Terrain) GetPath(startPos, endPos int, diagonals, wallsBlockDiagonals
 			break
 		}
 
-		for _, adjacent := range g2d.GetAdjacentTranslatePos(slf.matrix, slf.width, node.landform.pos) {
+		for _, adjacent := range geometry.GetAdjacentTranslatePos(slf.matrix, slf.width, node.landform.pos) {
 			landform := slf.GetWithPos(adjacent)
 			n := &Node{landform: landform, parent: node, cost: landform.GetTotalCost() + node.cost}
 			if _, exist := checkedLandforms[adjacent]; n.landform.Walkable() && !exist {

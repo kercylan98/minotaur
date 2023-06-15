@@ -2,15 +2,16 @@ package g2d
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/geometry"
 	"testing"
 )
 
 func TestPositionIntToXY(t *testing.T) {
-	pos := CoordinateToPos(9, 7, 8)
+	pos := geometry.CoordinateToPos(9, 7, 8)
 	fmt.Println(pos)
-	fmt.Println(PosToCoordinate(9, pos))
+	fmt.Println(geometry.PosToCoordinate(9, pos))
 
-	fmt.Println(CoordinateToPos(65000, 61411, 158266))
-	fmt.Println(PosToCoordinate(65000, 10287351411))
+	fmt.Println(geometry.CoordinateToPos(65000, 61411, 158266))
+	fmt.Println(geometry.PosToCoordinate(65000, 10287351411))
 
 }

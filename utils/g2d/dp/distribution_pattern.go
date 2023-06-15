@@ -1,7 +1,7 @@
 package dp
 
 import (
-	"github.com/kercylan98/minotaur/utils/g2d"
+	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
 // NewDistributionPattern 构建一个分布图实例
@@ -43,7 +43,7 @@ func (slf *DistributionPattern[Item]) HasLink(pos int) bool {
 //   - 通过该函数加载的分布图使用的矩阵是复制后的矩阵，因此无法直接通过刷新(Refresh)来更新分布关系
 //   - 需要通过直接刷新的方式请使用 LoadMatrixWithPos
 func (slf *DistributionPattern[Item]) LoadMatrix(matrix [][]Item) {
-	slf.LoadMatrixWithPos(g2d.MatrixToPosMatrix(matrix))
+	slf.LoadMatrixWithPos(geometry.CoordinateMatrixToPosMatrix(matrix))
 	slf.usePos = false
 }
 
@@ -114,7 +114,7 @@ func (slf *DistributionPattern[Item]) buildRelationships(pos int, item Item) {
 		slf.links[pos] = links
 	}
 
-	for _, tp := range g2d.GetAdjacentTranslatePos(slf.matrix, slf.width, pos) {
+	for _, tp := range geometry.GetAdjacentTranslatePos(slf.matrix, slf.width, pos) {
 		target := slf.matrix[tp]
 		if _, exist := links[tp]; exist || !slf.sameKindVerifyHandle(item, target) {
 			continue
