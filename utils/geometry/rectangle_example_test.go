@@ -31,3 +31,19 @@ func ExampleGetShapeCoverageAreaWithPos() {
 
 	// left: 1, right: 2, top: 1, bottom: 2
 }
+
+func ExampleCoverageAreaBoundless() {
+	// # # #
+	// # X #
+	// # X X
+
+	//   ↓
+
+	// X #
+	// X X
+
+	left, right, top, bottom := geometry.CoverageAreaBoundless(1, 2, 1, 2)
+	fmt.Println(fmt.Sprintf("left: %v, right: %v, top: %v, bottom: %v", left, right, top, bottom))
+
+	// left: 0, right: 1, top: 0, bottom: 1
+}

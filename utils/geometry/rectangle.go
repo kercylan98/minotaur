@@ -189,3 +189,106 @@ func GetShapeCoverageAreaWithPos[V generic.Number](width V, positions ...V) (lef
 	}
 	return
 }
+
+// CoverageAreaBoundless 将一个图形覆盖矩形范围设置为无边的
+//   - 无边化表示会将多余的部分进行裁剪，例如图形左边从 2 开始的时候，那么左边将会被裁剪到从 0 开始
+func CoverageAreaBoundless[V generic.Number](l, r, t, b V) (left, right, top, bottom V) {
+	differentX := 0 - l
+	differentY := 0 - t
+	left = l + differentX
+	right = r + differentX
+	top = t + differentY
+	bottom = b + differentY
+	return
+}
+
+// GenerateShapeOnRectangle 生成一组二维坐标的形状
+//   - 这个形状将被在一个刚好能容纳形状的矩形中表示
+//   - 为 true 的位置表示了形状的每一个点
+func GenerateShapeOnRectangle[V generic.Number](xys ...Point[V]) (result []PointCap[V, bool]) {
+	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
+	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
+	w, h := right+1, bottom+1
+	result = make([]PointCap[V, bool], int(w*h))
+	for _, xy := range xys {
+		x, y := xy.GetXY()
+		sx := x - (r - right)
+		sy := y - (b - bottom)
+		pos := CoordinateToPos(w, sx, sy)
+		pointCap := &result[int(pos)]
+		pointCap.Point[0] = sx
+		pointCap.Point[1] = sy
+		pointCap.Data = true
+	}
+	for pos, pointCap := range result {
+		if !pointCap.Data {
+			pointCap := &result[pos]
+			sx, sy := PosToCoordinate(w, V(pos))
+			pointCap.Point[0] = sx
+			pointCap.Point[1] = sy
+		}
+	}
+	return
+}
+
+// GetExpressibleRectangleBySize 获取一个宽高可表达的所有特定尺寸以上的矩形形状
+//   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
+//   - 矩形尺寸由大到小
+func GetExpressibleRectangleBySize[V generic.Number](width, height, minWidth, minHeight V) (result []Point[V]) {
+	sourceWidth := width
+	if width == 0 || height == 0 {
+		return nil
+	}
+	if width < minWidth || height < minHeight {
+		return nil
+	}
+	width--
+	height--
+	for {
+		rightBottom := NewPoint(width, height)
+		result = append(result, rightBottom)
+		if width == 0 && height == 0 || (width < minWidth && height < minHeight) {
+			return
+		}
+		if width == height {
+			width--
+		} else if width < height {
+			if width+1 == sourceWidth {
+				height--
+			} else {
+				width++
+				height--
+			}
+		} else if width > height {
+			width--
+		}
+	}
+}
+
+// GetExpressibleRectangle 获取一个宽高可表达的所有矩形形状
+//   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
+//   - 矩形尺寸由大到小
+func GetExpressibleRectangle[V generic.Number](width, height V) (result []Point[V]) {
+	return GetExpressibleRectangleBySize(width, height, 1, 1)
+}
+
+// GetRectangleFullPointsByXY 通过开始结束坐标获取一个矩形包含的所有点
+//   - 例如 1,1 到 2,2 的矩形结果为 1,1 2,1 1,2 2,2
+func GetRectangleFullPointsByXY[V generic.Number](startX, startY, endX, endY V) (result []Point[V]) {
+	for x := startX; x <= endX; x++ {
+		for y := startY; y <= endY; y++ {
+			result = append(result, NewPoint(x, y))
+		}
+	}
+	return
+}
+
+// GetRectangleFullPoints 获取一个矩形包含的所有点
+func GetRectangleFullPoints[V generic.Number](width, height V) (result []Point[V]) {
+	for x := V(0); x < width; x++ {
+		for y := V(0); y < height; y++ {
+			result = append(result, NewPoint(x, y))
+		}
+	}
+	return
+}

@@ -38,6 +38,32 @@ func (slf Point[V]) Copy() Point[V] {
 	return CoordinateArrayCopy(slf)
 }
 
+// NewPointCap 创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
+func NewPointCap[V generic.Number, D any](x, y V) PointCap[V, D] {
+	return PointCap[V, D]{
+		Point: NewPoint(x, y),
+	}
+}
+
+// NewPointCapWithData 通过设置数据的方式创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
+func NewPointCapWithData[V generic.Number, D any](x, y V, data D) PointCap[V, D] {
+	return PointCap[V, D]{
+		Point: NewPoint(x, y),
+		Data:  data,
+	}
+}
+
+// PointCap 表示了一个由 x、y 坐标组成的点，这个点具有一个数据容量
+type PointCap[V generic.Number, D any] struct {
+	Point[V]
+	Data D
+}
+
+// GetData 获取数据
+func (slf PointCap[V, D]) GetData() D {
+	return slf.Data
+}
+
 // CoordinateToCoordinateArray 将坐标转换为x、y的坐标数组
 func CoordinateToCoordinateArray[V generic.Number](x, y V) Point[V] {
 	return [2]V{x, y}
