@@ -143,3 +143,49 @@ func CoordinateMatrixToPosMatrix[V any](matrix [][]V) (width int, posMatrix []V)
 	}
 	return
 }
+
+// GetShapeCoverageAreaWithCoordinateArray 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
+func GetShapeCoverageAreaWithCoordinateArray[V generic.Number](xys ...Point[V]) (left, right, top, bottom V) {
+	hasLeft, hasTop := false, false
+	for _, xy := range xys {
+		x, y := CoordinateArrayToCoordinate(xy)
+		if x < left || !hasLeft {
+			hasLeft = true
+			left = x
+		}
+		if x > right {
+			right = x
+		}
+		if y < top || !hasTop {
+			hasTop = true
+			top = y
+		}
+		if y > bottom {
+			bottom = y
+		}
+	}
+	return
+}
+
+// GetShapeCoverageAreaWithPos 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
+func GetShapeCoverageAreaWithPos[V generic.Number](width V, positions ...V) (left, right, top, bottom V) {
+	hasLeft, hasTop := false, false
+	for _, pos := range positions {
+		x, y := PosToCoordinate(width, pos)
+		if x < left || !hasLeft {
+			hasLeft = true
+			left = x
+		}
+		if x > right {
+			right = x
+		}
+		if y < top || !hasTop {
+			hasTop = true
+			top = y
+		}
+		if y > bottom {
+			bottom = y
+		}
+	}
+	return
+}
