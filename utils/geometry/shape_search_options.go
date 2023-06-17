@@ -1,14 +1,44 @@
 package geometry
 
 type shapeSearchOptions struct {
-	lowerLimit    int
-	upperLimit    int
-	sort          int
-	deduplication bool
+	lowerLimit          int
+	upperLimit          int
+	sort                int
+	deduplication       bool
+	directionCountLower map[Direction]int
+	directionCountUpper map[Direction]int
+	directionCount      int
 }
 
 // ShapeSearchOption 图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 type ShapeSearchOption func(options *shapeSearchOptions)
+
+// WithShapeSearchDirectionCountLowerLimit 通过限制特定方向数量下限的方式搜索
+func WithShapeSearchDirectionCountLowerLimit(direction Direction, count int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		if options.directionCountLower == nil {
+			options.directionCountLower = map[Direction]int{}
+		}
+		options.directionCountLower[direction] = count
+	}
+}
+
+// WithShapeSearchDirectionCount 通过限制方向数量的方式搜索
+func WithShapeSearchDirectionCount(count int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		if options.directionCountLower == nil {
+			options.directionCountLower = map[Direction]int{}
+		}
+		options.directionCount = count
+	}
+}
+
+// WithShapeSearchDirectionCountUpperLimit 通过限制特定方向数量上限的方式搜索
+func WithShapeSearchDirectionCountUpperLimit(direction Direction, count int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.directionCountUpper[direction] = count
+	}
+}
 
 // WithShapeSearchDeduplication 通过去重的方式进行搜索
 //   - 去重方式中每个点仅会被使用一次

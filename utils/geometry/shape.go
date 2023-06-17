@@ -49,6 +49,11 @@ func (slf Shape[V]) String() string {
 // 可通过可选项对搜索结果进行过滤
 func (slf Shape[V]) ShapeSearch(options ...ShapeSearchOption) (result []Shape[V]) {
 	opt := &shapeSearchOptions{upperLimit: math.MaxInt}
+	opt.directionCountUpper = map[Direction]int{}
+	for _, d := range Directions {
+		opt.directionCountUpper[d] = math.MaxInt
+	}
+
 	for _, option := range options {
 		option(opt)
 	}
@@ -123,6 +128,7 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 		var next = -1
 		var directionPoint = point
 		var links = Shape[V]{point}
+		var directionCount = map[Direction]int{}
 		for {
 			var direction Direction
 			next, direction = slice.NextLoop(Directions, next)
@@ -135,18 +141,36 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 					break
 				}
 				links = append(links, directionPoint)
+				directionCount[direction]++
 				pos := directionPoint.GetPos(areaWidth)
 				if _, exist := records[pos]; !exist {
 					result = append(result, Shape[V]{directionPoint})
 					records[pos] = struct{}{}
 				}
+
 			}
 			if direction == DirectionRight {
 				break
 			}
 			directionPoint = point
 		}
-		result = append(result, links)
+
+		match := true
+		for _, direction := range Directions {
+			c := directionCount[direction]
+			if c < opt.directionCountLower[direction] || c > opt.directionCountUpper[direction] {
+				match = false
+				break
+			}
+		}
+
+		if match && opt.directionCount > 0 && len(directionCount) != opt.directionCount {
+			match = false
+		}
+
+		if match {
+			result = append(result, links)
+		}
 	}
 
 	return result

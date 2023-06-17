@@ -14,12 +14,18 @@ func TestShape_Search(t *testing.T) {
 	shape = append(shape, geometry.NewPoint(1, 2))
 	shape = append(shape, geometry.NewPoint(2, 2))
 
+	fmt.Println("形状：")
 	fmt.Println(shape)
 
-	shapes := shape.ShapeSearch(geometry.WithShapeSearchAsc(), geometry.WithShapeSearchDeduplication())
+	shapes := shape.ShapeSearch(
+		geometry.WithShapeSearchDesc(),
+		geometry.WithShapeSearchDeduplication(),
+		geometry.WithShapeSearchPointCountLowerLimit(3),
+		geometry.WithShapeSearchDirectionCount(1),
+	)
 
 	for _, shape := range shapes {
-		fmt.Println("图形", shape.Points())
+		fmt.Println("搜索", shape.Points())
 		fmt.Println(shape)
 	}
 }
