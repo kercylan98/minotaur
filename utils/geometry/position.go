@@ -38,6 +38,11 @@ func (slf Point[V]) GetOffset(x, y V) Point[V] {
 	return NewPoint(slf.GetX()+x, slf.GetY()+y)
 }
 
+// Negative 返回该点是否是一个负数坐标
+func (slf Point[V]) Negative() bool {
+	return slf.GetX() < V(0) || slf.GetY() < V(0)
+}
+
 // Equal 返回两个点是否相等
 func (slf Point[V]) Equal(point Point[V]) bool {
 	return slf.GetX() == point.GetX() && slf.GetY() == point.GetY()

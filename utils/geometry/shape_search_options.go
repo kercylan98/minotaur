@@ -9,10 +9,18 @@ type shapeSearchOptions struct {
 	directionCountUpper map[Direction]int
 	directionCount      int
 	oppositionDirection Direction
+	ra                  bool
 }
 
 // ShapeSearchOption 图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 type ShapeSearchOption func(options *shapeSearchOptions)
+
+// WithShapeSearchRightAngle 通过直角的方式进行搜索
+func WithShapeSearchRightAngle() ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.ra = true
+	}
+}
 
 // WithShapeSearchOppositionDirection 通过限制对立方向的方式搜索
 //   - 对立方向例如上不能与下共存

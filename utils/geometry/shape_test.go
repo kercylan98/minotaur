@@ -13,6 +13,8 @@ func TestShape_Search(t *testing.T) {
 	shape = append(shape, geometry.NewPoint(1, 1))
 	shape = append(shape, geometry.NewPoint(1, 2))
 	shape = append(shape, geometry.NewPoint(2, 2))
+	shape = append(shape, geometry.NewPoint(1, 3))
+	geometry.ShapeStringHasBorder = true
 
 	fmt.Println("形状：")
 	fmt.Println(shape)
@@ -21,7 +23,7 @@ func TestShape_Search(t *testing.T) {
 		geometry.WithShapeSearchDesc(),
 		geometry.WithShapeSearchDeduplication(),
 		geometry.WithShapeSearchPointCountLowerLimit(3),
-		geometry.WithShapeSearchDirectionCount(1),
+		geometry.WithShapeSearchRightAngle(),
 	)
 
 	for _, shape := range shapes {

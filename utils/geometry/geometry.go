@@ -17,8 +17,24 @@ const (
 )
 
 var (
-	Directions = []Direction{DirectionUp, DirectionDown, DirectionLeft, DirectionRight} // 上下左右四个方向的数组
+	DirectionUDLR = []Direction{DirectionUp, DirectionDown, DirectionLeft, DirectionRight} // 上下左右四个方向的数组
+	DirectionLRUD = []Direction{DirectionLeft, DirectionRight, DirectionUp, DirectionDown} // 左右上下四个方向的数组
 )
+
+// GetOppositionDirection 获取特定方向的对立方向
+func GetOppositionDirection(direction Direction) Direction {
+	switch direction {
+	case DirectionUp:
+		return DirectionDown
+	case DirectionDown:
+		return DirectionUp
+	case DirectionLeft:
+		return DirectionRight
+	case DirectionRight:
+		return DirectionLeft
+	}
+	return DirectionUnknown
+}
 
 // GetDirectionNextWithCoordinate 获取特定方向上的下一个坐标
 func GetDirectionNextWithCoordinate[V generic.Number](direction Direction, x, y V) (nx, ny V) {
