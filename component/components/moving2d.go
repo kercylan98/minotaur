@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/kercylan98/minotaur/component"
-	"github.com/kercylan98/minotaur/utils/g2d"
+	"github.com/kercylan98/minotaur/utils/geometry"
 	"sync"
 	"time"
 )
@@ -117,13 +117,13 @@ func (slf *Moving2D) handle() {
 		for guid, entity := range slf.entities {
 			entity := entity
 			x, y := entity.GetPosition()
-			angle := g2d.CalcAngle(x, y, entity.x, entity.y)
+			angle := geometry.CalcAngle(x, y, entity.x, entity.y)
 			moveTime := time.Now().UnixMilli()
 			interval := float64(moveTime - entity.lastMoveTime)
 			if interval == 0 {
 				continue
 			}
-			distance := g2d.CalcDistance(x, y, entity.x, entity.y)
+			distance := geometry.CalcDistance(x, y, entity.x, entity.y)
 			moveDistance := interval * (entity.GetSpeed() / (slf.timeUnit / 1000 / 1000))
 			if moveDistance >= distance || (x == entity.x && y == entity.y) {
 				entity.SetPosition(entity.x, entity.y)
@@ -131,7 +131,7 @@ func (slf *Moving2D) handle() {
 				slf.OnPosition2DDestinationEvent(entity)
 				continue
 			} else {
-				nx, ny := g2d.CalculateNewCoordinate(x, y, angle, moveDistance)
+				nx, ny := geometry.CalculateNewCoordinate(x, y, angle, moveDistance)
 				entity.SetPosition(nx, ny)
 				entity.lastMoveTime = moveTime
 				slf.OnPosition2DChangeEvent(entity, x, y)

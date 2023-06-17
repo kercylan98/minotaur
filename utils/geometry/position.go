@@ -33,6 +33,16 @@ func (slf Point[V]) GetPos(width V) V {
 	return CoordinateArrayToPos(width, slf)
 }
 
+// GetOffset 获取偏移后的新坐标
+func (slf Point[V]) GetOffset(x, y V) Point[V] {
+	return NewPoint(slf.GetX()+x, slf.GetY()+y)
+}
+
+// Equal 返回两个点是否相等
+func (slf Point[V]) Equal(point Point[V]) bool {
+	return slf.GetX() == point.GetX() && slf.GetY() == point.GetY()
+}
+
 // Copy 复制一个点位置
 func (slf Point[V]) Copy() Point[V] {
 	return CoordinateArrayCopy(slf)
@@ -131,4 +141,9 @@ func PosToCoordinateArrayWithMulti[V generic.Number](width V, positions ...V) []
 		result[i] = PosToCoordinateArray(width, positions[i])
 	}
 	return result
+}
+
+// PosSameRow 返回两个顺序位置在同一宽度是否位于同一行
+func PosSameRow[V generic.Number](width, pos1, pos2 V) bool {
+	return (pos1 / width) == (pos2 / width)
 }

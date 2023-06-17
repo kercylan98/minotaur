@@ -54,3 +54,16 @@ func Move[V any](slice *[]V, index, to int) {
 		Del[V](slice, index)
 	}
 }
+
+// NextLoop 返回 i 的下一个数组成员，当 i 达到数组长度时从 0 开始
+//   - 当 i 为 -1 时将返回第一个元素
+func NextLoop[V any](slice []V, i int) (next int, value V) {
+	if i == -1 {
+		return 0, slice[0]
+	}
+	next = i + 1
+	if next == len(slice) {
+		next = 0
+	}
+	return next, slice[next]
+}

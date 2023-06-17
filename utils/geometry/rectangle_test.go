@@ -1,6 +1,7 @@
 package geometry_test
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/geometry"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -46,12 +47,14 @@ func TestCoverageAreaBoundless(t *testing.T) {
 
 func TestGenerateShapeOnRectangle(t *testing.T) {
 	Convey("TestGenerateShapeOnRectangle", t, func() {
-		var points []geometry.Point[int]
+		var points geometry.Shape[int]
 		points = append(points, geometry.NewPoint(1, 1))
 		points = append(points, geometry.NewPoint(2, 1))
 		points = append(points, geometry.NewPoint(2, 2))
 
-		ps := geometry.GenerateShapeOnRectangle(points...)
+		fmt.Println(points)
+
+		ps := geometry.GenerateShapeOnRectangle(points.Points()...)
 
 		So(ps[0].GetX(), ShouldEqual, 0)
 		So(ps[0].GetY(), ShouldEqual, 0)

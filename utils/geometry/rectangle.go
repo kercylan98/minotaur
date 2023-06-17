@@ -283,12 +283,22 @@ func GetRectangleFullPointsByXY[V generic.Number](startX, startY, endX, endY V) 
 	return
 }
 
-// GetRectangleFullPoints 获取一个矩形包含的所有点
+// GetRectangleFullPoints 获取一个矩形填充满后包含的所有点
 func GetRectangleFullPoints[V generic.Number](width, height V) (result []Point[V]) {
 	for x := V(0); x < width; x++ {
 		for y := V(0); y < height; y++ {
 			result = append(result, NewPoint(x, y))
 		}
+	}
+	return
+}
+
+// GetRectangleFullPos 获取一个矩形填充满后包含的所有位置
+func GetRectangleFullPos[V generic.Number](width, height V) (result []V) {
+	size := int(width * height)
+	result = make([]V, 0, size)
+	for pos := 0; pos < size; pos++ {
+		result[pos] = V(pos)
 	}
 	return
 }
