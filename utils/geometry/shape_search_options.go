@@ -8,10 +8,26 @@ type shapeSearchOptions struct {
 	directionCountLower map[Direction]int
 	directionCountUpper map[Direction]int
 	directionCount      int
+	oppositionDirection Direction
 }
 
 // ShapeSearchOption 图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 type ShapeSearchOption func(options *shapeSearchOptions)
+
+// WithShapeSearchOppositionDirection 通过限制对立方向的方式搜索
+//   - 对立方向例如上不能与下共存
+func WithShapeSearchOppositionDirection(direction Direction) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.oppositionDirection = direction
+	}
+}
+
+// WithShapeSearchDirectionCount 通过限制方向数量的方式搜索
+func WithShapeSearchDirectionCount(count int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.directionCount = count
+	}
+}
 
 // WithShapeSearchDirectionCountLowerLimit 通过限制特定方向数量下限的方式搜索
 func WithShapeSearchDirectionCountLowerLimit(direction Direction, count int) ShapeSearchOption {
@@ -20,16 +36,6 @@ func WithShapeSearchDirectionCountLowerLimit(direction Direction, count int) Sha
 			options.directionCountLower = map[Direction]int{}
 		}
 		options.directionCountLower[direction] = count
-	}
-}
-
-// WithShapeSearchDirectionCount 通过限制方向数量的方式搜索
-func WithShapeSearchDirectionCount(count int) ShapeSearchOption {
-	return func(options *shapeSearchOptions) {
-		if options.directionCountLower == nil {
-			options.directionCountLower = map[Direction]int{}
-		}
-		options.directionCount = count
 	}
 }
 
