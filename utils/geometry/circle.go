@@ -13,7 +13,6 @@ func GenerateCircle[V generic.SignedNumber](radius V, points int) Shape[V] {
 		curAngle := float64(i) * angle
 		x := radius * V(math.Cos(curAngle))
 		y := radius * V(math.Sin(curAngle))
-
 		shape = append(shape, NewPoint(x, y))
 	}
 	return shape

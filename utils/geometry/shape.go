@@ -30,7 +30,7 @@ func (slf Shape[V]) String() string {
 			for x := left; x < left+width; x++ {
 				exist := false
 				for _, p := range slf {
-					if x == p.GetX() && y == p.GetY() {
+					if int(x) == int(p.GetX()) && int(y) == int(p.GetY()) {
 						exist = true
 						break
 					}
