@@ -231,6 +231,26 @@ func GenerateShapeOnRectangle[V generic.Number](xys ...Point[V]) (result []Point
 	return
 }
 
+// GenerateShapeOnRectangleWithCoordinate 生成一组二维坐标的形状
+//   - 这个形状将被在一个刚好能容纳形状的矩形中表示
+//   - 为 true 的位置表示了形状的每一个点
+func GenerateShapeOnRectangleWithCoordinate[V generic.Number](xys ...Point[V]) (result [][]bool) {
+	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
+	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
+	w, h := right+1, bottom+1
+	result = make([][]bool, int(w))
+	for x := V(0); x < w; x++ {
+		result[int(x)] = make([]bool, int(h))
+	}
+	for _, xy := range xys {
+		x, y := xy.GetXY()
+		sx := x - (r - right)
+		sy := y - (b - bottom)
+		result[int(sx)][int(sy)] = true
+	}
+	return
+}
+
 // GetExpressibleRectangleBySize 获取一个宽高可表达的所有特定尺寸以上的矩形形状
 //   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
 //   - 矩形尺寸由大到小

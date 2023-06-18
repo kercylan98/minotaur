@@ -72,7 +72,7 @@ func (slf Shape[V]) String() string {
 //
 // 可通过可选项对搜索结果进行过滤
 func (slf Shape[V]) ShapeSearch(options ...ShapeSearchOption) (result []Shape[V]) {
-	opt := &shapeSearchOptions{upperLimit: math.MaxInt}
+	opt := &shapeSearchOptions{upperLimit: math.MaxInt, rectangleMaxWidth: math.MaxInt, rectangleMaxHeight: math.MaxInt}
 	opt.directionCountUpper = map[Direction]int{}
 	for _, d := range DirectionUDLR {
 		opt.directionCountUpper[d] = math.MaxInt
@@ -147,6 +147,9 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 	records := make(map[V]struct{})
 
 	var match = func(links Shape[V], directionCount map[Direction]int, count int) bool {
+		if opt.rectangle {
+			return false
+		}
 		match := true
 		for _, direction := range DirectionUDLR {
 			c := directionCount[direction]
@@ -183,59 +186,99 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 		return match
 	}
 
-	// 通过每个点扩散图形
-	for _, point := range slf.Points() {
-		// 搜索四个方向
-		var next = -1
-		var directionPoint = point
-		var links = Shape[V]{point}
-		var directionCount = map[Direction]int{}
-		var count = 0
-		for i, directions := range [][]Direction{DirectionUDLR, DirectionLRUD} {
-			var direction Direction
-			next, direction = slice.NextLoop(directions, next)
+	if opt.rectangle {
+		l, r, t, b := GetShapeCoverageAreaWithCoordinateArray(slf.Points()...)
+		rs := GenerateShapeOnRectangleWithCoordinate(slf.Points()...)
+		w := r - l + 1
+		h := b - t + 1
+		shapes := GetExpressibleRectangleBySize(w, h, V(opt.rectangleMinWidth), V(opt.rectangleMinHeight))
+		for _, s := range shapes {
+			x, y := 0, 0
 			for {
-				directionPoint = GetDirectionNextWithCoordinateArray(direction, directionPoint)
-				if px, py := directionPoint.GetXY(); px < 0 || px >= areaWidth || py < 0 || py >= areaHeight {
+				if V(x)+s.GetX() >= w {
+					x = 0
+					y++
+				}
+				if V(y)+s.GetY() >= h {
 					break
 				}
-				offset := directionPoint.GetOffset(-left, -top)
-				if offset.Negative() {
-					break
+				points := GetRectangleFullPoints(s[0]+1, s[1]+1)
+				find := 0
+				for _, point := range points {
+					px, py := CoordinateArrayToCoordinate(point)
+					ox, oy := px+V(x), py+V(y)
+					if !rs[int(ox)][int(oy)] {
+						find = 0
+						break
+					}
+					find++
 				}
-				offsetPos := int(offset.GetPos(width))
-				if offsetPos < 0 || offsetPos >= len(rectangleShape) || !rectangleShape[offsetPos].Data {
-					break
-				}
-				links = append(links, directionPoint)
-				directionCount[direction]++
-				count++
-				match(links, directionCount, count)
-				pos := directionPoint.GetPos(areaWidth)
-				if _, exist := records[pos]; !exist {
-					result = append(result, Shape[V]{directionPoint})
-					records[pos] = struct{}{}
+				if find == len(points) {
+					sw := s.GetX() + 1
+					sh := s.GetY() + 1
+					if !(sw < V(opt.rectangleMinWidth) || sw > V(opt.rectangleMaxWidth) || sh < V(opt.rectangleMinHeight) || sh > V(opt.rectangleMaxHeight)) {
+						result = append(result, points)
+					}
 				}
 
+				x++
 			}
-
-			finish := false
-			switch i {
-			case 0:
-				if direction == DirectionRight {
-					finish = true
-				}
-			case 1:
-				if direction == DirectionDown {
-					finish = true
-				}
-			}
-			if finish {
-				break
-			}
-			directionPoint = point
 		}
+	} else {
+		for _, point := range slf.Points() {
+			// 搜索四个方向
+			var next = -1
+			var directionPoint = point
+			var links = Shape[V]{point}
+			var directionCount = map[Direction]int{}
+			var count = 0
+			for i, directions := range [][]Direction{DirectionUDLR, DirectionLRUD} {
+				var direction Direction
+				next, direction = slice.NextLoop(directions, next)
+				for {
+					directionPoint = GetDirectionNextWithCoordinateArray(direction, directionPoint)
+					if px, py := directionPoint.GetXY(); px < 0 || px >= areaWidth || py < 0 || py >= areaHeight {
+						break
+					}
+					offset := directionPoint.GetOffset(-left, -top)
+					if offset.Negative() {
+						break
+					}
+					offsetPos := int(offset.GetPos(width))
+					if offsetPos < 0 || offsetPos >= len(rectangleShape) || !rectangleShape[offsetPos].Data {
+						break
+					}
+					links = append(links, directionPoint)
+					directionCount[direction]++
+					count++
+					match(links, directionCount, count)
 
+					pos := directionPoint.GetPos(areaWidth)
+					if _, exist := records[pos]; !exist {
+						result = append(result, Shape[V]{directionPoint})
+						records[pos] = struct{}{}
+					}
+
+				}
+
+				finish := false
+				switch i {
+				case 0:
+					if direction == DirectionRight {
+						finish = true
+					}
+				case 1:
+					if direction == DirectionDown {
+						finish = true
+					}
+				}
+				if finish {
+					break
+				}
+				directionPoint = point
+			}
+
+		}
 	}
 
 	return result
@@ -262,107 +305,3 @@ func (slf Shape[V]) getAllGraphicCompositionWithDesc(opt *shapeSearchOptions) (r
 	})
 	return
 }
-
-//
-//// SearchNotRepeatFullRectangle 在一组二维坐标中从大到小搜索不重复的填充满的矩形
-////   - 不重复指一个位置被使用后将不会被其他矩形使用
-////   - 返回值表示了匹配的形状的左上角和右下角的点坐标
-//func SearchNotRepeatFullRectangle(minWidth, minHeight int, xys ...[2]int) (result [][2][2]int) {
-//	left, _, top, _ := GetShapeCoverageArea(xys...)
-//	rectangleShape := GenerateShape(xys...)
-//	record := map[int]map[int]bool{}
-//	width := len(rectangleShape)
-//	height := len(rectangleShape[0])
-//	for x := 0; x < width; x++ {
-//		for y := 0; y < height; y++ {
-//			record[x] = map[int]bool{}
-//		}
-//	}
-//
-//	shapes := GetExpressibleRectangleBySize(width, height, minWidth, minHeight)
-//	for _, s := range shapes {
-//		x, y := 0, 0
-//		for {
-//			if x+s[0] >= width {
-//				x = 0
-//				y++
-//			}
-//			if y+s[1] >= height {
-//				break
-//			}
-//			points := GetRectangleFullPoints(s[0]+1, s[1]+1)
-//			find := 0
-//			for _, point := range points {
-//				px, py := CoordinateArrayToCoordinate(point)
-//				ox, oy := px+x, py+y
-//				if record[ox][oy] || !rectangleShape[ox][oy] {
-//					find = 0
-//					break
-//				}
-//				find++
-//			}
-//			if find == len(points) {
-//				for _, point := range points {
-//					px, py := CoordinateArrayToCoordinate(point)
-//					record[px+x][py+y] = true
-//				}
-//				result = append(result, [2][2]int{
-//					{x + left, y + top}, {x + left + s[0], y + top + s[1]},
-//				})
-//			}
-//
-//			x++
-//		}
-//	}
-//
-//	return result
-//}
-//
-//// SearchContainFullRectangle 在一组二维坐标中查找是否存在填充满的矩形
-//func SearchContainFullRectangle(minWidth, minHeight int, xys ...[2]int) bool {
-//	rectangleShape := GenerateShape(xys...)
-//	record := map[int]map[int]bool{}
-//	width := len(rectangleShape)
-//	height := len(rectangleShape[0])
-//	for x := 0; x < width; x++ {
-//		for y := 0; y < height; y++ {
-//			record[x] = map[int]bool{}
-//		}
-//	}
-//
-//	shapes := GetExpressibleRectangleBySize(width, height, minWidth, minHeight)
-//	for _, s := range shapes {
-//		x, y := 0, 0
-//		for {
-//			if x+s[0] >= width {
-//				x = 0
-//				y++
-//			}
-//			if y+s[1] >= height {
-//				break
-//			}
-//			points := GetRectangleFullPoints(s[0]+1, s[1]+1)
-//			find := 0
-//			for _, point := range points {
-//				px, py := CoordinateArrayToCoordinate(point)
-//				ox, oy := px+x, py+y
-//				if record[ox][oy] || !rectangleShape[ox][oy] {
-//					find = 0
-//					break
-//				}
-//				find++
-//			}
-//			if find == len(points) {
-//				for _, point := range points {
-//					px, py := CoordinateArrayToCoordinate(point)
-//					record[px+x][py+y] = true
-//				}
-//				return true
-//			}
-//
-//			x++
-//		}
-//	}
-//
-//	return false
-//}

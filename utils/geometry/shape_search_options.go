@@ -10,10 +10,33 @@ type shapeSearchOptions struct {
 	directionCount      int
 	oppositionDirection Direction
 	ra                  bool
+	rectangle           bool
+	rectangleMinWidth   int
+	rectangleMinHeight  int
+	rectangleMaxWidth   int
+	rectangleMaxHeight  int
 }
 
 // ShapeSearchOption 图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 type ShapeSearchOption func(options *shapeSearchOptions)
+
+// WithShapeSearchRectangleLowerLimit 通过矩形宽高下限的方式搜索
+func WithShapeSearchRectangleLowerLimit(minWidth, minHeight int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.rectangleMinWidth = minWidth
+		options.rectangleMinHeight = minHeight
+		options.rectangle = true
+	}
+}
+
+// WithShapeSearchRectangleUpperLimit 通过矩形宽高上限的方式搜索
+func WithShapeSearchRectangleUpperLimit(maxWidth, maxHeight int) ShapeSearchOption {
+	return func(options *shapeSearchOptions) {
+		options.rectangleMaxWidth = maxWidth
+		options.rectangleMaxHeight = maxHeight
+		options.rectangle = true
+	}
+}
 
 // WithShapeSearchRightAngle 通过直角的方式进行搜索
 func WithShapeSearchRightAngle() ShapeSearchOption {

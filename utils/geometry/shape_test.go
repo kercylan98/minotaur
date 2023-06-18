@@ -12,6 +12,7 @@ func TestShape_Search(t *testing.T) {
 	shape = append(shape, geometry.NewPoint(1, 0))
 	shape = append(shape, geometry.NewPoint(1, 1))
 	shape = append(shape, geometry.NewPoint(1, 2))
+	shape = append(shape, geometry.NewPoint(2, 1))
 	shape = append(shape, geometry.NewPoint(2, 2))
 	shape = append(shape, geometry.NewPoint(1, 3))
 	geometry.ShapeStringHasBorder = true
@@ -21,9 +22,7 @@ func TestShape_Search(t *testing.T) {
 
 	shapes := shape.ShapeSearch(
 		geometry.WithShapeSearchDesc(),
-		geometry.WithShapeSearchDeduplication(),
-		geometry.WithShapeSearchPointCountLowerLimit(3),
-		geometry.WithShapeSearchRightAngle(),
+		geometry.WithShapeSearchRectangleLowerLimit(2, 2),
 	)
 
 	for _, shape := range shapes {
