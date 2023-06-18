@@ -12,7 +12,7 @@ var (
 )
 
 // Shape 通过多个点表示了一个形状
-type Shape[V generic.Number] []Point[V]
+type Shape[V generic.SignedNumber] []Point[V]
 
 // Points 获取这个形状的所有点
 func (slf Shape[V]) Points() []Point[V] {

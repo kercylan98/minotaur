@@ -8,6 +8,10 @@ type Number interface {
 	Integer | Float
 }
 
+type SignedNumber interface {
+	Signed | Float
+}
+
 type Integer interface {
 	Signed | Unsigned
 }

@@ -3,7 +3,7 @@ package geometry
 import "github.com/kercylan98/minotaur/utils/generic"
 
 // GetAdjacentTranslatePos 获取一个连续位置的矩阵中，特定位置相邻的最多四个平移方向（上下左右）的位置
-func GetAdjacentTranslatePos[T any, P generic.Number](matrix []T, width, pos P) (result []P) {
+func GetAdjacentTranslatePos[T any, P generic.SignedNumber](matrix []T, width, pos P) (result []P) {
 	size := P(len(matrix))
 	currentRow := pos / width
 	if up := pos - width; up >= 0 {
@@ -22,7 +22,7 @@ func GetAdjacentTranslatePos[T any, P generic.Number](matrix []T, width, pos P) 
 }
 
 // GetAdjacentTranslateCoordinateXY 获取一个基于 x、y 的二维矩阵中，特定位置相邻的最多四个平移方向（上下左右）的位置
-func GetAdjacentTranslateCoordinateXY[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentTranslateCoordinateXY[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	width := P(len(matrix))
 	height := P(len(matrix[0]))
 	if up := y - 1; up >= 0 {
@@ -41,7 +41,7 @@ func GetAdjacentTranslateCoordinateXY[T any, P generic.Number](matrix [][]T, x, 
 }
 
 // GetAdjacentTranslateCoordinateYX 获取一个基于 y、x 的二维矩阵中，特定位置相邻的最多四个平移方向（上下左右）的位置
-func GetAdjacentTranslateCoordinateYX[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentTranslateCoordinateYX[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	width := P(len(matrix[0]))
 	height := P(len(matrix))
 	if up := y - 1; up >= 0 {
@@ -60,7 +60,7 @@ func GetAdjacentTranslateCoordinateYX[T any, P generic.Number](matrix [][]T, x, 
 }
 
 // GetAdjacentDiagonalsPos 获取一个连续位置的矩阵中，特定位置相邻的对角线最多四个方向的位置
-func GetAdjacentDiagonalsPos[T any, P generic.Number](matrix []T, width, pos P) (result []P) {
+func GetAdjacentDiagonalsPos[T any, P generic.SignedNumber](matrix []T, width, pos P) (result []P) {
 	size := P(len(matrix))
 	currentRow := pos / width
 	if topLeft := pos - width - 1; topLeft >= 0 && currentRow-1 == (topLeft/width) {
@@ -79,7 +79,7 @@ func GetAdjacentDiagonalsPos[T any, P generic.Number](matrix []T, width, pos P) 
 }
 
 // GetAdjacentDiagonalsCoordinateXY 获取一个基于 x、y 的二维矩阵中，特定位置相邻的对角线最多四个方向的位置
-func GetAdjacentDiagonalsCoordinateXY[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentDiagonalsCoordinateXY[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	width := P(len(matrix[0]))
 	height := P(len(matrix))
 	if nx, ny := x-1, y-1; nx >= 0 && ny >= 0 {
@@ -98,7 +98,7 @@ func GetAdjacentDiagonalsCoordinateXY[T any, P generic.Number](matrix [][]T, x, 
 }
 
 // GetAdjacentDiagonalsCoordinateYX 获取一个基于 tx 的二维矩阵中，特定位置相邻的对角线最多四个方向的位置
-func GetAdjacentDiagonalsCoordinateYX[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentDiagonalsCoordinateYX[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	width := P(len(matrix))
 	height := P(len(matrix[0]))
 	if nx, ny := x-1, y-1; nx >= 0 && ny >= 0 {
@@ -117,17 +117,17 @@ func GetAdjacentDiagonalsCoordinateYX[T any, P generic.Number](matrix [][]T, x, 
 }
 
 // GetAdjacentPos 获取一个连续位置的矩阵中，特定位置相邻的最多八个方向的位置
-func GetAdjacentPos[T any, P generic.Number](matrix []T, width, pos P) (result []P) {
+func GetAdjacentPos[T any, P generic.SignedNumber](matrix []T, width, pos P) (result []P) {
 	return append(GetAdjacentTranslatePos(matrix, width, pos), GetAdjacentDiagonalsPos(matrix, width, pos)...)
 }
 
 // GetAdjacentCoordinateXY 获取一个基于 x、y 的二维矩阵中，特定位置相邻的最多八个方向的位置
-func GetAdjacentCoordinateXY[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentCoordinateXY[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	return append(GetAdjacentTranslateCoordinateXY(matrix, x, y), GetAdjacentDiagonalsCoordinateXY(matrix, x, y)...)
 }
 
 // GetAdjacentCoordinateYX 获取一个基于 yx 的二维矩阵中，特定位置相邻的最多八个方向的位置
-func GetAdjacentCoordinateYX[T any, P generic.Number](matrix [][]T, x, y P) (result []Point[P]) {
+func GetAdjacentCoordinateYX[T any, P generic.SignedNumber](matrix [][]T, x, y P) (result []Point[P]) {
 	return append(GetAdjacentTranslateCoordinateYX(matrix, x, y), GetAdjacentDiagonalsCoordinateYX(matrix, x, y)...)
 }
 
@@ -145,7 +145,7 @@ func CoordinateMatrixToPosMatrix[V any](matrix [][]V) (width int, posMatrix []V)
 }
 
 // GetShapeCoverageAreaWithCoordinateArray 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
-func GetShapeCoverageAreaWithCoordinateArray[V generic.Number](xys ...Point[V]) (left, right, top, bottom V) {
+func GetShapeCoverageAreaWithCoordinateArray[V generic.SignedNumber](xys ...Point[V]) (left, right, top, bottom V) {
 	hasLeft, hasTop := false, false
 	for _, xy := range xys {
 		x, y := CoordinateArrayToCoordinate(xy)
@@ -168,7 +168,7 @@ func GetShapeCoverageAreaWithCoordinateArray[V generic.Number](xys ...Point[V]) 
 }
 
 // GetShapeCoverageAreaWithPos 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
-func GetShapeCoverageAreaWithPos[V generic.Number](width V, positions ...V) (left, right, top, bottom V) {
+func GetShapeCoverageAreaWithPos[V generic.SignedNumber](width V, positions ...V) (left, right, top, bottom V) {
 	hasLeft, hasTop := false, false
 	for _, pos := range positions {
 		x, y := PosToCoordinate(width, pos)
@@ -192,7 +192,7 @@ func GetShapeCoverageAreaWithPos[V generic.Number](width V, positions ...V) (lef
 
 // CoverageAreaBoundless 将一个图形覆盖矩形范围设置为无边的
 //   - 无边化表示会将多余的部分进行裁剪，例如图形左边从 2 开始的时候，那么左边将会被裁剪到从 0 开始
-func CoverageAreaBoundless[V generic.Number](l, r, t, b V) (left, right, top, bottom V) {
+func CoverageAreaBoundless[V generic.SignedNumber](l, r, t, b V) (left, right, top, bottom V) {
 	differentX := 0 - l
 	differentY := 0 - t
 	left = l + differentX
@@ -205,7 +205,7 @@ func CoverageAreaBoundless[V generic.Number](l, r, t, b V) (left, right, top, bo
 // GenerateShapeOnRectangle 生成一组二维坐标的形状
 //   - 这个形状将被在一个刚好能容纳形状的矩形中表示
 //   - 为 true 的位置表示了形状的每一个点
-func GenerateShapeOnRectangle[V generic.Number](xys ...Point[V]) (result []PointCap[V, bool]) {
+func GenerateShapeOnRectangle[V generic.SignedNumber](xys ...Point[V]) (result []PointCap[V, bool]) {
 	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
 	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
 	w, h := right+1, bottom+1
@@ -234,7 +234,7 @@ func GenerateShapeOnRectangle[V generic.Number](xys ...Point[V]) (result []Point
 // GenerateShapeOnRectangleWithCoordinate 生成一组二维坐标的形状
 //   - 这个形状将被在一个刚好能容纳形状的矩形中表示
 //   - 为 true 的位置表示了形状的每一个点
-func GenerateShapeOnRectangleWithCoordinate[V generic.Number](xys ...Point[V]) (result [][]bool) {
+func GenerateShapeOnRectangleWithCoordinate[V generic.SignedNumber](xys ...Point[V]) (result [][]bool) {
 	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
 	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
 	w, h := right+1, bottom+1
@@ -254,7 +254,7 @@ func GenerateShapeOnRectangleWithCoordinate[V generic.Number](xys ...Point[V]) (
 // GetExpressibleRectangleBySize 获取一个宽高可表达的所有特定尺寸以上的矩形形状
 //   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
 //   - 矩形尺寸由大到小
-func GetExpressibleRectangleBySize[V generic.Number](width, height, minWidth, minHeight V) (result []Point[V]) {
+func GetExpressibleRectangleBySize[V generic.SignedNumber](width, height, minWidth, minHeight V) (result []Point[V]) {
 	sourceWidth := width
 	if width == 0 || height == 0 {
 		return nil
@@ -288,13 +288,13 @@ func GetExpressibleRectangleBySize[V generic.Number](width, height, minWidth, mi
 // GetExpressibleRectangle 获取一个宽高可表达的所有矩形形状
 //   - 返回值表示了每一个矩形右下角的x,y位置（左上角始终为0, 0）
 //   - 矩形尺寸由大到小
-func GetExpressibleRectangle[V generic.Number](width, height V) (result []Point[V]) {
+func GetExpressibleRectangle[V generic.SignedNumber](width, height V) (result []Point[V]) {
 	return GetExpressibleRectangleBySize(width, height, 1, 1)
 }
 
 // GetRectangleFullPointsByXY 通过开始结束坐标获取一个矩形包含的所有点
 //   - 例如 1,1 到 2,2 的矩形结果为 1,1 2,1 1,2 2,2
-func GetRectangleFullPointsByXY[V generic.Number](startX, startY, endX, endY V) (result []Point[V]) {
+func GetRectangleFullPointsByXY[V generic.SignedNumber](startX, startY, endX, endY V) (result []Point[V]) {
 	for x := startX; x <= endX; x++ {
 		for y := startY; y <= endY; y++ {
 			result = append(result, NewPoint(x, y))
@@ -304,7 +304,7 @@ func GetRectangleFullPointsByXY[V generic.Number](startX, startY, endX, endY V) 
 }
 
 // GetRectangleFullPoints 获取一个矩形填充满后包含的所有点
-func GetRectangleFullPoints[V generic.Number](width, height V) (result []Point[V]) {
+func GetRectangleFullPoints[V generic.SignedNumber](width, height V) (result []Point[V]) {
 	for x := V(0); x < width; x++ {
 		for y := V(0); y < height; y++ {
 			result = append(result, NewPoint(x, y))
@@ -314,7 +314,7 @@ func GetRectangleFullPoints[V generic.Number](width, height V) (result []Point[V
 }
 
 // GetRectangleFullPos 获取一个矩形填充满后包含的所有位置
-func GetRectangleFullPos[V generic.Number](width, height V) (result []V) {
+func GetRectangleFullPos[V generic.SignedNumber](width, height V) (result []V) {
 	size := int(width * height)
 	result = make([]V, 0, size)
 	for pos := 0; pos < size; pos++ {

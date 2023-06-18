@@ -37,7 +37,7 @@ func GetOppositionDirection(direction Direction) Direction {
 }
 
 // GetDirectionNextWithCoordinate 获取特定方向上的下一个坐标
-func GetDirectionNextWithCoordinate[V generic.Number](direction Direction, x, y V) (nx, ny V) {
+func GetDirectionNextWithCoordinate[V generic.SignedNumber](direction Direction, x, y V) (nx, ny V) {
 	switch direction {
 	case DirectionUp:
 		nx, ny = x, y-1
@@ -54,7 +54,7 @@ func GetDirectionNextWithCoordinate[V generic.Number](direction Direction, x, y 
 }
 
 // GetDirectionNextWithCoordinateArray 获取特定方向上的下一个坐标
-func GetDirectionNextWithCoordinateArray[V generic.Number](direction Direction, point Point[V]) Point[V] {
+func GetDirectionNextWithCoordinateArray[V generic.SignedNumber](direction Direction, point Point[V]) Point[V] {
 	x, y := point.GetXY()
 	switch direction {
 	case DirectionUp:
@@ -72,7 +72,7 @@ func GetDirectionNextWithCoordinateArray[V generic.Number](direction Direction, 
 
 // GetDirectionNextWithPos 获取位置在特定宽度和特定方向上的下一个位置
 //   - 需要注意的是，在左右方向时，当下一个位置不在游戏区域内时，将会返回上一行的末位置或下一行的首位置
-func GetDirectionNextWithPos[V generic.Number](direction Direction, width, pos V) V {
+func GetDirectionNextWithPos[V generic.SignedNumber](direction Direction, width, pos V) V {
 	switch direction {
 	case DirectionUp:
 		return pos - width
@@ -88,7 +88,7 @@ func GetDirectionNextWithPos[V generic.Number](direction Direction, width, pos V
 }
 
 // CalcDirection 计算点2位于点1的方向
-func CalcDirection[V generic.Number](x1, y1, x2, y2 V) Direction {
+func CalcDirection[V generic.SignedNumber](x1, y1, x2, y2 V) Direction {
 	var oneEighty = 180
 	var fortyFive = 45
 	var oneThirtyFive = 135
@@ -110,17 +110,17 @@ func CalcDirection[V generic.Number](x1, y1, x2, y2 V) Direction {
 }
 
 // CalcDistance 计算两点之间的距离
-func CalcDistance[V generic.Number](x1, y1, x2, y2 V) V {
+func CalcDistance[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Sqrt(math.Pow(float64(x2-x1), 2) + math.Pow(float64(y2-y1), 2)))
 }
 
 // CalcAngle 计算点2位于点1之间的角度
-func CalcAngle[V generic.Number](x1, y1, x2, y2 V) V {
+func CalcAngle[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Atan2(float64(y2-y1), float64(x2-x1)) * 180 / math.Pi)
 }
 
 // CalculateNewCoordinate 根据给定的x、y坐标、角度和距离计算新的坐标
-func CalculateNewCoordinate[V generic.Number](x, y, angle, distance V) (newX, newY V) {
+func CalculateNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, newY V) {
 	// 将角度转换为弧度
 	var pi = math.Pi
 	var dividend = 180.0
