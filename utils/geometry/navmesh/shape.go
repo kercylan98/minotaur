@@ -5,8 +5,9 @@ import (
 	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
-func newShape[V generic.SignedNumber](s geometry.Shape[V]) *shape[V] {
+func newShape[V generic.SignedNumber](id int, s geometry.Shape[V]) *shape[V] {
 	return &shape[V]{
+		id:             id,
 		Shape:          s,
 		centroid:       geometry.CalcRectangleCentroid(s),
 		boundingRadius: geometry.CalcBoundingRadius(s),
@@ -15,6 +16,7 @@ func newShape[V generic.SignedNumber](s geometry.Shape[V]) *shape[V] {
 }
 
 type shape[V generic.SignedNumber] struct {
+	id int
 	geometry.Shape[V]
 	links          []*shape[V]
 	portals        []geometry.Line[V]

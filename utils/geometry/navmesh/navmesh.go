@@ -13,7 +13,7 @@ func NewNavMesh[V generic.SignedNumber](shapes []geometry.Shape[V], meshShrinkAm
 		meshShrinkAmount: meshShrinkAmount,
 	}
 	for i, shape := range shapes {
-		nm.meshShapes[i] = newShape(shape)
+		nm.meshShapes[i] = newShape(i, shape)
 	}
 	nm.generateLink()
 	return nm
@@ -129,6 +129,39 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	}
 
 	path = append([]*shape[V]{startShape}, path...)
+
+	funnel := new(funnel[V])
+	funnel.pushSingle(start)
+	for i := 0; i < len(path)-1; i++ {
+		current := path[i]
+		next := path[i+1]
+
+		var portal geometry.Line[V]
+		var find bool
+		for i := 0; i < len(current.links); i++ {
+			if current.links[i].id == next.id {
+				portal = current.portals[i]
+				find = true
+			}
+		}
+		if !find {
+			panic("not found portal")
+		}
+
+		funnel.push(portal.GetStart(), portal.GetEnd())
+	}
+	funnel.pushSingle(end)
+	funnel.stringPull()
+
+	var lastPoint geometry.Point[V]
+	for i, point := range funnel.path {
+		var np = point.Copy()
+		if i == 0 || !np.Equal(lastPoint) {
+			result = append(result, np)
+		}
+		lastPoint = np
+	}
+	return result
 }
 
 func (slf *NavMesh[V]) generateLink() {
