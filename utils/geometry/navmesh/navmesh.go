@@ -6,11 +6,11 @@ import (
 	"github.com/kercylan98/minotaur/utils/maths"
 )
 
-type Navmesh[V generic.SignedNumber] struct {
+type NavMesh[V generic.SignedNumber] struct {
 	meshShapes []*shape[V]
 }
 
-func (slf *Navmesh[V]) generateLink() {
+func (slf *NavMesh[V]) generateLink() {
 	refer := len(slf.meshShapes)
 	for i := 0; i < refer; i++ {
 		shapePkg := slf.meshShapes[i]
