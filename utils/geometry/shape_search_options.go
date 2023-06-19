@@ -1,5 +1,15 @@
 package geometry
 
+import "math"
+
+func newShapeSearchOptions() *shapeSearchOptions {
+	return &shapeSearchOptions{
+		upperLimit:         math.MaxInt,
+		rectangleMaxWidth:  math.MaxInt,
+		rectangleMaxHeight: math.MaxInt,
+	}
+}
+
 type shapeSearchOptions struct {
 	lowerLimit          int
 	upperLimit          int
