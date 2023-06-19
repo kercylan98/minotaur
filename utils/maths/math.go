@@ -2,7 +2,17 @@ package maths
 
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
+	"math"
 )
+
+const (
+	DefaultTolerance = 0.0001 // 默认误差范围
+)
+
+// GetDefaultTolerance 获取默认误差范围
+func GetDefaultTolerance() float64 {
+	return DefaultTolerance
+}
 
 // Pow 整数幂运算
 func Pow(a, n int) int {
@@ -93,4 +103,9 @@ func Clamp[V generic.Number](value, min, max V) V {
 		return max
 	}
 	return value
+}
+
+// Tolerance 检查两个值是否在一个误差范围内
+func Tolerance[V generic.Number](value1, value2, tolerance V) bool {
+	return V(math.Abs(float64(value1-value2))) <= tolerance
 }

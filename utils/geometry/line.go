@@ -2,7 +2,40 @@ package geometry
 
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/utils/maths"
+	"sort"
 )
+
+// NewLine 创建一根线段
+func NewLine[V generic.SignedNumber](start, end Point[V]) Line[V] {
+	if start.Equal(end) {
+		panic("two points of the line segment are the same")
+	}
+	return Line[V]{start, end}
+}
+
+// Line 通过两个点表示一根线段
+type Line[V generic.SignedNumber] [2]Point[V]
+
+// GetPoints 获取该线段的两个点
+func (slf Line[V]) GetPoints() [2]Point[V] {
+	return slf
+}
+
+// GetStart 获取该线段的开始位置
+func (slf Line[V]) GetStart() Point[V] {
+	return slf[0]
+}
+
+// GetEnd 获取该线段的结束位置
+func (slf Line[V]) GetEnd() Point[V] {
+	return slf[1]
+}
+
+// GetLength 获取该线段的长度
+func (slf Line[V]) GetLength() V {
+	return CalcDistance(DoublePointToCoordinate(slf.GetStart(), slf.GetEnd()))
+}
 
 // PointOnLineWithCoordinate 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 func PointOnLineWithCoordinate[V generic.SignedNumber](x1, y1, x2, y2, x, y V) bool {
@@ -47,4 +80,39 @@ func PointOnSegmentWithCoordinateArray[V generic.SignedNumber](point1, point2, p
 	x2, y2 := point2.GetXY()
 	x, y := point.GetXY()
 	return x >= x1 && x <= x2 && y >= y1 && y <= y2 && PointOnLineWithCoordinate(x1, y1, x2, y2, x, y)
+}
+
+// CalcLineIsCollinear 检查两条线段在一个误差内是否共线
+//   - 共线是指两条线段在同一直线上，即它们的延长线可以重合
+func CalcLineIsCollinear[V generic.SignedNumber](line1, line2 Line[V], tolerance V) bool {
+	area1 := CalcTriangleTwiceArea(line1.GetStart(), line1.GetEnd(), line2.GetStart())
+	area2 := CalcTriangleTwiceArea(line1.GetStart(), line1.GetEnd(), line2.GetEnd())
+	return maths.Tolerance(area1, 0, tolerance) && maths.Tolerance(area2, 0, tolerance)
+}
+
+// CalcLineIsOverlap 通过对点进行排序来检查两条共线线段是否重叠，返回重叠线段
+func CalcLineIsOverlap[V generic.SignedNumber](line1, line2 Line[V]) (line Line[V], overlap bool) {
+	var shapes = []Shape[V]{
+		{line1.GetStart(), line1.GetEnd(), line1.GetStart()},
+		{line1.GetStart(), line1.GetEnd(), line1.GetEnd()},
+		{line2.GetStart(), line2.GetEnd(), line2.GetStart()},
+		{line2.GetStart(), line2.GetEnd(), line2.GetEnd()},
+	}
+	sort.Slice(shapes, func(i, j int) bool {
+		a, b := shapes[i], shapes[j]
+		if a[2].GetX() < b[2].GetX() {
+			return true
+		} else if a[2].GetX() > b[2].GetX() {
+			return false
+		} else {
+			return a[2].GetY() < b[2].GetY()
+		}
+	})
+
+	notOverlap := shapes[0][0].Equal(shapes[1][0]) && shapes[0][1].Equal(shapes[1][1])
+	singlePointOverlap := shapes[1][2].Equal(shapes[2][2])
+	if notOverlap || singlePointOverlap {
+		return line, false
+	}
+	return NewLine(shapes[1][2], shapes[2][2]), true
 }

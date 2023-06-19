@@ -322,3 +322,14 @@ func GetRectangleFullPos[V generic.SignedNumber](width, height V) (result []V) {
 	}
 	return
 }
+
+// CalcRectangleCentroid 计算矩形质心
+//   - 非多边形质心计算，仅为顶点的平均值 - 该区域中多边形因子的适当质心
+func CalcRectangleCentroid[V generic.SignedNumber](shape Shape[V]) Point[V] {
+	x, y := V(0), V(0)
+	length := V(shape.PointCount())
+
+	x /= length
+	y /= length
+	return NewPoint(x, y)
+}

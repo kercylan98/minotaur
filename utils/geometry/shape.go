@@ -11,8 +11,18 @@ import (
 )
 
 var (
-	ShapeStringHasBorder = false // 控制 Shape.String 是否拥有边界
+	shapeStringHasBorder = false // 控制 Shape.String 是否拥有边界
 )
+
+// SetShapeStringHasBorder 设置 Shape.String 是拥有边界的
+func SetShapeStringHasBorder() {
+	shapeStringHasBorder = true
+}
+
+// SetShapeStringNotHasBorder 设置 Shape.String 是没有边界的
+func SetShapeStringNotHasBorder() {
+	shapeStringHasBorder = false
+}
 
 // NewShape 通过多个点生成一个形状进行返回
 func NewShape[V generic.SignedNumber](points ...Point[V]) Shape[V] {
@@ -63,7 +73,7 @@ func (slf Shape[V]) String() string {
 	left, right, top, bottom := GetShapeCoverageAreaWithCoordinateArray(slf.Points()...)
 	width := right - left + 1
 	height := bottom - top + 1
-	if !ShapeStringHasBorder {
+	if !shapeStringHasBorder {
 		for y := top; y < top+height; y++ {
 			for x := left; x < left+width; x++ {
 				exist := false
@@ -334,6 +344,20 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 	return result
 }
 
+// Edges 获取该形状每一条边
+//   - 该形状需要最少由3个点组成，否则将不会返回任意一边
+func (slf Shape[V]) Edges() (edges []Line[V]) {
+	if len(slf) < 3 {
+		return
+	}
+	for i := 1; i < slf.PointCount(); i++ {
+		before := slf[i-1]
+		edges = append(edges, NewLine(before, slf[i]))
+	}
+	edges = append(edges, NewLine(slf[0], slf[len(slf)-1]))
+	return edges
+}
+
 // getAllGraphicCompositionWithAsc 通过升序的方式获取该形状中包含的所有图形组合及其位置
 //   - 升序指标为图形包含的点数量
 //   - 其余内容可参考 getAllGraphicComposition
@@ -354,4 +378,38 @@ func (slf Shape[V]) getAllGraphicCompositionWithDesc(opt *shapeSearchOptions) (r
 		return len(result[i].Points()) > len(result[j].Points())
 	})
 	return
+}
+
+// CalcBoundingRadius 计算多边形转换为圆的半径
+func CalcBoundingRadius[V generic.SignedNumber](shape Shape[V]) V {
+	var boundingRadius V
+	var centroid = CalcRectangleCentroid(shape)
+	for _, point := range shape.Points() {
+		distance := CalcDistance(DoublePointToCoordinate(centroid, point))
+		if distance > boundingRadius {
+			boundingRadius = distance
+		}
+	}
+	return boundingRadius
+}
+
+// CalcBoundingRadiusWithCentroid 计算多边形在特定质心下圆的半径
+func CalcBoundingRadiusWithCentroid[V generic.SignedNumber](shape Shape[V], centroid Point[V]) V {
+	var boundingRadius V
+	for _, point := range shape.Points() {
+		distance := CalcDistance(DoublePointToCoordinate(centroid, point))
+		if distance > boundingRadius {
+			boundingRadius = distance
+		}
+	}
+	return boundingRadius
+}
+
+// CalcTriangleTwiceArea 计算由 a、b、c 三个点组成的三角形的面积的两倍
+func CalcTriangleTwiceArea[V generic.SignedNumber](a, b, c Point[V]) V {
+	ax := b.GetX() - a.GetX()
+	ay := b.GetY() - a.GetY()
+	bx := c.GetX() - a.GetX()
+	by := c.GetY() - a.GetY()
+	return bx*ay - ax*by
 }
