@@ -52,26 +52,91 @@ func (slf *NavMesh[V]) Find(point geometry.Point[V], maxDistance V) (distance V,
 	return minDistance, pointOnClosest, closest.Shape
 }
 
+// FindPath 使用此导航网格查找从起点到终点的路径。
+func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry.Point[V]) {
+	var startShape, endShape *shape[V]
+	var startDistance, endDistance = V(-1), V(-1)
+
+	for _, meshShape := range slf.meshShapes {
+		br := meshShape.BoundingRadius()
+
+		distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
+		if (distance <= startDistance || startDistance == V(-1)) && distance <= br && meshShape.Contains(start) {
+			startShape = meshShape
+			startDistance = distance
+		}
+
+		distance = geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
+		if (distance <= endDistance || endDistance == V(-1)) && distance <= br && meshShape.Contains(end) {
+			endShape = meshShape
+			endDistance = distance
+		}
+	}
+
+	if endShape == nil && slf.meshShrinkAmount > V(0) {
+		for _, meshShape := range slf.meshShapes {
+			br := meshShape.BoundingRadius() + slf.meshShrinkAmount
+			distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
+			if distance <= br {
+				_, projectionDistance := geometry.ProjectionPointToShape(end, meshShape.Shape)
+				if projectionDistance <= slf.meshShrinkAmount && projectionDistance < endDistance {
+					endShape = meshShape
+					endDistance = projectionDistance
+				}
+			}
+		}
+	}
+
+	if endShape == nil {
+		return
+	}
+
+	if startShape == nil && slf.meshShrinkAmount > 0 {
+		for _, meshShape := range slf.meshShapes {
+			br := meshShape.BoundingRadius() + slf.meshShrinkAmount
+			distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
+			if distance <= br {
+				_, projectionDistance := geometry.ProjectionPointToShape(start, meshShape.Shape)
+				if projectionDistance <= slf.meshShrinkAmount && projectionDistance < startDistance {
+					startShape = meshShape
+					startDistance = projectionDistance
+				}
+			}
+		}
+	}
+
+	if startShape == nil {
+		return
+	}
+
+	if startShape == endShape {
+		return append(result, start, end)
+	}
+
+}
+
+func (slf *NavMesh[V]) aStar() {
+
+}
+
 func (slf *NavMesh[V]) generateLink() {
 	refer := len(slf.meshShapes)
 	for i := 0; i < refer; i++ {
 		shapePkg := slf.meshShapes[i]
-		shape := shapePkg.Shape
-		shapeCentroid := geometry.CalcRectangleCentroid(shape)
-		shapeBoundingRadius := geometry.CalcBoundingRadiusWithCentroid(shape, shapeCentroid)
-		shapeEdges := shape.Edges()
+		shapeCentroid := shapePkg.Centroid()
+		shapeBoundingRadius := shapePkg.BoundingRadius()
+		shapeEdges := shapePkg.Edges()
 		for t := i + 1; t < len(slf.meshShapes); t++ {
 			targetShapePkg := slf.meshShapes[t]
-			targetShape := targetShapePkg.Shape
-			targetShapeCentroid := geometry.CalcRectangleCentroid(targetShape)
-			targetShapeBoundingRadius := geometry.CalcBoundingRadiusWithCentroid(shape, targetShapeCentroid)
+			targetShapeCentroid := targetShapePkg.Centroid()
+			targetShapeBoundingRadius := targetShapePkg.BoundingRadius()
 			centroidDistance := geometry.CalcDistance(geometry.DoublePointToCoordinate(shapeCentroid, targetShapeCentroid))
 			if centroidDistance > shapeBoundingRadius+targetShapeBoundingRadius {
 				continue
 			}
 
 			for _, shapeEdge := range shapeEdges {
-				for _, targetEdge := range targetShape.Edges() {
+				for _, targetEdge := range targetShapePkg.Edges() {
 					if !geometry.CalcLineIsCollinear(shapeEdge, targetEdge, V(maths.GetDefaultTolerance())) {
 						continue
 					}
