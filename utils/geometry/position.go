@@ -166,8 +166,8 @@ func DoublePointToCoordinate[V generic.SignedNumber](point1, point2 Point[V]) (x
 
 // CalcProjectionPoint 计算一个点到一条线段的最近点（即投影点）的。这个函数接收一个点和一条线段作为输入，线段由两个端点组成。
 //   - 该函数的主要用于需要计算一个点到一条线段的最近点的情况下
-func CalcProjectionPoint[V generic.SignedNumber](linePointA, linePointB, point Point[V]) Point[V] {
-	ax, ay, bx, by := DoublePointToCoordinate(linePointA, linePointB)
+func CalcProjectionPoint[V generic.SignedNumber](line Line[V], point Point[V]) Point[V] {
+	ax, ay, bx, by := DoublePointToCoordinate(line.GetStart(), line.GetEnd())
 	ds := CalcDistanceSquared(ax, ay, bx, by)
 	px, py := point.GetXY()
 	clamp := maths.Clamp((px-ax)*(bx-ax)+(py-ay)*(by-ay)/ds, V(0), V(1))

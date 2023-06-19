@@ -67,6 +67,23 @@ func (slf Shape[V]) PointCount() int {
 	return len(slf)
 }
 
+// Contains 返回该形状中是否包含点
+func (slf Shape[V]) Contains(point Point[V]) bool {
+	x, y := point.GetXY()
+	inside := false
+	for i, j := -1, len(slf)-1; i < len(slf); j, i = i, i+1 {
+		ix := slf[i].GetX()
+		iy := slf[i].GetY()
+		jx := slf[j].GetX()
+		jy := slf[j].GetY()
+
+		if ((iy <= y && y < jy) || (jy <= y && y < iy)) && x < ((jx-ix)*(y-iy))/(jy-iy)+ix {
+			inside = !inside
+		}
+	}
+	return inside
+}
+
 // String 将该形状转换为可视化的字符串进行返回
 func (slf Shape[V]) String() string {
 	var result string
@@ -358,6 +375,16 @@ func (slf Shape[V]) Edges() (edges []Line[V]) {
 	return edges
 }
 
+// IsPointOnEdge 检查点是否在该形状的一条边上
+func (slf Shape[V]) IsPointOnEdge(point Point[V]) bool {
+	for _, edge := range slf.Edges() {
+		if PointOnSegmentWithCoordinateArray(edge.GetStart(), edge.GetEnd(), point) {
+			return true
+		}
+	}
+	return false
+}
+
 // getAllGraphicCompositionWithAsc 通过升序的方式获取该形状中包含的所有图形组合及其位置
 //   - 升序指标为图形包含的点数量
 //   - 其余内容可参考 getAllGraphicComposition
@@ -412,4 +439,33 @@ func CalcTriangleTwiceArea[V generic.SignedNumber](a, b, c Point[V]) V {
 	bx := c.GetX() - a.GetX()
 	by := c.GetY() - a.GetY()
 	return bx*ay - ax*by
+}
+
+// IsPointOnEdge 检查点是否在 edges 的任意一条边上
+func IsPointOnEdge[V generic.SignedNumber](edges []Line[V], point Point[V]) bool {
+	for _, edge := range edges {
+		if PointOnSegmentWithCoordinateArray(edge.GetStart(), edge.GetEnd(), point) {
+			return true
+		}
+	}
+	return false
+}
+
+// ProjectionPointToShape 将一个点投影到一个多边形上，找到离该点最近的投影点，并返回投影点和距离
+func ProjectionPointToShape[V generic.SignedNumber](point Point[V], shape Shape[V]) (Point[V], V) {
+	var closestProjection Point[V]
+	var hasClosestProjection bool
+	var closestDistance V
+
+	for _, edge := range shape.Edges() {
+		projectedPoint := CalcProjectionPoint(edge, point)
+		distance := CalcDistance(DoublePointToCoordinate(point, projectedPoint))
+		if !hasClosestProjection || distance < closestDistance {
+			closestDistance = distance
+			closestProjection = projectedPoint
+			hasClosestProjection = true
+		}
+	}
+
+	return closestProjection, closestDistance
 }

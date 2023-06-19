@@ -6,8 +6,50 @@ import (
 	"github.com/kercylan98/minotaur/utils/maths"
 )
 
+func NewNavMesh[V generic.SignedNumber](shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V] {
+	nm := &NavMesh[V]{
+		meshShapes:       make([]*shape[V], len(shapes)),
+		meshShrinkAmount: meshShrinkAmount,
+	}
+	for i, shape := range shapes {
+		nm.meshShapes[i] = newShape(shape)
+	}
+	nm.generateLink()
+	return nm
+}
+
 type NavMesh[V generic.SignedNumber] struct {
-	meshShapes []*shape[V]
+	meshShapes       []*shape[V]
+	meshShrinkAmount V
+}
+
+// Find 在网格中找到与给定点最近的点。如果该点已经在网格中，这将为您提供该点。如果点在网格之外，这将尝试将此点投影到网格中（直到给定的 maxDistance）
+func (slf *NavMesh[V]) Find(point geometry.Point[V], maxDistance V) (distance V, findPoint geometry.Point[V], findShape geometry.Shape[V]) {
+	var minDistance = maxDistance
+	var closest *shape[V]
+	var pointOnClosest geometry.Point[V]
+	for _, meshShape := range slf.meshShapes {
+		if meshShape.Contains(point) || geometry.IsPointOnEdge(meshShape.Edges(), point) {
+			minDistance = 0
+			closest = meshShape
+			pointOnClosest = point
+			break
+		}
+		br := geometry.CalcBoundingRadius(meshShape.Shape)
+		distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(
+			geometry.CalcRectangleCentroid(meshShape.Shape),
+			point,
+		))
+		if distance-br < minDistance {
+			point, distance := geometry.ProjectionPointToShape(point, meshShape.Shape)
+			if distance < minDistance {
+				minDistance = distance
+				closest = meshShape
+				pointOnClosest = point
+			}
+		}
+	}
+	return minDistance, pointOnClosest, closest.Shape
 }
 
 func (slf *NavMesh[V]) generateLink() {
