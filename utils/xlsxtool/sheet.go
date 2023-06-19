@@ -1,7 +1,7 @@
 package xlsxtool
 
 import (
-	"github.com/kercylan98/minotaur/utils/g2d/matrix"
+	"github.com/kercylan98/minotaur/utils/geometry/matrix"
 	"github.com/tealeg/xlsx"
 )
 

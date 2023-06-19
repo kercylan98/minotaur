@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	jsonIter "github.com/json-iterator/go"
-	"github.com/kercylan98/minotaur/utils/g2d/matrix"
+	"github.com/kercylan98/minotaur/utils/geometry/matrix"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/xlsxtool"
 	"github.com/tealeg/xlsx"
