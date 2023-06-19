@@ -1,6 +1,7 @@
 package navmesh
 
 import (
+	"github.com/kercylan98/minotaur/utils/astar"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/geometry"
 	"github.com/kercylan98/minotaur/utils/maths"
@@ -21,6 +22,10 @@ func NewNavMesh[V generic.SignedNumber](shapes []geometry.Shape[V], meshShrinkAm
 type NavMesh[V generic.SignedNumber] struct {
 	meshShapes       []*shape[V]
 	meshShrinkAmount V
+}
+
+func (slf *NavMesh[V]) Neighbours(node *shape[V]) []*shape[V] {
+	return node.links
 }
 
 // Find 在网格中找到与给定点最近的点。如果该点已经在网格中，这将为您提供该点。如果点在网格之外，这将尝试将此点投影到网格中（直到给定的 maxDistance）
@@ -113,10 +118,17 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 		return append(result, start, end)
 	}
 
-}
+	path := astar.Find[*shape[V], V](slf, startShape, endShape, func(a, b *shape[V]) V {
+		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
+	}, func(a, b *shape[V]) V {
+		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
+	})
 
-func (slf *NavMesh[V]) aStar() {
+	if len(path) == 0 {
+		return
+	}
 
+	path = append([]*shape[V]{startShape}, path...)
 }
 
 func (slf *NavMesh[V]) generateLink() {
