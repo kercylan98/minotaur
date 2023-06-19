@@ -114,6 +114,13 @@ func CalcDistance[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Sqrt(math.Pow(float64(x2-x1), 2) + math.Pow(float64(y2-y1), 2)))
 }
 
+// CalcDistanceSquared 计算两点之间的平方距离
+//   - 这个函数的主要用途是在需要计算两点之间距离的情况下，但不需要得到实际的距离值，而只需要比较距离大小。因为平方根运算相对较为耗时，所以在只需要比较大小的情况下，通常会使用平方距离。
+func CalcDistanceSquared[V generic.SignedNumber](x1, y1, x2, y2 V) V {
+	dx, dy := x2-x1, y2-y1
+	return dx*dx + dy*dy
+}
+
 // CalcAngle 计算点2位于点1之间的角度
 func CalcAngle[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Atan2(float64(y2-y1), float64(x2-x1)) * 180 / math.Pi)

@@ -83,3 +83,14 @@ func MaxMin[V generic.Number](a, b V) (max, min V) {
 	}
 	return b, a
 }
+
+// Clamp 将给定值限制在最小值和最大值之间
+func Clamp[V generic.Number](value, min, max V) V {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}

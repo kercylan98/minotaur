@@ -2,6 +2,7 @@ package geometry
 
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/utils/maths"
 	"math"
 )
 
@@ -156,4 +157,19 @@ func PosToCoordinateArrayWithMulti[V generic.SignedNumber](width V, positions ..
 // PosSameRow 返回两个顺序位置在同一宽度是否位于同一行
 func PosSameRow[V generic.SignedNumber](width, pos1, pos2 V) bool {
 	return (pos1 / width) == (pos2 / width)
+}
+
+// DoublePointToCoordinate 将两个位置转换为 x1, y1, x2, y2 的坐标进行返回
+func DoublePointToCoordinate[V generic.SignedNumber](point1, point2 Point[V]) (x1, y1, x2, y2 V) {
+	return point1.GetX(), point1.GetY(), point2.GetX(), point2.GetY()
+}
+
+// CalcProjectionPoint 计算一个点到一条线段的最近点（即投影点）的。这个函数接收一个点和一条线段作为输入，线段由两个端点组成。
+//   - 该函数的主要用于需要计算一个点到一条线段的最近点的情况下
+func CalcProjectionPoint[V generic.SignedNumber](linePointA, linePointB, point Point[V]) Point[V] {
+	ax, ay, bx, by := DoublePointToCoordinate(linePointA, linePointB)
+	ds := CalcDistanceSquared(ax, ay, bx, by)
+	px, py := point.GetXY()
+	clamp := maths.Clamp((px-ax)*(bx-ax)+(py-ay)*(by-ay)/ds, V(0), V(1))
+	return NewPoint(ax+clamp*(bx-ax), ay+clamp*(by-ay))
 }
