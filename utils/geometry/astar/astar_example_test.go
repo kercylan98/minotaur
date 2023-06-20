@@ -2,8 +2,8 @@ package astar_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/astar"
 	"github.com/kercylan98/minotaur/utils/geometry"
+	"github.com/kercylan98/minotaur/utils/geometry/astar"
 )
 
 type Graph struct {
