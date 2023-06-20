@@ -21,6 +21,9 @@ import (
 //   - meshShrinkAmount 表示导航网格的缩小量，用于在形状之间创建链接时考虑形状的缩小效果。
 //   - 函数内部使用了泛型类型参数 V，可以根据需要指定形状的坐标类型。
 //   - 函数返回一个指向创建的导航网格的指针。
+//
+// 使用建议：
+//   - 确保 NavMesh 计算精度的情况下，V 建议使用 float64 类型
 func NewNavMesh[V generic.SignedNumber](shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V] {
 	nm := &NavMesh[V]{
 		meshShapes:       make([]*shape[V], len(shapes)),
