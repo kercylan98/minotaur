@@ -19,16 +19,16 @@ type shape[V generic.SignedNumber] struct {
 	id int
 	geometry.Shape[V]
 	links          []*shape[V]
-	portals        []geometry.Line[V]
+	portals        []geometry.LineSegment[V]
 	boundingRadius V
 	centroid       geometry.Point[V]
-	edges          []geometry.Line[V]
+	edges          []geometry.LineSegment[V]
 
 	weight V
 	x, y   V
 }
 
-func (slf *shape[V]) Edges() []geometry.Line[V] {
+func (slf *shape[V]) Edges() []geometry.LineSegment[V] {
 	return slf.edges
 }
 

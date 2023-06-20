@@ -185,7 +185,7 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 			continue
 		}
 
-		var portal geometry.Line[V]
+		var portal geometry.LineSegment[V]
 		var find bool
 		for i := 0; i < len(current.links); i++ {
 			if current.links[i].id == next.id {
@@ -230,11 +230,11 @@ func (slf *NavMesh[V]) generateLink() {
 
 			for _, shapeEdge := range shapeEdges {
 				for _, targetEdge := range targetShapePkg.Edges() {
-					if !geometry.CalcLineIsCollinear(shapeEdge, targetEdge, V(maths.GetDefaultTolerance())) {
+					if !geometry.CalcLineSegmentIsCollinear(shapeEdge, targetEdge, V(maths.GetDefaultTolerance())) {
 						continue
 					}
 
-					var overlapLine, overlap = geometry.CalcLineIsOverlap(shapeEdge, targetEdge)
+					var overlapLine, overlap = geometry.CalcLineSegmentIsOverlap(shapeEdge, targetEdge)
 					if !overlap {
 						continue
 					}
@@ -248,9 +248,9 @@ func (slf *NavMesh[V]) generateLink() {
 					a3 := geometry.CalcAngleDifference(edgeAngle, a1)
 					a4 := geometry.CalcAngleDifference(edgeAngle, a2)
 					if a3 < a4 {
-						shapePkg.portals = append(shapePkg.portals, geometry.NewLine(overlapLine.GetStart(), overlapLine.GetEnd()))
+						shapePkg.portals = append(shapePkg.portals, geometry.NewLineSegment(overlapLine.GetStart(), overlapLine.GetEnd()))
 					} else {
-						shapePkg.portals = append(shapePkg.portals, geometry.NewLine(overlapLine.GetEnd(), overlapLine.GetStart()))
+						shapePkg.portals = append(shapePkg.portals, geometry.NewLineSegment(overlapLine.GetEnd(), overlapLine.GetStart()))
 					}
 
 					edgeAngle = geometry.CalcAngle(geometry.DoublePointToCoordinate(targetShapeCentroid, targetEdge.GetStart()))
@@ -259,9 +259,9 @@ func (slf *NavMesh[V]) generateLink() {
 					a3 = geometry.CalcAngleDifference(edgeAngle, a1)
 					a4 = geometry.CalcAngleDifference(edgeAngle, a2)
 					if a3 < a4 {
-						targetShapePkg.portals = append(targetShapePkg.portals, geometry.NewLine(overlapLine.GetStart(), overlapLine.GetEnd()))
+						targetShapePkg.portals = append(targetShapePkg.portals, geometry.NewLineSegment(overlapLine.GetStart(), overlapLine.GetEnd()))
 					} else {
-						targetShapePkg.portals = append(targetShapePkg.portals, geometry.NewLine(overlapLine.GetEnd(), overlapLine.GetStart()))
+						targetShapePkg.portals = append(targetShapePkg.portals, geometry.NewLineSegment(overlapLine.GetEnd(), overlapLine.GetStart()))
 					}
 				}
 			}

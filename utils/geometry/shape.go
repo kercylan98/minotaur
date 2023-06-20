@@ -363,22 +363,22 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 
 // Edges 获取该形状每一条边
 //   - 该形状需要最少由3个点组成，否则将不会返回任意一边
-func (slf Shape[V]) Edges() (edges []Line[V]) {
+func (slf Shape[V]) Edges() (edges []LineSegment[V]) {
 	if len(slf) < 3 {
 		return
 	}
 	for i := 1; i < slf.PointCount(); i++ {
 		before := slf[i-1]
-		edges = append(edges, NewLine(before, slf[i]))
+		edges = append(edges, NewLineSegment(before, slf[i]))
 	}
-	edges = append(edges, NewLine(slf[0], slf[len(slf)-1]))
+	edges = append(edges, NewLineSegment(slf[0], slf[len(slf)-1]))
 	return edges
 }
 
 // IsPointOnEdge 检查点是否在该形状的一条边上
 func (slf Shape[V]) IsPointOnEdge(point Point[V]) bool {
 	for _, edge := range slf.Edges() {
-		if PointOnSegmentWithPoint(edge.GetStart(), edge.GetEnd(), point) {
+		if PointOnLineSegmentWithPointInBounds(edge.GetStart(), edge.GetEnd(), point) {
 			return true
 		}
 	}
@@ -442,9 +442,9 @@ func CalcTriangleTwiceArea[V generic.SignedNumber](a, b, c Point[V]) V {
 }
 
 // IsPointOnEdge 检查点是否在 edges 的任意一条边上
-func IsPointOnEdge[V generic.SignedNumber](edges []Line[V], point Point[V]) bool {
+func IsPointOnEdge[V generic.SignedNumber](edges []LineSegment[V], point Point[V]) bool {
 	for _, edge := range edges {
-		if PointOnSegmentWithPoint(edge.GetStart(), edge.GetEnd(), point) {
+		if PointOnLineSegmentWithPointInBounds(edge.GetStart(), edge.GetEnd(), point) {
 			return true
 		}
 	}
