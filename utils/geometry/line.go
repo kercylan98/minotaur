@@ -70,8 +70,8 @@ func PointOnLineWithPos[V generic.SignedNumber](width, pos1, pos2, pos V) bool {
 	return PointOnLineWithCoordinate(x1, y1, x2, y2, x, y)
 }
 
-// PointOnLineWithCoordinateArray 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
-func PointOnLineWithCoordinateArray[V generic.SignedNumber](point1, point2, point Point[V]) bool {
+// PointOnLineWithPoint 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
+func PointOnLineWithPoint[V generic.SignedNumber](point1, point2, point Point[V]) bool {
 	x1, y1 := point1.GetXY()
 	x2, y2 := point2.GetXY()
 	x, y := point.GetXY()
@@ -93,9 +93,9 @@ func PointOnSegmentWithPos[V generic.SignedNumber](width, pos1, pos2, pos V) boo
 	return x >= x1 && x <= x2 && y >= y1 && y <= y2 && PointOnLineWithCoordinate(x1, y1, x2, y2, x, y)
 }
 
-// PointOnSegmentWithCoordinateArray 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
-//   - 与 PointOnLineWithCoordinateArray 不同的是， PointOnSegmentWithCoordinateArray 中会判断线段及点的位置是否正确
-func PointOnSegmentWithCoordinateArray[V generic.SignedNumber](point1, point2, point Point[V]) bool {
+// PointOnSegmentWithPoint 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
+//   - 与 PointOnLineWithPoint 不同的是， PointOnSegmentWithPoint 中会判断线段及点的位置是否正确
+func PointOnSegmentWithPoint[V generic.SignedNumber](point1, point2, point Point[V]) bool {
 	x1, y1 := point1.GetXY()
 	x2, y2 := point2.GetXY()
 	x, y := point.GetXY()

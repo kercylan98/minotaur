@@ -5,7 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
-func ExampleGetShapeCoverageAreaWithCoordinateArray() {
+func ExampleGetShapeCoverageAreaWithPoint() {
 	// # # #
 	// # X #
 	// # X X
@@ -15,7 +15,7 @@ func ExampleGetShapeCoverageAreaWithCoordinateArray() {
 	points = append(points, geometry.NewPoint(2, 1))
 	points = append(points, geometry.NewPoint(2, 2))
 
-	left, right, top, bottom := geometry.GetShapeCoverageAreaWithCoordinateArray(points...)
+	left, right, top, bottom := geometry.GetShapeCoverageAreaWithPoint(points...)
 	fmt.Println(fmt.Sprintf("left: %v, right: %v, top: %v, bottom: %v", left, right, top, bottom))
 
 	// left: 1, right: 2, top: 1, bottom: 2

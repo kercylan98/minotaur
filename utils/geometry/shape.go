@@ -87,7 +87,7 @@ func (slf Shape[V]) Contains(point Point[V]) bool {
 // String 将该形状转换为可视化的字符串进行返回
 func (slf Shape[V]) String() string {
 	var result string
-	left, right, top, bottom := GetShapeCoverageAreaWithCoordinateArray(slf.Points()...)
+	left, right, top, bottom := GetShapeCoverageAreaWithPoint(slf.Points()...)
 	width := right - left + 1
 	height := bottom - top + 1
 	if !shapeStringHasBorder {
@@ -213,7 +213,7 @@ func (slf Shape[V]) ShapeSearch(options ...ShapeSearchOption) (result []Shape[V]
 //   - [[1 0] [1 1] [1 2]] 和 [[1 1] [1 0] [1 2]] 可以被视为两个图形组合
 //   - 返回的坐标为原始形状的坐标
 func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []Shape[V]) {
-	left, right, top, bottom := GetShapeCoverageAreaWithCoordinateArray(slf.Points()...)
+	left, right, top, bottom := GetShapeCoverageAreaWithPoint(slf.Points()...)
 	width := right - left + 1
 	height := bottom - top + 1
 	areaWidth := width + left
@@ -262,7 +262,7 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 	}
 
 	if opt.rectangle {
-		l, r, t, b := GetShapeCoverageAreaWithCoordinateArray(slf.Points()...)
+		l, r, t, b := GetShapeCoverageAreaWithPoint(slf.Points()...)
 		rs := GenerateShapeOnRectangleWithCoordinate(slf.Points()...)
 		w := r - l + 1
 		h := b - t + 1
@@ -280,7 +280,7 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 				points := GetRectangleFullPoints(s[0]+1, s[1]+1)
 				find := 0
 				for _, point := range points {
-					px, py := CoordinateArrayToCoordinate(point)
+					px, py := PointToCoordinate(point)
 					ox, oy := px+V(x), py+V(y)
 					if !rs[int(ox)][int(oy)] {
 						find = 0
@@ -313,7 +313,7 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 				for {
 					next, direction = slice.NextLoop(directions, next)
 					for {
-						directionPoint = GetDirectionNextWithCoordinateArray(direction, directionPoint)
+						directionPoint = GetDirectionNextWithPoint(direction, directionPoint)
 						if px, py := directionPoint.GetXY(); px < 0 || px >= areaWidth || py < 0 || py >= areaHeight {
 							break
 						}
@@ -378,7 +378,7 @@ func (slf Shape[V]) Edges() (edges []Line[V]) {
 // IsPointOnEdge 检查点是否在该形状的一条边上
 func (slf Shape[V]) IsPointOnEdge(point Point[V]) bool {
 	for _, edge := range slf.Edges() {
-		if PointOnSegmentWithCoordinateArray(edge.GetStart(), edge.GetEnd(), point) {
+		if PointOnSegmentWithPoint(edge.GetStart(), edge.GetEnd(), point) {
 			return true
 		}
 	}
@@ -444,7 +444,7 @@ func CalcTriangleTwiceArea[V generic.SignedNumber](a, b, c Point[V]) V {
 // IsPointOnEdge 检查点是否在 edges 的任意一条边上
 func IsPointOnEdge[V generic.SignedNumber](edges []Line[V], point Point[V]) bool {
 	for _, edge := range edges {
-		if PointOnSegmentWithCoordinateArray(edge.GetStart(), edge.GetEnd(), point) {
+		if PointOnSegmentWithPoint(edge.GetStart(), edge.GetEnd(), point) {
 			return true
 		}
 	}

@@ -144,11 +144,11 @@ func CoordinateMatrixToPosMatrix[V any](matrix [][]V) (width int, posMatrix []V)
 	return
 }
 
-// GetShapeCoverageAreaWithCoordinateArray 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
-func GetShapeCoverageAreaWithCoordinateArray[V generic.SignedNumber](xys ...Point[V]) (left, right, top, bottom V) {
+// GetShapeCoverageAreaWithPoint 通过传入的一组坐标 points 计算一个图形覆盖的矩形范围
+func GetShapeCoverageAreaWithPoint[V generic.SignedNumber](points ...Point[V]) (left, right, top, bottom V) {
 	hasLeft, hasTop := false, false
-	for _, xy := range xys {
-		x, y := CoordinateArrayToCoordinate(xy)
+	for _, xy := range points {
+		x, y := PointToCoordinate(xy)
 		if x < left || !hasLeft {
 			hasLeft = true
 			left = x
@@ -167,7 +167,7 @@ func GetShapeCoverageAreaWithCoordinateArray[V generic.SignedNumber](xys ...Poin
 	return
 }
 
-// GetShapeCoverageAreaWithPos 通过传入的一组坐标 xys 计算一个图形覆盖的矩形范围
+// GetShapeCoverageAreaWithPos 通过传入的一组坐标 positions 计算一个图形覆盖的矩形范围
 func GetShapeCoverageAreaWithPos[V generic.SignedNumber](width V, positions ...V) (left, right, top, bottom V) {
 	hasLeft, hasTop := false, false
 	for _, pos := range positions {
@@ -205,12 +205,12 @@ func CoverageAreaBoundless[V generic.SignedNumber](l, r, t, b V) (left, right, t
 // GenerateShapeOnRectangle 生成一组二维坐标的形状
 //   - 这个形状将被在一个刚好能容纳形状的矩形中表示
 //   - 为 true 的位置表示了形状的每一个点
-func GenerateShapeOnRectangle[V generic.SignedNumber](xys ...Point[V]) (result []PointCap[V, bool]) {
-	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
+func GenerateShapeOnRectangle[V generic.SignedNumber](points ...Point[V]) (result []PointCap[V, bool]) {
+	left, r, top, b := GetShapeCoverageAreaWithPoint(points...)
 	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
 	w, h := right+1, bottom+1
 	result = make([]PointCap[V, bool], int(w*h))
-	for _, xy := range xys {
+	for _, xy := range points {
 		x, y := xy.GetXY()
 		sx := x - (r - right)
 		sy := y - (b - bottom)
@@ -234,15 +234,15 @@ func GenerateShapeOnRectangle[V generic.SignedNumber](xys ...Point[V]) (result [
 // GenerateShapeOnRectangleWithCoordinate 生成一组二维坐标的形状
 //   - 这个形状将被在一个刚好能容纳形状的矩形中表示
 //   - 为 true 的位置表示了形状的每一个点
-func GenerateShapeOnRectangleWithCoordinate[V generic.SignedNumber](xys ...Point[V]) (result [][]bool) {
-	left, r, top, b := GetShapeCoverageAreaWithCoordinateArray(xys...)
+func GenerateShapeOnRectangleWithCoordinate[V generic.SignedNumber](points ...Point[V]) (result [][]bool) {
+	left, r, top, b := GetShapeCoverageAreaWithPoint(points...)
 	_, right, _, bottom := CoverageAreaBoundless(left, r, top, b)
 	w, h := right+1, bottom+1
 	result = make([][]bool, int(w))
 	for x := V(0); x < w; x++ {
 		result[int(x)] = make([]bool, int(h))
 	}
-	for _, xy := range xys {
+	for _, xy := range points {
 		x, y := xy.GetXY()
 		sx := x - (r - right)
 		sy := y - (b - bottom)

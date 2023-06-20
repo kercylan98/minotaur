@@ -53,8 +53,8 @@ func GetDirectionNextWithCoordinate[V generic.SignedNumber](direction Direction,
 	return
 }
 
-// GetDirectionNextWithCoordinateArray 获取特定方向上的下一个坐标
-func GetDirectionNextWithCoordinateArray[V generic.SignedNumber](direction Direction, point Point[V]) Point[V] {
+// GetDirectionNextWithPoint 获取特定方向上的下一个坐标
+func GetDirectionNextWithPoint[V generic.SignedNumber](direction Direction, point Point[V]) Point[V] {
 	x, y := point.GetXY()
 	switch direction {
 	case DirectionUp:

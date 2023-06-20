@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-func TestGetShapeCoverageAreaWithCoordinateArray(t *testing.T) {
-	Convey("TestGetShapeCoverageAreaWithCoordinateArray", t, func() {
+func TestGetShapeCoverageAreaWithPoint(t *testing.T) {
+	Convey("TestGetShapeCoverageAreaWithPoint", t, func() {
 		var points []geometry.Point[int]
 		points = append(points, geometry.NewPoint(1, 1))
 		points = append(points, geometry.NewPoint(2, 1))
 		points = append(points, geometry.NewPoint(2, 2))
 
-		left, right, top, bottom := geometry.GetShapeCoverageAreaWithCoordinateArray(points...)
+		left, right, top, bottom := geometry.GetShapeCoverageAreaWithPoint(points...)
 
 		So(left, ShouldEqual, 1)
 		So(right, ShouldEqual, 2)

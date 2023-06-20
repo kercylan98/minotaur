@@ -13,7 +13,7 @@ type Graph struct {
 func (slf Graph) Neighbours(point geometry.Point[int]) []geometry.Point[int] {
 	neighbours := make([]geometry.Point[int], 0, 4)
 	for _, direction := range geometry.DirectionUDLR {
-		np := geometry.GetDirectionNextWithCoordinateArray(direction, point)
+		np := geometry.GetDirectionNextWithPoint(direction, point)
 		if slf.IsFree(np) {
 			neighbours = append(neighbours, np)
 		}
