@@ -140,7 +140,7 @@ func PosToCoordinateY[V generic.SignedNumber](width, pos V) V {
 
 // PointCopy 复制一个坐标数组
 func PointCopy[V generic.SignedNumber](point Point[V]) Point[V] {
-	return point.Copy()
+	return NewPoint(point.GetXY())
 }
 
 // PointToPosWithMulti 将一组坐标转换为二维数组的顺序位置
