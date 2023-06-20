@@ -70,5 +70,5 @@ func NewCircle[V generic.SignedNumber](radius V, points int) Circle[V] {
 
 // CalcCircleCentroidDistance 计算两个圆质心距离
 func CalcCircleCentroidDistance[V generic.SignedNumber](circle1, circle2 Circle[V]) V {
-	return CalcDistanceWithPoint(circle1.Centroid(), circle1.Centroid())
+	return CalcDistanceWithPoint(circle1.Centroid(), circle2.Centroid())
 }
