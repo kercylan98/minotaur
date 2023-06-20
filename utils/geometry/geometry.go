@@ -109,9 +109,14 @@ func CalcDirection[V generic.SignedNumber](x1, y1, x2, y2 V) Direction {
 	return DirectionUnknown
 }
 
-// CalcDistance 计算两点之间的距离
-func CalcDistance[V generic.SignedNumber](x1, y1, x2, y2 V) V {
+// CalcDistanceWithCoordinate 计算两点之间的距离
+func CalcDistanceWithCoordinate[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Sqrt(math.Pow(float64(x2-x1), 2) + math.Pow(float64(y2-y1), 2)))
+}
+
+// CalcDistanceWithPoint 计算两点之间的距离
+func CalcDistanceWithPoint[V generic.SignedNumber](point1, point2 Point[V]) V {
+	return CalcDistanceWithCoordinate(DoublePointToCoordinate(point1, point2))
 }
 
 // CalcDistanceSquared 计算两点之间的平方距离

@@ -74,7 +74,7 @@ func (slf *NavMesh[V]) Find(point geometry.Point[V], maxDistance V) (distance V,
 			break
 		}
 		br := geometry.CalcBoundingRadius(meshShape.Shape)
-		distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(
+		distance := geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(
 			geometry.CalcRectangleCentroid(meshShape.Shape),
 			point,
 		))
@@ -111,13 +111,13 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	for _, meshShape := range slf.meshShapes {
 		br := meshShape.BoundingRadius()
 
-		distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
+		distance := geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
 		if (distance <= startDistance || startDistance == V(-1)) && distance <= br && meshShape.Contains(start) {
 			startShape = meshShape
 			startDistance = distance
 		}
 
-		distance = geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
+		distance = geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
 		if (distance <= endDistance || endDistance == V(-1)) && distance <= br && meshShape.Contains(end) {
 			endShape = meshShape
 			endDistance = distance
@@ -127,7 +127,7 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	if endShape == nil && slf.meshShrinkAmount > V(0) {
 		for _, meshShape := range slf.meshShapes {
 			br := meshShape.BoundingRadius() + slf.meshShrinkAmount
-			distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
+			distance := geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(meshShape.Centroid(), end))
 			if distance <= br {
 				_, projectionDistance := geometry.ProjectionPointToShape(end, meshShape.Shape)
 				if projectionDistance <= slf.meshShrinkAmount && projectionDistance < endDistance {
@@ -145,7 +145,7 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	if startShape == nil && slf.meshShrinkAmount > 0 {
 		for _, meshShape := range slf.meshShapes {
 			br := meshShape.BoundingRadius() + slf.meshShrinkAmount
-			distance := geometry.CalcDistance(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
+			distance := geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(meshShape.Centroid(), start))
 			if distance <= br {
 				_, projectionDistance := geometry.ProjectionPointToShape(start, meshShape.Shape)
 				if projectionDistance <= slf.meshShrinkAmount && projectionDistance < startDistance {
@@ -165,9 +165,9 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	}
 
 	path := astar.Find[*shape[V], V](slf, startShape, endShape, func(a, b *shape[V]) V {
-		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
 	}, func(a, b *shape[V]) V {
-		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a.centroid, b.centroid))
 	})
 
 	if len(path) == 0 {
@@ -223,7 +223,7 @@ func (slf *NavMesh[V]) generateLink() {
 			targetShapePkg := slf.meshShapes[t]
 			targetShapeCentroid := targetShapePkg.Centroid()
 			targetShapeBoundingRadius := targetShapePkg.BoundingRadius()
-			centroidDistance := geometry.CalcDistance(geometry.DoublePointToCoordinate(shapeCentroid, targetShapeCentroid))
+			centroidDistance := geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(shapeCentroid, targetShapeCentroid))
 			if centroidDistance > shapeBoundingRadius+targetShapeBoundingRadius {
 				continue
 			}

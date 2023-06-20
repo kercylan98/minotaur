@@ -59,6 +59,26 @@ func (slf Point[V]) Copy() Point[V] {
 	return PointCopy(slf)
 }
 
+// Add 得到加上 point 后的点
+func (slf Point[V]) Add(point Point[V]) Point[V] {
+	return slf.GetOffset(point.GetXY())
+}
+
+// Sub 得到减去 point 后的点
+func (slf Point[V]) Sub(point Point[V]) Point[V] {
+	return NewPoint(slf.GetX()-point.GetX(), slf.GetY()-point.GetY())
+}
+
+// Mul 得到乘以 point 后的点
+func (slf Point[V]) Mul(point Point[V]) Point[V] {
+	return NewPoint(slf.GetX()*point.GetX(), slf.GetY()*point.GetY())
+}
+
+// Div 得到除以 point 后的点
+func (slf Point[V]) Div(point Point[V]) Point[V] {
+	return NewPoint(slf.GetX()/point.GetX(), slf.GetY()/point.GetY())
+}
+
 // NewPointCap 创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
 func NewPointCap[V generic.SignedNumber, D any](x, y V) PointCap[V, D] {
 	return PointCap[V, D]{

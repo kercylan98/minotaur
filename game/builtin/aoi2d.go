@@ -177,7 +177,7 @@ func (slf *AOI2D) refresh(entity game.AOIEntity2D) {
 	focus := slf.focus[guid]
 	for eg, e := range focus {
 		ex, ey := e.GetPosition()
-		if geometry.CalcDistance(x, y, ex, ey) > vision {
+		if geometry.CalcDistanceWithCoordinate(x, y, ex, ey) > vision {
 			delete(focus, eg)
 			delete(slf.focus[eg], guid)
 		}
@@ -243,13 +243,13 @@ func (slf *AOI2D) rangeVisionAreaEntities(entity game.AOIEntity2D, handle func(g
 			} else {
 				areaY = y
 			}
-			areaDistance := geometry.CalcDistance(x, y, areaX, areaY)
+			areaDistance := geometry.CalcDistanceWithCoordinate(x, y, areaX, areaY)
 			if areaDistance <= vision {
 				for eg, e := range slf.areas[w][h] {
 					if eg == guid {
 						continue
 					}
-					if ex, ey := e.GetPosition(); geometry.CalcDistance(x, y, ex, ey) > vision {
+					if ex, ey := e.GetPosition(); geometry.CalcDistanceWithCoordinate(x, y, ex, ey) > vision {
 						continue
 					}
 					handle(eg, e)

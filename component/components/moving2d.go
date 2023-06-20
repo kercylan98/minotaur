@@ -123,7 +123,7 @@ func (slf *Moving2D) handle() {
 			if interval == 0 {
 				continue
 			}
-			distance := geometry.CalcDistance(x, y, entity.x, entity.y)
+			distance := geometry.CalcDistanceWithCoordinate(x, y, entity.x, entity.y)
 			moveDistance := interval * (entity.GetSpeed() / (slf.timeUnit / 1000 / 1000))
 			if moveDistance >= distance || (x == entity.x && y == entity.y) {
 				entity.SetPosition(entity.x, entity.y)

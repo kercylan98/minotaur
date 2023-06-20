@@ -45,5 +45,5 @@ func (slf *shape[V]) IsWall() bool {
 }
 
 func (slf *shape[V]) GetCost(point geometry.Point[V]) V {
-	return geometry.CalcDistance(geometry.DoublePointToCoordinate(slf.Centroid(), point))
+	return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(slf.Centroid(), point))
 }

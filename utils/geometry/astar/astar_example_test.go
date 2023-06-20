@@ -37,9 +37,9 @@ func ExampleFind() {
 	}
 
 	paths := astar.Find[geometry.Point[int], int](graph, geometry.NewPoint(1, 1), geometry.NewPoint(8, 6), func(a, b geometry.Point[int]) int {
-		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a, b))
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a, b))
 	}, func(a, b geometry.Point[int]) int {
-		return geometry.CalcDistance(geometry.DoublePointToCoordinate(a, b))
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a, b))
 	})
 
 	for _, path := range paths {

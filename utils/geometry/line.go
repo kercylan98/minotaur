@@ -54,7 +54,7 @@ func (slf LineSegment[V]) GetEnd() Point[V] {
 
 // GetLength 获取该线段的长度
 func (slf LineSegment[V]) GetLength() V {
-	return CalcDistance(DoublePointToCoordinate(slf.GetStart(), slf.GetEnd()))
+	return CalcDistanceWithCoordinate(DoublePointToCoordinate(slf.GetStart(), slf.GetEnd()))
 }
 
 // PointOnLineSegmentWithCoordinate 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上

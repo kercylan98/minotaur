@@ -84,6 +84,12 @@ func (slf Shape[V]) Contains(point Point[V]) bool {
 	return inside
 }
 
+// ToCircle 将形状转换为圆形进行处理
+//   - 当形状非圆形时将会产生意外情况
+func (slf Shape[V]) ToCircle() Circle[V] {
+	return Circle[V]{slf}
+}
+
 // String 将该形状转换为可视化的字符串进行返回
 func (slf Shape[V]) String() string {
 	var result string
@@ -412,7 +418,7 @@ func CalcBoundingRadius[V generic.SignedNumber](shape Shape[V]) V {
 	var boundingRadius V
 	var centroid = CalcRectangleCentroid(shape)
 	for _, point := range shape.Points() {
-		distance := CalcDistance(DoublePointToCoordinate(centroid, point))
+		distance := CalcDistanceWithCoordinate(DoublePointToCoordinate(centroid, point))
 		if distance > boundingRadius {
 			boundingRadius = distance
 		}
@@ -424,7 +430,7 @@ func CalcBoundingRadius[V generic.SignedNumber](shape Shape[V]) V {
 func CalcBoundingRadiusWithCentroid[V generic.SignedNumber](shape Shape[V], centroid Point[V]) V {
 	var boundingRadius V
 	for _, point := range shape.Points() {
-		distance := CalcDistance(DoublePointToCoordinate(centroid, point))
+		distance := CalcDistanceWithCoordinate(DoublePointToCoordinate(centroid, point))
 		if distance > boundingRadius {
 			boundingRadius = distance
 		}
@@ -459,7 +465,7 @@ func ProjectionPointToShape[V generic.SignedNumber](point Point[V], shape Shape[
 
 	for _, edge := range shape.Edges() {
 		projectedPoint := CalcProjectionPoint(edge, point)
-		distance := CalcDistance(DoublePointToCoordinate(point, projectedPoint))
+		distance := CalcDistanceWithCoordinate(DoublePointToCoordinate(point, projectedPoint))
 		if !hasClosestProjection || distance < closestDistance {
 			closestDistance = distance
 			closestProjection = projectedPoint
