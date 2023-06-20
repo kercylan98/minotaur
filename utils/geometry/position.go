@@ -74,6 +74,14 @@ func NewPointCapWithData[V generic.SignedNumber, D any](x, y V, data D) PointCap
 	}
 }
 
+// NewPointCapWithPoint 通过设置数据的方式创建一个由已有坐标组成的点，这个点具有一个数据容量
+func NewPointCapWithPoint[V generic.SignedNumber, D any](point Point[V], data D) PointCap[V, D] {
+	return PointCap[V, D]{
+		Point: point,
+		Data:  data,
+	}
+}
+
 // PointCap 表示了一个由 x、y 坐标组成的点，这个点具有一个数据容量
 type PointCap[V generic.SignedNumber, D any] struct {
 	Point[V]

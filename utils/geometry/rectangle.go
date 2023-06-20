@@ -328,7 +328,10 @@ func GetRectangleFullPos[V generic.SignedNumber](width, height V) (result []V) {
 func CalcRectangleCentroid[V generic.SignedNumber](shape Shape[V]) Point[V] {
 	x, y := V(0), V(0)
 	length := V(shape.PointCount())
-
+	for _, point := range shape.Points() {
+		x += point.GetX()
+		y += point.GetY()
+	}
 	x /= length
 	y /= length
 	return NewPoint(x, y)

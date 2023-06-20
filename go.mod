@@ -11,6 +11,7 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/nats-io/nats.go v1.25.0
 	github.com/panjf2000/gnet v1.6.6
+	github.com/smartystreets/goconvey v1.8.0
 	github.com/sony/sonyflake v1.1.0
 	github.com/tealeg/xlsx v1.0.5
 	github.com/tidwall/gjson v1.14.4
@@ -46,7 +47,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/smartystreets/assertions v1.13.1 // indirect
-	github.com/smartystreets/goconvey v1.8.0 // indirect
 	github.com/templexxx/cpu v0.0.9 // indirect
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -59,11 +59,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

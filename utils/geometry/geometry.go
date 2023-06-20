@@ -71,7 +71,7 @@ func GetDirectionNextWithCoordinateArray[V generic.SignedNumber](direction Direc
 }
 
 // GetDirectionNextWithPos 获取位置在特定宽度和特定方向上的下一个位置
-//   - 需要注意的是，在左右方向时，当下一个位置不在游戏区域内时，将会返回上一行的末位置或下一行的首位置
+//   - 需要注意的是，在左右方向时，当下一个位置不在矩形区域内时，将会返回上一行的末位置或下一行的首位置
 func GetDirectionNextWithPos[V generic.SignedNumber](direction Direction, width, pos V) V {
 	switch direction {
 	case DirectionUp:

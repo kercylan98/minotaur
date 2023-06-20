@@ -1,9 +1,9 @@
 package navmesh
 
 import (
-	"github.com/kercylan98/minotaur/utils/astar"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/geometry"
+	"github.com/kercylan98/minotaur/utils/geometry/astar"
 	"github.com/kercylan98/minotaur/utils/maths"
 )
 
@@ -178,6 +178,9 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 	for i := 0; i < len(path)-1; i++ {
 		current := path[i]
 		next := path[i+1]
+		if current.id == next.id {
+			continue
+		}
 
 		var portal geometry.Line[V]
 		var find bool
@@ -208,8 +211,7 @@ func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry
 }
 
 func (slf *NavMesh[V]) generateLink() {
-	refer := len(slf.meshShapes)
-	for i := 0; i < refer; i++ {
+	for i := 0; i < len(slf.meshShapes); i++ {
 		shapePkg := slf.meshShapes[i]
 		shapeCentroid := shapePkg.Centroid()
 		shapeBoundingRadius := shapePkg.BoundingRadius()

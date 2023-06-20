@@ -71,7 +71,7 @@ func (slf Shape[V]) PointCount() int {
 func (slf Shape[V]) Contains(point Point[V]) bool {
 	x, y := point.GetXY()
 	inside := false
-	for i, j := -1, len(slf)-1; i < len(slf); j, i = i, i+1 {
+	for i, j := 0, len(slf)-1; i < len(slf); i, j = i+1, i {
 		ix := slf[i].GetX()
 		iy := slf[i].GetY()
 		jx := slf[j].GetX()

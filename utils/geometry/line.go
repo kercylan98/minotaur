@@ -14,8 +14,28 @@ func NewLine[V generic.SignedNumber](start, end Point[V]) Line[V] {
 	return Line[V]{start, end}
 }
 
+// NewLineCap 创建一根包含数据的线段
+func NewLineCap[V generic.SignedNumber, Data any](start, end Point[V], data Data) LineCap[V, Data] {
+	return LineCap[V, Data]{NewLine(start, end), data}
+}
+
+// NewLineCapWithLine 通过已有线段创建一根包含数据的线段
+func NewLineCapWithLine[V generic.SignedNumber, Data any](line Line[V], data Data) LineCap[V, Data] {
+	return LineCap[V, Data]{line, data}
+}
+
 // Line 通过两个点表示一根线段
 type Line[V generic.SignedNumber] [2]Point[V]
+
+// LineCap 可以包含一份额外数据的线段
+type LineCap[V generic.SignedNumber, Data any] struct {
+	Line[V]
+	Data Data
+}
+
+func (slf *LineCap[V, Data]) GetData() Data {
+	return slf.Data
+}
 
 // GetPoints 获取该线段的两个点
 func (slf Line[V]) GetPoints() [2]Point[V] {
@@ -92,11 +112,13 @@ func CalcLineIsCollinear[V generic.SignedNumber](line1, line2 Line[V], tolerance
 
 // CalcLineIsOverlap 通过对点进行排序来检查两条共线线段是否重叠，返回重叠线段
 func CalcLineIsOverlap[V generic.SignedNumber](line1, line2 Line[V]) (line Line[V], overlap bool) {
-	var shapes = []Shape[V]{
-		{line1.GetStart(), line1.GetEnd(), line1.GetStart()},
-		{line1.GetStart(), line1.GetEnd(), line1.GetEnd()},
-		{line2.GetStart(), line2.GetEnd(), line2.GetStart()},
-		{line2.GetStart(), line2.GetEnd(), line2.GetEnd()},
+	l1ps, l1pe := NewPointCapWithPoint(line1.GetStart(), true), NewPointCapWithPoint(line1.GetEnd(), true)
+	l2ps, l2pe := NewPointCapWithPoint(line2.GetStart(), false), NewPointCapWithPoint(line2.GetEnd(), false)
+	var shapes = [][]PointCap[V, bool]{
+		{l1ps, l1pe, l1ps},
+		{l1ps, l1pe, l1pe},
+		{l2ps, l2pe, l2ps},
+		{l2ps, l2pe, l2pe},
 	}
 	sort.Slice(shapes, func(i, j int) bool {
 		a, b := shapes[i], shapes[j]
@@ -109,10 +131,10 @@ func CalcLineIsOverlap[V generic.SignedNumber](line1, line2 Line[V]) (line Line[
 		}
 	})
 
-	notOverlap := shapes[0][0].Equal(shapes[1][0]) && shapes[0][1].Equal(shapes[1][1])
-	singlePointOverlap := shapes[1][2].Equal(shapes[2][2])
+	notOverlap := shapes[1][0].GetData() == shapes[2][0].GetData()
+	singlePointOverlap := shapes[1][2].Equal(shapes[2][2].Point)
 	if notOverlap || singlePointOverlap {
 		return line, false
 	}
-	return NewLine(shapes[1][2], shapes[2][2]), true
+	return NewLine(shapes[1][2].Point, shapes[2][2].Point), true
 }
