@@ -126,8 +126,8 @@ func CalcAngle[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 	return V(math.Atan2(float64(y2-y1), float64(x2-x1)) * 180 / math.Pi)
 }
 
-// CalculateNewCoordinate 根据给定的x、y坐标、角度和距离计算新的坐标
-func CalculateNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, newY V) {
+// CalcNewCoordinate 根据给定的x、y坐标、角度和距离计算新的坐标
+func CalcNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, newY V) {
 	// 将角度转换为弧度
 	var pi = math.Pi
 	var dividend = 180.0

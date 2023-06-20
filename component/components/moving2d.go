@@ -131,7 +131,7 @@ func (slf *Moving2D) handle() {
 				slf.OnPosition2DDestinationEvent(entity)
 				continue
 			} else {
-				nx, ny := geometry.CalculateNewCoordinate(x, y, angle, moveDistance)
+				nx, ny := geometry.CalcNewCoordinate(x, y, angle, moveDistance)
 				entity.SetPosition(nx, ny)
 				entity.lastMoveTime = moveTime
 				slf.OnPosition2DChangeEvent(entity, x, y)
