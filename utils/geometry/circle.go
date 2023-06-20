@@ -37,7 +37,7 @@ func (slf Circle[V]) Centroid() Point[V] {
 
 // Overlap 与另一个圆是否发生重叠
 func (slf Circle[V]) Overlap(circle Circle[V]) bool {
-	return CalcDistanceWithPoint(slf.Centroid(), circle.Centroid())/2 > slf.radius
+	return slf.CentroidDistance(circle) < slf.Radius()+circle.Radius()
 }
 
 // Area 获取圆形面积
@@ -50,8 +50,13 @@ func (slf Circle[V]) Length() V {
 	return V(2 * math.Pi * float64(slf.Radius()))
 }
 
-// GenerateCircle 通过传入圆的半径和需要的点数量，生成一个圆
-func GenerateCircle[V generic.SignedNumber](radius V, points int) Circle[V] {
+// CentroidDistance 计算与另一个圆的质心距离
+func (slf Circle[V]) CentroidDistance(circle Circle[V]) V {
+	return CalcCircleCentroidDistance(slf, circle)
+}
+
+// NewCircle 通过传入圆的半径和需要的点数量，生成一个圆
+func NewCircle[V generic.SignedNumber](radius V, points int) Circle[V] {
 	angle := 2.0 * math.Pi / float64(points)
 	var shape = make(Shape[V], points)
 	for i := 0; i < points; i++ {
@@ -61,4 +66,9 @@ func GenerateCircle[V generic.SignedNumber](radius V, points int) Circle[V] {
 		shape = append(shape, NewPoint(x, y))
 	}
 	return shape.ToCircle()
+}
+
+// CalcCircleCentroidDistance 计算两个圆质心距离
+func CalcCircleCentroidDistance[V generic.SignedNumber](circle1, circle2 Circle[V]) V {
+	return CalcDistanceWithPoint(circle1.Centroid(), circle1.Centroid())
 }
