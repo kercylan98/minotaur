@@ -87,7 +87,7 @@ func (slf Shape[V]) Contains(point Point[V]) bool {
 // ToCircle 将形状转换为圆形进行处理
 //   - 当形状非圆形时将会产生意外情况
 func (slf Shape[V]) ToCircle() Circle[V] {
-	return Circle[V]{slf}
+	return Circle[V]{Shape: slf}
 }
 
 // String 将该形状转换为可视化的字符串进行返回
