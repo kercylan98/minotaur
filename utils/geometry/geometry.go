@@ -147,6 +147,6 @@ func CalcAngleDifference[V generic.Number](angleA, angleB V) V {
 	a := t + V(pi)
 	b := V(pi) * 2
 	t = V(math.Floor(float64(a/b))) * b
-	t -= pi
+	t -= V(pi)
 	return t
 }

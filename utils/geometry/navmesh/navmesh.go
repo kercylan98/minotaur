@@ -7,6 +7,20 @@ import (
 	"github.com/kercylan98/minotaur/utils/maths"
 )
 
+// NewNavMesh 创建一个新的导航网格，并返回一个指向该导航网格的指针。
+//
+// 参数：
+//   - shapes: 形状切片，类型为 []geometry.Shape[V]，表示导航网格中的形状。
+//   - meshShrinkAmount: 网格缩小量，类型为 V，表示导航网格的缩小量。
+//
+// 返回值：
+//   - *NavMesh[V]: 指向创建的导航网格的指针。
+//
+// 注意事项：
+//   - 导航网格的形状可以是任何几何形状。
+//   - meshShrinkAmount 表示导航网格的缩小量，用于在形状之间创建链接时考虑形状的缩小效果。
+//   - 函数内部使用了泛型类型参数 V，可以根据需要指定形状的坐标类型。
+//   - 函数返回一个指向创建的导航网格的指针。
 func NewNavMesh[V generic.SignedNumber](shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V] {
 	nm := &NavMesh[V]{
 		meshShapes:       make([]*shape[V], len(shapes)),
@@ -24,11 +38,27 @@ type NavMesh[V generic.SignedNumber] struct {
 	meshShrinkAmount V
 }
 
+// Neighbours 实现 astar.Graph 的接口，用于向 A* 算法提供相邻图形
 func (slf *NavMesh[V]) Neighbours(node *shape[V]) []*shape[V] {
 	return node.links
 }
 
-// Find 在网格中找到与给定点最近的点。如果该点已经在网格中，这将为您提供该点。如果点在网格之外，这将尝试将此点投影到网格中（直到给定的 maxDistance）
+// Find 用于在 NavMesh 中查找离给定点最近的形状，并返回距离、找到的点和找到的形状。
+//
+// 参数：
+//   - point: 给定的点，类型为 geometry.Point[V]，表示一个 V 维度的点坐标。
+//   - maxDistance: 最大距离，类型为 V，表示查找的最大距离限制。
+//
+// 返回值：
+//   - distance: 距离，类型为 V，表示离给定点最近的形状的距离。
+//   - findPoint: 找到的点，类型为 geometry.Point[V]，表示离给定点最近的点坐标。
+//   - findShape: 找到的形状，类型为 geometry.Shape[V]，表示离给定点最近的形状。
+//
+// 注意事项：
+//   - 如果给定点在 NavMesh 中的某个形状内部或者在形状的边上，距离为 0，找到的形状为该形状，找到的点为给定点。
+//   - 如果给定点不在任何形状内部或者形状的边上，将计算给定点到每个形状的距离，并找到最近的形状和对应的点。
+//   - 距离的计算采用几何学中的投影点到形状的距离。
+//   - 函数返回离给定点最近的形状的距离、找到的点和找到的形状。
 func (slf *NavMesh[V]) Find(point geometry.Point[V], maxDistance V) (distance V, findPoint geometry.Point[V], findShape geometry.Shape[V]) {
 	var minDistance = maxDistance
 	var closest *shape[V]
@@ -57,7 +87,20 @@ func (slf *NavMesh[V]) Find(point geometry.Point[V], maxDistance V) (distance V,
 	return minDistance, pointOnClosest, closest.Shape
 }
 
-// FindPath 使用此导航网格查找从起点到终点的路径。
+// FindPath 函数用于在 NavMesh 中查找从起点到终点的路径，并返回路径上的点序列。
+//
+// 参数：
+//   - start: 起点，类型为 geometry.Point[V]，表示路径的起始点。
+//   - end: 终点，类型为 geometry.Point[V]，表示路径的终点。
+//
+// 返回值：
+//   - result: 路径上的点序列，类型为 []geometry.Point[V]。
+//
+// 注意事项：
+//   - 函数首先根据起点和终点的位置，找到离它们最近的形状作为起点形状和终点形状。
+//   - 如果起点或终点不在任何形状内部，且 NavMesh 的 meshShrinkAmount 大于0，则会考虑缩小的形状。
+//   - 使用 A* 算法在 NavMesh 上搜索从起点形状到终点形状的最短路径。
+//   - 使用漏斗算法对路径进行优化，以得到最终的路径点序列。
 func (slf *NavMesh[V]) FindPath(start, end geometry.Point[V]) (result []geometry.Point[V]) {
 	var startShape, endShape *shape[V]
 	var startDistance, endDistance = V(-1), V(-1)
