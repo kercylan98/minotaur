@@ -137,7 +137,6 @@ func PointToPos[V generic.SignedNumber](width V, xy Point[V]) V {
 
 // PosToCoordinate 通过宽度将一个二维数组的顺序位置转换为xy坐标
 func PosToCoordinate[V generic.SignedNumber](width, pos V) (x, y V) {
-
 	x = V(math.Mod(float64(pos), float64(width)))
 	y = pos / width
 	return x, y

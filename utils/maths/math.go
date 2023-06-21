@@ -109,3 +109,15 @@ func Clamp[V generic.Number](value, min, max V) V {
 func Tolerance[V generic.Number](value1, value2, tolerance V) bool {
 	return V(math.Abs(float64(value1-value2))) <= tolerance
 }
+
+// Merge 通过一个参考值合并两个数字
+func Merge[V generic.SignedNumber](refer, a, b V) V {
+	return b*refer + a
+}
+
+// UnMerge 通过一个参考值取消合并的两个数字
+func UnMerge[V generic.SignedNumber](refer, num V) (a, b V) {
+	a = V(math.Mod(float64(num), float64(refer)))
+	b = num / refer
+	return a, b
+}
