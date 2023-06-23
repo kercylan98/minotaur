@@ -1,6 +1,9 @@
 package builtin
 
-import "github.com/kercylan98/minotaur/utils/maths"
+import (
+	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/maths"
+)
 
 func NewPoker[PlayerID comparable](pile *PokerCardPile, options ...PokerOption[PlayerID]) *Poker[PlayerID] {
 	poker := &Poker[PlayerID]{
@@ -20,18 +23,23 @@ type Poker[PlayerID comparable] struct {
 	handCards    map[PlayerID][][]PokerCard
 }
 
+// GetPlayerIds 获取拥有手牌的所有玩家ID
+func (slf *Poker[PlayerID]) GetPlayerIds() []PlayerID {
+	return hash.KeyToSlice(slf.handCards)
+}
+
 // HandCard 获取玩家特定索引的手牌组
 func (slf *Poker[PlayerID]) HandCard(playerId PlayerID, index int) []PokerCard {
 	return slf.handCards[playerId][index]
 }
 
-// HandCards 获取玩家所有手牌
+// HandCards 获取玩家所有手牌组
 //   - 获取结果为多份手牌
 func (slf *Poker[PlayerID]) HandCards(playerId PlayerID) [][]PokerCard {
 	return slf.handCards[playerId]
 }
 
-// HandCardGroupCount 获取玩家共有多少副手牌
+// HandCardGroupCount 获取玩家共有多少个手牌组
 func (slf *Poker[PlayerID]) HandCardGroupCount(playerId PlayerID) int {
 	return len(slf.handCards[playerId])
 }
