@@ -1,4 +1,4 @@
-package builtin
+package poker
 
 import (
 	"fmt"
@@ -8,14 +8,14 @@ import (
 	"sort"
 )
 
-// NewPokerCardPile 返回一个新的牌堆，其中 size 表示了该牌堆由多少副牌组成
+// NewCardPile 返回一个新的牌堆，其中 size 表示了该牌堆由多少副牌组成
 //   - 在不洗牌的情况下，默认牌堆顶部到底部为从大到小排列
-func NewPokerCardPile(size int, options ...PokerCardPileOption) *PokerCardPile {
-	pile := &PokerCardPile{
+func NewCardPile(size int, options ...CardPileOption) *CardPile {
+	pile := &CardPile{
 		size: size,
-		pile: make([]PokerCard, 0, size*54),
+		pile: make([]Card, 0, size*54),
 	}
-	pile.shuffleHandle = func(cards []PokerCard) []PokerCard {
+	pile.shuffleHandle = func(cards []Card) []Card {
 		sort.Slice(cards, func(i, j int) bool {
 			return random.Float64() >= 0.5
 		})
@@ -28,29 +28,29 @@ func NewPokerCardPile(size int, options ...PokerCardPileOption) *PokerCardPile {
 	return pile
 }
 
-// PokerCardPile 扑克牌堆
-type PokerCardPile struct {
-	pile          []PokerCard
+// CardPile 扑克牌堆
+type CardPile struct {
+	pile          []Card
 	size          int
-	shuffleHandle func(cards []PokerCard) []PokerCard
-	excludeColor  map[PokerColor]struct{}
-	excludePoint  map[PokerPoint]struct{}
-	excludeCard   map[PokerPoint]map[PokerColor]struct{}
+	shuffleHandle func(cards []Card) []Card
+	excludeColor  map[Color]struct{}
+	excludePoint  map[Point]struct{}
+	excludeCard   map[Point]map[Color]struct{}
 }
 
 // Reset 重置牌堆的扑克牌数量及顺序
-func (slf *PokerCardPile) Reset() {
-	var cards = make([]PokerCard, 0, 54)
-	if !slf.IsExclude(PokerPointRedJoker, PokerColorNone) {
-		cards = append(cards, NewPokerCard(PokerPointRedJoker, PokerColorNone))
+func (slf *CardPile) Reset() {
+	var cards = make([]Card, 0, 54)
+	if !slf.IsExclude(PointRedJoker, ColorNone) {
+		cards = append(cards, NewCard(PointRedJoker, ColorNone))
 	}
-	if !slf.IsExclude(PokerPointBlackJoker, PokerColorNone) {
-		cards = append(cards, NewPokerCard(PokerPointBlackJoker, PokerColorNone))
+	if !slf.IsExclude(PointBlackJoker, ColorNone) {
+		cards = append(cards, NewCard(PointBlackJoker, ColorNone))
 	}
-	for point := PokerPointK; point >= PokerPointA; point-- {
-		for color := PokerColorSpade; color <= PokerColorDiamond; color++ {
+	for point := PointK; point >= PointA; point-- {
+		for color := ColorSpade; color <= ColorDiamond; color++ {
 			if !slf.IsExclude(point, color) {
-				cards = append(cards, NewPokerCard(point, color))
+				cards = append(cards, NewCard(point, color))
 			}
 		}
 	}
@@ -61,18 +61,21 @@ func (slf *PokerCardPile) Reset() {
 }
 
 // IsExclude 检查特定点数和花色是否被排除在外
-func (slf *PokerCardPile) IsExclude(point PokerPoint, color PokerColor) bool {
+func (slf *CardPile) IsExclude(point Point, color Color) bool {
+	if point == PointRedJoker || point == PointBlackJoker {
+		color = ColorNone
+	}
 	return hash.Exist(slf.excludePoint, point) || hash.Exist(slf.excludeColor, color) || hash.Exist(slf.excludeCard[point], color)
 }
 
 // IsExcludeWithCard 检查特定扑克牌是否被排除在外
-func (slf *PokerCardPile) IsExcludeWithCard(card PokerCard) bool {
+func (slf *CardPile) IsExcludeWithCard(card Card) bool {
 	point, color := card.GetPointAndColor()
 	return hash.Exist(slf.excludePoint, point) || hash.Exist(slf.excludeColor, color) || hash.Exist(slf.excludeCard[point], color)
 }
 
 // Shuffle 洗牌
-func (slf *PokerCardPile) Shuffle() {
+func (slf *CardPile) Shuffle() {
 	before := slf.Count()
 	cards := slf.shuffleHandle(slf.Cards())
 	if len(cards) != before {
@@ -82,22 +85,22 @@ func (slf *PokerCardPile) Shuffle() {
 }
 
 // Cards 获取当前牌堆的所有扑克牌
-func (slf *PokerCardPile) Cards() []PokerCard {
+func (slf *CardPile) Cards() []Card {
 	return slf.pile
 }
 
 // IsFree 返回牌堆是否没有扑克牌了
-func (slf *PokerCardPile) IsFree() bool {
+func (slf *CardPile) IsFree() bool {
 	return len(slf.pile) == 0
 }
 
 // Count 获取牌堆剩余牌量
-func (slf *PokerCardPile) Count() int {
+func (slf *CardPile) Count() int {
 	return len(slf.pile)
 }
 
 // Pull 从牌堆特定位置抽出一张牌
-func (slf *PokerCardPile) Pull(index int) PokerCard {
+func (slf *CardPile) Pull(index int) Card {
 	if index >= slf.Count() || index < 0 {
 		panic(fmt.Errorf("failed to pull a poker card from the pile, the index is less than 0 or exceeds the remaining number of cards in the pile. count: %d, index: %d", slf.Count(), index))
 	}
@@ -107,7 +110,7 @@ func (slf *PokerCardPile) Pull(index int) PokerCard {
 }
 
 // PullTop 从牌堆顶部抽出一张牌
-func (slf *PokerCardPile) PullTop() PokerCard {
+func (slf *CardPile) PullTop() Card {
 	if slf.IsFree() {
 		panic("empty poker cards pile")
 	}
@@ -117,7 +120,7 @@ func (slf *PokerCardPile) PullTop() PokerCard {
 }
 
 // PullBottom 从牌堆底部抽出一张牌
-func (slf *PokerCardPile) PullBottom() PokerCard {
+func (slf *CardPile) PullBottom() Card {
 	if slf.IsFree() {
 		panic("empty poker cards pile")
 	}
@@ -128,17 +131,17 @@ func (slf *PokerCardPile) PullBottom() PokerCard {
 }
 
 // Push 将扑克牌插入到牌堆特定位置
-func (slf *PokerCardPile) Push(index int, card PokerCard) {
+func (slf *CardPile) Push(index int, card Card) {
 	slice.Insert(&slf.pile, index, card)
 	return
 }
 
 // PushTop 将扑克牌插入到牌堆顶部
-func (slf *PokerCardPile) PushTop(card PokerCard) {
-	slf.pile = append([]PokerCard{card}, slf.pile...)
+func (slf *CardPile) PushTop(card Card) {
+	slf.pile = append([]Card{card}, slf.pile...)
 }
 
 // PushBottom 将扑克牌插入到牌堆底部
-func (slf *PokerCardPile) PushBottom(card PokerCard) {
+func (slf *CardPile) PushBottom(card Card) {
 	slf.pile = append(slf.pile, card)
 }
