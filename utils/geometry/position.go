@@ -79,6 +79,37 @@ func (slf Point[V]) Div(point Point[V]) Point[V] {
 	return NewPoint(slf.GetX()/point.GetX(), slf.GetY()/point.GetY())
 }
 
+// Abs 返回位置的绝对值
+func (slf Point[V]) Abs() Point[V] {
+	return NewPoint(V(math.Abs(float64(slf.GetX()))), V(math.Abs(float64(slf.GetY()))))
+}
+
+// Max 返回两个位置中每个维度的最大值组成的新的位置
+func (slf Point[V]) Max(point Point[V]) Point[V] {
+	x, y := slf.GetXY()
+	px, py := point.GetXY()
+	if px > x {
+		x = px
+	}
+	if py > y {
+		y = py
+	}
+	return NewPoint(x, y)
+}
+
+// Max 返回两个位置中每个维度的最小值组成的新的位置
+func (slf Point[V]) Min(point Point[V]) Point[V] {
+	x, y := slf.GetXY()
+	px, py := point.GetXY()
+	if px < x {
+		x = px
+	}
+	if py < y {
+		y = py
+	}
+	return NewPoint(x, y)
+}
+
 // NewPointCap 创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
 func NewPointCap[V generic.SignedNumber, D any](x, y V) PointCap[V, D] {
 	return PointCap[V, D]{

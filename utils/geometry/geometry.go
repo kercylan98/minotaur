@@ -146,7 +146,7 @@ func CalcNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, n
 }
 
 // CalcAngleDifference 计算两个角度之间的最小角度差
-func CalcAngleDifference[V generic.Number](angleA, angleB V) V {
+func CalcAngleDifference[V generic.SignedNumber](angleA, angleB V) V {
 	pi := math.Pi
 	t := angleA - angleB
 	a := t + V(pi)
