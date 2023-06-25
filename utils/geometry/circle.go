@@ -8,31 +8,19 @@ import (
 // Circle 圆形
 type Circle[V generic.SignedNumber] struct {
 	Shape[V]
-	radius       V
-	centroid     Point[V]
-	initCentroid bool
 }
 
 // Radius 获取圆形半径
 func (slf Circle[V]) Radius() V {
-	if slf.radius > V(-0) {
-		return slf.radius
-	}
 	for _, point := range slf.Points() {
-		slf.radius = CalcDistanceWithPoint(slf.Centroid(), point)
-		return slf.radius
+		return CalcDistanceWithPoint(slf.Centroid(), point)
 	}
 	panic("circle without any points")
 }
 
 // Centroid 获取圆形质心位置
 func (slf Circle[V]) Centroid() Point[V] {
-	if slf.initCentroid {
-		return slf.centroid
-	}
-	slf.centroid = CalcRectangleCentroid(slf.Shape)
-	slf.initCentroid = true
-	return slf.centroid
+	return CalcRectangleCentroid(slf.Shape)
 }
 
 // Overlap 与另一个圆是否发生重叠

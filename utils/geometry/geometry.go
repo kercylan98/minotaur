@@ -133,16 +133,17 @@ func CalcAngle[V generic.SignedNumber](x1, y1, x2, y2 V) V {
 
 // CalcNewCoordinate 根据给定的x、y坐标、角度和距离计算新的坐标
 func CalcNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, newY V) {
-	// 将角度转换为弧度
+	radian := CalcRadianWithAngle(angle)
+	newX = x + distance*V(math.Cos(float64(radian)))
+	newY = y + distance*V(math.Sin(float64(radian)))
+	return newX, newY
+}
+
+// CalcRadianWithAngle 根据角度 angle 计算弧度
+func CalcRadianWithAngle[V generic.SignedNumber](angle V) V {
 	var pi = math.Pi
 	var dividend = 180.0
-	radians := angle * V(pi) / V(dividend)
-
-	// 计算新的坐标
-	newX = x + distance*V(math.Cos(float64(radians)))
-	newY = y + distance*V(math.Sin(float64(radians)))
-
-	return newX, newY
+	return angle * V(pi) / V(dividend)
 }
 
 // CalcAngleDifference 计算两个角度之间的最小角度差
@@ -154,4 +155,19 @@ func CalcAngleDifference[V generic.SignedNumber](angleA, angleB V) V {
 	t = V(math.Floor(float64(a/b))) * b
 	t -= V(pi)
 	return t
+}
+
+// CalcRayIsIntersect 根据给定的位置和角度生成射线，检测射线是否与多边形发生碰撞
+func CalcRayIsIntersect[V generic.SignedNumber](x, y, angle V, shape Shape[V]) bool {
+	fx, fy := float64(x), float64(y)
+	radian := CalcRadianWithAngle(float64(angle))
+	end := NewPoint(fx+math.Cos(radian), fy+math.Sin(radian))
+
+	edges := shape.Edges()
+	for i := 0; i < len(edges); i++ {
+		if CalcLineSegmentIsIntersect(NewLineSegment(NewPoint(fx, fy), end), ConvertLineSegmentGeneric[V, float64](edges[i])) {
+			return true
+		}
+	}
+	return false
 }

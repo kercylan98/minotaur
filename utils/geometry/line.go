@@ -57,6 +57,13 @@ func (slf LineSegment[V]) GetLength() V {
 	return CalcDistanceWithCoordinate(DoublePointToCoordinate(slf.GetStart(), slf.GetEnd()))
 }
 
+// ConvertLineSegmentGeneric 转换线段的泛型类型为特定类型
+func ConvertLineSegmentGeneric[V generic.SignedNumber, TO generic.SignedNumber](line LineSegment[V]) LineSegment[TO] {
+	x1, y1 := line.GetStart().GetXY()
+	x2, y2 := line.GetEnd().GetXY()
+	return NewLineSegment(NewPoint(TO(x1), TO(y1)), NewPoint(TO(x2), TO(y2)))
+}
+
 // PointOnLineSegmentWithCoordinate 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 func PointOnLineSegmentWithCoordinate[V generic.SignedNumber](x1, y1, x2, y2, x, y V) bool {
 	return (x-x1)*(y2-y1) == (x2-x1)*(y-y1)
@@ -137,4 +144,38 @@ func CalcLineSegmentIsOverlap[V generic.SignedNumber](line1, line2 LineSegment[V
 		return line, false
 	}
 	return NewLineSegment(shapes[1][2].Point, shapes[2][2].Point), true
+}
+
+// CalcLineSegmentIsIntersect 计算两条线段是否相交
+func CalcLineSegmentIsIntersect[V generic.SignedNumber](line1, line2 LineSegment[V]) bool {
+	fl1 := ConvertLineSegmentGeneric[V, float64](line1)
+	fl2 := ConvertLineSegmentGeneric[V, float64](line2)
+	slope1 := CalcLineSegmentSlope(fl1)
+	slope2 := CalcLineSegmentSlope(fl2)
+
+	if slope1 == slope2 {
+		return false
+	}
+
+	intercept1 := CalcLineSegmentIntercept(fl1)
+	intercept2 := CalcLineSegmentIntercept(fl2)
+
+	intersectX := (intercept2 - intercept1) / (slope1 - slope2)
+
+	if intersectX >= maths.Min(fl1.GetStart().GetX(), fl1.GetEnd().GetX()) && intersectX <= maths.Max(fl1.GetStart().GetX(), fl1.GetEnd().GetX()) &&
+		intersectX >= maths.Min(fl2.GetStart().GetX(), fl2.GetEnd().GetX()) && intersectX <= maths.Max(fl2.GetStart().GetX(), fl2.GetEnd().GetX()) {
+		return true
+	}
+
+	return false
+}
+
+// CalcLineSegmentSlope 计算线段的斜率
+func CalcLineSegmentSlope[V generic.SignedNumber](line LineSegment[V]) V {
+	return (line.GetEnd().GetY() - line.GetStart().GetY()) / (line.GetEnd().GetX() - line.GetStart().GetX())
+}
+
+// CalcLineSegmentIntercept 计算线段的截距
+func CalcLineSegmentIntercept[V generic.SignedNumber](line LineSegment[V]) V {
+	return line.GetStart().GetY() - CalcLineSegmentSlope(line)*line.GetStart().GetX()
 }

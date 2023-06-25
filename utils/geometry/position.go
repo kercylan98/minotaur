@@ -97,7 +97,7 @@ func (slf Point[V]) Max(point Point[V]) Point[V] {
 	return NewPoint(x, y)
 }
 
-// Max 返回两个位置中每个维度的最小值组成的新的位置
+// Min 返回两个位置中每个维度的最小值组成的新的位置
 func (slf Point[V]) Min(point Point[V]) Point[V] {
 	x, y := slf.GetXY()
 	px, py := point.GetXY()
