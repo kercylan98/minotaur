@@ -38,6 +38,11 @@ func SetGlobal(offset time.Duration) {
 	global.SetOffset(offset)
 }
 
+// GetGlobal 获取全局偏移时间
+func GetGlobal() *Time {
+	return global
+}
+
 // Now 获取当前时间偏移后的时间
 func Now() time.Time {
 	return global.Now()
