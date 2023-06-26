@@ -1,6 +1,19 @@
 package times
 
-import "time"
+import (
+	"time"
+)
+
+const (
+	Nanosecond  = time.Nanosecond
+	Microsecond = time.Microsecond
+	Millisecond = time.Millisecond
+	Second      = time.Second
+	Minute      = time.Minute
+	Hour        = time.Hour
+	Day         = time.Hour * 24
+	Week        = Day * 7
+)
 
 // GetMonthDays 获取一个时间当月共有多少天
 func GetMonthDays(t time.Time) int {
@@ -63,4 +76,25 @@ func GetMondayZero(t time.Time) time.Time {
 	t = GetToday(t)
 	weekDay := WeekDay(t)
 	return t.AddDate(0, 0, 1-weekDay)
+}
+
+// Date 返回一个特定日期的时间
+func Date(year int, month time.Month, day int) time.Time {
+	return time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+}
+
+// DateWithHMS 返回一个精确到秒的时间
+func DateWithHMS(year int, month time.Month, day, hour, min, sec int) time.Time {
+	return time.Date(year, month, day, hour, min, sec, 0, time.Local)
+}
+
+// GetDeltaDay 获取两个时间需要加减的天数
+func GetDeltaDay(t1, t2 time.Time) int {
+	return int(GetToday(t1).Sub(GetToday(t2)) / time.Hour * 24)
+}
+
+// GetDeltaWeek 获取两个时间需要加减的周数
+func GetDeltaWeek(t1, t2 time.Time) int {
+	t1, t2 = GetMondayZero(t1), GetMondayZero(t2)
+	return GetDeltaDay(t1, t2) / 7
 }
