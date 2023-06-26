@@ -5,7 +5,6 @@
 ![](https://komarev.com/ghpvc/?username=kercylan98)
 
 Minotaur 是一个基于Golang 1.20 编写的服务端开发支持库，其中采用了大量泛型设计，用于游戏服务器开发。
-> 未经严格测试，开发阶段，生产慎用！
 
 ## 目录结构概况
 ```mermaid
