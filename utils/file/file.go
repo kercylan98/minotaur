@@ -48,7 +48,9 @@ func ReadOnce(filePath string) ([]byte, error) {
 	if file, err := os.Open(filePath); err != nil {
 		return nil, err
 	} else {
-		_ = file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 		return io.ReadAll(file)
 	}
 }
