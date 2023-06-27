@@ -98,3 +98,15 @@ func GetDeltaWeek(t1, t2 time.Time) int {
 	t1, t2 = GetMondayZero(t1), GetMondayZero(t2)
 	return GetDeltaDay(t1, t2) / 7
 }
+
+// GetHSMFromString 从时间字符串中获取时分秒
+func GetHSMFromString(timeStr, layout string) (hour, min, sec int) {
+	t, _ := time.ParseInLocation(layout, timeStr, time.Local)
+	return t.Hour(), t.Minute(), t.Second()
+}
+
+// GetTimeFromString 将时间字符串转化为时间
+func GetTimeFromString(timeStr, layout string) time.Time {
+	t, _ := time.ParseInLocation(layout, timeStr, time.Local)
+	return t
+}
