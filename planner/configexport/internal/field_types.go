@@ -185,8 +185,6 @@ func withUintType(fieldValue string) any {
 	value, _ := strconv.Atoi(fieldValue)
 	if value < 0 {
 		return uint(0)
-	} else if value > math.MaxUint {
-		return uint(math.MaxUint)
 	}
 	return uint(value)
 }
