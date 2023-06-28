@@ -110,3 +110,8 @@ func GetTimeFromString(timeStr, layout string) time.Time {
 	t, _ := time.ParseInLocation(layout, timeStr, time.Local)
 	return t
 }
+
+// GetDayZero 获取 t 增加 day 天后的零点时间
+func GetDayZero(t time.Time, day int) time.Time {
+	return GetToday(t.AddDate(0, 0, day))
+}

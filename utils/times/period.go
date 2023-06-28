@@ -16,6 +16,46 @@ func NewPeriodWithTimeArray(times [2]time.Time) Period {
 	return NewPeriod(times[0], times[1])
 }
 
+// NewPeriodWithDayZero 创建一个时间段，从 t 开始，持续到 day 天后的 0 点
+func NewPeriodWithDayZero(t time.Time, day int) Period {
+	return NewPeriod(t, GetToday(t.AddDate(0, 0, day)))
+}
+
+// NewPeriodWithDay 创建一个时间段，从 t 开始，持续 day 天
+func NewPeriodWithDay(t time.Time, day int) Period {
+	return NewPeriod(t, t.AddDate(0, 0, day))
+}
+
+// NewPeriodWithHour 创建一个时间段，从 t 开始，持续 hour 小时
+func NewPeriodWithHour(t time.Time, hour int) Period {
+	return NewPeriod(t, t.Add(time.Duration(hour)*time.Hour))
+}
+
+// NewPeriodWithMinute 创建一个时间段，从 t 开始，持续 minute 分钟
+func NewPeriodWithMinute(t time.Time, minute int) Period {
+	return NewPeriod(t, t.Add(time.Duration(minute)*time.Minute))
+}
+
+// NewPeriodWithSecond 创建一个时间段，从 t 开始，持续 second 秒
+func NewPeriodWithSecond(t time.Time, second int) Period {
+	return NewPeriod(t, t.Add(time.Duration(second)*time.Second))
+}
+
+// NewPeriodWithMillisecond 创建一个时间段，从 t 开始，持续 millisecond 毫秒
+func NewPeriodWithMillisecond(t time.Time, millisecond int) Period {
+	return NewPeriod(t, t.Add(time.Duration(millisecond)*time.Millisecond))
+}
+
+// NewPeriodWithMicrosecond 创建一个时间段，从 t 开始，持续 microsecond 微秒
+func NewPeriodWithMicrosecond(t time.Time, microsecond int) Period {
+	return NewPeriod(t, t.Add(time.Duration(microsecond)*time.Microsecond))
+}
+
+// NewPeriodWithNanosecond 创建一个时间段，从 t 开始，持续 nanosecond 纳秒
+func NewPeriodWithNanosecond(t time.Time, nanosecond int) Period {
+	return NewPeriod(t, t.Add(time.Duration(nanosecond)*time.Nanosecond))
+}
+
 // Period 表示一个时间段
 type Period [2]time.Time
 
