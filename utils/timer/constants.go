@@ -11,3 +11,7 @@ const (
 	Once      = 1  // 一次
 	Instantly = 0  // 立刻
 )
+
+const (
+	NoMark = "" // 没有设置标记的定时器
+)

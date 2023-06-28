@@ -8,3 +8,10 @@ func WithCaller(handle func(name string, caller func())) Option {
 		ticker.handle = handle
 	}
 }
+
+// WithMark 通过特定的标记创建定时器
+func WithMark(mark string) Option {
+	return func(ticker *Ticker) {
+		ticker.mark = mark
+	}
+}

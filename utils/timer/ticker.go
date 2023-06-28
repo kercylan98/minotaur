@@ -8,22 +8,29 @@ import (
 	"github.com/RussellLuo/timingwheel"
 )
 
-// Ticker 管理器
+// Ticker 定时器
 type Ticker struct {
 	timer  *Timer
 	wheel  *timingwheel.TimingWheel
 	timers map[string]*Scheduler
 	lock   sync.RWMutex
 	handle func(name string, caller func())
+	mark   string
 }
 
-// Release 释放管理器，并将管理器重新放回 Timer 池中
+// Mark 获取定时器的标记
+//   - 通常用于鉴别定时器来源
+func (slf *Ticker) Mark() string {
+	return slf.mark
+}
+
+// Release 释放定时器，并将定时器重新放回 Timer 池中
 func (slf *Ticker) Release() {
 	slf.timer.lock.Lock()
 	defer slf.timer.lock.Unlock()
 
 	slf.lock.Lock()
-
+	slf.mark = ""
 	for name, scheduler := range slf.timers {
 		scheduler.close()
 		delete(slf.timers, name)
