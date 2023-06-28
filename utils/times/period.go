@@ -134,6 +134,12 @@ func (slf Period) IsBetween(t time.Time) bool {
 	return slf[0].Before(t) && slf[1].After(t)
 }
 
+// IsOngoing 判断指定时间是否正在进行时
+//   - 如果时间段的开始时间在指定时间之前或者等于指定时间，且时间段的结束时间在指定时间之后，则返回 true
+func (slf Period) IsOngoing(t time.Time) bool {
+	return (slf[0].Before(t) || slf[0].Equal(t)) && slf[1].After(t)
+}
+
 // IsBetweenOrEqual 判断指定时间是否在时间段之间或者等于时间段的开始或结束时间
 func (slf Period) IsBetweenOrEqual(t time.Time) bool {
 	return slf.IsBetween(t) || slf[0].Equal(t) || slf[1].Equal(t)
