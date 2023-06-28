@@ -2,222 +2,327 @@ package activity
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/offset"
-	"github.com/kercylan98/minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/times"
 	"time"
 )
 
-func New[PlayerID comparable, Data any, PlayerData any](id int64, startTime, endTime time.Time, data Data, generatePlayerDataHandle func() PlayerData, options ...Option[PlayerID, Data, PlayerData]) *Activity[PlayerID, Data, PlayerData] {
-	activity := &Activity[PlayerID, Data, PlayerData]{
-		id:                       id,
-		playerData:               make(map[PlayerID]PlayerData),
-		newDay:                   map[PlayerID]int64{},
-		online:                   map[PlayerID]struct{}{},
-		data:                     data,
-		generatePlayerDataHandle: generatePlayerDataHandle,
+// NewActivity 创建一个新的活动
+//   - id: 活动 ID
+//   - period: 活动周期
+func NewActivity[PlayerID comparable, ActivityData, PlayerData any](id int64, period times.Period, options ...Option[PlayerID, ActivityData, PlayerData]) *Activity[PlayerID, ActivityData, PlayerData] {
+	activity := &Activity[PlayerID, ActivityData, PlayerData]{
+		id:     id,
+		data:   newData[PlayerID, ActivityData, PlayerData](),
+		period: period,
 	}
+
 	for _, option := range options {
 		option(activity)
 	}
-	if activity.offset == nil {
-		activity.offset = offset.NewTime(0)
-	}
-	if activity.ticker == nil {
-		activity.ticker = timer.GetTicker(5)
-	}
-	activity.SetTime(startTime, endTime)
 	return activity
 }
 
-type Activity[PlayerID comparable, Data any, PlayerData any] struct {
-	id                       int64
-	ticker                   *timer.Ticker
-	offset                   *offset.Time
-	startTime                time.Time
-	endTime                  time.Time
-	data                     Data
-	playerData               map[PlayerID]PlayerData
-	newDay                   map[PlayerID]int64
-	online                   map[PlayerID]struct{}
-	generatePlayerDataHandle func() PlayerData
+// Activity 活动
+type Activity[PlayerID comparable, ActivityData, PlayerData any] struct {
+	id                    int64
+	data                  *Data[PlayerID, ActivityData, PlayerData]
+	period                times.Period
+	beforeShow, afterShow time.Time
 
-	startEventHandles        []StartEventHandle[PlayerID, Data, PlayerData]
-	finishEventHandles       []FinishEventHandle[PlayerID, Data, PlayerData]
-	newDayEventHandles       []NewDayEventHandle[PlayerID, Data, PlayerData]
-	playerNewDayEventHandles []PlayerNewDayEventHandle[PlayerID, Data, PlayerData]
+	playerDataLoadHandle func(activity *Activity[PlayerID, ActivityData, PlayerData], playerId PlayerID) PlayerData
+
+	startEventHandles        []StartEventHandle[PlayerID, ActivityData, PlayerData]
+	stopEventHandles         []StopEventHandle[PlayerID, ActivityData, PlayerData]
+	startShowEventHandles    []StartShowEventHandle[PlayerID, ActivityData, PlayerData]
+	stopShowEventHandles     []StopShowEventHandle[PlayerID, ActivityData, PlayerData]
+	playerJoinEventHandles   []PlayerJoinEventHandle[PlayerID, ActivityData, PlayerData]
+	playerLeaveEventHandles  []PlayerLeaveEventHandle[PlayerID, ActivityData, PlayerData]
+	newDayEventHandles       []NewDayEventHandle[PlayerID, ActivityData, PlayerData]
+	playerNewDayEventHandles []PlayerNewDayEventHandle[PlayerID, ActivityData, PlayerData]
 }
 
-// GetId 获取活动 ID
-func (slf *Activity[PlayerID, Data, PlayerData]) GetId() int64 {
-	return slf.id
+// GetStart 获取活动开始时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) GetStart() time.Time {
+	return slf.period.Start()
+}
+
+// GetEnd 获取活动结束时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) GetEnd() time.Time {
+	return slf.period.End()
+}
+
+// GetPeriod 获取活动周期
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) GetPeriod() times.Period {
+	return slf.period
+}
+
+// StoreData 通过特定的存储函数存储活动数据
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) StoreData(handle func(data *Data[PlayerID, ActivityData, PlayerData])) {
+	handle(slf.data)
+}
+
+// GetActivityData 获取活动数据
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) GetActivityData() ActivityData {
+	return slf.data.Data
+}
+
+// GetPlayerData 获取玩家数据
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) GetPlayerData(playerId PlayerID) PlayerData {
+	return slf.data.PlayerData[playerId]
+}
+
+// ChangeTime 修改活动时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) ChangeTime(period times.Period) {
+	slf.period = period
+	slf.refreshTicker(false)
+}
+
+// ChangeBeforeShowTime 修改活动开始前的展示时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) ChangeBeforeShowTime(beforeShow time.Time) {
+	slf.beforeShow = beforeShow
+	slf.refreshTicker(false)
+}
+
+// ChangeAfterShowTime 修改活动结束后的展示时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) ChangeAfterShowTime(afterShow time.Time) {
+	slf.afterShow = afterShow
+	slf.refreshTicker(false)
+}
+
+// IsShowAndOpen 判断活动是否展示并开启
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) IsShowAndOpen() bool {
+	return slf.IsShow() && slf.IsOpen()
+}
+
+// IsShow 判断活动是否展示
+//   - 活动展示时，活动并非一定开启。常用于活动的预告和结束后的成果展示
+//   - 当活动没有设置展示时间时，活动展示与活动开启一致
+//   - 如果活动仅设置了活动开始前的展示时间，则活动展示将从开始前的展示时间持续到活动结束
+//   - 如果活动仅设置了活动结束后的展示时间，则活动展示将从活动开始持续到结束后的展示时间
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) IsShow() bool {
+	if slf.beforeShow.IsZero() && slf.afterShow.IsZero() {
+		return slf.IsOpen()
+	} else if slf.beforeShow.IsZero() {
+		return slf.IsOpen() && slf.afterShow.After(activityOffset.Now())
+	} else if slf.afterShow.IsZero() {
+		return slf.IsOpen() && slf.beforeShow.Before(activityOffset.Now())
+	}
+	return times.NewPeriod(slf.beforeShow, slf.afterShow).IsOngoing(activityOffset.Now())
+}
+
+// IsOpen 判断活动是否开启
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) IsOpen() bool {
+	current := activityOffset.Now()
+	return slf.period.IsOngoing(current)
+}
+
+// IsInvalid 判断活动是否无效
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) IsInvalid() bool {
+	current := activityOffset.Now()
+	if slf.beforeShow.IsZero() && !slf.afterShow.IsZero() {
+		return current.After(slf.afterShow) || current.Equal(slf.afterShow)
+	} else if !slf.beforeShow.IsZero() && slf.afterShow.IsZero() {
+		end := slf.GetEnd()
+		return current.After(end) || current.Equal(end)
+	} else if !slf.beforeShow.IsZero() && !slf.afterShow.IsZero() {
+		end := slf.GetEnd()
+		return current.After(end) || current.Equal(end)
+	} else {
+		end := slf.GetEnd()
+		return current.After(end) || current.Equal(end)
+	}
+}
+
+// Register 将该活动进行注册
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) Register() {
+	if slf.IsInvalid() {
+		return
+	}
+	if !generic.IsNil(slf.data) {
+		activities[slf.id] = slf
+	}
+	slf.refreshTicker(true)
 }
 
 // Join 设置玩家加入活动
-func (slf *Activity[PlayerID, Data, PlayerData]) Join(playerId PlayerID) {
-	if !hash.Exist(slf.playerData, playerId) {
-		slf.playerData[playerId] = slf.generatePlayerDataHandle()
-	}
-	if slf.IsFirstDay() || !hash.Exist(slf.online, playerId) {
-		return
-	}
-	nd := slf.newDay[playerId]
-	if nd > 0 {
-		ndt := time.Unix(nd, 0)
-		now := slf.offset.Now()
-		if !times.IsSameDay(ndt, now) {
-			slf.onPlayerNewDayEvent(playerId)
-			slf.newDay[playerId] = now.Unix()
+//   - 通常玩家应该在上线的时候加入活动
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) Join(playerId PlayerID) {
+	if slf.playerDataLoadHandle != nil {
+		playerData := slf.playerDataLoadHandle(slf, playerId)
+		if !generic.IsNil(playerData) {
+			slf.data.PlayerData[playerId] = playerData
 		}
 	}
+	current := activityOffset.Now()
+	slf.OnPlayerJoinEvent(playerId)
+	slf.playerNewDay(playerId, current)
 }
 
 // Leave 设置玩家离开活动
-func (slf *Activity[PlayerID, Data, PlayerData]) Leave(playerId PlayerID) {
-	delete(slf.online, playerId)
+//   - 当玩家离开活动时，玩家的活动数据将会被清除
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) Leave(playerId PlayerID) {
+	slf.OnPlayerLeaveEvent(playerId)
+	delete(slf.data.PlayerData, playerId)
 }
 
-// SetTime 设置活动开始时间和结束时间
-func (slf *Activity[PlayerID, Data, PlayerData]) SetTime(startTime, endTime time.Time) {
-	// 如果结束时间小于开始时间
-	if endTime.Before(startTime) {
-		return
-	}
-	slf.startTime, slf.endTime = startTime, endTime
-	if !slf.IsOpen() {
-		slf.ticker.StopTimer(fmt.Sprintf("ACTIVITY_%d_END", slf.id))
-		slf.ticker.StopTimer(fmt.Sprintf("ACTIVITY_%d_NEW_DAY", slf.id))
-	} else {
-		slf.ticker.After(fmt.Sprintf("ACTIVITY_%d_END", slf.id), slf.endTime.Sub(slf.startTime), func() {
-			slf.onFinishEvent()
-		})
-		now := slf.offset.Now()
-		next := times.GetToday(now).AddDate(0, 0, 1).Sub(now)
-		slf.nd(next)
-	}
-}
-
-// IsFirstDay 检查是否是活动第一天
-func (slf *Activity[PlayerID, Data, PlayerData]) IsFirstDay() bool {
-	return times.IsSameDay(slf.startTime, slf.offset.Now())
-}
-
-// IsLastDay 检查是否是活动最后一天
-func (slf *Activity[PlayerID, Data, PlayerData]) IsLastDay() bool {
-	return times.IsSameDay(slf.endTime, slf.offset.Now())
-}
-
-// IsOpen 检查活动是否开放
-func (slf *Activity[PlayerID, Data, PlayerData]) IsOpen() bool {
-	now := slf.offset.Now()
-	return now.After(slf.startTime) && now.Before(slf.endTime)
-}
-
-// GetData 获取活动数据
-func (slf *Activity[PlayerID, Data, PlayerData]) GetData() Data {
-	return slf.data
-}
-
-// GetPlayerData 获取活动玩家数据
-func (slf *Activity[PlayerID, Data, PlayerData]) GetPlayerData(playerId PlayerID) PlayerData {
-	return slf.playerData[playerId]
-}
-
-// GetLastNewDayTime 获取玩家最后触发新一天的时间
-func (slf *Activity[PlayerID, Data, PlayerData]) GetLastNewDayTime(playerId PlayerID) int64 {
-	return slf.newDay[playerId]
-}
-
-// GetAllLastNewDayTime 获取所有玩家最后触发新一天的时间
-func (slf *Activity[PlayerID, Data, PlayerData]) GetAllLastNewDayTime() map[PlayerID]int64 {
-	return slf.newDay
-}
-
-// GetAllPlayerData 获取所有玩家的活动数据
-func (slf *Activity[PlayerID, Data, PlayerData]) GetAllPlayerData() map[PlayerID]PlayerData {
-	return slf.playerData
-}
-
-// GetStartTime 获取活动开始时间
-func (slf *Activity[PlayerID, Data, PlayerData]) GetStartTime() time.Time {
-	return slf.startTime
-}
-
-// GetEndTime 获取活动结束时间
-func (slf *Activity[PlayerID, Data, PlayerData]) GetEndTime() time.Time {
-	return slf.endTime
-}
-
-// GetEndOfDistanceTime 获取活动距离结束的时间
-//   - 如果活动已经结束，将返回 <= 0 的数值
-func (slf *Activity[PlayerID, Data, PlayerData]) GetEndOfDistanceTime() time.Duration {
-	now := slf.offset.Now()
-	return slf.endTime.Sub(now)
-}
-
-// GetPlayerCount 获取活动玩家数量
-func (slf *Activity[PlayerID, Data, PlayerData]) GetPlayerCount() int {
-	return len(slf.playerData)
-}
-
-// DeletePlayerData 删除特定玩家的活动数据
-func (slf *Activity[PlayerID, Data, PlayerData]) DeletePlayerData(playerId PlayerID) {
-	delete(slf.playerData, playerId)
-}
-
-// HasPlayer 检查活动中是否存在特定玩家
-func (slf *Activity[PlayerID, Data, PlayerData]) HasPlayer(playerId PlayerID) bool {
-	return hash.Exist(slf.playerData, playerId)
-}
-
-// RegStartEvent 活动开始时将立即执行被注册的事件处理函数
-func (slf *Activity[PlayerID, Data, PlayerData]) RegStartEvent(handle StartEventHandle[PlayerID, Data, PlayerData]) {
+// RegStartEvent 注册活动开始事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegStartEvent(handle StartEventHandle[PlayerID, ActivityData, PlayerData]) {
 	slf.startEventHandles = append(slf.startEventHandles, handle)
 }
 
-func (slf *Activity[PlayerID, Data, PlayerData]) onStartEvent() {
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnStartEvent() {
 	for _, handle := range slf.startEventHandles {
 		handle(slf)
 	}
 }
 
-// RegFinishEvent 活动结束时将立即执行被注册的事件处理函数
-func (slf *Activity[PlayerID, Data, PlayerData]) RegFinishEvent(handle FinishEventHandle[PlayerID, Data, PlayerData]) {
-	slf.finishEventHandles = append(slf.finishEventHandles, handle)
+// RegStopEvent 注册活动结束事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegStopEvent(handle StopEventHandle[PlayerID, ActivityData, PlayerData]) {
+	slf.stopEventHandles = append(slf.stopEventHandles, handle)
 }
 
-func (slf *Activity[PlayerID, Data, PlayerData]) onFinishEvent() {
-	for _, handle := range slf.finishEventHandles {
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnStopEvent() {
+	slf.stopTicker()
+	for _, handle := range slf.stopEventHandles {
 		handle(slf)
 	}
 }
 
-// RegNewDayEvent 活动到达新的一天时将立即执行被注册的事件处理函数
-func (slf *Activity[PlayerID, Data, PlayerData]) RegNewDayEvent(handle NewDayEventHandle[PlayerID, Data, PlayerData]) {
+// RegStartShowEvent 注册活动开始展示事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegStartShowEvent(handle StartShowEventHandle[PlayerID, ActivityData, PlayerData]) {
+	slf.startShowEventHandles = append(slf.startShowEventHandles, handle)
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnStartShowEvent() {
+	for _, handle := range slf.startShowEventHandles {
+		handle(slf)
+	}
+}
+
+// RegStopShowEvent 注册活动结束展示事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegStopShowEvent(handle StopShowEventHandle[PlayerID, ActivityData, PlayerData]) {
+	slf.stopShowEventHandles = append(slf.stopShowEventHandles, handle)
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnStopShowEvent() {
+	for _, handle := range slf.stopShowEventHandles {
+		handle(slf)
+	}
+}
+
+// RegPlayerJoinEvent 注册玩家加入活动事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegPlayerJoinEvent(handle PlayerJoinEventHandle[PlayerID, ActivityData, PlayerData]) {
+	slf.playerJoinEventHandles = append(slf.playerJoinEventHandles, handle)
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnPlayerJoinEvent(playerId PlayerID) {
+	for _, handle := range slf.playerJoinEventHandles {
+		handle(slf, playerId)
+	}
+}
+
+// RegPlayerLeaveEvent 注册玩家离开活动事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegPlayerLeaveEvent(handle PlayerLeaveEventHandle[PlayerID, ActivityData, PlayerData]) {
+	slf.playerLeaveEventHandles = append(slf.playerLeaveEventHandles, handle)
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnPlayerLeaveEvent(playerId PlayerID) {
+	for _, handle := range slf.playerLeaveEventHandles {
+		handle(slf, playerId)
+	}
+}
+
+// RegNewDayEvent 注册新的一天事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegNewDayEvent(handle NewDayEventHandle[PlayerID, ActivityData, PlayerData]) {
 	slf.newDayEventHandles = append(slf.newDayEventHandles, handle)
 }
 
-func (slf *Activity[PlayerID, Data, PlayerData]) onNewDayEvent() {
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnNewDayEvent() {
 	for _, handle := range slf.newDayEventHandles {
 		handle(slf)
 	}
 }
 
-// RegPlayerNewDayEvent 活动玩家到达新的一天时将立即执行被注册的事件处理函数
-func (slf *Activity[PlayerID, Data, PlayerData]) RegPlayerNewDayEvent(handle PlayerNewDayEventHandle[PlayerID, Data, PlayerData]) {
+// RegPlayerNewDayEvent 注册玩家新的一天事件
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) RegPlayerNewDayEvent(handle PlayerNewDayEventHandle[PlayerID, ActivityData, PlayerData]) {
 	slf.playerNewDayEventHandles = append(slf.playerNewDayEventHandles, handle)
 }
 
-func (slf *Activity[PlayerID, Data, PlayerData]) onPlayerNewDayEvent(playerId PlayerID) {
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) OnPlayerNewDayEvent(playerId PlayerID) {
 	for _, handle := range slf.playerNewDayEventHandles {
 		handle(slf, playerId)
 	}
 }
 
-func (slf *Activity[PlayerID, Data, PlayerData]) nd(next time.Duration) {
-	slf.ticker.After(fmt.Sprintf("ACTIVITY_%d_NEW_DAY", slf.id), next, func() {
-		slf.onNewDayEvent()
-		slf.nd(times.Day)
-	})
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) refreshTicker(init bool) {
+	var (
+		current = activityOffset.Now()
+		start   = slf.period.Start()
+		end     = slf.period.End()
+	)
+
+	if slf.IsOpen() {
+		if init {
+			slf.OnStartEvent()
+		}
+		if distance := end.Sub(current); distance > 0 {
+			ticker.After(fmt.Sprintf(tickerStop, slf.id), distance, slf.OnStopEvent)
+		}
+		ticker.After(fmt.Sprintf(tickerNewDay, slf.id), times.GetNextDayInterval(current), slf.newDay)
+	} else {
+		if distance := start.Sub(current); distance > 0 {
+			ticker.After(fmt.Sprintf(tickerNewDay, slf.id), times.GetNextDayInterval(start), slf.newDay)
+			ticker.After(fmt.Sprintf(tickerStart, slf.id), distance, slf.OnStartEvent)
+		}
+		if end.Before(current) {
+			slf.OnStopEvent()
+		}
+	}
+	if slf.IsShow() {
+		if init {
+			slf.OnStartShowEvent()
+		}
+		if distance := slf.afterShow.Sub(current); distance > 0 {
+			ticker.After(fmt.Sprintf(tickerShowStop, slf.id), distance, slf.OnStopShowEvent)
+		}
+	} else {
+		if distance := slf.beforeShow.Sub(current); distance > 0 {
+			ticker.After(fmt.Sprintf(tickerShowStart, slf.id), distance, slf.OnStartShowEvent)
+		}
+		if slf.afterShow.Before(current) {
+			slf.OnStopShowEvent()
+		}
+	}
+
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) stopTicker() {
+	ticker.StopTimer(fmt.Sprintf(tickerStart, slf.id))
+	ticker.StopTimer(fmt.Sprintf(tickerStop, slf.id))
+	ticker.StopTimer(fmt.Sprintf(tickerShowStart, slf.id))
+	ticker.StopTimer(fmt.Sprintf(tickerShowStop, slf.id))
+	ticker.StopTimer(fmt.Sprintf(tickerNewDay, slf.id))
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) newDay() {
+	current := activityOffset.Now()
+	ticker.After(fmt.Sprintf(tickerNewDay, slf.id), times.GetNextDayInterval(current), slf.newDay)
+
+	last := time.Unix(slf.data.LastNewDay, 0)
+	if !times.IsSameDay(last, times.GetToday(current)) {
+		slf.OnNewDayEvent()
+	}
+
+	for playerId := range slf.data.PlayerData {
+		slf.playerNewDay(playerId, current)
+	}
+
+}
+
+func (slf *Activity[PlayerID, ActivityData, PlayerData]) playerNewDay(playerId PlayerID, current time.Time) {
+	last := time.Unix(slf.data.PlayerLastNewDay[playerId], 0)
+	if !times.IsSameDay(last, times.GetToday(current)) {
+		slf.OnPlayerNewDayEvent(playerId)
+	}
 }
