@@ -6,9 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/gnet"
+	"github.com/panjf2000/gnet/pkg/logging"
 	"github.com/xtaci/kcp-go/v5"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -62,6 +64,7 @@ type Server struct {
 	grpcServer          *grpc.Server     // GRPC模式下的服务器
 	supportMessageTypes map[int]bool     // websocket模式下支持的消息类型
 	certFile, keyFile   string           // TLS文件
+	isRunning           bool             // 是否正在运行
 	isShutdown          atomic.Bool      // 是否已关闭
 	closeChannel        chan struct{}    // 关闭信号
 
@@ -70,11 +73,13 @@ type Server struct {
 	messagePoolSize           int                             // 消息池大小
 	messageChannel            map[int]chan *Message           // 消息管道
 	initMessageChannel        bool                            // 消息管道是否已经初始化
-	multiple                  bool                            // 是否为多服务器模式下运行
+	multiple                  *MultipleServer                 // 多服务器模式下的服务器
 	prod                      bool                            // 是否为生产模式
 	core                      int                             // 消息处理核心数
 	websocketWriteMessageType int                             // websocket写入的消息类型
 	ticker                    *timer.Ticker                   // 定时器
+
+	multipleRuntimeErrorChan chan error // 多服务器模式下的运行时错误
 }
 
 // Run 使用特定地址运行服务器
@@ -137,15 +142,24 @@ func (slf *Server) Run(addr string) error {
 			return err
 		}
 		go func() {
+			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			if err := slf.grpcServer.Serve(listener); err != nil {
+				slf.isRunning = false
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		}()
 	case NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
 		go connectionInitHandle(func() {
+			slf.isRunning = true
 			slf.OnStartBeforeEvent()
-			if err := gnet.Serve(slf.gServer, protoAddr); err != nil {
+			if err := gnet.Serve(slf.gServer, protoAddr,
+				gnet.WithLogger(log.Logger().Sugar()),
+				gnet.WithLogLevel(super.If(slf.IsProd(), logging.ErrorLevel, logging.DebugLevel)),
+				gnet.WithTicker(true),
+				gnet.WithMulticore(true),
+			); err != nil {
+				slf.isRunning = false
 				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 			}
 		})
@@ -155,6 +169,7 @@ func (slf *Server) Run(addr string) error {
 			return err
 		}
 		go connectionInitHandle(func() {
+			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			for {
 				session, err := listener.AcceptKCP()
@@ -189,14 +204,17 @@ func (slf *Server) Run(addr string) error {
 			gin.SetMode(gin.ReleaseMode)
 		}
 		go func() {
+			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			slf.httpServer.Addr = slf.addr
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
+					slf.isRunning = false
 					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
 			} else {
 				if err := slf.httpServer.ListenAndServe(); err != nil {
+					slf.isRunning = false
 					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
 			}
@@ -263,13 +281,16 @@ func (slf *Server) Run(addr string) error {
 				}
 			})
 			go func() {
+				slf.isRunning = true
 				slf.OnStartBeforeEvent()
 				if len(slf.certFile)+len(slf.keyFile) > 0 {
 					if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
+						slf.isRunning = false
 						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 					}
 				} else {
 					if err := http.ListenAndServe(slf.addr, nil); err != nil {
+						slf.isRunning = false
 						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 					}
 				}
@@ -280,7 +301,7 @@ func (slf *Server) Run(addr string) error {
 		return ErrCanNotSupportNetwork
 	}
 
-	if !slf.multiple {
+	if slf.multiple == nil {
 		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
 		log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
 			zap.Any("network", slf.network),
@@ -334,6 +355,11 @@ func (slf *Server) Ticker() *timer.Ticker {
 
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error, stack ...string) {
+	defer func() {
+		if slf.multipleRuntimeErrorChan != nil {
+			slf.multipleRuntimeErrorChan <- err
+		}
+	}()
 	slf.isShutdown.Store(true)
 	if slf.ticker != nil {
 		slf.ticker.Release()
@@ -342,23 +368,16 @@ func (slf *Server) Shutdown(err error, stack ...string) {
 		cross.Release()
 	}
 	if slf.initMessageChannel {
-		if slf.gServer != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			defer cancel()
-			if shutdownErr := gnet.Stop(ctx, fmt.Sprintf("%s://%s", slf.network, slf.addr)); shutdownErr != nil {
-				log.Error("Server", zap.Error(shutdownErr))
-			}
-		}
 		for _, messageChannel := range slf.messageChannel {
 			close(messageChannel)
 		}
 		slf.messagePool.Close()
 		slf.initMessageChannel = false
 	}
-	if slf.grpcServer != nil {
+	if slf.grpcServer != nil && slf.isRunning {
 		slf.grpcServer.GracefulStop()
 	}
-	if slf.httpServer != nil {
+	if slf.httpServer != nil && slf.isRunning {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if shutdownErr := slf.httpServer.Shutdown(ctx); shutdownErr != nil {
@@ -371,13 +390,28 @@ func (slf *Server) Shutdown(err error, stack ...string) {
 		if len(stack) > 0 {
 			s = stack[0]
 		}
-		log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
-			zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+		if slf.multiple != nil {
+			slf.multiple.RegExitEvent(func() {
+				log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
+					zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+			})
+			for i, server := range slf.multiple.servers {
+				if server.addr == slf.addr {
+					slf.multiple.servers = append(slf.multiple.servers[:i], slf.multiple.servers[i+1:]...)
+					break
+				}
+			}
+		} else {
+			log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
+				zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+		}
 	} else {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 			zap.String("action", "shutdown"), zap.String("state", "normal"))
 	}
-	slf.closeChannel <- struct{}{}
+	if slf.gServer == nil {
+		slf.closeChannel <- struct{}{}
+	}
 }
 
 func (slf *Server) GRPCServer() *grpc.Server {

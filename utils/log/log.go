@@ -96,6 +96,10 @@ func getWriter(filename string, times int32) io.Writer {
 	return hook
 }
 
+func Logger() *zap.Logger {
+	return logger
+}
+
 func Info(msg string, fields ...zap.Field) {
 	logger.Info(msg, fields...)
 }

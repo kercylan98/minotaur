@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func NewMultipleServer(serverHandle ...func() (addr string, srv *Server)) *MultipleServer {
@@ -21,17 +20,21 @@ func NewMultipleServer(serverHandle ...func() (addr string, srv *Server)) *Multi
 }
 
 type MultipleServer struct {
-	servers   []*Server
-	addresses []string
+	servers          []*Server
+	addresses        []string
+	exitEventHandles []func()
 }
 
 func (slf *MultipleServer) Run() {
 	var exceptionChannel = make(chan error, 1)
+	var runtimeExceptionChannel = make(chan error, 1)
 	defer close(exceptionChannel)
+	defer close(runtimeExceptionChannel)
 	var running = make([]*Server, 0, len(slf.servers))
 	for i := 0; i < len(slf.servers); i++ {
 		go func(address string, server *Server) {
-			server.multiple = true
+			server.multiple = slf
+			server.multipleRuntimeErrorChan = runtimeExceptionChannel
 			if err := server.Run(address); err != nil {
 				exceptionChannel <- err
 			} else {
@@ -39,8 +42,6 @@ func (slf *MultipleServer) Run() {
 			}
 		}(slf.addresses[i], slf.servers[i])
 	}
-
-	time.Sleep(500 * time.Millisecond)
 
 	log.Info("Server", zap.String("Minotaur Multiple Server", "===================================================================="))
 	for _, server := range slf.servers {
@@ -55,14 +56,39 @@ func (slf *MultipleServer) Run() {
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	select {
 	case err := <-exceptionChannel:
-		for _, server := range slf.servers {
+		for len(slf.servers) > 0 {
+			server := slf.servers[0]
 			server.Shutdown(err)
+			slf.servers = slf.servers[1:]
 		}
-		return
-	case <-systemSignal:
-		for _, server := range slf.servers {
+		break
+	case <-runtimeExceptionChannel:
+		for len(slf.servers) > 0 {
+			server := slf.servers[0]
+			server.multipleRuntimeErrorChan = nil
 			server.Shutdown(nil)
+			slf.servers = slf.servers[1:]
 		}
-		return
+		break
+	case <-systemSignal:
+		for len(slf.servers) > 0 {
+			server := slf.servers[0]
+			server.Shutdown(nil)
+			slf.servers = slf.servers[1:]
+		}
+		break
+	}
+
+	slf.OnExitEvent()
+}
+
+// RegExitEvent 注册退出事件
+func (slf *MultipleServer) RegExitEvent(handle func()) {
+	slf.exitEventHandles = append(slf.exitEventHandles, handle)
+}
+
+func (slf *MultipleServer) OnExitEvent() {
+	for _, handle := range slf.exitEventHandles {
+		handle()
 	}
 }
