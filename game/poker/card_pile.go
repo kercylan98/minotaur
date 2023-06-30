@@ -48,7 +48,7 @@ func (slf *CardPile) Reset() {
 		cards = append(cards, NewCard(PointBlackJoker, ColorNone))
 	}
 	for point := PointK; point >= PointA; point-- {
-		for color := ColorSpade; color <= ColorDiamond; color++ {
+		for color := ColorDiamond; color <= ColorSpade; color++ {
 			if !slf.IsExclude(point, color) {
 				cards = append(cards, NewCard(point, color))
 			}

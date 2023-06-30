@@ -2,11 +2,19 @@ package poker
 
 const (
 	ColorNone    Color = 0 // 无花色，通常为大小王
-	ColorSpade   Color = 1 // 黑桃
-	ColorHeart   Color = 2 // 红桃
-	ColorClub    Color = 3 // 梅花
-	ColorDiamond Color = 4 // 方片
+	ColorSpade   Color = 4 // 黑桃
+	ColorHeart   Color = 3 // 红桃
+	ColorClub    Color = 2 // 梅花
+	ColorDiamond Color = 1 // 方片
 )
+
+var defaultColorSort = map[Color]int{
+	ColorSpade:   int(ColorSpade),
+	ColorHeart:   int(ColorHeart),
+	ColorClub:    int(ColorClub),
+	ColorDiamond: int(ColorDiamond),
+	ColorNone:    int(ColorDiamond + 1),
+}
 
 // Color 扑克牌花色
 type Color int

@@ -3,6 +3,7 @@ package maths
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
 	"math"
+	"sort"
 )
 
 const (
@@ -120,4 +121,20 @@ func UnMerge[V generic.SignedNumber](refer, num V) (a, b V) {
 	a = V(math.Mod(float64(num), float64(refer)))
 	b = num / refer
 	return a, b
+}
+
+// ToContinuous 将一组非连续的数字转换为从1开始的连续数字
+//   - 返回值是一个 map，key 是从 1 开始的连续数字，value 是原始数字
+func ToContinuous[V generic.Integer](nums []V) map[V]V {
+	if len(nums) == 0 {
+		return nil
+	}
+	sort.Slice(nums, func(i, j int) bool {
+		return nums[i] < nums[j]
+	})
+	var result = make(map[V]V)
+	for i, num := range nums {
+		result[V(i+1)] = num
+	}
+	return result
 }

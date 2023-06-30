@@ -1,90 +1,70 @@
 package poker
 
-import (
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/maths"
-	"sort"
-)
-
-func New(pile *CardPile, options ...Option) *Poker {
-	poker := &Poker{
-		pile:      pile,
-		pokerHand: map[string]HandHandle{},
-		pointSort: hash.Copy(defaultPointSort),
+// IsContainJoker 检查扑克牌是否包含大小王
+func IsContainJoker(cards ...Card) bool {
+	for _, card := range cards {
+		if card.IsJoker() {
+			return true
+		}
 	}
-	for _, option := range options {
-		option(poker)
-	}
-	if poker.pointValue == nil {
-		poker.pointValue = poker.pointSort
-	}
-	return poker
+	return false
 }
 
-type Poker struct {
-	pile              *CardPile
-	pokerHand         map[string]HandHandle
-	pokerHandPriority []string
-	pointValue        map[Point]int
-	colorValue        map[Color]int
-	pointSort         map[Point]int
+// GroupByPoint 将扑克牌按照点数分组
+func GroupByPoint(cards ...Card) map[Point][]Card {
+	group := map[Point][]Card{}
+	for _, card := range cards {
+		group[card.GetPoint()] = append(group[card.GetPoint()], card)
+	}
+	return group
 }
 
-// IsContinuity 检查一组扑克牌是否连续
-func (slf *Poker) IsContinuity(cards ...Card) bool {
-	length := len(cards)
-	if length == 0 {
+// GroupByColor 将扑克牌按照花色分组
+func GroupByColor(cards ...Card) map[Color][]Card {
+	group := map[Color][]Card{}
+	for _, card := range cards {
+		group[card.GetColor()] = append(group[card.GetColor()], card)
+	}
+	return group
+}
+
+// IsRocket 两张牌能否组成红黑 Joker
+func IsRocket(cardA, cardB Card) bool {
+	return cardA.GetPoint() == PointRedJoker && cardB.GetPoint() == PointBlackJoker || cardA.GetPoint() == PointBlackJoker && cardB.GetPoint() == PointRedJoker
+}
+
+// IsFlush 判断是否是同花
+func IsFlush(cards ...Card) bool {
+	if len(cards) == 0 {
 		return false
 	}
-	if length == 1 {
+	if len(cards) == 1 {
 		return true
 	}
-	var points = make([]int, length)
-	for i, card := range cards {
-		points[i] = slf.pointSort[card.GetPoint()]
-	}
-	sort.Slice(points, func(i, j int) bool { return points[i] < points[j] })
-	for i := 0; i < length-1; i++ {
-		if points[i+1]-points[i] != 1 {
+
+	color := cards[0].GetColor()
+	for i := 1; i < len(cards); i++ {
+		if cards[i].GetColor() != color {
 			return false
 		}
 	}
 	return true
 }
 
-// CardValue 获取扑克牌的牌值
-func (slf *Poker) CardValue(cards ...Card) int {
-	var value int
-	for _, card := range cards {
-		value += slf.pointValue[card.GetPoint()]
-		value += slf.colorValue[card.GetColor()]
+// GetCardsPoint 获取一组扑克牌的点数
+func GetCardsPoint(cards ...Card) []Point {
+	var points = make([]Point, len(cards))
+	for i, card := range cards {
+		points[i] = card.GetPoint()
 	}
-	return value
+	return points
 }
 
-// Compare 根据特定的条件表达式比较两组扑克牌的牌值
-func (slf *Poker) Compare(cards1 []Card, expression maths.CompareExpression, cards2 []Card) bool {
-	return maths.Compare(slf.CardValue(cards1...), expression, slf.CardValue(cards2...))
-}
-
-// PokerHand 获取一组扑克的牌型
-//
-// 参数：
-//   - cards: 扑克牌切片，类型为 []builtin.Card，表示一组扑克牌。
-//
-// 返回值：
-//   - string: 命中的牌型名称。
-//   - bool: 是否命中牌型。
-func (slf *Poker) PokerHand(cards ...Card) (cardType string, hit bool) {
-	for _, phn := range slf.pokerHandPriority {
-		if slf.pokerHand[phn](slf, cards) {
-			return phn, true
-		}
+// GetCardsColor 获取一组扑克牌的花色
+func GetCardsColor(cards ...Card) []Color {
+	var colors = make([]Color, len(cards))
+	for i, card := range cards {
+		colors[i] = card.GetColor()
 	}
-	return "", false
-}
-
-// GetPile 获取牌堆
-func (slf *Poker) GetPile() *CardPile {
-	return slf.pile
+	return colors
 }
