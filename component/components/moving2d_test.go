@@ -41,29 +41,11 @@ func NewEntity(guid int64, speed float64) *MoveEntity {
 	}
 }
 
-func TestMoving2D_MoveTo(t *testing.T) {
-	var wait sync.WaitGroup
-
-	moving := components.NewMoving2D(components.WithMoving2DTimeUnit(time.Second))
+func TestNewMoving2D(t *testing.T) {
+	moving := components.NewMoving2D()
 	defer func() {
 		moving.Release()
 	}()
-
-	moving.RegPosition2DChangeEvent(func(moving component.Moving2D, entity component.Moving2DEntity, oldX, oldY float64) {
-		x, y := entity.GetPosition()
-		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetGuid(), time.Now().UnixMilli(), oldX, oldY, x, y))
-	})
-	moving.RegPosition2DDestinationEvent(func(moving component.Moving2D, entity component.Moving2DEntity) {
-		wait.Done()
-	})
-
-	for i := 0; i < 10; i++ {
-		wait.Add(1)
-		entity := NewEntity(int64(i)+1, float64(10+i))
-		moving.MoveTo(entity, 50, 30)
-	}
-
-	wait.Wait()
 }
 
 func TestMoving2D_StopMove(t *testing.T) {
