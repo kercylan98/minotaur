@@ -53,20 +53,21 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                               // 事件
-	cross               map[string]Cross // 跨服
-	id                  int64            // 服务器id
-	network             Network          // 网络类型
-	addr                string           // 侦听地址
-	options             []Option         // 选项
-	ginServer           *gin.Engine      // HTTP模式下的路由器
-	httpServer          *http.Server     // HTTP模式下的服务器
-	grpcServer          *grpc.Server     // GRPC模式下的服务器
-	supportMessageTypes map[int]bool     // websocket模式下支持的消息类型
-	certFile, keyFile   string           // TLS文件
-	isRunning           bool             // 是否正在运行
-	isShutdown          atomic.Bool      // 是否已关闭
-	closeChannel        chan struct{}    // 关闭信号
+	*event                                                                 // 事件
+	cross               map[string]Cross                                   // 跨服
+	id                  int64                                              // 服务器id
+	network             Network                                            // 网络类型
+	addr                string                                             // 侦听地址
+	options             []Option                                           // 选项
+	ginServer           *gin.Engine                                        // HTTP模式下的路由器
+	httpServer          *http.Server                                       // HTTP模式下的服务器
+	grpcServer          *grpc.Server                                       // GRPC模式下的服务器
+	supportMessageTypes map[int]bool                                       // websocket模式下支持的消息类型
+	certFile, keyFile   string                                             // TLS文件
+	isRunning           bool                                               // 是否正在运行
+	isShutdown          atomic.Bool                                        // 是否已关闭
+	closeChannel        chan struct{}                                      // 关闭信号
+	diversion           func(conn ConnReadonly, packet []byte) chan func() // 分流器
 
 	gServer                   *gNet                           // TCP或UDP模式下的服务器
 	messagePool               *synchronization.Pool[*Message] // 消息池
@@ -129,7 +130,7 @@ func (slf *Server) Run(addr string) error {
 			messageChannel := messageChannel
 			go func() {
 				for message := range messageChannel {
-					slf.dispatchMessage(message)
+					slf.dispatchMessage(message, slf.diversion != nil)
 				}
 			}()
 		}
@@ -456,7 +457,16 @@ func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []b
 }
 
 // dispatchMessage 消息分发
-func (slf *Server) dispatchMessage(msg *Message) {
+func (slf *Server) dispatchMessage(msg *Message, isRedirect bool) {
+	if slf.diversion != nil && isRedirect && msg.t == MessageTypePacket {
+		conn, packet, _ := msg.t.deconstructWebSocketPacket(msg.attrs...)
+		if redirect := slf.diversion(conn, packet); redirect != nil {
+			redirect <- func() {
+				slf.dispatchMessage(msg, false)
+			}
+		}
+		return
+	}
 	present := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
