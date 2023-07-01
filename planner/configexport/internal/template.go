@@ -41,6 +41,7 @@ import (
 )
 
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
+var full map[string]any
 
 var (
 {{range $index, $config := .Configs}}
@@ -66,13 +67,16 @@ func LoadConfig(handle func(filename string, config any) error) {
 {{end}}
 }
 
+// Refresh 将加载后的配置刷新到线上
 func Refresh() {
+    full = make(map[string]any)
 {{range $index, $config := .Configs}}
 	{{$config.Name}} = _{{$config.Name}}
+    full["{{$config.Name}}"] = {{$config.Name}}
 {{end}}
 }
 
-
+// DefaultLoad 默认提供的配置加载函数
 func DefaultLoad(filepath string) {
 	LoadConfig(func(filename string, config any) error {
 		bytes, err := os.ReadFile(filepath)
@@ -81,6 +85,12 @@ func DefaultLoad(filepath string) {
 		}
 		return json.Unmarshal(bytes, &config)
 	})
+}
+
+// GetFull 获取所有配置的 map 集合
+//   - 通常用于前端配置通过后端接口获取的情况
+func GetFull() map[string]any {
+	return full
 }
 `
 
