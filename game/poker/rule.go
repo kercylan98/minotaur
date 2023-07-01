@@ -34,6 +34,81 @@ type Rule struct {
 	restraint              map[string]map[string]struct{}
 }
 
+// GetCardCountWithPointMaximumNumber 获取指定点数的牌的数量
+func (slf *Rule) GetCardCountWithPointMaximumNumber(cards []Card, point Point, maximumNumber int) int {
+	count := 0
+	for _, card := range cards {
+		if card.GetPoint() == point {
+			count++
+			if count >= maximumNumber {
+				return count
+			}
+		}
+	}
+	return count
+}
+
+// GetCardCountWithColorMaximumNumber 获取指定花色的牌的数量
+func (slf *Rule) GetCardCountWithColorMaximumNumber(cards []Card, color Color, maximumNumber int) int {
+	count := 0
+	for _, card := range cards {
+		if card.GetColor() == color {
+			count++
+			if count >= maximumNumber {
+				return count
+			}
+		}
+	}
+	return count
+}
+
+// GetCardCountWithMaximumNumber 获取指定牌的数量
+func (slf *Rule) GetCardCountWithMaximumNumber(cards []Card, card Card, maximumNumber int) int {
+	count := 0
+	for _, c := range cards {
+		if c.Equal(card) {
+			count++
+			if count >= maximumNumber {
+				return count
+			}
+		}
+	}
+	return count
+}
+
+// GetCardCountWithPoint 获取指定点数的牌的数量
+func (slf *Rule) GetCardCountWithPoint(cards []Card, point Point) int {
+	count := 0
+	for _, card := range cards {
+		if card.GetPoint() == point {
+			count++
+		}
+	}
+	return count
+}
+
+// GetCardCountWithColor 获取指定花色的牌的数量
+func (slf *Rule) GetCardCountWithColor(cards []Card, color Color) int {
+	count := 0
+	for _, card := range cards {
+		if card.GetColor() == color {
+			count++
+		}
+	}
+	return count
+}
+
+// GetCardCount 获取指定牌的数量
+func (slf *Rule) GetCardCount(cards []Card, card Card) int {
+	count := 0
+	for _, c := range cards {
+		if c.Equal(card) {
+			count++
+		}
+	}
+	return count
+}
+
 // PokerHandIsMatch 检查两组扑克牌牌型是否匹配
 func (slf *Rule) PokerHandIsMatch(cardsA, cardsB []Card) bool {
 	handA, exist := slf.PokerHand(cardsA...)
@@ -148,16 +223,17 @@ func (slf *Rule) SortByColorAsc(cards []Card) []Card {
 }
 
 // GetValueWithPokerHand 获取扑克牌的牌型牌值
-func (slf *Rule) GetValueWithPokerHand(hand string) int {
-	return slf.pokerHandValue[hand]
+func (slf *Rule) GetValueWithPokerHand(hand string, cards ...Card) int {
+	hv := slf.pokerHandValue[hand]
+	return hv * slf.GetValueWithCards(cards...)
 }
 
 // GetValueWithCards 获取扑克牌的牌值
 func (slf *Rule) GetValueWithCards(cards ...Card) int {
 	var value int
 	for _, card := range cards {
-		value += slf.pointValue[card.GetPoint()]
-		value += slf.colorValue[card.GetColor()]
+		value += slf.GetValueWithPoint(card.GetPoint())
+		value += slf.GetValueWithColor(card.GetColor())
 	}
 	return value
 }

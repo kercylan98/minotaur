@@ -32,11 +32,11 @@ type Moving2D struct {
 	timeUnit float64
 	idle     time.Duration
 	interval time.Duration
-	event    chan func()
 	close    bool
 
 	position2DChangeEventHandles      []component.Position2DChangeEventHandle
 	position2DDestinationEventHandles []component.Position2DDestinationEventHandle
+	position2DStopMoveEventHandles    []component.Position2DStopMoveEventHandle
 }
 
 // MoveTo 设置对象移动到特定位置
@@ -67,8 +67,12 @@ func (slf *Moving2D) MoveTo(entity component.Moving2DEntity, x float64, y float6
 // StopMove 停止特定对象的移动
 func (slf *Moving2D) StopMove(guid int64) {
 	slf.rw.Lock()
-	delete(slf.entities, guid)
-	slf.rw.Unlock()
+	defer slf.rw.Unlock()
+	entity, exist := slf.entities[guid]
+	if exist {
+		slf.OnPosition2DStopMoveEvent(entity)
+		delete(slf.entities, guid)
+	}
 }
 
 // RegPosition2DChangeEvent 在对象位置改变时将执行注册的事件处理函数
@@ -93,6 +97,17 @@ func (slf *Moving2D) OnPosition2DDestinationEvent(entity component.Moving2DEntit
 	}
 }
 
+// RegPosition2DStopMoveEvent 在对象停止移动时将执行被注册的事件处理函数
+func (slf *Moving2D) RegPosition2DStopMoveEvent(handle component.Position2DStopMoveEventHandle) {
+	slf.position2DStopMoveEventHandles = append(slf.position2DStopMoveEventHandles, handle)
+}
+
+func (slf *Moving2D) OnPosition2DStopMoveEvent(entity component.Moving2DEntity) {
+	for _, handle := range slf.position2DStopMoveEventHandles {
+		handle(slf, entity)
+	}
+}
+
 type moving2DTarget struct {
 	component.Moving2DEntity
 	x, y         float64
@@ -104,7 +119,6 @@ func (slf *Moving2D) Release() {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
 	slf.close = true
-	close(slf.event)
 }
 
 func (slf *Moving2D) handle() {

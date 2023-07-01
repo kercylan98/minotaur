@@ -19,4 +19,5 @@ type Moving2D interface {
 type (
 	Position2DChangeEventHandle      func(moving Moving2D, entity Moving2DEntity, oldX, oldY float64)
 	Position2DDestinationEventHandle func(moving Moving2D, entity Moving2DEntity)
+	Position2DStopMoveEventHandle    func(moving Moving2D, entity Moving2DEntity)
 )
