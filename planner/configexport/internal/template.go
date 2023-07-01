@@ -3,11 +3,18 @@ package internal
 const (
 	generateConfigTemplate = `
 
-// {{.Name}} {{.DisplayName}}
-type {{.Name}} struct {
+// {{.Name}}Define {{.DisplayName}}
+type {{.Name}}Define struct {
 	{{range $index, $value := .Fields}}{{if eq $value.Server true}}{{if eq $value.Ignore false}}{{$value.Name}} {{$value.Type}} // {{$value.Describe}}{{end}}{{end}}
 	{{end}}
 } 
+
+func (slf *{{.Name}}Define) String() string {
+    if data, err := json.Marshal(slf); err == nil {
+  	  return string(data)
+    }
+    return "{}"
+}
 
 {{range $index, $value := .Fields}}{{$value}}{{end}}
 `
@@ -37,21 +44,22 @@ var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 var (
 {{range $index, $config := .Configs}}
-	 I{{$config.Name}} {{$config.GetVariable}}
-	 i{{$config.Name}} {{$config.GetVariable}}
+     // {{$config.Name}} {{$config.DisplayName}}
+	 {{$config.Name}} {{$config.GetVariable}}
+	 _{{$config.Name}} {{$config.GetVariable}}
 {{end}}
 )
 
 func LoadConfig(handle func(filename string, config any) error) {
 	var err error
 {{range $index, $config := .Configs}}
-	i{{$config.Name}} = {{$config.GetVariableGen}}
+	_{{$config.Name}} = {{$config.GetVariableGen}}
 {{if eq $config.IndexCount 0}}
-	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", i{{$config.Name}}); err != nil {
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", _{{$config.Name}}); err != nil {
 			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 {{else}}
-	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &i{{$config.Name}}); err != nil {
+	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &_{{$config.Name}}); err != nil {
 			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
 	}
 {{end}}
@@ -60,7 +68,7 @@ func LoadConfig(handle func(filename string, config any) error) {
 
 func Refresh() {
 {{range $index, $config := .Configs}}
-	I{{$config.Name}} = i{{$config.Name}}
+	{{$config.Name}} = _{{$config.Name}}
 {{end}}
 }
 

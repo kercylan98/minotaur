@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/geometry"
 )
 
@@ -58,6 +59,19 @@ func (slf *Matrix[T]) GetMatrixWithPos() []T {
 // Get 获取特定坐标的内容
 func (slf *Matrix[T]) Get(x, y int) (value T) {
 	return slf.m[geometry.CoordinateToPos(slf.w, x, y)]
+}
+
+// GetExist 获取特定坐标的内容，如果不存在则返回 false
+func (slf *Matrix[T]) GetExist(x, y int) (value T, exist bool) {
+	pos := geometry.CoordinateToPos(slf.w, x, y)
+	if pos >= len(slf.m) {
+		return
+	}
+	t := slf.m[pos]
+	if generic.IsNil(t) {
+		return
+	}
+	return slf.m[pos], true
 }
 
 // GetWithPos 获取特定坐标的内容

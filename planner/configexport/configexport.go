@@ -5,24 +5,52 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/planner/configexport/internal"
 	"github.com/kercylan98/minotaur/utils/file"
+	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/tealeg/xlsx"
+	"go.uber.org/zap"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
 )
 
+// New 创建一个导表配置
 func New(xlsxPath string) *ConfigExport {
-	ce := &ConfigExport{xlsxPath: xlsxPath}
+	ce := &ConfigExport{xlsxPath: xlsxPath, exist: make(map[string]bool)}
 	xlsxFile, err := xlsx.OpenFile(xlsxPath)
 	if err != nil {
 		panic(err)
 	}
 	for i := 0; i < len(xlsxFile.Sheets); i++ {
-		if config, err := internal.NewConfig(xlsxFile.Sheets[i]); err != nil {
-			panic(err)
+		sheet := xlsxFile.Sheets[i]
+		if config, err := internal.NewConfig(sheet, ce.exist); err != nil {
+			switch err {
+			case internal.ErrReadConfigFailedSame:
+				log.Warn("ConfigExport",
+					zap.String("File", xlsxPath),
+					zap.String("Sheet", sheet.Name),
+					zap.String("Info", "A configuration with the same name exists, skipped"),
+				)
+			case internal.ErrReadConfigFailedIgnore:
+				log.Info("ConfigExport",
+					zap.String("File", xlsxPath),
+					zap.String("Sheet", sheet.Name),
+					zap.String("Info", "Excluded non-configuration table files"),
+				)
+			default:
+				log.ErrorHideStack("ConfigExport",
+					zap.String("File", xlsxPath),
+					zap.String("Sheet", sheet.Name),
+					zap.String("Info", "Excluded non-configuration table files"),
+				)
+			}
 		} else {
+			if config == nil {
+				continue
+			}
 			ce.configs = append(ce.configs, config)
+			ce.exist[config.Name] = true
 		}
 	}
 	return ce
@@ -31,6 +59,34 @@ func New(xlsxPath string) *ConfigExport {
 type ConfigExport struct {
 	xlsxPath string
 	configs  []*internal.Config
+	exist    map[string]bool
+}
+
+// Merge 合并多个导表配置
+func Merge(exports ...*ConfigExport) *ConfigExport {
+	if len(exports) == 0 {
+		return nil
+	}
+	if len(exports) == 1 {
+		return exports[0]
+	}
+	var export = exports[0]
+	for i := 1; i < len(exports); i++ {
+		ce := exports[i]
+		for _, config := range ce.configs {
+			if _, ok := export.exist[config.Name]; ok {
+				log.Warn("ConfigExport",
+					zap.String("File", ce.xlsxPath),
+					zap.String("Sheet", config.Name),
+					zap.String("Info", "A configuration with the same name exists, skipped"),
+				)
+				continue
+			}
+			export.configs = append(export.configs, config)
+			export.exist[config.Name] = true
+		}
+	}
+	return export
 }
 
 func (slf *ConfigExport) ExportClient(prefix, outputDir string) {
@@ -99,9 +155,13 @@ func (slf *ConfigExport) exportGoConfig(outputDir string) {
 		return nil
 	})
 
-	if err := file.WriterFile(filepath.Join(outputDir, "config.go"), []byte(result)); err != nil {
+	filePath := filepath.Join(outputDir, "config.go")
+	if err := file.WriterFile(filePath, []byte(result)); err != nil {
 		panic(err)
 	}
+
+	cmd := exec.Command("gofmt", "-w", filePath)
+	_ = cmd.Run()
 }
 
 func (slf *ConfigExport) exportGoDefine(outputDir string) {
@@ -136,7 +196,11 @@ func (slf *ConfigExport) exportGoDefine(outputDir string) {
 		return nil
 	})
 
-	if err := file.WriterFile(filepath.Join(outputDir, "config.define.go"), []byte(result)); err != nil {
+	filePath := filepath.Join(outputDir, "config.define.go")
+	if err := file.WriterFile(filePath, []byte(result)); err != nil {
 		panic(err)
 	}
+
+	cmd := exec.Command("gofmt", "-w", filePath)
+	_ = cmd.Run()
 }

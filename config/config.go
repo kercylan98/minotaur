@@ -36,9 +36,12 @@ func Init(loadDir string, loadHandle LoadHandle, refreshHandle RefreshHandle) {
 	cLoadDir = loadDir
 	cLoadHandle = loadHandle
 	cRefreshHandle = refreshHandle
+	Load()
+	Refresh()
 }
 
 // Load 加载配置
+//   - 加载后并不会刷新线上配置，需要执行 Refresh 函数对线上配置进行刷新
 func Load() {
 	mutex.Lock()
 	if cTicker != nil {

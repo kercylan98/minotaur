@@ -3,6 +3,8 @@ package internal
 import "errors"
 
 var (
+	ErrReadConfigFailedIgnore                     = errors.New("read config skip ignore")
+	ErrReadConfigFailedSame                       = errors.New("read config skip, same name")
 	ErrReadConfigFailedWithDisplayName            = errors.New("read config display name failed, can not found position")
 	ErrReadConfigFailedWithName                   = errors.New("read config name failed, can not found position")
 	ErrReadConfigFailedWithIndexCount             = errors.New("read config index count failed, can not found position")

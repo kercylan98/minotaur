@@ -5,6 +5,7 @@ import (
 	"fmt"
 	jsonIter "github.com/json-iterator/go"
 	"github.com/kercylan98/minotaur/utils/geometry/matrix"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/xlsxtool"
 	"github.com/tealeg/xlsx"
@@ -15,10 +16,14 @@ import (
 
 // NewConfig 定位为空将读取Sheet名称
 //   - 表格中需要严格遵守 描述、名称、类型、导出参数、数据列的顺序
-func NewConfig(sheet *xlsx.Sheet) (*Config, error) {
+func NewConfig(sheet *xlsx.Sheet, exist map[string]bool) (*Config, error) {
 	config := &Config{
 		ignore:        "#",
 		excludeFields: map[int]bool{0: true},
+		Exist:         exist,
+	}
+	if strings.HasPrefix(sheet.Name, config.ignore) {
+		return nil, ErrReadConfigFailedIgnore
 	}
 	if err := config.initField(sheet); err != nil {
 		return nil, err
@@ -27,6 +32,7 @@ func NewConfig(sheet *xlsx.Sheet) (*Config, error) {
 }
 
 type Config struct {
+	Exist       map[string]bool
 	Prefix      string
 	DisplayName string
 	Name        string
@@ -67,6 +73,12 @@ func (slf *Config) initField(sheet *xlsx.Sheet) error {
 		} else {
 			slf.Name = str.FirstUpper(strings.TrimSpace(value.String()))
 		}
+	}
+	if strings.HasPrefix(sheet.Name, slf.ignore) {
+		return ErrReadConfigFailedIgnore
+	}
+	if hash.Exist(slf.Exist, slf.Name) {
+		return ErrReadConfigFailedSame
 	}
 
 	if indexCount == nil {
@@ -120,22 +132,22 @@ func (slf *Config) initField(sheet *xlsx.Sheet) error {
 			describe, fieldName, fieldType, exportParam string
 		)
 		var skip bool
-		if value := slf.matrix.Get(dx, dy); value == nil {
+		if value, exist := slf.matrix.GetExist(dx, dy); !exist {
 			skip = true
 		} else {
 			describe = value.String()
 		}
-		if value := slf.matrix.Get(nx, ny); value == nil {
+		if value, exist := slf.matrix.GetExist(nx, ny); !exist {
 			skip = true
 		} else {
 			fieldName = str.FirstUpper(strings.TrimSpace(value.String()))
 		}
-		if value := slf.matrix.Get(tx, ty); value == nil {
+		if value, exist := slf.matrix.GetExist(tx, ty); !exist {
 			skip = true
 		} else {
 			fieldType = strings.TrimSpace(value.String())
 		}
-		if value := slf.matrix.Get(ex, ey); value == nil {
+		if value, exist := slf.matrix.GetExist(ex, ey); !exist {
 			skip = true
 		} else {
 			exportParam = strings.ToLower(strings.TrimSpace(value.String()))
@@ -233,6 +245,7 @@ func (slf *Config) initData() error {
 		var lineClient = map[any]any{}
 		var skip bool
 		var offset int
+		var stop bool
 		for i := 0; i < len(slf.Fields); i++ {
 			if slf.excludeFields[i] {
 				if c := slf.matrix.Get(x+i, y); c != nil && strings.HasPrefix(c.String(), "#") {
@@ -249,8 +262,8 @@ func (slf *Config) initData() error {
 			var value any
 			if slf.horizontal {
 				c := slf.matrix.Get(x+i, y)
-				if c == nil || (currentIndex < slf.IndexCount && len(c.String()) == 0) {
-					skip = true
+				if c == nil || (currentIndex < slf.IndexCount && len(strings.TrimSpace(c.String())) == 0) {
+					stop = true
 					break
 				}
 				value = getValueWithType(field.SourceType, c.String())
@@ -273,6 +286,9 @@ func (slf *Config) initData() error {
 			case "sc", "cs":
 				lineServer[field.Name] = value
 				lineClient[field.Name] = value
+			default:
+				skip = true
+				break
 			}
 
 			if currentIndex < slf.IndexCount {
@@ -304,7 +320,9 @@ func (slf *Config) initData() error {
 				}
 			}
 		}
-		if slf.horizontal {
+		if stop {
+			break
+		} else if slf.horizontal {
 			y++
 			if y >= slf.matrix.GetHeight() {
 				break
@@ -373,7 +391,7 @@ func (slf *Config) GetVariable() string {
 			}
 		}
 	}
-	return fmt.Sprintf("%s*%s", result, slf.Name)
+	return fmt.Sprintf("%s*%sDefine", result, slf.Name)
 }
 
 func (slf *Config) GetVariableGen() string {
