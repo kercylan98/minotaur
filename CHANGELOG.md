@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/kercylan98/minotaur/compare/v0.0.5...v0.0.6) (2023-07-03)
+
+
+### Features | 新特性
+
+* 日志 log 包支持更多设置 ([83e0675](https://github.com/kercylan98/minotaur/commit/83e06759a50c7d211932ea95b6d83385f71dd6d3))
+
 ## [0.0.5](https://github.com/kercylan98/minotaur/compare/v0.0.4...v0.0.5) (2023-07-03)
 
 
