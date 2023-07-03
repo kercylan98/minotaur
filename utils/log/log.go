@@ -138,8 +138,11 @@ func ErrorWithStack(msg, stack string, fields ...zap.Field) {
 }
 
 // SetProd 设置生产环境模式
-func SetProd() {
-	prod = true
+func SetProd(isProd bool) {
+	if prod == isProd {
+		return
+	}
+	prod = isProd
 	if logger != nil {
 		_ = logger.Sync()
 	}
@@ -156,8 +159,11 @@ func SetLogDir(dir string) {
 }
 
 // SetWriteFileWithDev 设置开发环境下写入文件
-func SetWriteFileWithDev() {
-	logDevWrite = true
+func SetWriteFileWithDev(isWrite bool) {
+	if isWrite == logDevWrite {
+		return
+	}
+	logDevWrite = isWrite
 	if logger != nil {
 		_ = logger.Sync()
 	}
