@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.5](https://github.com/kercylan98/minotaur/compare/v0.0.4...v0.0.5) (2023-07-03)
+
+
+### Other | 其他更改
+
+* 删除 net 包中的不合理函数 ([f22bf5b](https://github.com/kercylan98/minotaur/commit/f22bf5bc936e6f709f43c306e38703be498acf01))
+
+
+### Features | 新特性
+
+* 为 slice 包添加更多的辅助函数 ([d4d11f2](https://github.com/kercylan98/minotaur/commit/d4d11f2a8d1eab2633bc9772c893011d7051706e))
+* 配置导出生成的 Go 代码支持获取所有线上配置的集合 ([68cb5f2](https://github.com/kercylan98/minotaur/commit/68cb5f25162302e1c701ad0c81ae719f9426661b))
+
 ## [0.0.4](https://github.com/kercylan98/minotaur/compare/v0.0.3...v0.0.4) (2023-07-01)
 
 
