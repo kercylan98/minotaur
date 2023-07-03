@@ -12,16 +12,11 @@ import (
 )
 
 var (
-	logger *zap.Logger
-	prod   bool
-)
-
-var (
-	logPath string
-)
-
-const (
-	logTime = 7
+	logger      *zap.Logger
+	prod        bool
+	logPath     string
+	logDevWrite bool
+	logTime     = 7
 )
 
 func init() {
@@ -60,9 +55,19 @@ func newLogger() *zap.Logger {
 	var cores zapcore.Core
 
 	if !prod {
-		cores = zapcore.NewTee(
-			zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
-		)
+		if len(logPath) > 0 && logDevWrite {
+			infoWriter := getWriter(fmt.Sprintf("%s/info.log", logPath), logTime)
+			errorWriter := getWriter(fmt.Sprintf("%s/error.log", logPath), logTime)
+			cores = zapcore.NewTee(
+				zapcore.NewCore(encoder, zapcore.AddSync(infoWriter), infoLevel),
+				zapcore.NewCore(encoder, zapcore.AddSync(errorWriter), errorLevel),
+				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
+			)
+		} else {
+			cores = zapcore.NewTee(
+				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
+			)
+		}
 	} else {
 		if len(logPath) == 0 {
 			cores = zapcore.NewTee(
@@ -82,7 +87,7 @@ func newLogger() *zap.Logger {
 	return zap.New(cores, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
-func getWriter(filename string, times int32) io.Writer {
+func getWriter(filename string, times int) io.Writer {
 	hook, err := rotatelogs.New(
 		filename+".%Y%m%d",
 		rotatelogs.WithLinkName(filename),
@@ -132,18 +137,38 @@ func ErrorWithStack(msg, stack string, fields ...zap.Field) {
 	fmt.Println(stackMerge)
 }
 
+// SetProd 设置生产环境模式
 func SetProd() {
 	prod = true
 	if logger != nil {
 		_ = logger.Sync()
-		logger = newLogger()
 	}
+	logger = newLogger()
 }
 
+// SetLogDir 设置日志输出目录
 func SetLogDir(dir string) {
 	logPath = dir
 	if logger != nil {
 		_ = logger.Sync()
-		logger = newLogger()
 	}
+	logger = newLogger()
+}
+
+// SetWriteFileWithDev 设置开发环境下写入文件
+func SetWriteFileWithDev() {
+	logDevWrite = true
+	if logger != nil {
+		_ = logger.Sync()
+	}
+	logger = newLogger()
+}
+
+// SetLogRotate 设置日志切割时间
+func SetLogRotate(t int) {
+	logTime = t
+	if logger != nil {
+		_ = logger.Sync()
+	}
+	logger = newLogger()
 }
