@@ -202,7 +202,7 @@ func (slf *Server) Run(addr string) error {
 		})
 	case NetworkHttp:
 		if slf.prod {
-			log.SetProd()
+			log.SetProd(slf.prod)
 			gin.SetMode(gin.ReleaseMode)
 		}
 		go func() {
