@@ -9,6 +9,7 @@ import (
 )
 
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
+var full map[string]any
 var (
 	// IndexConfig 有索引
 	IndexConfig  map[int]map[string]*IndexConfigDefine
@@ -32,11 +33,16 @@ func LoadConfig(handle func(filename string, config any) error) {
 
 }
 
+// Refresh 将加载后的配置刷新到线上
 func Refresh() {
+	full = make(map[string]any)
 	IndexConfig = _IndexConfig
+	full["IndexConfig"] = IndexConfig
 	EasyConfig = _EasyConfig
+	full["EasyConfig"] = EasyConfig
 }
 
+// DefaultLoad 默认提供的配置加载函数
 func DefaultLoad(filepath string) {
 	LoadConfig(func(filename string, config any) error {
 		bytes, err := os.ReadFile(filepath)
@@ -46,4 +52,10 @@ func DefaultLoad(filepath string) {
 
 		return json.Unmarshal(bytes, &config)
 	})
+}
+
+// GetFull 获取所有配置的 map 集合
+//   - 通常用于前端配置通过后端接口获取的情况
+func GetFull() map[string]any {
+	return full
 }

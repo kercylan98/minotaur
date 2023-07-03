@@ -1,5 +1,7 @@
 package slice
 
+import "math/rand"
+
 // Del 删除特定索引的元素
 func Del[V any](slice *[]V, index int) {
 	s := *slice
@@ -66,4 +68,55 @@ func NextLoop[V any](slice []V, i int) (next int, value V) {
 		next = 0
 	}
 	return next, slice[next]
+}
+
+// PrevLoop 返回 i 的上一个数组成员，当 i 为 0 时从数组末尾开始
+//   - 当 i 为 -1 时将返回最后一个元素
+func PrevLoop[V any](slice []V, i int) (prev int, value V) {
+	if i == -1 {
+		return len(slice) - 1, slice[len(slice)-1]
+	}
+	prev = i - 1
+	if prev == -1 {
+		prev = len(slice) - 1
+	}
+	return prev, slice[prev]
+}
+
+// Reverse 反转数组
+func Reverse[V any](slice []V) {
+	for i := 0; i < len(slice)/2; i++ {
+		slice[i], slice[len(slice)-1-i] = slice[len(slice)-1-i], slice[i]
+	}
+}
+
+// Shuffle 随机打乱数组
+func Shuffle[V any](slice []V) {
+	for i := 0; i < len(slice); i++ {
+		j := rand.Intn(len(slice))
+		slice[i], slice[j] = slice[j], slice[i]
+	}
+}
+
+// Swap 交换数组中的两个元素
+func Swap[V any](slice []V, i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// ToMap 将数组转换为 map
+func ToMap[K comparable, V any](slice []V, key func(V) K) map[K]V {
+	m := make(map[K]V)
+	for _, v := range slice {
+		m[key(v)] = v
+	}
+	return m
+}
+
+// ToSet 将数组转换为 set
+func ToSet[V comparable](slice []V) map[V]struct{} {
+	m := make(map[V]struct{})
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
 }
