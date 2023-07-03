@@ -28,8 +28,10 @@ type MultipleServer struct {
 func (slf *MultipleServer) Run() {
 	var exceptionChannel = make(chan error, 1)
 	var runtimeExceptionChannel = make(chan error, 1)
-	defer close(exceptionChannel)
-	defer close(runtimeExceptionChannel)
+	defer func() {
+		close(exceptionChannel)
+		close(runtimeExceptionChannel)
+	}()
 	var running = make([]*Server, 0, len(slf.servers))
 	for i := 0; i < len(slf.servers); i++ {
 		go func(address string, server *Server) {
@@ -73,6 +75,7 @@ func (slf *MultipleServer) Run() {
 	case <-systemSignal:
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
+			server.multipleRuntimeErrorChan = nil
 			server.Shutdown(nil)
 			slf.servers = slf.servers[1:]
 		}

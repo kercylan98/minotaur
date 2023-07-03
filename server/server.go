@@ -120,7 +120,7 @@ func (slf *Server) Run(addr string) error {
 		for i := 0; i < slf.core; i++ {
 			slf.messageChannel[i] = make(chan *Message, 4096*1000)
 		}
-		if slf.network != NetworkHttp && slf.network != NetworkWebsocket {
+		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
 			slf.gServer = &gNet{Server: slf}
 		}
 		if callback != nil {
@@ -142,6 +142,7 @@ func (slf *Server) Run(addr string) error {
 		if err != nil {
 			return err
 		}
+		go connectionInitHandle(nil)
 		go func() {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
@@ -208,13 +209,14 @@ func (slf *Server) Run(addr string) error {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			slf.httpServer.Addr = slf.addr
+			go connectionInitHandle(nil)
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
 					slf.isRunning = false
 					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
 			} else {
-				if err := slf.httpServer.ListenAndServe(); err != nil {
+				if err := slf.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					slf.isRunning = false
 					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
 				}
@@ -432,6 +434,9 @@ func (slf *Server) HttpRouter() gin.IRouter {
 
 // PushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
+	if slf.messagePool.IsClose() {
+		return
+	}
 	msg := slf.messagePool.Get()
 	msg.t = messageType
 	msg.attrs = attrs

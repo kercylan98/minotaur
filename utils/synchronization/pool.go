@@ -48,6 +48,10 @@ func (slf *Pool[T]) Get() T {
 	return slf.generator()
 }
 
+func (slf *Pool[T]) IsClose() bool {
+	return slf.generator == nil
+}
+
 func (slf *Pool[T]) Release(data T) {
 	slf.releaser(data)
 	slf.put(data)
