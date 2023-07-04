@@ -23,7 +23,10 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
-	go c.writeLoop()
+	var wait = new(sync.WaitGroup)
+	wait.Add(1)
+	go c.writeLoop(wait)
+	wait.Wait()
 	return c
 }
 
@@ -39,7 +42,10 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
-	go c.writeLoop()
+	var wait = new(sync.WaitGroup)
+	wait.Add(1)
+	go c.writeLoop(wait)
+	wait.Wait()
 	return c
 }
 
@@ -52,7 +58,10 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 		ws:         ws,
 		data:       map[any]any{},
 	}
-	go c.writeLoop()
+	var wait = new(sync.WaitGroup)
+	wait.Add(1)
+	go c.writeLoop(wait)
+	wait.Wait()
 	return c
 }
 
@@ -84,8 +93,6 @@ func (slf *Conn) GetIP() string {
 
 // Close 关闭连接
 func (slf *Conn) Close() {
-	slf.mutex.Lock()
-	defer slf.mutex.Unlock()
 	if slf.ws != nil {
 		_ = slf.ws.Close()
 	} else if slf.gn != nil {
@@ -147,7 +154,7 @@ func (slf *Conn) Write(data []byte, messageType ...int) {
 }
 
 // writeLoop 写循环
-func (slf *Conn) writeLoop() {
+func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 	slf.packetPool = synchronization.NewPool[*connPacket](10*1024,
 		func() *connPacket {
 			return &connPacket{}
@@ -161,6 +168,7 @@ func (slf *Conn) writeLoop() {
 			slf.Close()
 		}
 	}()
+	wait.Done()
 	for {
 		slf.mutex.Lock()
 		if slf.packetPool == nil {

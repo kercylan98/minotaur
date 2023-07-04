@@ -29,7 +29,7 @@ func main() {
 		players.Set(conn.GetID(), player)
 		lockstep.JoinClient(player)
 	})
-	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn) {
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
 		players.Delete(conn.GetID())
 		lockstep.LeaveClient(conn.GetID())
 		if players.Size() == 0 {

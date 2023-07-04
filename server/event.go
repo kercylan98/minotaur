@@ -15,7 +15,7 @@ type StartFinishEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
 type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, packet []byte, messageType int)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
-type ConnectionClosedEventHandle func(srv *Server, conn *Conn)
+type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
 type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
@@ -106,10 +106,10 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
 	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnConnectionClosedEvent(conn *Conn) {
+func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 	log.Debug("Server", zap.String("ConnectionClosed", conn.GetID()))
 	for _, handle := range slf.connectionClosedEventHandles {
-		handle(slf.Server, conn)
+		handle(slf.Server, conn, err)
 	}
 	conn.Close()
 }

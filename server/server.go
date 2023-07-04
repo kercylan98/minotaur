@@ -185,7 +185,7 @@ func (slf *Server) Run(addr string) error {
 				go func(conn *Conn) {
 					defer func() {
 						if err := recover(); err != nil {
-							slf.OnConnectionClosedEvent(conn)
+							slf.OnConnectionClosedEvent(conn, err)
 						}
 					}()
 
@@ -265,7 +265,7 @@ func (slf *Server) Run(addr string) error {
 
 				defer func() {
 					if err := recover(); err != nil {
-						slf.OnConnectionClosedEvent(conn)
+						slf.OnConnectionClosedEvent(conn, err)
 					}
 				}()
 

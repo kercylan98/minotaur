@@ -18,7 +18,7 @@ func main() {
 		connections.Set(conn.GetID(), conn)
 		conn.Write([]byte("欢迎加入"))
 	})
-	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn) {
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
 		if connections.DeleteExist(conn.GetID()) {
 			for id, c := range connections.Map() {
 				c.Write([]byte(fmt.Sprintf("%s 退出了聊天室", id)))
