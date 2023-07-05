@@ -264,6 +264,10 @@ func (slf *Config) initData() error {
 			if slf.horizontal {
 				c := slf.matrix.Get(x+i, y)
 				if c == nil {
+					if currentIndex < slf.IndexCount {
+						stop = true
+						break
+					}
 					value = getValueZero(field.SourceType)
 					zero = true
 				} else if currentIndex < slf.IndexCount && len(strings.TrimSpace(c.String())) == 0 {

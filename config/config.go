@@ -29,6 +29,7 @@ var (
 	cRefreshHandle RefreshHandle
 	json           = jsonIter.ConfigCompatibleWithStandardLibrary
 	mutex          sync.Mutex
+	isInit         = true
 )
 
 // Init 配置初始化
@@ -44,24 +45,23 @@ func Init(loadDir string, loadHandle LoadHandle, refreshHandle RefreshHandle) {
 //   - 加载后并不会刷新线上配置，需要执行 Refresh 函数对线上配置进行刷新
 func Load() {
 	mutex.Lock()
-	if cTicker != nil {
-		WithTickerLoad(cTicker, cInterval)
-	} else {
-		cLoadHandle(func(filename string, config any) error {
-			bytes, err := os.ReadFile(filepath.Join(cLoadDir, filename))
-			if err != nil {
-				return err
-			}
-			if err = json.Unmarshal(bytes, &config); err == nil {
-				log.Info("Config", zap.String("Name", filename), zap.Bool("LoadSuccess", true))
-			}
+	cLoadHandle(func(filename string, config any) error {
+		bytes, err := os.ReadFile(filepath.Join(cLoadDir, filename))
+		if err != nil {
 			return err
-		})
-	}
+		}
+		if err = json.Unmarshal(bytes, &config); err == nil && isInit {
+			log.Info("Config", zap.String("Name", filename), zap.Bool("LoadSuccess", true))
+		}
+		return err
+	})
+	isInit = false
 	mutex.Unlock()
 }
 
 // WithTickerLoad 通过定时器加载配置
+//   - 通过定时器加载配置后，会自动刷新线上配置
+//   - 调用该函数后将会立即加载并刷新一次配置，随后每隔 interval 时间加载并刷新一次配置
 func WithTickerLoad(ticker *timer.Ticker, interval time.Duration) {
 	if ticker != cTicker && cTicker != nil {
 		cTicker.StopTimer(tickerLoadRefresh)
