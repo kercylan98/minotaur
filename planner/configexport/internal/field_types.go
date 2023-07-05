@@ -54,6 +54,44 @@ var basicType = map[string]func(fieldValue string) any{
 	"boolean": withBoolType,
 }
 
+func getValueZero(fileType string) any {
+	switch basicTypeName[fileType] {
+	case "string":
+		return getValueWithType(fileType, "")
+	case "int":
+		return getValueWithType(fileType, "0")
+	case "int8":
+		return getValueWithType(fileType, "0")
+	case "int16":
+		return getValueWithType(fileType, "0")
+	case "int32":
+		return getValueWithType(fileType, "0")
+	case "int64":
+		return getValueWithType(fileType, "0")
+	case "uint":
+		return getValueWithType(fileType, "0")
+	case "uint8":
+		return getValueWithType(fileType, "0")
+	case "uint16":
+		return getValueWithType(fileType, "0")
+	case "uint32":
+		return getValueWithType(fileType, "0")
+	case "uint64":
+		return getValueWithType(fileType, "0")
+	case "float32":
+		return getValueWithType(fileType, "0")
+	case "float64":
+		return getValueWithType(fileType, "0")
+	case "byte":
+		return getValueWithType(fileType, "0")
+	case "rune":
+		return getValueWithType(fileType, "0")
+	case "bool":
+		return getValueWithType(fileType, "false")
+	}
+	return nil
+}
+
 func getValueWithType(fieldType string, fieldValue string) any {
 	fieldType = strings.ToLower(strings.TrimSpace(fieldType))
 	handle, exist := basicType[fieldType]

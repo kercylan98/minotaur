@@ -260,13 +260,19 @@ func (slf *Config) initData() error {
 				continue
 			}
 			var value any
+			var zero bool
 			if slf.horizontal {
 				c := slf.matrix.Get(x+i, y)
-				if c == nil || (currentIndex < slf.IndexCount && len(strings.TrimSpace(c.String())) == 0) {
+				if c == nil {
+					value = getValueZero(field.SourceType)
+					zero = true
+				} else if currentIndex < slf.IndexCount && len(strings.TrimSpace(c.String())) == 0 {
 					stop = true
 					break
 				}
-				value = getValueWithType(field.SourceType, c.String())
+				if !zero {
+					value = getValueWithType(field.SourceType, c.String())
+				}
 			} else {
 				c := slf.matrix.Get(x, y+i+offset)
 				for c == nil {
