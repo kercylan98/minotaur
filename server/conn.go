@@ -184,13 +184,13 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 		slf.mutex.Unlock()
 		for i := 0; i < len(packets); i++ {
 			data := packets[i]
-			if len(data.packet) == 0 {
-				for _, packet := range packets {
-					slf.packetPool.Release(packet)
-				}
-				slf.Close()
-				return
-			}
+			//if len(data.packet) == 0 {
+			//	for _, packet := range packets {
+			//		slf.packetPool.Release(packet)
+			//	}
+			//	slf.Close()
+			//	return
+			//}
 			var err error
 			if slf.IsWebsocket() {
 				if data.websocketMessageType <= 0 {
