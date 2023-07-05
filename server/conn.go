@@ -79,14 +79,39 @@ type Conn struct {
 	packets    []*connPacket
 }
 
+// Reuse 重用连接
+//   - 重用连接时，会将当前连接的数据复制到新连接中
+//   - 通常在于连接断开后，重新连接时使用
+func (slf *Conn) Reuse(conn *Conn) {
+	slf.mutex.Lock()
+	conn.mutex.Lock()
+	defer func() {
+		slf.mutex.Unlock()
+		conn.mutex.Unlock()
+	}()
+	slf.Close()
+	slf.remoteAddr = conn.remoteAddr
+	slf.ip = conn.ip
+	slf.ws = conn.ws
+	slf.gn = conn.gn
+	slf.kcp = conn.kcp
+	slf.data = conn.data
+	slf.packetPool = conn.packetPool
+	slf.packets = conn.packets
+}
+
+// RemoteAddr 获取远程地址
 func (slf *Conn) RemoteAddr() net.Addr {
 	return slf.remoteAddr
 }
 
+// GetID 获取连接ID
+//   - 为远程地址的字符串形式
 func (slf *Conn) GetID() string {
 	return slf.remoteAddr.String()
 }
 
+// GetIP 获取连接IP
 func (slf *Conn) GetIP() string {
 	return slf.ip
 }
