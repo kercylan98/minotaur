@@ -1,7 +1,8 @@
-package builtin
+package builtin_test
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/game/builtin"
 	"github.com/kercylan98/minotaur/utils/random"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func (slf *Ent) GetVision() float64 {
 }
 
 func TestNewAOI2D(t *testing.T) {
-	aoi := NewAOI2D(10000, 10000, 100, 100)
+	aoi := builtin.NewAOI2D(10000, 10000, 100, 100)
 
 	start := time.Now()
 	for i := 0; i < 50000; i++ {
