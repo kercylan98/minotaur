@@ -120,3 +120,12 @@ func ToSet[V comparable](slice []V) map[V]struct{} {
 	}
 	return m
 }
+
+// Merge 合并多个数组
+func Merge[V any](slices ...[]V) []V {
+	var slice []V
+	for _, s := range slices {
+		slice = append(slice, s...)
+	}
+	return slice
+}
