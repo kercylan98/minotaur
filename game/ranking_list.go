@@ -12,6 +12,7 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] interface {
 	// Size 获取竞争者数量
 	Size() int
 	// GetRank 获取竞争者排名
+	//  - 排名从 0 开始
 	GetRank(competitorId CompetitorID) (int, error)
 	// GetCompetitor 获取特定排名的竞争者
 	GetCompetitor(rank int) (CompetitorID, error)

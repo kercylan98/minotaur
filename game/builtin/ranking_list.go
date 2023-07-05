@@ -87,6 +87,7 @@ func (slf *RankingList[CompetitorID, Score]) Size() int {
 }
 
 // GetRank 获取竞争者排名
+//   - 排名从 0 开始
 func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
 	competitorScore, exist := slf.competitors.GetExist(competitorId)
 	if !exist {
