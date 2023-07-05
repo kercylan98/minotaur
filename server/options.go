@@ -24,6 +24,18 @@ const (
 
 type Option func(srv *Server)
 
+// WithWebsocketReadDeadline 设置 Websocket 读取超时时间
+//   - 默认： 30 * time.Second
+//   - 当 t <= 0 时，表示不设置超时时间
+func WithWebsocketReadDeadline(t time.Duration) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkWebsocket {
+			return
+		}
+		srv.websocketReadDeadline = t
+	}
+}
+
 // WithDiversion 通过分流的方式创建服务器
 //   - diversion：分流函数，返回一个函数通道，用于接收分流的消息
 //   - 需要确保能够通过 conn 和 packet 确定分流通道

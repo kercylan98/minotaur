@@ -9,6 +9,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/utils/times"
 	"github.com/panjf2000/gnet"
 	"github.com/panjf2000/gnet/pkg/logging"
 	"github.com/xtaci/kcp-go/v5"
@@ -37,14 +38,18 @@ func New(network Network, options ...Option) *Server {
 	}
 	server.event.Server = server
 
-	if network == NetworkHttp {
+	switch network {
+	case NetworkHttp:
 		server.ginServer = gin.New()
 		server.httpServer = &http.Server{
 			Handler: server.ginServer,
 		}
-	} else if network == NetworkGRPC {
+	case NetworkGRPC:
 		server.grpcServer = grpc.NewServer()
+	case NetworkWebsocket:
+		server.websocketReadDeadline = time.Second * 30
 	}
+
 	for _, option := range options {
 		option(server)
 	}
@@ -81,6 +86,8 @@ type Server struct {
 	ticker                    *timer.Ticker                   // 定时器
 
 	multipleRuntimeErrorChan chan error // 多服务器模式下的运行时错误
+
+	websocketReadDeadline time.Duration // websocket连接超时时间
 }
 
 // Run 使用特定地址运行服务器
@@ -268,9 +275,8 @@ func (slf *Server) Run(addr string) error {
 						slf.OnConnectionClosedEvent(conn, err)
 					}
 				}()
-
 				for {
-					if err := ws.SetReadDeadline(time.Now().Add(time.Second * 30)); err != nil {
+					if err := ws.SetReadDeadline(super.If(slf.websocketReadDeadline <= 0, times.Zero, time.Now().Add(slf.websocketReadDeadline))); err != nil {
 						panic(err)
 					}
 					messageType, packet, readErr := ws.ReadMessage()
