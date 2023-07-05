@@ -12,11 +12,13 @@ var json = jsonIter.ConfigCompatibleWithStandardLibrary
 var full map[string]any
 var (
 	// IndexConfig 有索引
-	IndexConfig  map[int]map[string]*IndexConfigDefine
-	_IndexConfig map[int]map[string]*IndexConfigDefine
+	IndexConfigSign = "IndexConfig"
+	IndexConfig     map[int]map[string]*IndexConfigDefine
+	_IndexConfig    map[int]map[string]*IndexConfigDefine
 	// EasyConfig 无索引
-	EasyConfig  *EasyConfigDefine
-	_EasyConfig *EasyConfigDefine
+	EasyConfigSign = "EasyConfig"
+	EasyConfig     *EasyConfigDefine
+	_EasyConfig    *EasyConfigDefine
 )
 
 func LoadConfig(handle func(filename string, config any) error) {

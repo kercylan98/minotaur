@@ -51,6 +51,12 @@ func New(xlsxPath string) *ConfigExport {
 			}
 			ce.configs = append(ce.configs, config)
 			ce.exist[config.Name] = true
+
+			log.Info("ConfigExport",
+				zap.String("File", xlsxPath),
+				zap.String("Sheet", sheet.Name),
+				zap.String("Info", "Export successfully"),
+			)
 		}
 	}
 	return ce
