@@ -7,9 +7,6 @@ type RankingList[CompetitorID comparable, Score generic.Ordered] interface {
 	// Competitor 声明排行榜竞争者
 	//  - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
 	Competitor(competitorId CompetitorID, score Score)
-	// CompetitorIncrease 积分增量的形式竞争排行榜
-	//  - 如果竞争者存在的情况下，会更新已有成绩为增加score后的成绩，否则新增竞争者
-	CompetitorIncrease(competitorId CompetitorID, score Score)
 	// RemoveCompetitor 删除特定竞争者
 	RemoveCompetitor(competitorId CompetitorID)
 	// Size 获取竞争者数量

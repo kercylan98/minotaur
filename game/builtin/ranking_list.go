@@ -34,6 +34,8 @@ type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
 	Score        Score        `json:"score,omitempty"`
 }
 
+// Competitor 声明排行榜竞争者
+//   - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
 func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
 	v, exist := slf.competitors.GetExist(competitorId)
 	if exist {
@@ -62,15 +64,7 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 	}
 }
 
-func (slf *RankingList[CompetitorID, Score]) CompetitorIncrease(competitorId CompetitorID, score Score) {
-	oldScore, err := slf.GetScore(competitorId)
-	if err != nil {
-		slf.Competitor(competitorId, score)
-	} else {
-		slf.Competitor(competitorId, oldScore+score)
-	}
-}
-
+// RemoveCompetitor 删除特定竞争者
 func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
 	if !slf.competitors.Exist(competitorId) {
 		return
@@ -87,10 +81,12 @@ func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId Compe
 
 }
 
+// Size 获取竞争者数量
 func (slf *RankingList[CompetitorID, Score]) Size() int {
 	return slf.competitors.Size()
 }
 
+// GetRank 获取竞争者排名
 func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
 	competitorScore, exist := slf.competitors.GetExist(competitorId)
 	if !exist {
@@ -126,6 +122,7 @@ func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) 
 	return 0, ErrRankingListIndexErr
 }
 
+// GetCompetitor 获取特定排名的竞争者
 func (slf *RankingList[CompetitorID, Score]) GetCompetitor(rank int) (competitorId CompetitorID, err error) {
 	if rank < 0 || rank >= len(slf.scores) {
 		return competitorId, ErrRankingListNonexistentRanking
@@ -133,6 +130,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitor(rank int) (competitor
 	return slf.scores[rank].CompetitorId, nil
 }
 
+// GetCompetitorWithRange 获取第start名到第end名竞争者
 func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
 	if start < 1 || end < start {
 		return nil, ErrRankingListNonexistentRanking
@@ -151,6 +149,7 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end i
 	return ids, nil
 }
 
+// GetScore 获取竞争者成绩
 func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score Score, err error) {
 	data, ok := slf.competitors.GetExist(competitorId)
 	if !ok {
@@ -159,6 +158,8 @@ func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID)
 	return data, nil
 }
 
+// GetAllCompetitor 获取所有竞争者ID
+//   - 结果为名次有序的
 func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	var result []CompetitorID
 	for _, data := range slf.scores {
@@ -167,6 +168,7 @@ func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	return result
 }
 
+// Clear 清空排行榜
 func (slf *RankingList[CompetitorID, Score]) Clear() {
 	slf.OnRankClearBeforeEvent()
 	slf.competitors.Clear()
