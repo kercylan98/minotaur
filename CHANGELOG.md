@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.7](https://github.com/kercylan98/minotaur/compare/v0.0.6...v0.0.7) (2023-07-05)
+
+
+### Features | 新特性
+
+* 导表工具导出的 Golang 代码将携带配置名称签名 ([8576d0f](https://github.com/kercylan98/minotaur/commit/8576d0f35229b555fce80110ea681e4c9f09f967))
+
+
+### Code Refactoring | 重构
+
+* 日志设置生产模式和开发模式写入文件支持开关 ([c6073a9](https://github.com/kercylan98/minotaur/commit/c6073a97a84ff2e118ee349e4ff2b3fffec1c60f))
+* 重构 server.ConnectionClosedEventHandle，修复部分问题 ([e0c63d5](https://github.com/kercylan98/minotaur/commit/e0c63d569d13f6a349544bcea00af43c225d84fc))
+
+
+### Bug Fixes | 修复
+
+* 修复 server.Multiple 关闭服务器空指针异常 ([1136af4](https://github.com/kercylan98/minotaur/commit/1136af4dd87552970eb45594ddcb48ffde0c0a91))
+* 配置导表部分未填写的字段导致整个表被截断问题处理 ([65aac67](https://github.com/kercylan98/minotaur/commit/65aac67cf48d4fd73440a0f1acf9fb33d27edd2a))
+
 ## [0.0.6](https://github.com/kercylan98/minotaur/compare/v0.0.5...v0.0.6) (2023-07-03)
 
 
