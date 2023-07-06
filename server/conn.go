@@ -261,12 +261,11 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 			}
 			callback := data.callback
 			slf.packetPool.Release(data)
+			if callback != nil {
+				callback(err)
+			}
 			if err != nil {
-				if callback != nil {
-					callback(err)
-				} else {
-					panic(err)
-				}
+				panic(err)
 			}
 		}
 	}
