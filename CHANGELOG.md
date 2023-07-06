@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.9](https://github.com/kercylan98/minotaur/compare/v0.0.8...v0.0.9) (2023-07-06)
+
+
+### Bug Fixes | 修复
+
+* 修复导出配置 JSON 特殊字符被转义的问题 ([193763e](https://github.com/kercylan98/minotaur/commit/193763e471d3e63a45e1eee4e2375cf738a9d1aa))
+* 修复请求成功 server.Conn 的 callback 不调用的问题 ([8e3325f](https://github.com/kercylan98/minotaur/commit/8e3325fcd8fcaaaaf105d23249ffc5f3fa492108))
+* 修复释放定时器后可能造成空指针的问题 ([9f27102](https://github.com/kercylan98/minotaur/commit/9f27102d3ae84cd9034dc8842903264112c63a50))
+
+
+### Other | 其他更改
+
+* 移除 server.Server.OnConnectionClosedEvent 和 server.Server.OnConnectionOpenedEvent 的日志 ([7065448](https://github.com/kercylan98/minotaur/commit/7065448ddfe9ffc8b09e2133df3c56726bbbdbde))
+
+
+### Features | 新特性
+
+* 支持通过 hash 包随机的读取 map 数据 ([9a35486](https://github.com/kercylan98/minotaur/commit/9a3548652a13df1bd7e6db3c9a6ebab136fb0c93))
+* 支持通过 server.Server.RegStopEvent() 函数注册服务器关闭事件 ([18b9598](https://github.com/kercylan98/minotaur/commit/18b9598f5a807b1b21b380edcdf65b6cb0b88a57))
+
 ## [0.0.8](https://github.com/kercylan98/minotaur/compare/v0.0.7...v0.0.8) (2023-07-05)
 
 
