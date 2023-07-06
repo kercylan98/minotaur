@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.0.8](https://github.com/kercylan98/minotaur/compare/v0.0.7...v0.0.8) (2023-07-05)
+
+
+### Styling | 可读性优化
+
+* 导出日志增加已导出的表信息 ([741da79](https://github.com/kercylan98/minotaur/commit/741da79d6047fce88c19bf50785bb4bde5e66b0b))
+
+
+### Performance Improvements | 性能优化
+
+* 移除向连接发送数据时的空包处理 ([e0571c7](https://github.com/kercylan98/minotaur/commit/e0571c7ed17eadb89b251944da2c85e347501e97))
+
+
+### Code Refactoring | 重构
+
+* 由于设计不合理，移除排行榜中的 CompetitorIncrease 函数 ([0f125d4](https://github.com/kercylan98/minotaur/commit/0f125d4de5d29532e79283b3e7d51822a36e1079))
+
+
+### Tests | 新增或优化测试用例
+
+* 新增 ranking_list 测试用例，调整 aoi2d_test.go 的 packge 为 builtin_test ([b5b428d](https://github.com/kercylan98/minotaur/commit/b5b428ddc106cc1d672789a1a7ff9b1f21f6c2a3))
+
+
+### Docs | 文档优化
+
+* 排行榜 GetRank 函数增加注释，提示排名从 0 开始 ([1001d50](https://github.com/kercylan98/minotaur/commit/1001d50c04c783b4044aacb014b782f2f1be392e))
+
+
+### Other | 其他更改
+
+* 在 README.md 中添加 JetBrains OS licenses 信息 ([b234568](https://github.com/kercylan98/minotaur/commit/b234568e5653bbe32eee5149874e4217a542f480))
+
+
+### Bug Fixes | 修复
+
+* 配置加载后无限刷新修复 ([6634aa6](https://github.com/kercylan98/minotaur/commit/6634aa675ecb69e44851966561f8f4b6f3be01ad))
+
+
+### Features | 新特性
+
+* server.New 支持通过 server.WithWebsocketReadDeadline 设置超时时间 ([2513714](https://github.com/kercylan98/minotaur/commit/2513714ac44c146dfe73a2875403658a6a83d4e0))
+* 可通过 slice.Merge 合并多个切片数据 ([ebfdd7c](https://github.com/kercylan98/minotaur/commit/ebfdd7c28177f15b8c79eb35e9d0c84ffeb1b680))
+* 支持在重连等情况时使用 server.Conn.Reuse 函数重用连接数据 ([6144dd6](https://github.com/kercylan98/minotaur/commit/6144dd6bf057d04e94a2244bf2e2933536a069d4))
+* 支持对 server.Conn 写入时调用带有 Callback 的写入函数 ([4717566](https://github.com/kercylan98/minotaur/commit/47175660de5645cb06d393f76b3d86a37cd924fe))
+* 新增重试函数及两个关于 func 执行的辅助函数 ([ee87612](https://github.com/kercylan98/minotaur/commit/ee87612f60ccecade532a1345e157147597a3540))
+
 ## [0.0.7](https://github.com/kercylan98/minotaur/compare/v0.0.6...v0.0.7) (2023-07-05)
 
 
