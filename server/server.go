@@ -364,6 +364,7 @@ func (slf *Server) Ticker() *timer.Ticker {
 
 // Shutdown 停止运行服务器
 func (slf *Server) Shutdown(err error, stack ...string) {
+	slf.OnStopEvent()
 	defer func() {
 		if slf.multipleRuntimeErrorChan != nil {
 			slf.multipleRuntimeErrorChan <- err

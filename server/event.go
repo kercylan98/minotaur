@@ -12,6 +12,7 @@ import (
 
 type StartBeforeEventHandle func(srv *Server)
 type StartFinishEventHandle func(srv *Server)
+type StopEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
 type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, packet []byte, messageType int)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
@@ -25,6 +26,7 @@ type event struct {
 	*Server
 	startBeforeEventHandles                      []StartBeforeEventHandle
 	startFinishEventHandles                      []StartFinishEventHandle
+	stopEventHandles                             []StopEventHandle
 	connectionReceivePacketEventHandles          []ConnectionReceivePacketEventHandle
 	connectionReceiveWebsocketPacketEventHandles []ConnectionReceiveWebsocketPacketEventHandle
 	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
@@ -36,6 +38,18 @@ type event struct {
 	consoleCommandEventHandles map[string][]ConsoleCommandEventHandle
 
 	consoleCommandEventHandleInitOnce sync.Once
+}
+
+// RegStopEvent 服务器停止时将立即执行被注册的事件处理函数
+func (slf *event) RegStopEvent(handle StopEventHandle) {
+	slf.stopEventHandles = append(slf.stopEventHandles, handle)
+	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnStopEvent() {
+	for _, handle := range slf.stopEventHandles {
+		handle(slf.Server)
+	}
 }
 
 // RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
