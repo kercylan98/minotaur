@@ -107,7 +107,6 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
-	log.Debug("Server", zap.String("ConnectionClosed", conn.GetID()))
 	for _, handle := range slf.connectionClosedEventHandles {
 		handle(slf.Server, conn, err)
 	}
@@ -124,7 +123,6 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
-	log.Debug("Server", zap.String("ConnectionOpened", conn.GetID()))
 	for _, handle := range slf.connectionOpenedEventHandles {
 		handle(slf.Server, conn)
 	}
