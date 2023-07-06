@@ -377,13 +377,21 @@ func (slf *Config) String() string {
 }
 
 func (slf *Config) JsonServer() []byte {
-	d, _ := jsonIter.MarshalIndent(slf.dataServer, "", "  ")
-	return d
+	buffer := &bytes.Buffer{}
+	encoder := jsonIter.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	_ = encoder.Encode(slf.dataServer)
+	return buffer.Bytes()
 }
 
 func (slf *Config) JsonClient() []byte {
-	d, _ := jsonIter.MarshalIndent(slf.dataClient, "", "  ")
-	return d
+	buffer := &bytes.Buffer{}
+	encoder := jsonIter.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	_ = encoder.Encode(slf.dataClient)
+	return buffer.Bytes()
 }
 
 func (slf *Config) GetVariable() string {
