@@ -35,7 +35,6 @@ func (slf *Ticker) Release() {
 		scheduler.close()
 		delete(slf.timers, name)
 	}
-	slf.handle = nil
 	slf.lock.Unlock()
 
 	slf.timer.tickers = append(slf.timer.tickers, slf)
