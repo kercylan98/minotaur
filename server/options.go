@@ -36,16 +36,6 @@ func WithWebsocketReadDeadline(t time.Duration) Option {
 	}
 }
 
-// WithDiversion 通过分流的方式创建服务器
-//   - diversion：分流函数，返回一个函数通道，用于接收分流的消息
-//   - 需要确保能够通过 conn 和 packet 确定分流通道
-//   - 多核模式下将导致消息顺序不一致，通过结果依然是单核处理的，因为分流通道仅有一个
-func WithDiversion(diversion func(conn ConnReadonly, packet []byte) chan func()) Option {
-	return func(srv *Server) {
-		srv.diversion = diversion
-	}
-}
-
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
 //   - 多核与分流情况下需要考虑是否有必要 autonomy
@@ -157,19 +147,5 @@ func WithMessageBufferSize(size int) Option {
 			return
 		}
 		srv.messagePoolSize = size
-	}
-}
-
-// WithMultiCore 通过特定核心数量运行服务器，默认为单核
-//   - count > 1 的情况下，将会有对应数量的 goroutine 来处理消息
-//   - 注意：HTTP和GRPC网络模式下不会生效
-//   - 在需要分流的场景推荐采用多核模式，如游戏以房间的形式进行，每个房间互不干扰，这种情况下便可以每个房间单独维护数据包消息进行处理
-func WithMultiCore(count int) Option {
-	return func(srv *Server) {
-		srv.core = count
-		if srv.core < 1 {
-			log.Warn("WithMultiCore", zap.Int("count", count), zap.String("tips", "wrong core count configuration, corrected to 1, currently in single-core mode"))
-			srv.core = 1
-		}
 	}
 }

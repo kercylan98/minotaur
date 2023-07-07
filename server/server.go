@@ -32,7 +32,6 @@ func New(network Network, options ...Option) *Server {
 		event:                     &event{},
 		network:                   network,
 		options:                   options,
-		core:                      1,
 		closeChannel:              make(chan struct{}, 1),
 		websocketWriteMessageType: WebsocketMessageTypeBinary,
 	}
@@ -58,30 +57,27 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                                 // 事件
-	cross               map[string]Cross                                   // 跨服
-	id                  int64                                              // 服务器id
-	network             Network                                            // 网络类型
-	addr                string                                             // 侦听地址
-	options             []Option                                           // 选项
-	ginServer           *gin.Engine                                        // HTTP模式下的路由器
-	httpServer          *http.Server                                       // HTTP模式下的服务器
-	grpcServer          *grpc.Server                                       // GRPC模式下的服务器
-	supportMessageTypes map[int]bool                                       // websocket模式下支持的消息类型
-	certFile, keyFile   string                                             // TLS文件
-	isRunning           bool                                               // 是否正在运行
-	isShutdown          atomic.Bool                                        // 是否已关闭
-	closeChannel        chan struct{}                                      // 关闭信号
-	diversion           func(conn ConnReadonly, packet []byte) chan func() // 分流器
+	*event                               // 事件
+	cross               map[string]Cross // 跨服
+	id                  int64            // 服务器id
+	network             Network          // 网络类型
+	addr                string           // 侦听地址
+	options             []Option         // 选项
+	ginServer           *gin.Engine      // HTTP模式下的路由器
+	httpServer          *http.Server     // HTTP模式下的服务器
+	grpcServer          *grpc.Server     // GRPC模式下的服务器
+	supportMessageTypes map[int]bool     // websocket模式下支持的消息类型
+	certFile, keyFile   string           // TLS文件
+	isRunning           bool             // 是否正在运行
+	isShutdown          atomic.Bool      // 是否已关闭
+	closeChannel        chan struct{}    // 关闭信号
 
 	gServer                   *gNet                           // TCP或UDP模式下的服务器
 	messagePool               *synchronization.Pool[*Message] // 消息池
 	messagePoolSize           int                             // 消息池大小
-	messageChannel            map[int]chan *Message           // 消息管道
-	initMessageChannel        bool                            // 消息管道是否已经初始化
+	messageChannel            chan *Message                   // 消息管道
 	multiple                  *MultipleServer                 // 多服务器模式下的服务器
 	prod                      bool                            // 是否为生产模式
-	core                      int                             // 消息处理核心数
 	websocketWriteMessageType int                             // websocket写入的消息类型
 	ticker                    *timer.Ticker                   // 定时器
 
@@ -110,7 +106,6 @@ func (slf *Server) Run(addr string) error {
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var connectionInitHandle = func(callback func()) {
-		slf.initMessageChannel = true
 		if slf.messagePoolSize <= 0 {
 			slf.messagePoolSize = 100
 		}
@@ -123,24 +118,18 @@ func (slf *Server) Run(addr string) error {
 				data.attrs = nil
 			},
 		)
-		slf.messageChannel = map[int]chan *Message{}
-		for i := 0; i < slf.core; i++ {
-			slf.messageChannel[i] = make(chan *Message, 4096*1000)
-		}
+		slf.messageChannel = make(chan *Message, 4096*1000)
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
 			slf.gServer = &gNet{Server: slf}
 		}
 		if callback != nil {
 			go callback()
 		}
-		for _, messageChannel := range slf.messageChannel {
-			messageChannel := messageChannel
-			go func() {
-				for message := range messageChannel {
-					slf.dispatchMessage(message, slf.diversion != nil)
-				}
-			}()
-		}
+		go func() {
+			for message := range slf.messageChannel {
+				slf.dispatchMessage(message)
+			}
+		}()
 	}
 
 	switch slf.network {
@@ -377,12 +366,10 @@ func (slf *Server) Shutdown(err error, stack ...string) {
 	for _, cross := range slf.cross {
 		cross.Release()
 	}
-	if slf.initMessageChannel {
-		for _, messageChannel := range slf.messageChannel {
-			close(messageChannel)
-		}
+	if slf.messageChannel != nil {
+		close(slf.messageChannel)
 		slf.messagePool.Close()
-		slf.initMessageChannel = false
+		slf.messageChannel = nil
 	}
 	if slf.grpcServer != nil && slf.isRunning {
 		slf.grpcServer.GracefulStop()
@@ -450,10 +437,7 @@ func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
 	if msg.t == MessageTypeError {
 		msg.attrs = append(msg.attrs, string(debug.Stack()))
 	}
-	for _, channel := range slf.messageChannel {
-		channel <- msg
-		break
-	}
+	slf.messageChannel <- msg
 }
 
 // PushCrossMessage 推送跨服消息到特定跨服的服务器中
@@ -469,16 +453,7 @@ func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []b
 }
 
 // dispatchMessage 消息分发
-func (slf *Server) dispatchMessage(msg *Message, isRedirect bool) {
-	if slf.diversion != nil && isRedirect && msg.t == MessageTypePacket {
-		conn, packet, _ := msg.t.deconstructWebSocketPacket(msg.attrs...)
-		if redirect := slf.diversion(conn, packet); redirect != nil {
-			redirect <- func() {
-				slf.dispatchMessage(msg, false)
-			}
-		}
-		return
-	}
+func (slf *Server) dispatchMessage(msg *Message) {
 	present := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
