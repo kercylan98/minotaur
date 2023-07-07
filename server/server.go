@@ -415,7 +415,7 @@ func (slf *Server) shutdown(err error, stack ...string) {
 		if slf.multiple != nil {
 			slf.multiple.RegExitEvent(func() {
 				log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
-					zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+					zap.String("action", "Shutdown"), zap.String("state", "exception"), zap.Error(err))
 			})
 			for i, server := range slf.multiple.servers {
 				if server.addr == slf.addr {
@@ -425,11 +425,11 @@ func (slf *Server) shutdown(err error, stack ...string) {
 			}
 		} else {
 			log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
-				zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+				zap.String("action", "Shutdown"), zap.String("state", "exception"), zap.Error(err))
 		}
 	} else {
 		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
-			zap.String("action", "shutdown"), zap.String("state", "normal"))
+			zap.String("action", "Shutdown"), zap.String("state", "normal"))
 	}
 	if slf.gServer == nil {
 		slf.closeChannel <- struct{}{}

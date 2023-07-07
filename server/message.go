@@ -36,7 +36,7 @@ const (
 
 var messageErrorActionNames = map[MessageErrorAction]string{
 	MessageErrorActionNone:     "None",
-	MessageErrorActionShutdown: "shutdown",
+	MessageErrorActionShutdown: "Shutdown",
 }
 
 type (

@@ -73,7 +73,7 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 	if !exist {
 		switch command {
 		case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
-			log.Info("Console", zap.String("Receive", command), zap.String("Action", "shutdown"))
+			log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
 			slf.Server.shutdown(nil)
 			return
 		}
