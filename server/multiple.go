@@ -60,7 +60,7 @@ func (slf *MultipleServer) Run() {
 	case err := <-exceptionChannel:
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
-			server.Shutdown(err)
+			server.shutdown(err)
 			slf.servers = slf.servers[1:]
 		}
 		break
@@ -68,7 +68,7 @@ func (slf *MultipleServer) Run() {
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
 			server.multipleRuntimeErrorChan = nil
-			server.Shutdown(nil)
+			server.shutdown(nil)
 			slf.servers = slf.servers[1:]
 		}
 		break
@@ -76,7 +76,7 @@ func (slf *MultipleServer) Run() {
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
 			server.multipleRuntimeErrorChan = nil
-			server.Shutdown(nil)
+			server.shutdown(nil)
 			slf.servers = slf.servers[1:]
 		}
 		break

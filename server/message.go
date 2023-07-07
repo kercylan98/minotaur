@@ -31,12 +31,12 @@ var messageNames = map[MessageType]string{
 
 const (
 	MessageErrorActionNone     MessageErrorAction = iota // 错误消息类型操作：将不会被进行任何特殊处理，仅进行日志输出
-	MessageErrorActionShutdown                           // 错误消息类型操作：当接收到该类型的操作时，服务器将执行 Server.Shutdown 函数
+	MessageErrorActionShutdown                           // 错误消息类型操作：当接收到该类型的操作时，服务器将执行 Server.shutdown 函数
 )
 
 var messageErrorActionNames = map[MessageErrorAction]string{
 	MessageErrorActionNone:     "None",
-	MessageErrorActionShutdown: "Shutdown",
+	MessageErrorActionShutdown: "shutdown",
 }
 
 type (
@@ -60,7 +60,7 @@ func (slf MessageType) String() string {
 	return messageNames[slf]
 }
 
-// PushPacketMessage 向特定服务器中推送 Packet 消息
+// PushPacketMessage 向特定服务器中推送 MessageTypePacket 消息
 func PushPacketMessage(srv *Server, conn *Conn, packet []byte) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypePacket
@@ -68,7 +68,7 @@ func PushPacketMessage(srv *Server, conn *Conn, packet []byte) {
 	srv.pushMessage(msg)
 }
 
-// PushErrorMessage 向特定服务器中推送 Error 消息
+// PushErrorMessage 向特定服务器中推送 MessageTypeError 消息
 func PushErrorMessage(srv *Server, err error, action MessageErrorAction) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeError
@@ -76,7 +76,7 @@ func PushErrorMessage(srv *Server, err error, action MessageErrorAction) {
 	srv.pushMessage(msg)
 }
 
-// PushCrossMessage 向特定服务器中推送 Cross 消息
+// PushCrossMessage 向特定服务器中推送 MessageTypeCross 消息
 func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte) {
 	if serverId == srv.id {
 		msg := srv.messagePool.Get()
@@ -95,10 +95,18 @@ func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []by
 	}
 }
 
-// PushTickerMessage 向特定服务器中推送 Ticker 消息
+// PushTickerMessage 向特定服务器中推送 MessageTypeTicker 消息
 func PushTickerMessage(srv *Server, caller func()) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeTicker
 	msg.attrs = []any{caller}
+	srv.pushMessage(msg)
+}
+
+// PushAsyncMessage 向特定服务器中推送 MessageTypeAsync 消息
+func PushAsyncMessage(srv *Server, caller func() error, callback ...func(err error)) {
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypeAsync
+	msg.attrs = []any{caller, callback}
 	srv.pushMessage(msg)
 }

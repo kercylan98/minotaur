@@ -101,8 +101,16 @@ func getWriter(filename string, times int) io.Writer {
 	return hook
 }
 
-func Logger() *zap.Logger {
-	return logger
+type MLogger struct {
+	*zap.Logger
+}
+
+func (slf *MLogger) Printf(format string, args ...interface{}) {
+	slf.Info(fmt.Sprintf(format, args...))
+}
+
+func Logger() *MLogger {
+	return &MLogger{logger}
 }
 
 func Info(msg string, fields ...zap.Field) {

@@ -39,8 +39,6 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 //   - 自定帧序列化方式 WithLockstepSerialization
 //   - 从特定帧开始追帧
 //   - 兼容各种基于TCP/UDP/Unix的网络类型，可通过客户端实现其他网络类型同步
-//
-// 可在 examples 目录下找到示例，示例项目：simple-server-lockstep
 type Lockstep[ClientID comparable, Command any] struct {
 	clients            *synchronization.Map[ClientID, component.LockstepClient[ClientID]] // 接受广播的客户端
 	frames             *synchronization.Map[int, []Command]                               // 所有帧指令

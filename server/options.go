@@ -23,6 +23,41 @@ const (
 )
 
 type Option func(srv *Server)
+type option struct {
+	disableAnts  bool // 是否禁用协程池
+	antsPoolSize int  // 协程池大小
+}
+
+type runtime struct {
+	deadlockDetect time.Duration // 是否开启死锁检测
+}
+
+// WithDeadlockDetect 通过死锁、死循环、永久阻塞检测的方式创建服务器
+//   - 当检测到死锁、死循环、永久阻塞时，服务器将会生成 WARN 类型的日志，关键字为 "SuspectedDeadlock"
+func WithDeadlockDetect(t time.Duration) Option {
+	return func(srv *Server) {
+		if t > 0 {
+			srv.deadlockDetect = t
+			log.Info("DeadlockDetect", zap.Any("Time", t))
+		}
+	}
+}
+
+// WithDisableAsyncMessage 通过禁用异步消息的方式创建服务器
+func WithDisableAsyncMessage() Option {
+	return func(srv *Server) {
+		srv.disableAnts = true
+	}
+}
+
+// WithAsyncPoolSize 通过指定异步消息池大小的方式创建服务器
+//   - 当通过 WithDisableAsyncMessage 禁用异步消息时，此选项无效
+//   - 默认值为 256
+func WithAsyncPoolSize(size int) Option {
+	return func(srv *Server) {
+		srv.antsPoolSize = size
+	}
+}
 
 // WithWebsocketReadDeadline 设置 Websocket 读取超时时间
 //   - 默认： 30 * time.Second

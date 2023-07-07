@@ -73,8 +73,8 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 	if !exist {
 		switch command {
 		case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
-			log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
-			slf.Server.Shutdown(nil)
+			log.Info("Console", zap.String("Receive", command), zap.String("Action", "shutdown"))
+			slf.Server.shutdown(nil)
 			return
 		}
 		log.Warn("Server", zap.String("Command", "unregistered"))
