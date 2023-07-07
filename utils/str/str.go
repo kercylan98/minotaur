@@ -1,5 +1,9 @@
 package str
 
+const (
+	None = "" // 空字符串
+)
+
 // FirstUpper 首字母大写
 func FirstUpper(str string) string {
 	var upperStr string

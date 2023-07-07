@@ -23,7 +23,7 @@ func (slf *gNet) OnShutdown(server gnet.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if err := gnet.Stop(ctx, fmt.Sprintf("%s://%s", slf.network, slf.addr)); err != nil {
-		log.Error("Server", zap.String("Minotaur GNet Server", "Shutdown"), zap.Error(err))
+		log.Error("Server", zap.String("Minotaur GNet Server", "shutdown"), zap.Error(err))
 	}
 }
 
@@ -48,7 +48,7 @@ func (slf *gNet) AfterWrite(c gnet.Conn, b []byte) {
 }
 
 func (slf *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	slf.Server.PushMessage(MessageTypePacket, c.Context().(*Conn), bytes.Clone(packet))
+	PushPacketMessage(slf.Server, c.Context().(*Conn), append(bytes.Clone(packet), 0))
 	return nil, gnet.None
 }
 

@@ -23,6 +23,41 @@ const (
 )
 
 type Option func(srv *Server)
+type option struct {
+	disableAnts  bool // 是否禁用协程池
+	antsPoolSize int  // 协程池大小
+}
+
+type runtime struct {
+	deadlockDetect time.Duration // 是否开启死锁检测
+}
+
+// WithDeadlockDetect 通过死锁、死循环、永久阻塞检测的方式创建服务器
+//   - 当检测到死锁、死循环、永久阻塞时，服务器将会生成 WARN 类型的日志，关键字为 "SuspectedDeadlock"
+func WithDeadlockDetect(t time.Duration) Option {
+	return func(srv *Server) {
+		if t > 0 {
+			srv.deadlockDetect = t
+			log.Info("DeadlockDetect", zap.Any("Time", t))
+		}
+	}
+}
+
+// WithDisableAsyncMessage 通过禁用异步消息的方式创建服务器
+func WithDisableAsyncMessage() Option {
+	return func(srv *Server) {
+		srv.disableAnts = true
+	}
+}
+
+// WithAsyncPoolSize 通过指定异步消息池大小的方式创建服务器
+//   - 当通过 WithDisableAsyncMessage 禁用异步消息时，此选项无效
+//   - 默认值为 256
+func WithAsyncPoolSize(size int) Option {
+	return func(srv *Server) {
+		srv.antsPoolSize = size
+	}
+}
 
 // WithWebsocketReadDeadline 设置 Websocket 读取超时时间
 //   - 默认： 30 * time.Second
@@ -36,16 +71,6 @@ func WithWebsocketReadDeadline(t time.Duration) Option {
 	}
 }
 
-// WithDiversion 通过分流的方式创建服务器
-//   - diversion：分流函数，返回一个函数通道，用于接收分流的消息
-//   - 需要确保能够通过 conn 和 packet 确定分流通道
-//   - 多核模式下将导致消息顺序不一致，通过结果依然是单核处理的，因为分流通道仅有一个
-func WithDiversion(diversion func(conn ConnReadonly, packet []byte) chan func()) Option {
-	return func(srv *Server) {
-		srv.diversion = diversion
-	}
-}
-
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
 //   - 多核与分流情况下需要考虑是否有必要 autonomy
@@ -55,7 +80,7 @@ func WithTicker(size int, autonomy bool) Option {
 			srv.ticker = timer.GetTicker(size)
 		} else {
 			srv.ticker = timer.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
-				srv.PushMessage(MessageTypeTicker, caller)
+				PushTickerMessage(srv, caller)
 			}))
 		}
 	}
@@ -74,7 +99,10 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 			}
 			srv.cross[crossName] = cross
 			err := cross.Init(srv, func(serverId int64, packet []byte) {
-				srv.PushMessage(MessageTypeCross, serverId, packet)
+				msg := srv.messagePool.Get()
+				msg.t = MessageTypeCross
+				msg.attrs = []any{serverId, packet}
+				srv.pushMessage(msg)
 			})
 			if err != nil {
 				log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()), zap.String("State", "WaitNatsRun"))
@@ -115,24 +143,10 @@ func WithProd() Option {
 	}
 }
 
-// WithWebsocketWriteMessageType 设置客户端写入的Websocket消息类型
-//   - 默认： WebsocketMessageTypeBinary
-func WithWebsocketWriteMessageType(messageType int) Option {
-	return func(srv *Server) {
-		switch messageType {
-		case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
-			srv.websocketWriteMessageType = messageType
-		default:
-			log.Warn("WithWebsocketWriteMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
-		}
-	}
-}
-
 // WithWebsocketMessageType 设置仅支持特定类型的Websocket消息
 func WithWebsocketMessageType(messageTypes ...int) Option {
 	return func(srv *Server) {
 		if srv.network != NetworkWebsocket {
-			log.Warn("WitchWebsocketMessageType", zap.String("Network", string(srv.network)), zap.Error(ErrNotWebsocketUseMessageType))
 			return
 		}
 		var supports = make(map[int]bool)
@@ -140,8 +154,6 @@ func WithWebsocketMessageType(messageTypes ...int) Option {
 			switch messageType {
 			case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
 				supports[messageType] = true
-			default:
-				log.Warn("WitchWebsocketMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
 			}
 		}
 		srv.supportMessageTypes = supports
@@ -157,19 +169,5 @@ func WithMessageBufferSize(size int) Option {
 			return
 		}
 		srv.messagePoolSize = size
-	}
-}
-
-// WithMultiCore 通过特定核心数量运行服务器，默认为单核
-//   - count > 1 的情况下，将会有对应数量的 goroutine 来处理消息
-//   - 注意：HTTP和GRPC网络模式下不会生效
-//   - 在需要分流的场景推荐采用多核模式，如游戏以房间的形式进行，每个房间互不干扰，这种情况下便可以每个房间单独维护数据包消息进行处理
-func WithMultiCore(count int) Option {
-	return func(srv *Server) {
-		srv.core = count
-		if srv.core < 1 {
-			log.Warn("WithMultiCore", zap.Int("count", count), zap.String("tips", "wrong core count configuration, corrected to 1, currently in single-core mode"))
-			srv.core = 1
-		}
 	}
 }
