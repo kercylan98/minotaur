@@ -157,7 +157,10 @@ func (slf *Config) initField(sheet *xlsx.Sheet) error {
 		}
 
 		var field = NewField(slf.Name, fieldName, fieldType)
-		field.Describe = describe
+		field.Describe = strings.ReplaceAll(describe, "\n", ", ")
+		if strings.HasSuffix(field.Describe, ", ") {
+			field.Describe = field.Describe[:len(field.Describe)-2]
+		}
 		field.ExportParam = exportParam
 		switch field.ExportParam {
 		case "s", "sc", "cs":
