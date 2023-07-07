@@ -1,6 +1,8 @@
 package server
 
-import "runtime/debug"
+import (
+	"runtime/debug"
+)
 
 const (
 	// MessageTypePacket 数据包消息类型：该类型的数据将被发送到 ConnectionReceivePacketEvent 进行处理
@@ -24,6 +26,7 @@ var messageNames = map[MessageType]string{
 	MessageTypeError:  "MessageTypeError",
 	MessageTypeCross:  "MessageTypeCross",
 	MessageTypeTicker: "MessageTypeTicker",
+	MessageTypeAsync:  "MessageTypeAsync",
 }
 
 const (
@@ -57,85 +60,6 @@ func (slf MessageType) String() string {
 	return messageNames[slf]
 }
 
-func (slf MessageType) deconstructWebSocketPacket(attrs ...any) (conn *Conn, packet []byte, messageType int) {
-	if len(attrs) != 3 {
-		panic(ErrWebsocketMessageTypePacketAttrs)
-	}
-	var ok bool
-	if conn, ok = attrs[0].(*Conn); !ok {
-		panic(ErrWebsocketMessageTypePacketAttrs)
-	}
-	if packet, ok = attrs[1].([]byte); !ok {
-		panic(ErrWebsocketMessageTypePacketAttrs)
-	}
-	if messageType, ok = attrs[2].(int); !ok {
-		panic(ErrWebsocketMessageTypePacketAttrs)
-	}
-	return
-}
-
-func (slf MessageType) deconstructPacket(attrs ...any) (conn *Conn, packet []byte) {
-	if len(attrs) != 2 {
-		panic(ErrMessageTypePacketAttrs)
-	}
-	var ok bool
-	if conn, ok = attrs[0].(*Conn); !ok {
-		panic(ErrMessageTypePacketAttrs)
-	}
-	if packet, ok = attrs[1].([]byte); !ok {
-		panic(ErrMessageTypePacketAttrs)
-	}
-	return
-}
-
-func (slf MessageType) deconstructError(attrs ...any) (err error, action MessageErrorAction, stack string) {
-	if len(attrs) != 3 {
-		panic(ErrMessageTypeErrorAttrs)
-	}
-	var ok bool
-	if err, ok = attrs[0].(error); !ok {
-		panic(ErrMessageTypeErrorAttrs)
-	}
-	if action, ok = attrs[1].(MessageErrorAction); !ok {
-		panic(ErrMessageTypeErrorAttrs)
-	}
-	stack = attrs[2].(string)
-	return
-}
-
-func (slf MessageType) deconstructCross(attrs ...any) (serverId int64, packet []byte) {
-	if len(attrs) != 2 {
-		panic(ErrMessageTypeCrossErrorAttrs)
-	}
-	var ok bool
-	if serverId, ok = attrs[0].(int64); !ok {
-		panic(ErrMessageTypeCrossErrorAttrs)
-	}
-	if packet, ok = attrs[1].([]byte); !ok {
-		panic(ErrMessageTypeCrossErrorAttrs)
-	}
-	return
-}
-
-func (slf MessageType) deconstructTicker(attrs ...any) (caller func()) {
-	if len(attrs) != 1 {
-		panic(ErrMessageTypeTickerErrorAttrs)
-	}
-	var ok bool
-	if caller, ok = attrs[0].(func()); !ok {
-		panic(ErrMessageTypeTickerErrorAttrs)
-	}
-	return
-}
-
-// PushWebsocketPacketMessage 向特定服务器中推送 WebsocketPacket 消息
-func PushWebsocketPacketMessage(srv *Server, conn *Conn, packet []byte, messageType int) {
-	msg := srv.messagePool.Get()
-	msg.t = MessageTypePacket
-	msg.attrs = []any{conn, packet, messageType}
-	srv.pushMessage(msg)
-}
-
 // PushPacketMessage 向特定服务器中推送 Packet 消息
 func PushPacketMessage(srv *Server, conn *Conn, packet []byte) {
 	msg := srv.messagePool.Get()
@@ -154,15 +78,27 @@ func PushErrorMessage(srv *Server, err error, action MessageErrorAction) {
 
 // PushCrossMessage 向特定服务器中推送 Cross 消息
 func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte) {
-	if len(srv.cross) == 0 {
-		return
+	if serverId == srv.id {
+		msg := srv.messagePool.Get()
+		msg.t = MessageTypeCross
+		msg.attrs = []any{serverId, packet}
+		srv.pushMessage(msg)
+	} else {
+		if len(srv.cross) == 0 {
+			return
+		}
+		cross, exist := srv.cross[crossName]
+		if !exist {
+			return
+		}
+		_ = cross.PushMessage(serverId, packet)
 	}
-	_, exist := srv.cross[crossName]
-	if !exist {
-		return
-	}
+}
+
+// PushTickerMessage 向特定服务器中推送 Ticker 消息
+func PushTickerMessage(srv *Server, caller func()) {
 	msg := srv.messagePool.Get()
-	msg.t = MessageTypeCross
-	msg.attrs = []any{serverId, packet}
+	msg.t = MessageTypeTicker
+	msg.attrs = []any{caller}
 	srv.pushMessage(msg)
 }

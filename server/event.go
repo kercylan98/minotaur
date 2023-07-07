@@ -13,8 +13,7 @@ import (
 type StartBeforeEventHandle func(srv *Server)
 type StartFinishEventHandle func(srv *Server)
 type StopEventHandle func(srv *Server)
-type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
-type ConnectionReceiveWebsocketPacketEventHandle func(srv *Server, conn *Conn, packet []byte, messageType int)
+type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet Packet)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
 type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
@@ -24,16 +23,15 @@ type ConsoleCommandEventHandle func(srv *Server)
 
 type event struct {
 	*Server
-	startBeforeEventHandles                      []StartBeforeEventHandle
-	startFinishEventHandles                      []StartFinishEventHandle
-	stopEventHandles                             []StopEventHandle
-	connectionReceivePacketEventHandles          []ConnectionReceivePacketEventHandle
-	connectionReceiveWebsocketPacketEventHandles []ConnectionReceiveWebsocketPacketEventHandle
-	connectionOpenedEventHandles                 []ConnectionOpenedEventHandle
-	connectionClosedEventHandles                 []ConnectionClosedEventHandle
-	receiveCrossPacketEventHandles               []ReceiveCrossPacketEventHandle
-	messageErrorEventHandles                     []MessageErrorEventHandle
-	messageLowExecEventHandles                   []MessageLowExecEventHandle
+	startBeforeEventHandles             []StartBeforeEventHandle
+	startFinishEventHandles             []StartFinishEventHandle
+	stopEventHandles                    []StopEventHandle
+	connectionReceivePacketEventHandles []ConnectionReceivePacketEventHandle
+	connectionOpenedEventHandles        []ConnectionOpenedEventHandle
+	connectionClosedEventHandles        []ConnectionClosedEventHandle
+	receiveCrossPacketEventHandles      []ReceiveCrossPacketEventHandle
+	messageErrorEventHandles            []MessageErrorEventHandle
+	messageLowExecEventHandles          []MessageLowExecEventHandle
 
 	consoleCommandEventHandles map[string][]ConsoleCommandEventHandle
 
@@ -147,31 +145,13 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	if slf.network == NetworkWebsocket {
-		panic(ErrPleaseUseWebsocketHandle)
-	}
 	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
 	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
+func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet Packet) {
 	for _, handle := range slf.connectionReceivePacketEventHandles {
 		handle(slf.Server, conn, packet)
-	}
-}
-
-// RegConnectionReceiveWebsocketPacketEvent 在接收到Websocket数据包时将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionReceiveWebsocketPacketEvent(handle ConnectionReceiveWebsocketPacketEventHandle) {
-	if slf.network != NetworkWebsocket {
-		panic(ErrPleaseUseOrdinaryPacketHandle)
-	}
-	slf.connectionReceiveWebsocketPacketEventHandles = append(slf.connectionReceiveWebsocketPacketEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
-}
-
-func (slf *event) OnConnectionReceiveWebsocketPacketEvent(conn *Conn, packet []byte, messageType int) {
-	for _, handle := range slf.connectionReceiveWebsocketPacketEventHandles {
-		handle(slf.Server, conn, packet, messageType)
 	}
 }
 
@@ -215,15 +195,8 @@ func (slf *event) check() {
 	switch slf.network {
 	case NetworkHttp, NetworkGRPC:
 	default:
-		switch slf.network {
-		case NetworkWebsocket:
-			if len(slf.connectionReceiveWebsocketPacketEventHandles) == 0 {
-				log.Warn("Server", zap.String("ConnectionReceiveWebsocketPacketEvent", "invalid server, no packets processed"))
-			}
-		default:
-			if len(slf.connectionReceivePacketEventHandles) == 0 {
-				log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
-			}
+		if len(slf.connectionReceivePacketEventHandles) == 0 {
+			log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
 		}
 	}
 

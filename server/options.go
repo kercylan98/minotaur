@@ -45,7 +45,7 @@ func WithTicker(size int, autonomy bool) Option {
 			srv.ticker = timer.GetTicker(size)
 		} else {
 			srv.ticker = timer.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
-				srv.pushMessage(MessageTypeTicker, caller)
+				PushTickerMessage(srv, caller)
 			}))
 		}
 	}
@@ -64,7 +64,10 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 			}
 			srv.cross[crossName] = cross
 			err := cross.Init(srv, func(serverId int64, packet []byte) {
-				srv.pushMessage(MessageTypeCross, serverId, packet)
+				msg := srv.messagePool.Get()
+				msg.t = MessageTypeCross
+				msg.attrs = []any{serverId, packet}
+				srv.pushMessage(msg)
 			})
 			if err != nil {
 				log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()), zap.String("State", "WaitNatsRun"))
@@ -105,24 +108,10 @@ func WithProd() Option {
 	}
 }
 
-// WithWebsocketWriteMessageType 设置客户端写入的Websocket消息类型
-//   - 默认： WebsocketMessageTypeBinary
-func WithWebsocketWriteMessageType(messageType int) Option {
-	return func(srv *Server) {
-		switch messageType {
-		case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
-			srv.websocketWriteMessageType = messageType
-		default:
-			log.Warn("WithWebsocketWriteMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
-		}
-	}
-}
-
 // WithWebsocketMessageType 设置仅支持特定类型的Websocket消息
 func WithWebsocketMessageType(messageTypes ...int) Option {
 	return func(srv *Server) {
 		if srv.network != NetworkWebsocket {
-			log.Warn("WitchWebsocketMessageType", zap.String("Network", string(srv.network)), zap.Error(ErrNotWebsocketUseMessageType))
 			return
 		}
 		var supports = make(map[int]bool)
@@ -130,8 +119,6 @@ func WithWebsocketMessageType(messageTypes ...int) Option {
 			switch messageType {
 			case WebsocketMessageTypeText, WebsocketMessageTypeBinary, WebsocketMessageTypeClose, WebsocketMessageTypePing, WebsocketMessageTypePong:
 				supports[messageType] = true
-			default:
-				log.Warn("WitchWebsocketMessageType", zap.Int("MessageType", messageType), zap.Error(ErrWebsocketMessageTypeException))
 			}
 		}
 		srv.supportMessageTypes = supports

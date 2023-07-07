@@ -28,11 +28,10 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		event:                     &event{},
-		network:                   network,
-		options:                   options,
-		closeChannel:              make(chan struct{}, 1),
-		websocketWriteMessageType: WebsocketMessageTypeBinary,
+		event:        &event{},
+		network:      network,
+		options:      options,
+		closeChannel: make(chan struct{}, 1),
 	}
 	server.event.Server = server
 
@@ -71,14 +70,13 @@ type Server struct {
 	isShutdown          atomic.Bool      // 是否已关闭
 	closeChannel        chan struct{}    // 关闭信号
 
-	gServer                   *gNet                           // TCP或UDP模式下的服务器
-	messagePool               *synchronization.Pool[*Message] // 消息池
-	messagePoolSize           int                             // 消息池大小
-	messageChannel            chan *Message                   // 消息管道
-	multiple                  *MultipleServer                 // 多服务器模式下的服务器
-	prod                      bool                            // 是否为生产模式
-	websocketWriteMessageType int                             // websocket写入的消息类型
-	ticker                    *timer.Ticker                   // 定时器
+	gServer         *gNet                           // TCP或UDP模式下的服务器
+	messagePool     *synchronization.Pool[*Message] // 消息池
+	messagePoolSize int                             // 消息池大小
+	messageChannel  chan *Message                   // 消息管道
+	multiple        *MultipleServer                 // 多服务器模式下的服务器
+	prod            bool                            // 是否为生产模式
+	ticker          *timer.Ticker                   // 定时器
 
 	multipleRuntimeErrorChan chan error // 多服务器模式下的运行时错误
 
@@ -274,7 +272,7 @@ func (slf *Server) Run(addr string) error {
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
 					}
-					PushWebsocketPacketMessage(slf, conn, packet, messageType)
+					PushPacketMessage(slf, conn, append(packet, byte(messageType)))
 				}
 			})
 			go func() {
@@ -455,17 +453,14 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			slf.messagePool.Release(msg)
 		}
 	}()
+	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:
-		if slf.network == NetworkWebsocket {
-			conn, packet, messageType := msg.t.deconstructWebSocketPacket(msg.attrs...)
-			slf.OnConnectionReceiveWebsocketPacketEvent(conn, packet, messageType)
-		} else {
-			conn, packet := msg.t.deconstructPacket(msg.attrs...)
-			slf.OnConnectionReceivePacketEvent(conn, packet)
-		}
+		var packet = attrs[1].([]byte)
+		var wst = int(packet[len(packet)-1])
+		slf.OnConnectionReceivePacketEvent(attrs[0].(*Conn), Packet{Data: packet[:len(packet)-1], WebsocketType: wst})
 	case MessageTypeError:
-		err, action, stack := msg.t.deconstructError(msg.attrs...)
+		err, action, stack := attrs[0].(error), attrs[1].(MessageErrorAction), attrs[2].(string)
 		switch action {
 		case MessageErrorActionNone:
 			log.ErrorWithStack("Server", stack, zap.Error(err))
@@ -475,11 +470,11 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}
 	case MessageTypeCross:
-		serverId, packet := msg.t.deconstructCross(msg.attrs...)
-		slf.OnReceiveCrossPacketEvent(serverId, packet)
+		slf.OnReceiveCrossPacketEvent(attrs[0].(int64), attrs[1].([]byte))
 	case MessageTypeTicker:
-		caller := msg.t.deconstructTicker(msg.attrs...)
-		caller()
+		attrs[0].(func())()
+	case MessageTypeAsync:
+
 	default:
 		log.Warn("Server", zap.String("not support message type", msg.t.String()))
 	}

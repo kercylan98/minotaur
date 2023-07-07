@@ -156,29 +156,15 @@ func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
 }
 
-// WriteString 向连接中写入字符串
-//   - 通过转换为[]byte调用 *Conn.Write
-func (slf *Conn) WriteString(data string, messageType ...int) {
-	slf.Write([]byte(data), messageType...)
-}
-
-// WriteStringWithCallback 与 WriteString 相同，但是会在写入完成后调用 callback
-//   - 当 callback 为 nil 时，与 WriteString 相同
-func (slf *Conn) WriteStringWithCallback(data string, callback func(err error), messageType ...int) {
-	slf.WriteWithCallback([]byte(data), callback, messageType...)
-}
-
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
-func (slf *Conn) Write(data []byte, messageType ...int) {
+func (slf *Conn) Write(packet Packet) {
 	if slf.packetPool == nil {
 		return
 	}
 	cp := slf.packetPool.Get()
-	if len(messageType) > 0 {
-		cp.websocketMessageType = messageType[0]
-	}
-	cp.packet = data
+	cp.websocketMessageType = packet.WebsocketType
+	cp.packet = packet.Data
 	slf.mutex.Lock()
 	slf.packets = append(slf.packets, cp)
 	slf.mutex.Unlock()
@@ -186,15 +172,13 @@ func (slf *Conn) Write(data []byte, messageType ...int) {
 
 // WriteWithCallback 与 Write 相同，但是会在写入完成后调用 callback
 //   - 当 callback 为 nil 时，与 Write 相同
-func (slf *Conn) WriteWithCallback(data []byte, callback func(err error), messageType ...int) {
+func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error), messageType ...int) {
 	if slf.packetPool == nil {
 		return
 	}
 	cp := slf.packetPool.Get()
-	if len(messageType) > 0 {
-		cp.websocketMessageType = messageType[0]
-	}
-	cp.packet = data
+	cp.websocketMessageType = packet.WebsocketType
+	cp.packet = packet.Data
 	cp.callback = callback
 	slf.mutex.Lock()
 	slf.packets = append(slf.packets, cp)
@@ -233,18 +217,8 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 		slf.mutex.Unlock()
 		for i := 0; i < len(packets); i++ {
 			data := packets[i]
-			//if len(data.packet) == 0 {
-			//	for _, packet := range packets {
-			//		slf.packetPool.Release(packet)
-			//	}
-			//	slf.Close()
-			//	return
-			//}
 			var err error
 			if slf.IsWebsocket() {
-				if data.websocketMessageType <= 0 {
-					data.websocketMessageType = slf.server.websocketWriteMessageType
-				}
 				err = slf.ws.WriteMessage(data.websocketMessageType, data.packet)
 			} else {
 				if slf.gn != nil {
