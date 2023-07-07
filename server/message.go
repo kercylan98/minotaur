@@ -1,6 +1,10 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/str"
+	"reflect"
 	"runtime/debug"
 )
 
@@ -56,32 +60,48 @@ type Message struct {
 	attrs []any
 }
 
+func (slf *Message) String() string {
+	var attrs = make([]any, 0, len(slf.attrs))
+	for _, attr := range slf.attrs {
+		if reflect.TypeOf(attr).Kind() == reflect.Func {
+			continue
+		}
+		attrs = append(attrs, attr)
+	}
+	raw, _ := json.Marshal(attrs)
+	s := string(raw)
+	if s == str.None {
+		s = "NoneAttr"
+	}
+	return fmt.Sprintf("[%s] %s", slf.t, s)
+}
+
 func (slf MessageType) String() string {
 	return messageNames[slf]
 }
 
 // PushPacketMessage 向特定服务器中推送 MessageTypePacket 消息
-func PushPacketMessage(srv *Server, conn *Conn, packet []byte) {
+func PushPacketMessage(srv *Server, conn *Conn, packet []byte, mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypePacket
-	msg.attrs = []any{conn, packet}
+	msg.attrs = append([]any{conn, packet}, mark...)
 	srv.pushMessage(msg)
 }
 
 // PushErrorMessage 向特定服务器中推送 MessageTypeError 消息
-func PushErrorMessage(srv *Server, err error, action MessageErrorAction) {
+func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeError
-	msg.attrs = []any{err, action, string(debug.Stack())}
+	msg.attrs = append([]any{err, action, string(debug.Stack())}, mark...)
 	srv.pushMessage(msg)
 }
 
 // PushCrossMessage 向特定服务器中推送 MessageTypeCross 消息
-func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte) {
+func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte, mark ...any) {
 	if serverId == srv.id {
 		msg := srv.messagePool.Get()
 		msg.t = MessageTypeCross
-		msg.attrs = []any{serverId, packet}
+		msg.attrs = append([]any{serverId, packet}, mark...)
 		srv.pushMessage(msg)
 	} else {
 		if len(srv.cross) == 0 {
@@ -96,17 +116,17 @@ func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []by
 }
 
 // PushTickerMessage 向特定服务器中推送 MessageTypeTicker 消息
-func PushTickerMessage(srv *Server, caller func()) {
+func PushTickerMessage(srv *Server, caller func(), mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeTicker
-	msg.attrs = []any{caller}
+	msg.attrs = append([]any{caller}, mark...)
 	srv.pushMessage(msg)
 }
 
 // PushAsyncMessage 向特定服务器中推送 MessageTypeAsync 消息
-func PushAsyncMessage(srv *Server, caller func() error, callback ...func(err error)) {
+func PushAsyncMessage(srv *Server, caller func() error, callback func(err error), mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeAsync
-	msg.attrs = []any{caller, callback}
+	msg.attrs = append([]any{caller, callback, string(debug.Stack())}, mark...)
 	srv.pushMessage(msg)
 }

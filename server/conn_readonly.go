@@ -7,7 +7,7 @@ import (
 type ConnReadonly interface {
 	RemoteAddr() net.Addr
 	GetID() string
-	GetIP() string // GetData 获取连接数据
+	GetIP() string
 	GetData(key any) any
 	IsWebsocket() bool
 }

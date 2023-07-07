@@ -79,7 +79,7 @@ func WithTicker(size int, autonomy bool) Option {
 			srv.ticker = timer.GetTicker(size)
 		} else {
 			srv.ticker = timer.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
-				PushTickerMessage(srv, caller)
+				PushTickerMessage(srv, caller, name)
 			}))
 		}
 	}
