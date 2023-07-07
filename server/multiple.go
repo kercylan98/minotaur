@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
@@ -33,8 +34,17 @@ func (slf *MultipleServer) Run() {
 		close(runtimeExceptionChannel)
 	}()
 	var running = make([]*Server, 0, len(slf.servers))
+	var wait sync.WaitGroup
 	for i := 0; i < len(slf.servers); i++ {
+		wait.Add(1)
 		go func(address string, server *Server) {
+			var startFinish bool
+			server.RegStartFinishEvent(func(srv *Server) {
+				if !startFinish {
+					startFinish = true
+					wait.Done()
+				}
+			})
 			server.multiple = slf
 			server.multipleRuntimeErrorChan = runtimeExceptionChannel
 			if err := server.Run(address); err != nil {
@@ -42,8 +52,13 @@ func (slf *MultipleServer) Run() {
 			} else {
 				running = append(running, server)
 			}
+			if !startFinish {
+				startFinish = true
+				wait.Done()
+			}
 		}(slf.addresses[i], slf.servers[i])
 	}
+	wait.Wait()
 
 	log.Info("Server", zap.String("Minotaur Multiple Server", "===================================================================="))
 	for _, server := range slf.servers {
