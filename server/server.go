@@ -384,6 +384,10 @@ func (slf *Server) shutdown(err error, stack ...string) {
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
+	if slf.ants != nil {
+		slf.ants.Release()
+		slf.ants = nil
+	}
 	for _, cross := range slf.cross {
 		cross.Release()
 	}
