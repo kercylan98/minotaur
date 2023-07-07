@@ -73,7 +73,6 @@ func WithWebsocketReadDeadline(t time.Duration) Option {
 
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
-//   - 多核与分流情况下需要考虑是否有必要 autonomy
 func WithTicker(size int, autonomy bool) Option {
 	return func(srv *Server) {
 		if !autonomy {
