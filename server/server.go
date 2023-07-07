@@ -463,7 +463,7 @@ func (slf *Server) pushMessage(message *Message) {
 func (slf *Server) low(message *Message, present time.Time) {
 	cost := time.Since(present)
 	if cost > time.Millisecond*100 {
-		log.Warn("Server", zap.String("MessageType", messageNames[message.t]), zap.String("LowExecCost", cost.String()))
+		log.Warn("Server", zap.String("LowExecCost", cost.String()), zap.Any("Message", message))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -526,7 +526,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		attrs[0].(func())()
 	case MessageTypeAsync:
 		handle := attrs[0].(func() error)
-		callbacks := attrs[1].([]func(err error))
+		callback, cb := attrs[1].(func(err error))
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
@@ -536,12 +536,13 @@ func (slf *Server) dispatchMessage(msg *Message) {
 					}
 				}
 				super.Handle(cancel)
+				slf.low(msg, present)
 				if !slf.isShutdown.Load() {
 					slf.messagePool.Release(msg)
 				}
 			}()
 			if err := handle(); err != nil {
-				for _, callback := range callbacks {
+				if cb {
 					callback(err)
 				}
 			}
