@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -144,7 +143,7 @@ func (slf *Server) Run(addr string) error {
 			slf.OnStartBeforeEvent()
 			if err := slf.grpcServer.Serve(listener); err != nil {
 				slf.isRunning = false
-				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				PushErrorMessage(slf, err, MessageErrorActionShutdown)
 			}
 		}()
 	case NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
@@ -158,7 +157,7 @@ func (slf *Server) Run(addr string) error {
 				gnet.WithMulticore(true),
 			); err != nil {
 				slf.isRunning = false
-				slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+				PushErrorMessage(slf, err, MessageErrorActionShutdown)
 			}
 		})
 	case NetworkKcp:
@@ -191,7 +190,7 @@ func (slf *Server) Run(addr string) error {
 						if err != nil {
 							panic(err)
 						}
-						slf.PushMessage(MessageTypePacket, conn, buf[:n])
+						PushPacketMessage(slf, conn, buf[:n])
 					}
 				}(conn)
 			}
@@ -209,12 +208,12 @@ func (slf *Server) Run(addr string) error {
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
 					slf.isRunning = false
-					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+					PushErrorMessage(slf, err, MessageErrorActionShutdown)
 				}
 			} else {
 				if err := slf.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					slf.isRunning = false
-					slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+					PushErrorMessage(slf, err, MessageErrorActionShutdown)
 				}
 			}
 
@@ -275,7 +274,7 @@ func (slf *Server) Run(addr string) error {
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
 					}
-					slf.PushMessage(MessageTypePacket, conn, packet, messageType)
+					PushWebsocketPacketMessage(slf, conn, packet, messageType)
 				}
 			})
 			go func() {
@@ -284,12 +283,12 @@ func (slf *Server) Run(addr string) error {
 				if len(slf.certFile)+len(slf.keyFile) > 0 {
 					if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
 						slf.isRunning = false
-						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+						PushErrorMessage(slf, err, MessageErrorActionShutdown)
 					}
 				} else {
 					if err := http.ListenAndServe(slf.addr, nil); err != nil {
 						slf.isRunning = false
-						slf.PushMessage(MessageTypeError, err, MessageErrorActionShutdown)
+						PushErrorMessage(slf, err, MessageErrorActionShutdown)
 					}
 				}
 
@@ -426,30 +425,13 @@ func (slf *Server) HttpRouter() gin.IRouter {
 	return slf.ginServer
 }
 
-// PushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
-func (slf *Server) PushMessage(messageType MessageType, attrs ...any) {
+// pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
+func (slf *Server) pushMessage(message *Message) {
 	if slf.messagePool.IsClose() {
+		slf.messagePool.Release(message)
 		return
 	}
-	msg := slf.messagePool.Get()
-	msg.t = messageType
-	msg.attrs = attrs
-	if msg.t == MessageTypeError {
-		msg.attrs = append(msg.attrs, string(debug.Stack()))
-	}
-	slf.messageChannel <- msg
-}
-
-// PushCrossMessage 推送跨服消息到特定跨服的服务器中
-func (slf *Server) PushCrossMessage(crossName string, serverId int64, packet []byte) error {
-	if len(slf.cross) == 0 {
-		return ErrNoSupportCross
-	}
-	cross, exist := slf.cross[crossName]
-	if !exist {
-		return ErrUnregisteredCrossName
-	}
-	return cross.PushMessage(serverId, packet)
+	slf.messageChannel <- message
 }
 
 // dispatchMessage 消息分发

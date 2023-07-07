@@ -45,7 +45,7 @@ func WithTicker(size int, autonomy bool) Option {
 			srv.ticker = timer.GetTicker(size)
 		} else {
 			srv.ticker = timer.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
-				srv.PushMessage(MessageTypeTicker, caller)
+				srv.pushMessage(MessageTypeTicker, caller)
 			}))
 		}
 	}
@@ -64,7 +64,7 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 			}
 			srv.cross[crossName] = cross
 			err := cross.Init(srv, func(serverId int64, packet []byte) {
-				srv.PushMessage(MessageTypeCross, serverId, packet)
+				srv.pushMessage(MessageTypeCross, serverId, packet)
 			})
 			if err != nil {
 				log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()), zap.String("State", "WaitNatsRun"))

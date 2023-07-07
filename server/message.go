@@ -1,24 +1,22 @@
 package server
 
+import "runtime/debug"
+
 const (
 	// MessageTypePacket 数据包消息类型：该类型的数据将被发送到 ConnectionReceivePacketEvent 进行处理
-	//  - *server.Conn
-	//  - []byte
 	MessageTypePacket MessageType = iota
 
 	// MessageTypeError 错误消息类型：根据不同的错误状态，将交由 Server 进行统一处理
-	//  - error
-	//  - server.MessageErrorAction
 	MessageTypeError
 
 	// MessageTypeCross 跨服消息类型：将被推送到跨服的 Cross 实现中进行处理
-	//  - int64(serverId)
-	//  - []byte
 	MessageTypeCross
 
 	// MessageTypeTicker 定时器消息类型
-	//  - func()
 	MessageTypeTicker
+
+	// MessageTypeAsync 异步消息类型
+	MessageTypeAsync
 )
 
 var messageNames = map[MessageType]string{
@@ -128,4 +126,43 @@ func (slf MessageType) deconstructTicker(attrs ...any) (caller func()) {
 		panic(ErrMessageTypeTickerErrorAttrs)
 	}
 	return
+}
+
+// PushWebsocketPacketMessage 向特定服务器中推送 WebsocketPacket 消息
+func PushWebsocketPacketMessage(srv *Server, conn *Conn, packet []byte, messageType int) {
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypePacket
+	msg.attrs = []any{conn, packet, messageType}
+	srv.pushMessage(msg)
+}
+
+// PushPacketMessage 向特定服务器中推送 Packet 消息
+func PushPacketMessage(srv *Server, conn *Conn, packet []byte) {
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypePacket
+	msg.attrs = []any{conn, packet}
+	srv.pushMessage(msg)
+}
+
+// PushErrorMessage 向特定服务器中推送 Error 消息
+func PushErrorMessage(srv *Server, err error, action MessageErrorAction) {
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypeError
+	msg.attrs = []any{err, action, string(debug.Stack())}
+	srv.pushMessage(msg)
+}
+
+// PushCrossMessage 向特定服务器中推送 Cross 消息
+func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte) {
+	if len(srv.cross) == 0 {
+		return
+	}
+	_, exist := srv.cross[crossName]
+	if !exist {
+		return
+	}
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypeCross
+	msg.attrs = []any{serverId, packet}
+	srv.pushMessage(msg)
 }
