@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.0.10](https://github.com/kercylan98/minotaur/compare/v0.0.9...v0.0.10) (2023-07-07)
+
+
+### Tests | 新增或优化测试用例
+
+* 移除 examples 包 ([f0e3822](https://github.com/kercylan98/minotaur/commit/f0e3822ecfcf514ee928c328ae249c51dcf62352))
+
+
+### Code Refactoring | 重构
+
+* 优化 server 消息类型，合并 Websocket 数据包监听到统一的 RegConnectionReceivePacketEvent 中 ([8b90307](https://github.com/kercylan98/minotaur/commit/8b903072b12941fd7b39b7e61741909ef31d9b26))
+* 服务器支持异步消息类型、死锁阻塞、异步慢消息检测 ([1a2c1df](https://github.com/kercylan98/minotaur/commit/1a2c1df289e927e976cc9db90da557723328a9c5))
+* 私有化服务器 PushMessage 函数，移除 PushCrossMessage 函数，改为使用 server.PushXXXMessage 函数 ([6d27433](https://github.com/kercylan98/minotaur/commit/6d27433c4bf933beee48644c1bc8d4d94f783675))
+* 移除服务器多核和分流模式的可选项 ([7e67775](https://github.com/kercylan98/minotaur/commit/7e677751577389d675858a48ac5ece3a9fe401ba))
+
+## [0.0.9](https://github.com/kercylan98/minotaur/compare/v0.0.8...v0.0.9) (2023-07-06)
+
+
+### Bug Fixes | 修复
+
+* 修复导出配置 JSON 特殊字符被转义的问题 ([193763e](https://github.com/kercylan98/minotaur/commit/193763e471d3e63a45e1eee4e2375cf738a9d1aa))
+* 修复请求成功 server.Conn 的 callback 不调用的问题 ([8e3325f](https://github.com/kercylan98/minotaur/commit/8e3325fcd8fcaaaaf105d23249ffc5f3fa492108))
+* 修复释放定时器后可能造成空指针的问题 ([9f27102](https://github.com/kercylan98/minotaur/commit/9f27102d3ae84cd9034dc8842903264112c63a50))
+
+
+### Other | 其他更改
+
+* 移除 server.Server.OnConnectionClosedEvent 和 server.Server.OnConnectionOpenedEvent 的日志 ([7065448](https://github.com/kercylan98/minotaur/commit/7065448ddfe9ffc8b09e2133df3c56726bbbdbde))
+
+
+### Features | 新特性
+
+* 支持通过 hash 包随机的读取 map 数据 ([9a35486](https://github.com/kercylan98/minotaur/commit/9a3548652a13df1bd7e6db3c9a6ebab136fb0c93))
+* 支持通过 server.Server.RegStopEvent() 函数注册服务器关闭事件 ([18b9598](https://github.com/kercylan98/minotaur/commit/18b9598f5a807b1b21b380edcdf65b6cb0b88a57))
+
 ## [0.0.8](https://github.com/kercylan98/minotaur/compare/v0.0.7...v0.0.8) (2023-07-05)
 
 
