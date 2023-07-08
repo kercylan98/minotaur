@@ -29,12 +29,13 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		event:        &event{},
-		runtime:      &runtime{},
-		option:       &option{},
-		network:      network,
-		closeChannel: make(chan struct{}, 1),
-		systemSignal: make(chan os.Signal, 1),
+		event:           &event{},
+		runtime:         &runtime{},
+		option:          &option{},
+		network:         network,
+		closeChannel:    make(chan struct{}, 1),
+		systemSignal:    make(chan os.Signal, 1),
+		messagePoolSize: 1024,
 	}
 	server.event.Server = server
 
@@ -122,9 +123,6 @@ func (slf *Server) Run(addr string) error {
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var connectionInitHandle = func(callback func()) {
-		if slf.messagePoolSize <= 0 {
-			slf.messagePoolSize = 100
-		}
 		slf.messagePool = synchronization.NewPool[*Message](slf.messagePoolSize,
 			func() *Message {
 				return &Message{}
