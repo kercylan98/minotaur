@@ -38,7 +38,7 @@ func WithDeadlockDetect(t time.Duration) Option {
 	return func(srv *Server) {
 		if t > 0 {
 			srv.deadlockDetect = t
-			log.Info("DeadlockDetect", zap.Any("Time", t))
+			log.Info("DeadlockDetect", zap.String("Time", t.String()))
 		}
 	}
 }
