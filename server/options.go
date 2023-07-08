@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/gin-contrib/pprof"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"go.uber.org/zap"
@@ -168,5 +169,15 @@ func WithMessageBufferSize(size int) Option {
 			size = 1024
 		}
 		srv.messagePoolSize = size
+	}
+}
+
+// WithPprof 通过性能分析工具PProf创建服务器
+func WithPprof(pattern ...string) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkHttp {
+			return
+		}
+		pprof.Register(srv.ginServer, pattern...)
 	}
 }
