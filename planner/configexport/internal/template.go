@@ -45,8 +45,9 @@ var full map[string]any
 
 var (
 {{range $index, $config := .Configs}}
-     // {{$config.Name}} {{$config.DisplayName}}
+     // {{$config.Name}}Sign {{$config.DisplayName}}签名
 	 {{$config.Name}}Sign = "{{$config.Name}}"
+     // {{$config.Name}} {{$config.DisplayName}}
 	 {{$config.Name}} {{$config.GetVariable}}
 	 _{{$config.Name}} {{$config.GetVariable}}
 {{end}}
