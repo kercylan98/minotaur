@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.11](https://github.com/kercylan98/minotaur/compare/v0.0.10...v0.0.11) (2023-07-10)
+
+
+### Bug Fixes | 修复
+
+* 修复 Multiple 模式下启动服务器 listen 有时无法打印的问题 ([d972dc8](https://github.com/kercylan98/minotaur/commit/d972dc864df9024b9e21c109ad1c19ab9b38916a))
+* 修复 server.Server 关闭时线程池未释放的问题 ([7228a07](https://github.com/kercylan98/minotaur/commit/7228a07e7e7275a7674ab1568bec7c1b2a8a9105))
+* 修复异步慢消息追踪不生效的问题 ([7b8af05](https://github.com/kercylan98/minotaur/commit/7b8af0518e943ded08c6c53c96ca83d263a2af82))
+* 修复配置字段描述换行的情况下导出的 Go 代码编译报错问题 ([e676982](https://github.com/kercylan98/minotaur/commit/e676982b9a0fb1f3b64af31e08cb90d6d355fd3b))
+
+
+### Performance Improvements | 性能优化
+
+* 调整 server.WithBufferSize 默认值 ([1ad6577](https://github.com/kercylan98/minotaur/commit/1ad657799ae09d713a5270076525887cced3c772))
+
+
+### Features | 新特性
+
+* 增加任务功能 ([bdeaa5a](https://github.com/kercylan98/minotaur/commit/bdeaa5aeb34987564a1184b8d2fc2355deaf25e8))
+* 支持对 HTTP 服务器通过 server.WithPprof 开启 pprof ([53e91d1](https://github.com/kercylan98/minotaur/commit/53e91d1fce8fd5aaa365c2d18bdd2175d3f17801))
+* 支持对消息增加 mark 标记，可在执行 Message.String() 函数时进行展现 ([1e6974a](https://github.com/kercylan98/minotaur/commit/1e6974ae4be51239e07a0c69091bf45506d2525a))
+
 ## [0.0.10](https://github.com/kercylan98/minotaur/compare/v0.0.9...v0.0.10) (2023-07-07)
 
 
