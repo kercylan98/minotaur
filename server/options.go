@@ -172,8 +172,8 @@ func WithMessageBufferSize(size int) Option {
 	}
 }
 
-// WithPprof 通过性能分析工具PProf创建服务器
-func WithPprof(pattern ...string) Option {
+// WithPProf 通过性能分析工具PProf创建服务器
+func WithPProf(pattern ...string) Option {
 	return func(srv *Server) {
 		if srv.network != NetworkHttp {
 			return
