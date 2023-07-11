@@ -250,7 +250,10 @@ func (slf *Server) Run(addr string) error {
 						ip = addr[0:index]
 					}
 				}
-
+				if slf.websocketCompression > 0 {
+					_ = ws.SetCompressionLevel(slf.websocketCompression)
+				}
+				ws.EnableWriteCompression(slf.websocketWriteCompression)
 				conn := newWebsocketConn(slf, ws, ip)
 				for k, v := range request.URL.Query() {
 					if len(v) == 1 {

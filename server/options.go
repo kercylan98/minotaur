@@ -30,16 +30,43 @@ type option struct {
 }
 
 type runtime struct {
-	id                    int64            // 服务器id
-	cross                 map[string]Cross // 跨服
-	deadlockDetect        time.Duration    // 是否开启死锁检测
-	supportMessageTypes   map[int]bool     // websocket模式下支持的消息类型
-	certFile, keyFile     string           // TLS文件
-	messagePoolSize       int              // 消息池大小
-	messageChannelSize    int              // 消息通道大小
-	prod                  bool             // 是否为生产模式
-	ticker                *timer.Ticker    // 定时器
-	websocketReadDeadline time.Duration    // websocket连接超时时间
+	id                        int64            // 服务器id
+	cross                     map[string]Cross // 跨服
+	deadlockDetect            time.Duration    // 是否开启死锁检测
+	supportMessageTypes       map[int]bool     // websocket模式下支持的消息类型
+	certFile, keyFile         string           // TLS文件
+	messagePoolSize           int              // 消息池大小
+	messageChannelSize        int              // 消息通道大小
+	prod                      bool             // 是否为生产模式
+	ticker                    *timer.Ticker    // 定时器
+	websocketReadDeadline     time.Duration    // websocket连接超时时间
+	websocketCompression      int              // websocket压缩等级
+	websocketWriteCompression bool             // websocket写入压缩
+}
+
+// WithWebsocketWriteCompression 通过数据写入压缩的方式创建Websocket服务器
+//   - 默认不开启数据压缩
+func WithWebsocketWriteCompression() Option {
+	return func(srv *Server) {
+		if srv.network != NetworkWebsocket {
+			return
+		}
+		srv.websocketWriteCompression = true
+	}
+}
+
+// WithWebsocketCompression 通过数据压缩的方式创建Websocket服务器
+//   - 默认不开启数据压缩
+func WithWebsocketCompression(level int) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkWebsocket {
+			return
+		}
+		if !(-2 <= level && level <= 9) {
+			panic("websocket: invalid compression level")
+		}
+		srv.websocketCompression = level
+	}
 }
 
 // WithMessageChannelSize 通过指定消息通道大小的方式创建服务器
