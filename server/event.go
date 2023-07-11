@@ -123,6 +123,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 		handle(slf.Server, conn, err)
 	}
 	conn.Close()
+	slf.Server.online.Delete(conn.GetID())
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
@@ -135,6 +136,7 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
+	slf.Server.online.Set(conn.GetID(), conn)
 	for _, handle := range slf.connectionOpenedEventHandles {
 		handle(slf.Server, conn)
 	}

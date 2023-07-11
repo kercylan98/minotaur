@@ -33,6 +33,7 @@ func New(network Network, options ...Option) *Server {
 		runtime:      &runtime{messagePoolSize: DefaultMessageBufferSize, messageChannelSize: DefaultMessageChannelSize},
 		option:       &option{},
 		network:      network,
+		online:       synchronization.NewMap[string, *Conn](),
 		closeChannel: make(chan struct{}, 1),
 		systemSignal: make(chan os.Signal, 1),
 	}
@@ -71,24 +72,25 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                   // 事件
-	*runtime                                                 // 运行时
-	*option                                                  // 可选项
-	network                  Network                         // 网络类型
-	addr                     string                          // 侦听地址
-	systemSignal             chan os.Signal                  // 系统信号
-	ginServer                *gin.Engine                     // HTTP模式下的路由器
-	httpServer               *http.Server                    // HTTP模式下的服务器
-	grpcServer               *grpc.Server                    // GRPC模式下的服务器
-	gServer                  *gNet                           // TCP或UDP模式下的服务器
-	isRunning                bool                            // 是否正在运行
-	isShutdown               atomic.Bool                     // 是否已关闭
-	closeChannel             chan struct{}                   // 关闭信号
-	ants                     *ants.Pool                      // 协程池
-	messagePool              *synchronization.Pool[*Message] // 消息池
-	messageChannel           chan *Message                   // 消息管道
-	multiple                 *MultipleServer                 // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                      // 多服务器模式下的运行时错误
+	*event                                                       // 事件
+	*runtime                                                     // 运行时
+	*option                                                      // 可选项
+	network                  Network                             // 网络类型
+	addr                     string                              // 侦听地址
+	systemSignal             chan os.Signal                      // 系统信号
+	online                   *synchronization.Map[string, *Conn] // 在线连接
+	ginServer                *gin.Engine                         // HTTP模式下的路由器
+	httpServer               *http.Server                        // HTTP模式下的服务器
+	grpcServer               *grpc.Server                        // GRPC模式下的服务器
+	gServer                  *gNet                               // TCP或UDP模式下的服务器
+	isRunning                bool                                // 是否正在运行
+	isShutdown               atomic.Bool                         // 是否已关闭
+	closeChannel             chan struct{}                       // 关闭信号
+	ants                     *ants.Pool                          // 协程池
+	messagePool              *synchronization.Pool[*Message]     // 消息池
+	messageChannel           chan *Message                       // 消息管道
+	multiple                 *MultipleServer                     // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                          // 多服务器模式下的运行时错误
 }
 
 // Run 使用特定地址运行服务器
@@ -330,6 +332,33 @@ func (slf *Server) Run(addr string) error {
 	return nil
 }
 
+// GetOnlineCount 获取在线人数
+func (slf *Server) GetOnlineCount() int {
+	return slf.online.Size()
+}
+
+// GetOnline 获取在线连接
+func (slf *Server) GetOnline(id string) *Conn {
+	return slf.online.Get(id)
+}
+
+// GetOnlineAll 获取所有在线连接
+func (slf *Server) GetOnlineAll() map[string]*Conn {
+	return slf.online.Map()
+}
+
+// IsOnline 是否在线
+func (slf *Server) IsOnline(id string) bool {
+	return slf.online.Exist(id)
+}
+
+// CloseConn 关闭连接
+func (slf *Server) CloseConn(id string) {
+	if conn, exist := slf.online.GetExist(id); exist {
+		conn.Close()
+	}
+}
+
 // IsProd 是否为生产模式
 func (slf *Server) IsProd() bool {
 	return slf.prod
@@ -425,6 +454,7 @@ func (slf *Server) shutdown(err error, stack ...string) {
 	}
 }
 
+// GRPCServer 当网络类型为 NetworkGRPC 时将被允许获取 grpc 服务器，否则将会发生 panic
 func (slf *Server) GRPCServer() *grpc.Server {
 	if slf.grpcServer == nil {
 		panic(ErrNetworkOnlySupportGRPC)
