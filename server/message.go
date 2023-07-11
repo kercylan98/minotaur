@@ -55,9 +55,10 @@ func (slf MessageErrorAction) String() string {
 	return messageErrorActionNames[slf]
 }
 
+// Message 服务器消息
 type Message struct {
-	t     MessageType
-	attrs []any
+	t     MessageType // 消息类型
+	attrs []any       // 消息属性
 }
 
 func (slf *Message) String() string {

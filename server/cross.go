@@ -1,5 +1,6 @@
 package server
 
+// Cross 跨服接口
 type Cross interface {
 	// Init 初始化跨服
 	//  - serverId: 本服id
