@@ -87,12 +87,6 @@ func (slf *MapSegment[Key, Value]) GetExist(key Key) (value Value, exist bool) {
 	return slf.segments[s].GetExist(key)
 }
 
-func (slf *MapSegment[Key, Value]) Length() int {
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
-	return len(slf.cache)
-}
-
 func (slf *MapSegment[Key, Value]) Delete(key Key) {
 	slf.lock.Lock()
 	s, exist := slf.cache[key]

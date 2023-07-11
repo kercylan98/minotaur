@@ -48,10 +48,6 @@ func (slf *Map[Key, Value]) GetExist(key Key) (Value, bool) {
 	return value, exist
 }
 
-func (slf *Map[Key, Value]) Length() int {
-	return len(slf.data)
-}
-
 func (slf *Map[Key, Value]) Delete(key Key) {
 	delete(slf.data, key)
 }

@@ -259,7 +259,7 @@ func (slf *Server) Run(addr string) error {
 				conn := newWebsocketConn(slf, ws, ip)
 				for k, v := range request.URL.Query() {
 					if len(v) == 1 {
-						conn.SetData(k, v)
+						conn.SetData(k, v[0])
 					} else {
 						conn.SetData(k, v)
 					}
@@ -307,12 +307,12 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	if slf.multiple == nil {
-		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
-		log.Info("Server", zap.String("Minotaur Server", "RunningInfo"),
+		log.Info("Server", zap.String(serverMark, "===================================================================="))
+		log.Info("Server", zap.String(serverMark, "RunningInfo"),
 			zap.Any("network", slf.network),
 			zap.String("listen", slf.addr),
 		)
-		log.Info("Server", zap.String("Minotaur Server", "===================================================================="))
+		log.Info("Server", zap.String(serverMark, "===================================================================="))
 		slf.OnStartFinishEvent()
 
 		signal.Notify(slf.systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

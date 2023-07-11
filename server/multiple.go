@@ -60,14 +60,14 @@ func (slf *MultipleServer) Run() {
 	}
 	wait.Wait()
 
-	log.Info("Server", zap.String("Minotaur Multiple Server", "===================================================================="))
+	log.Info("Server", zap.String(serverMultipleMark, "===================================================================="))
 	for _, server := range slf.servers {
-		log.Info("Server", zap.String("Minotaur Multiple Server", "RunningInfo"),
+		log.Info("Server", zap.String(serverMultipleMark, "RunningInfo"),
 			zap.Any("network", server.network),
 			zap.String("listen", server.addr),
 		)
 	}
-	log.Info("Server", zap.String("Minotaur Multiple Server", "===================================================================="))
+	log.Info("Server", zap.String(serverMultipleMark, "===================================================================="))
 
 	systemSignal := make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
