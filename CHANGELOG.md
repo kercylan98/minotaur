@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.0.12](https://github.com/kercylan98/minotaur/compare/v0.0.11...v0.0.12) (2023-07-11)
+
+
+### Code Refactoring | 重构
+
+* server.WithPprof 名称修改为 server.WithPProf ([50ab92e](https://github.com/kercylan98/minotaur/commit/50ab92ef6752bf6a2ea47778680a7d7ab45e7d9c))
+
+
+### Bug Fixes | 修复
+
+* 修复配置导出 Go 代码注释错误问题 ([9f2242b](https://github.com/kercylan98/minotaur/commit/9f2242b6f7c76384d6a4cc12798331773b0ea5e3))
+
+
+### Styling | 可读性优化
+
+* 优化 server 包代码可读性 ([74c8f21](https://github.com/kercylan98/minotaur/commit/74c8f215d74c71ebc680e99a4c0c22057554a156))
+
+
+### Docs | 文档优化
+
+* server 包注释完善 ([9dc73bf](https://github.com/kercylan98/minotaur/commit/9dc73bf281b495434eebb34e28d95284238cc04a))
+
+
+### Features | 新特性
+
+* server 包 websocket 服务器支持压缩 ([6962cf4](https://github.com/kercylan98/minotaur/commit/6962cf4989edd639c7377c094c08a2dce7316e29))
+* server.Server 将记录在线的连接信息，可获取到在线连接和计数等 ([8368fe0](https://github.com/kercylan98/minotaur/commit/8368fe0770fb98a81a9588aef63fd2cc8b0e77c4))
+
 ## [0.0.11](https://github.com/kercylan98/minotaur/compare/v0.0.10...v0.0.11) (2023-07-10)
 
 
