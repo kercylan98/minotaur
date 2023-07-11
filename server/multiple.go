@@ -39,7 +39,7 @@ func (slf *MultipleServer) Run() {
 		wait.Add(1)
 		go func(address string, server *Server) {
 			var startFinish bool
-			server.RegStartFinishEvent(func(srv *Server) {
+			server.startFinishEventHandles = append(server.startFinishEventHandles, func(srv *Server) {
 				if !startFinish {
 					startFinish = true
 					wait.Done()

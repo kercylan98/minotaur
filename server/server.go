@@ -29,13 +29,12 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		event:           &event{},
-		runtime:         &runtime{},
-		option:          &option{},
-		network:         network,
-		closeChannel:    make(chan struct{}, 1),
-		systemSignal:    make(chan os.Signal, 1),
-		messagePoolSize: 1024,
+		event:        &event{},
+		runtime:      &runtime{messagePoolSize: DefaultMessageBufferSize, messageChannelSize: DefaultMessageChannelSize},
+		option:       &option{},
+		network:      network,
+		closeChannel: make(chan struct{}, 1),
+		systemSignal: make(chan os.Signal, 1),
 	}
 	server.event.Server = server
 
@@ -48,7 +47,7 @@ func New(network Network, options ...Option) *Server {
 	case NetworkGRPC:
 		server.grpcServer = grpc.NewServer()
 	case NetworkWebsocket:
-		server.websocketReadDeadline = time.Second * 30
+		server.websocketReadDeadline = DefaultWebsocketReadDeadline
 	}
 
 	for _, option := range options {
@@ -57,7 +56,7 @@ func New(network Network, options ...Option) *Server {
 
 	if !server.disableAnts {
 		if server.antsPoolSize <= 0 {
-			server.antsPoolSize = 256
+			server.antsPoolSize = DefaultAsyncPoolSize
 		}
 		var err error
 		server.ants, err = ants.NewPool(server.antsPoolSize, ants.WithLogger(log.Logger()))
@@ -72,35 +71,24 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                               // 事件
-	*runtime                             // 运行时
-	*option                              // 可选项
-	systemSignal        chan os.Signal   // 系统信号
-	cross               map[string]Cross // 跨服
-	id                  int64            // 服务器id
-	network             Network          // 网络类型
-	addr                string           // 侦听地址
-	ginServer           *gin.Engine      // HTTP模式下的路由器
-	httpServer          *http.Server     // HTTP模式下的服务器
-	grpcServer          *grpc.Server     // GRPC模式下的服务器
-	supportMessageTypes map[int]bool     // websocket模式下支持的消息类型
-	certFile, keyFile   string           // TLS文件
-	isRunning           bool             // 是否正在运行
-	isShutdown          atomic.Bool      // 是否已关闭
-	closeChannel        chan struct{}    // 关闭信号
-	ants                *ants.Pool       // 协程池
-
-	gServer         *gNet                           // TCP或UDP模式下的服务器
-	messagePool     *synchronization.Pool[*Message] // 消息池
-	messagePoolSize int                             // 消息池大小
-	messageChannel  chan *Message                   // 消息管道
-	multiple        *MultipleServer                 // 多服务器模式下的服务器
-	prod            bool                            // 是否为生产模式
-	ticker          *timer.Ticker                   // 定时器
-
-	multipleRuntimeErrorChan chan error // 多服务器模式下的运行时错误
-
-	websocketReadDeadline time.Duration // websocket连接超时时间
+	*event                                                   // 事件
+	*runtime                                                 // 运行时
+	*option                                                  // 可选项
+	network                  Network                         // 网络类型
+	addr                     string                          // 侦听地址
+	systemSignal             chan os.Signal                  // 系统信号
+	ginServer                *gin.Engine                     // HTTP模式下的路由器
+	httpServer               *http.Server                    // HTTP模式下的服务器
+	grpcServer               *grpc.Server                    // GRPC模式下的服务器
+	gServer                  *gNet                           // TCP或UDP模式下的服务器
+	isRunning                bool                            // 是否正在运行
+	isShutdown               atomic.Bool                     // 是否已关闭
+	closeChannel             chan struct{}                   // 关闭信号
+	ants                     *ants.Pool                      // 协程池
+	messagePool              *synchronization.Pool[*Message] // 消息池
+	messageChannel           chan *Message                   // 消息管道
+	multiple                 *MultipleServer                 // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                      // 多服务器模式下的运行时错误
 }
 
 // Run 使用特定地址运行服务器
@@ -132,7 +120,7 @@ func (slf *Server) Run(addr string) error {
 				data.attrs = nil
 			},
 		)
-		slf.messageChannel = make(chan *Message, 4096*1000)
+		slf.messageChannel = make(chan *Message, slf.messageChannelSize)
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
 			slf.gServer = &gNet{Server: slf}
 		}

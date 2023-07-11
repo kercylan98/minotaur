@@ -30,11 +30,32 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect time.Duration // 是否开启死锁检测
+	id                    int64            // 服务器id
+	cross                 map[string]Cross // 跨服
+	deadlockDetect        time.Duration    // 是否开启死锁检测
+	supportMessageTypes   map[int]bool     // websocket模式下支持的消息类型
+	certFile, keyFile     string           // TLS文件
+	messagePoolSize       int              // 消息池大小
+	messageChannelSize    int              // 消息通道大小
+	prod                  bool             // 是否为生产模式
+	ticker                *timer.Ticker    // 定时器
+	websocketReadDeadline time.Duration    // websocket连接超时时间
+}
+
+// WithMessageChannelSize 通过指定消息通道大小的方式创建服务器
+//   - 默认值为 DefaultMessageChannelSize
+func WithMessageChannelSize(size int) Option {
+	return func(srv *Server) {
+		if size <= 0 {
+			size = DefaultMessageChannelSize
+		}
+		srv.messageChannelSize = size
+	}
 }
 
 // WithDeadlockDetect 通过死锁、死循环、永久阻塞检测的方式创建服务器
 //   - 当检测到死锁、死循环、永久阻塞时，服务器将会生成 WARN 类型的日志，关键字为 "SuspectedDeadlock"
+//   - 默认不开启死锁检测
 func WithDeadlockDetect(t time.Duration) Option {
 	return func(srv *Server) {
 		if t > 0 {
@@ -53,7 +74,7 @@ func WithDisableAsyncMessage() Option {
 
 // WithAsyncPoolSize 通过指定异步消息池大小的方式创建服务器
 //   - 当通过 WithDisableAsyncMessage 禁用异步消息时，此选项无效
-//   - 默认值为 256
+//   - 默认值为 DefaultAsyncPoolSize
 func WithAsyncPoolSize(size int) Option {
 	return func(srv *Server) {
 		srv.antsPoolSize = size
@@ -61,7 +82,7 @@ func WithAsyncPoolSize(size int) Option {
 }
 
 // WithWebsocketReadDeadline 设置 Websocket 读取超时时间
-//   - 默认： 30 * time.Second
+//   - 默认： DefaultWebsocketReadDeadline
 //   - 当 t <= 0 时，表示不设置超时时间
 func WithWebsocketReadDeadline(t time.Duration) Option {
 	return func(srv *Server) {
@@ -87,8 +108,8 @@ func WithTicker(size int, autonomy bool) Option {
 }
 
 // WithCross 通过跨服的方式创建服务器
-//   - 推送跨服消息时，将推送到对应crossName的跨服中间件中，crossName可以满足不同功能采用不同的跨服/消息中间件
-//   - 通常情况下crossName仅需一个即可
+//   - 推送跨服消息时，将推送到对应 crossName 的跨服中间件中，crossName 可以满足不同功能采用不同的跨服/消息中间件
+//   - 通常情况下 crossName 仅需一个即可
 func WithCross(crossName string, serverId int64, cross Cross) Option {
 	return func(srv *Server) {
 	start:
@@ -161,7 +182,7 @@ func WithWebsocketMessageType(messageTypes ...int) Option {
 }
 
 // WithMessageBufferSize 通过特定的消息缓冲池大小运行服务器
-//   - 默认大小为 1024
+//   - 默认大小为 DefaultMessageBufferSize
 //   - 消息数量超出这个值的时候，消息处理将会造成更大的开销（频繁创建新的结构体），同时服务器将输出警告内容
 func WithMessageBufferSize(size int) Option {
 	return func(srv *Server) {
