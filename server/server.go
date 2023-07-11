@@ -479,9 +479,9 @@ func (slf *Server) pushMessage(message *Message) {
 	slf.messageChannel <- message
 }
 
-func (slf *Server) low(message *Message, present time.Time) {
+func (slf *Server) low(message *Message, present time.Time, expect time.Duration) {
 	cost := time.Since(present)
-	if cost > time.Millisecond*100 {
+	if cost > expect {
 		log.Warn("Server", zap.String("LowExecCost", cost.String()), zap.Any("Message", message))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
@@ -516,7 +516,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 
 		if msg.t != MessageTypeAsync {
 			super.Handle(cancel)
-			slf.low(msg, present)
+			slf.low(msg, present, time.Millisecond*100)
 			if !slf.isShutdown.Load() {
 				slf.messagePool.Release(msg)
 			}
@@ -555,7 +555,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 					}
 				}
 				super.Handle(cancel)
-				slf.low(msg, present)
+				slf.low(msg, present, time.Second)
 				if !slf.isShutdown.Load() {
 					slf.messagePool.Release(msg)
 				}
