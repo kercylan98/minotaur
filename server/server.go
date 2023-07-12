@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -499,7 +500,9 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	present := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err), zap.Stack("stack"))
+			stack := string(debug.Stack())
+			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err), zap.String("stack", stack))
+			fmt.Println(stack)
 			if e, ok := err.(error); ok {
 				slf.OnMessageErrorEvent(msg, e)
 			}
@@ -543,7 +546,9 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.Stack("stack"))
+					stack := string(debug.Stack())
+					log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.String("stack", stack))
+					fmt.Println(stack)
 					if e, ok := err.(error); ok {
 						slf.OnMessageErrorEvent(msg, e)
 					}
