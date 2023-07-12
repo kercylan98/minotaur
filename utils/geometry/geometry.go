@@ -48,7 +48,7 @@ func GetDirectionNextWithCoordinate[V generic.SignedNumber](direction Direction,
 	case DirectionRight:
 		nx, ny = x+1, y
 	default:
-		panic("unexplained direction")
+		panic(ErrUnexplainedDirection)
 	}
 	return
 }
@@ -66,7 +66,7 @@ func GetDirectionNextWithPoint[V generic.SignedNumber](direction Direction, poin
 	case DirectionRight:
 		return NewPoint(x+1, y)
 	default:
-		panic("unexplained direction")
+		panic(ErrUnexplainedDirection)
 	}
 }
 
@@ -83,7 +83,7 @@ func GetDirectionNextWithPos[V generic.SignedNumber](direction Direction, width,
 	case DirectionRight:
 		return pos + 1
 	default:
-		panic("unexplained direction")
+		panic(ErrUnexplainedDirection)
 	}
 }
 

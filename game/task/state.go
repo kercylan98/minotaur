@@ -1,10 +1,10 @@
 package task
 
 const (
-	StateDoing  State = iota // 进行中
-	StateDone                // 已完成
+	StateAccept State = iota // 已接受
+	StateFinish              // 已完成
 	StateReward              // 已领取
+	StateFail                // 已失败
 )
 
-// State 任务状态
-type State byte
+type State uint16

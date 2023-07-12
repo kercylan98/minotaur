@@ -3,9 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/str"
 	"reflect"
-	"runtime/debug"
 )
 
 const (
@@ -69,11 +67,14 @@ func (slf *Message) String() string {
 		}
 		attrs = append(attrs, attr)
 	}
-	raw, _ := json.Marshal(attrs)
-	s := string(raw)
-	if s == str.None {
+	var s string
+	if len(slf.attrs) == 0 {
 		s = "NoneAttr"
+	} else {
+		raw, _ := json.Marshal(attrs)
+		s = string(raw)
 	}
+
 	return fmt.Sprintf("[%s] %s", slf.t, s)
 }
 
@@ -93,7 +94,7 @@ func PushPacketMessage(srv *Server, conn *Conn, packet []byte, mark ...any) {
 func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeError
-	msg.attrs = append([]any{err, action, string(debug.Stack())}, mark...)
+	msg.attrs = append([]any{err, action}, mark...)
 	srv.pushMessage(msg)
 }
 
@@ -128,6 +129,6 @@ func PushTickerMessage(srv *Server, caller func(), mark ...any) {
 func PushAsyncMessage(srv *Server, caller func() error, callback func(err error), mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeAsync
-	msg.attrs = append([]any{caller, callback, string(debug.Stack())}, mark...)
+	msg.attrs = append([]any{caller, callback}, mark...)
 	srv.pushMessage(msg)
 }

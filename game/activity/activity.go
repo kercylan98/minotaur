@@ -122,12 +122,6 @@ func (slf *Activity[PlayerID, ActivityData, PlayerData]) IsInvalid() bool {
 	current := activityOffset.Now()
 	if slf.beforeShow.IsZero() && !slf.afterShow.IsZero() {
 		return current.After(slf.afterShow) || current.Equal(slf.afterShow)
-	} else if !slf.beforeShow.IsZero() && slf.afterShow.IsZero() {
-		end := slf.GetEnd()
-		return current.After(end) || current.Equal(end)
-	} else if !slf.beforeShow.IsZero() && !slf.afterShow.IsZero() {
-		end := slf.GetEnd()
-		return current.After(end) || current.Equal(end)
 	} else {
 		end := slf.GetEnd()
 		return current.After(end) || current.Equal(end)

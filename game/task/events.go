@@ -1,32 +1,35 @@
 package task
 
 type (
-	TaskDoneEventHandle func(eventId int64, task *Task)
+	RefreshTaskCountEvent      func(taskType int, increase int64)
+	RefreshTaskChildCountEvent func(taskType int, key any, increase int64)
 )
 
-var taskDoneEventHandles = make(map[int64]map[int64]TaskDoneEventHandle)
+var (
+	refreshTaskCountEventHandles      = make(map[int]RefreshTaskCountEvent)
+	refreshTaskChildCountEventHandles = make(map[int]RefreshTaskChildCountEvent)
+)
 
-// RegTaskDoneEvent 注册任务完成事件
-func RegTaskDoneEvent(id int64, eventId int64, handle TaskDoneEventHandle) {
-	events, exist := taskDoneEventHandles[id]
-	if !exist {
-		events = map[int64]TaskDoneEventHandle{}
-		taskDoneEventHandles[id] = events
-	}
-	events[eventId] = handle
+// RegRefreshTaskCount 注册任务计数刷新事件
+func RegRefreshTaskCount(taskType int, handler RefreshTaskCountEvent) {
+	refreshTaskCountEventHandles[taskType] = handler
 }
 
-// UnRegTaskDoneEvent 取消注册任务完成事件
-func UnRegTaskDoneEvent(id int64, eventId int64) {
-	events, exist := taskDoneEventHandles[id]
-	if exist {
-		delete(events, eventId)
+// OnRefreshTaskCount 触发任务计数刷新事件
+func OnRefreshTaskCount(taskType int, increase int64) {
+	if handler, ok := refreshTaskCountEventHandles[taskType]; ok {
+		handler(taskType, increase)
 	}
 }
 
-// OnTaskDoneEvent 任务完成事件
-func OnTaskDoneEvent(task *Task) {
-	for eventId, handle := range taskDoneEventHandles[task.id] {
-		handle(eventId, task)
+// RegRefreshTaskChildCount 注册任务子计数刷新事件
+func RegRefreshTaskChildCount(taskType int, handler RefreshTaskChildCountEvent) {
+	refreshTaskChildCountEventHandles[taskType] = handler
+}
+
+// OnRefreshTaskChildCount 触发任务子计数刷新事件
+func OnRefreshTaskChildCount(taskType int, key any, increase int64) {
+	if handler, ok := refreshTaskChildCountEventHandles[taskType]; ok {
+		handler(taskType, key, increase)
 	}
 }

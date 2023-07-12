@@ -2,187 +2,169 @@ package log
 
 import (
 	"fmt"
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/kercylan98/minotaur/utils/str"
+	"github.com/kercylan98/minotaur/utils/times"
+	rotateLogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"io"
 	"os"
-	"runtime/debug"
-	"time"
+	"path/filepath"
+	"strings"
 )
 
-var (
-	logger      *zap.Logger
-	prod        bool
-	logPath     string
-	logDevWrite bool
-	logTime     = 7
-)
-
-func init() {
-	logger = newLogger()
-	if prod && len(logPath) == 0 {
-		Warn("Logger", zap.String("Tip", "in production mode, if the log file output directory is not set, only the console will be output"))
+// NewLog 创建一个日志记录器
+func NewLog(options ...Option) *Log {
+	log := &Log{
+		filename: func(level Level) string {
+			return fmt.Sprintf("%s.log", level.String())
+		},
+		rotateFilename: func(level Level) string {
+			return strings.Join([]string{level.String(), "%Y%m%d.log"}, ".")
+		},
+		levelPartition: defaultLevelPartition,
 	}
-}
 
-func newLogger() *zap.Logger {
-	encoder := zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
-		MessageKey:  "msg",
-		LevelKey:    "level",
-		EncodeLevel: zapcore.CapitalLevelEncoder,
-		TimeKey:     "ts",
-		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.Format(time.DateTime))
-		},
-		CallerKey:    "file",
-		EncodeCaller: zapcore.ShortCallerEncoder,
-		EncodeDuration: func(d time.Duration, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendInt64(int64(d) / 1000000)
-		},
-	})
+	for _, option := range options {
+		option(log)
+	}
 
-	infoLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl == zapcore.InfoLevel
-	})
-	debugLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl <= zapcore.FatalLevel
-	})
-	errorLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
-	})
-
-	var cores zapcore.Core
-
-	if !prod {
-		if len(logPath) > 0 && logDevWrite {
-			infoWriter := getWriter(fmt.Sprintf("%s/info.log", logPath), logTime)
-			errorWriter := getWriter(fmt.Sprintf("%s/error.log", logPath), logTime)
-			cores = zapcore.NewTee(
-				zapcore.NewCore(encoder, zapcore.AddSync(infoWriter), infoLevel),
-				zapcore.NewCore(encoder, zapcore.AddSync(errorWriter), errorLevel),
-				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
-			)
-		} else {
-			cores = zapcore.NewTee(
-				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
-			)
-		}
-	} else {
-		if len(logPath) == 0 {
-			cores = zapcore.NewTee(
-				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), debugLevel),
-			)
-		} else {
-			infoWriter := getWriter(fmt.Sprintf("%s/info.log", logPath), logTime)
-			errorWriter := getWriter(fmt.Sprintf("%s/error.log", logPath), logTime)
-			cores = zapcore.NewTee(
-				zapcore.NewCore(encoder, zapcore.AddSync(infoWriter), infoLevel),
-				zapcore.NewCore(encoder, zapcore.AddSync(errorWriter), errorLevel),
-				zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), errorLevel),
-			)
+	if len(log.rotateOptions) == 0 {
+		log.rotateOptions = []rotateLogs.Option{
+			rotateLogs.WithMaxAge(times.Week),
+			rotateLogs.WithRotationTime(times.Day),
 		}
 	}
 
-	return zap.New(cores, zap.AddCaller(), zap.AddCallerSkip(1))
-}
+	if len(log.cores) == 0 {
+		var encoder = NewEncoder()
 
-func getWriter(filename string, times int) io.Writer {
-	hook, err := rotatelogs.New(
-		filename+".%Y%m%d",
-		rotatelogs.WithLinkName(filename),
-		rotatelogs.WithMaxAge(time.Hour*24*7),
-		rotatelogs.WithRotationTime(time.Hour*time.Duration(times)),
-	)
-
-	if err != nil {
-		panic(err)
+		switch log.mode {
+		case RunModeDev:
+			var partition LevelEnablerFunc = func(lvl Level) bool {
+				return true
+			}
+			log.cores = append(log.cores, zapcore.NewCore(encoder, os.Stdout, partition))
+		case RunModeTest, RunModeProd:
+			if log.mode == RunModeTest {
+				infoRotate, err := rotateLogs.New(
+					filepath.Join(log.rotateLogDir, log.rotateFilename(InfoLevel)),
+					append([]rotateLogs.Option{rotateLogs.WithLinkName(filepath.Join(log.logDir, log.filename(InfoLevel)))}, log.rotateOptions...)...,
+				)
+				if err != nil {
+					panic(err)
+				}
+				errRotate, err := rotateLogs.New(
+					filepath.Join(log.rotateLogDir, log.rotateFilename(ErrorLevel)),
+					append([]rotateLogs.Option{rotateLogs.WithLinkName(filepath.Join(log.logDir, log.filename(ErrorLevel)))}, log.rotateOptions...)...,
+				)
+				if err != nil {
+					panic(err)
+				}
+				if log.logDir != str.None {
+					log.cores = append(log.cores, zapcore.NewCore(encoder, zapcore.AddSync(infoRotate), LevelEnablerFunc(func(lvl Level) bool { return lvl < ErrorLevel })))
+					log.cores = append(log.cores, zapcore.NewCore(encoder, zapcore.AddSync(errRotate), LevelEnablerFunc(func(lvl Level) bool { return lvl >= ErrorLevel })))
+					log.cores = append(log.cores, zapcore.NewCore(encoder, os.Stdout, LevelEnablerFunc(func(lvl Level) bool { return lvl < ErrorLevel })))
+					log.cores = append(log.cores, zapcore.NewCore(encoder, os.Stdout, LevelEnablerFunc(func(lvl Level) bool { return lvl >= ErrorLevel })))
+				}
+			} else {
+				infoRotate, err := rotateLogs.New(
+					filepath.Join(log.rotateLogDir, log.rotateFilename(InfoLevel)),
+					append([]rotateLogs.Option{rotateLogs.WithLinkName(filepath.Join(log.logDir, log.filename(InfoLevel)))}, log.rotateOptions...)...,
+				)
+				if err != nil {
+					panic(err)
+				}
+				errRotate, err := rotateLogs.New(
+					filepath.Join(log.rotateLogDir, log.rotateFilename(ErrorLevel)),
+					append([]rotateLogs.Option{rotateLogs.WithLinkName(filepath.Join(log.logDir, log.filename(ErrorLevel)))}, log.rotateOptions...)...,
+				)
+				if err != nil {
+					panic(err)
+				}
+				if log.logDir != str.None {
+					log.cores = append(log.cores, zapcore.NewCore(encoder, zapcore.AddSync(infoRotate), LevelEnablerFunc(func(lvl Level) bool { return lvl == InfoLevel })))
+					log.cores = append(log.cores, zapcore.NewCore(encoder, zapcore.AddSync(errRotate), LevelEnablerFunc(func(lvl Level) bool { return lvl >= ErrorLevel })))
+				}
+			}
+		}
 	}
-	return hook
+
+	log.zap = zap.New(zapcore.NewTee(log.cores...), zap.AddCaller(), zap.AddCallerSkip(1))
+	log.sugar = log.zap.Sugar()
+	return log
 }
 
-type MLogger struct {
-	*zap.Logger
+type Log struct {
+	zap            *zap.Logger
+	sugar          *zap.SugaredLogger
+	filename       func(level Level) string
+	rotateFilename func(level Level) string
+	rotateOptions  []rotateLogs.Option
+	levelPartition map[Level]func() LevelEnablerFunc
+	cores          []Core
+	mode           RunMode
+	logDir         string
+	rotateLogDir   string
 }
 
-func (slf *MLogger) Printf(format string, args ...interface{}) {
-	slf.Info(fmt.Sprintf(format, args...))
+func (slf *Log) Debugf(format string, args ...interface{}) {
+	slf.sugar.Debugf(format, args...)
 }
 
-func Logger() *MLogger {
-	return &MLogger{logger}
+func (slf *Log) Infof(format string, args ...interface{}) {
+	slf.sugar.Infof(format, args...)
 }
 
-func Info(msg string, fields ...zap.Field) {
-	logger.Info(msg, fields...)
+func (slf *Log) Warnf(format string, args ...interface{}) {
+	slf.sugar.Warnf(format, args...)
 }
 
-func Warn(msg string, fields ...zap.Field) {
-	logger.Warn(msg, fields...)
+func (slf *Log) Errorf(format string, args ...interface{}) {
+	slf.sugar.Errorf(format, args...)
 }
 
-func Debug(msg string, fields ...zap.Field) {
-	logger.Debug(msg, fields...)
+func (slf *Log) Fatalf(format string, args ...interface{}) {
+	slf.sugar.Fatalf(format, args...)
 }
 
-func Error(msg string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
-	fmt.Println(string(debug.Stack()))
+func (slf *Log) Printf(format string, args ...interface{}) {
+	slf.sugar.Infof(format, args...)
 }
 
-func ErrorHideStack(msg string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
+// Debug 在 DebugLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+func (slf *Log) Debug(msg string, fields ...Field) {
+	slf.zap.Debug(msg, fields...)
 }
 
-// ErrorWithStack 通过额外的堆栈信息打印错误日志
-func ErrorWithStack(msg, stack string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
-	var stackMerge string
-	if len(stack) > 0 {
-		stackMerge = stack
-	}
-	stackMerge += string(debug.Stack())
-	fmt.Println(stackMerge)
+// Info 在 InfoLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+func (slf *Log) Info(msg string, fields ...Field) {
+	slf.zap.Info(msg, fields...)
 }
 
-// SetProd 设置生产环境模式
-func SetProd(isProd bool) {
-	if prod == isProd {
-		return
-	}
-	prod = isProd
-	if logger != nil {
-		_ = logger.Sync()
-	}
-	logger = newLogger()
+// Warn 在 WarnLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+func (slf *Log) Warn(msg string, fields ...Field) {
+	slf.zap.Warn(msg, fields...)
 }
 
-// SetLogDir 设置日志输出目录
-func SetLogDir(dir string) {
-	logPath = dir
-	if logger != nil {
-		_ = logger.Sync()
-	}
-	logger = newLogger()
+// Error 在 ErrorLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+func (slf *Log) Error(msg string, fields ...Field) {
+	slf.zap.Error(msg, fields...)
 }
 
-// SetWriteFileWithDev 设置开发环境下写入文件
-func SetWriteFileWithDev(isWrite bool) {
-	if isWrite == logDevWrite {
-		return
-	}
-	logDevWrite = isWrite
-	if logger != nil {
-		_ = logger.Sync()
-	}
-	logger = newLogger()
+// DPanic 在 DPanicLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+//   - 如果记录器处于开发模式，它就会出现 panic（DPanic 的意思是“development panic”）。这对于捕获可恢复但不应该发生的错误很有用
+func (slf *Log) DPanic(msg string, fields ...Field) {
+	slf.zap.DPanic(msg, fields...)
 }
 
-// SetLogRotate 设置日志切割时间
-func SetLogRotate(t int) {
-	logTime = t
-	if logger != nil {
-		_ = logger.Sync()
-	}
-	logger = newLogger()
+// Panic 在 PanicLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+//   - 即使禁用了 PanicLevel 的日志记录，记录器也会出现 panic
+func (slf *Log) Panic(msg string, fields ...Field) {
+	slf.zap.Panic(msg, fields...)
+}
+
+// Fatal 在 FatalLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
+//   - 然后记录器调用 os.Exit(1)，即使 FatalLevel 的日志记录被禁用
+func (slf *Log) Fatal(msg string, fields ...Field) {
+	slf.zap.Fatal(msg, fields...)
 }

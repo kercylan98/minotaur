@@ -8,6 +8,7 @@ import (
 
 const (
 	DefaultTolerance = 0.0001 // 默认误差范围
+	Zero             = 0      // 零
 )
 
 // GetDefaultTolerance 获取默认误差范围

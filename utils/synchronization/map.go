@@ -74,14 +74,6 @@ func (slf *Map[Key, Value]) GetExist(key Key) (Value, bool) {
 	return value, exist
 }
 
-func (slf *Map[Key, Value]) Length() int {
-	if !slf.atom {
-		slf.lock.RLock()
-		defer slf.lock.RUnlock()
-	}
-	return len(slf.data)
-}
-
 func (slf *Map[Key, Value]) Delete(key Key) {
 	if !slf.atom {
 		slf.lock.Lock()

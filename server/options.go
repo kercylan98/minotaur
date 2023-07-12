@@ -37,7 +37,6 @@ type runtime struct {
 	certFile, keyFile         string           // TLS文件
 	messagePoolSize           int              // 消息池大小
 	messageChannelSize        int              // 消息通道大小
-	prod                      bool             // 是否为生产模式
 	ticker                    *timer.Ticker    // 定时器
 	websocketReadDeadline     time.Duration    // websocket连接超时时间
 	websocketCompression      int              // websocket压缩等级
@@ -184,10 +183,11 @@ func WithGRPCServerOptions(options ...grpc.ServerOption) Option {
 	}
 }
 
-// WithProd 通过生产模式运行服务器
-func WithProd() Option {
+// WithRunMode 通过特定模式运行服务器
+//   - 默认为 RunModeDev
+func WithRunMode(mode RunMode) Option {
 	return func(srv *Server) {
-		srv.prod = true
+		srv.runMode = mode
 	}
 }
 
