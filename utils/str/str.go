@@ -1,7 +1,19 @@
 package str
 
 const (
-	None = "" // 空字符串
+	None      = ""  // 空字符串
+	Dunno     = "?" // 未知
+	CenterDot = "·" // 中点
+	Dot       = "." // 点
+	Slash     = "/" // 斜杠
+)
+
+var (
+	NoneBytes      = []byte("")  // 空字符串
+	DunnoBytes     = []byte("?") // 未知
+	CenterDotBytes = []byte("·") // 中点
+	DotBytes       = []byte(".") // 点
+	SlashBytes     = []byte("/") // 斜杠
 )
 
 // FirstUpper 首字母大写
