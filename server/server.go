@@ -60,7 +60,7 @@ func New(network Network, options ...Option) *Server {
 			server.antsPoolSize = DefaultAsyncPoolSize
 		}
 		var err error
-		server.ants, err = ants.NewPool(server.antsPoolSize, ants.WithLogger(log.Logger()))
+		server.ants, err = ants.NewPool(server.antsPoolSize, ants.WithLogger(log.GetLogger()))
 		if err != nil {
 			panic(err)
 		}
@@ -91,6 +91,7 @@ type Server struct {
 	messageChannel           chan *Message                       // 消息管道
 	multiple                 *MultipleServer                     // 多服务器模式下的服务器
 	multipleRuntimeErrorChan chan error                          // 多服务器模式下的运行时错误
+	runMode                  RunMode                             // 运行模式
 }
 
 // Run 使用特定地址运行服务器
@@ -156,8 +157,8 @@ func (slf *Server) Run(addr string) error {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			if err := gnet.Serve(slf.gServer, protoAddr,
-				gnet.WithLogger(log.Logger().Sugar()),
-				gnet.WithLogLevel(super.If(slf.IsProd(), logging.ErrorLevel, logging.DebugLevel)),
+				gnet.WithLogger(log.GetLogger()),
+				gnet.WithLogLevel(super.If(slf.runMode == RunModeProd, logging.ErrorLevel, logging.DebugLevel)),
 				gnet.WithTicker(true),
 				gnet.WithMulticore(true),
 			); err != nil {
@@ -201,8 +202,12 @@ func (slf *Server) Run(addr string) error {
 			}
 		})
 	case NetworkHttp:
-		if slf.prod {
-			log.SetProd(slf.prod)
+		switch slf.runMode {
+		case RunModeDev:
+			gin.SetMode(gin.DebugMode)
+		case RunModeTest:
+			gin.SetMode(gin.TestMode)
+		case RunModeProd:
 			gin.SetMode(gin.ReleaseMode)
 		}
 		go func() {
@@ -359,16 +364,6 @@ func (slf *Server) CloseConn(id string) {
 	}
 }
 
-// IsProd 是否为生产模式
-func (slf *Server) IsProd() bool {
-	return slf.prod
-}
-
-// IsDev 是否为开发模式
-func (slf *Server) IsDev() bool {
-	return !slf.prod
-}
-
 // GetID 获取服务器id
 func (slf *Server) GetID() int64 {
 	if slf.cross == nil {
@@ -391,7 +386,7 @@ func (slf *Server) Shutdown() {
 }
 
 // shutdown 停止运行服务器
-func (slf *Server) shutdown(err error, stack ...string) {
+func (slf *Server) shutdown(err error) {
 	slf.OnStopEvent()
 	defer func() {
 		if slf.multipleRuntimeErrorChan != nil {
@@ -426,13 +421,9 @@ func (slf *Server) shutdown(err error, stack ...string) {
 	}
 
 	if err != nil {
-		var s string
-		if len(stack) > 0 {
-			s = stack[0]
-		}
 		if slf.multiple != nil {
 			slf.multiple.RegExitEvent(func() {
-				log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
+				log.Panic("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 					zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 			})
 			for i, server := range slf.multiple.servers {
@@ -442,7 +433,7 @@ func (slf *Server) shutdown(err error, stack ...string) {
 				}
 			}
 		} else {
-			log.ErrorWithStack("Server", s, zap.Any("network", slf.network), zap.String("listen", slf.addr),
+			log.Panic("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
 				zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
 		}
 	} else {
@@ -482,7 +473,7 @@ func (slf *Server) pushMessage(message *Message) {
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration) {
 	cost := time.Since(present)
 	if cost > expect {
-		log.Warn("Server", zap.String("LowExecCost", cost.String()), zap.Any("Message", message))
+		log.Warn("Server", zap.String("type", "low-message"), zap.String("cost", cost.String()), zap.String("message", message.String()), zap.Stack("stack"))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -508,18 +499,21 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	present := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err))
+			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err), zap.Stack("stack"))
 			if e, ok := err.(error); ok {
 				slf.OnMessageErrorEvent(msg, e)
 			}
 		}
 
-		if msg.t != MessageTypeAsync {
-			super.Handle(cancel)
-			slf.low(msg, present, time.Millisecond*100)
-			if !slf.isShutdown.Load() {
-				slf.messagePool.Release(msg)
-			}
+		if msg.t == MessageTypeAsync {
+			return
+		}
+
+		super.Handle(cancel)
+		slf.low(msg, present, time.Millisecond*100)
+
+		if !slf.isShutdown.Load() {
+			slf.messagePool.Release(msg)
 		}
 
 	}()
@@ -530,12 +524,12 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		var wst = int(packet[len(packet)-1])
 		slf.OnConnectionReceivePacketEvent(attrs[0].(*Conn), Packet{Data: packet[:len(packet)-1], WebsocketType: wst})
 	case MessageTypeError:
-		err, action, stack := attrs[0].(error), attrs[1].(MessageErrorAction), attrs[2].(string)
+		err, action := attrs[0].(error), attrs[1].(MessageErrorAction)
 		switch action {
 		case MessageErrorActionNone:
-			log.ErrorWithStack("Server", stack, zap.Error(err))
+			log.Panic("Server", zap.Error(err))
 		case MessageErrorActionShutdown:
-			slf.shutdown(err, stack)
+			slf.shutdown(err)
 		default:
 			log.Warn("Server", zap.String("not support message error action", action.String()))
 		}
@@ -549,13 +543,14 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err))
+					log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.Stack("stack"))
 					if e, ok := err.(error); ok {
 						slf.OnMessageErrorEvent(msg, e)
 					}
 				}
 				super.Handle(cancel)
 				slf.low(msg, present, time.Second)
+
 				if !slf.isShutdown.Load() {
 					slf.messagePool.Release(msg)
 				}

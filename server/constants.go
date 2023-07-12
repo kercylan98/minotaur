@@ -1,6 +1,19 @@
 package server
 
-import "time"
+import (
+	"github.com/kercylan98/minotaur/utils/log"
+	"time"
+)
+
+type (
+	RunMode = log.RunMode
+)
+
+const (
+	RunModeDev  RunMode = log.RunModeDev
+	RunModeProd RunMode = log.RunModeProd
+	RunModeTest RunMode = log.RunModeTest
+)
 
 const (
 	serverMultipleMark = "Minotaur Multiple Server"

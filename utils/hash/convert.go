@@ -36,6 +36,15 @@ func ToMap[V any](slice []V) map[int]V {
 	return m
 }
 
+// ToIterator 将切片转换为 Iterator
+func ToIterator[V comparable](slice []V) map[V]struct{} {
+	var m = make(map[V]struct{})
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
+}
+
 // ToMapBool 将切片转换为 map，value作为Key
 func ToMapBool[V comparable](slice []V) map[V]bool {
 	var m = make(map[V]bool)
