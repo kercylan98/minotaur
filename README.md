@@ -23,7 +23,6 @@ mindmap
     /server 网络服务器支持
       /cross 内置跨服功能实现
       /router 内置路由器功能实现
-    /tools 第三方工具
     /utils 常用辅助函数包
 ```
 
