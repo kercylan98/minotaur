@@ -41,6 +41,12 @@ var messageErrorActionNames = map[MessageErrorAction]string{
 	MessageErrorActionShutdown: "Shutdown",
 }
 
+var (
+	messagePacketVisualization = func(packet []byte) string {
+		return string(packet)
+	}
+)
+
 type (
 	// MessageType 消息类型
 	MessageType byte
@@ -59,6 +65,7 @@ type Message struct {
 	attrs []any       // 消息属性
 }
 
+// String 返回消息的字符串表示
 func (slf *Message) String() string {
 	var attrs = make([]any, 0, len(slf.attrs))
 	for _, attr := range slf.attrs {
@@ -68,16 +75,22 @@ func (slf *Message) String() string {
 		attrs = append(attrs, attr)
 	}
 	var s string
-	if len(slf.attrs) == 0 {
-		s = "NoneAttr"
-	} else {
-		raw, _ := json.Marshal(attrs)
-		s = string(raw)
+	switch slf.t {
+	case MessageTypePacket:
+		s = messagePacketVisualization(attrs[1].([]byte))
+	default:
+		if len(slf.attrs) == 0 {
+			s = "NoneAttr"
+		} else {
+			raw, _ := json.Marshal(attrs)
+			s = string(raw)
+		}
 	}
 
 	return fmt.Sprintf("[%s] %s", slf.t, s)
 }
 
+// String 返回消息类型的字符串表示
 func (slf MessageType) String() string {
 	return messageNames[slf]
 }
@@ -131,4 +144,11 @@ func PushAsyncMessage(srv *Server, caller func() error, callback func(err error)
 	msg.t = MessageTypeAsync
 	msg.attrs = append([]any{caller, callback}, mark...)
 	srv.pushMessage(msg)
+}
+
+// SetMessagePacketVisualizer 设置消息可视化函数
+//   - 消息可视化将在慢消息等情况用于打印，使用自定消息可视化函数可以便于开发者进行调试
+//   - 默认的消息可视化函数将直接返回消息的字符串表示
+func SetMessagePacketVisualizer(handle func(packet []byte) string) {
+	messagePacketVisualization = handle
 }
