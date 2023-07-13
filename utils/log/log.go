@@ -89,7 +89,7 @@ func NewLog(options ...Option) *Log {
 		}
 	}
 
-	log.zap = zap.New(zapcore.NewTee(log.cores...), zap.AddCaller(), zap.AddCallerSkip(1))
+	log.zap = zap.New(zapcore.NewTee(log.cores...), zap.AddCaller(), zap.AddCallerSkip(2))
 	log.sugar = log.zap.Sugar()
 	return log
 }

@@ -79,8 +79,8 @@ import (
 
 func main() {
 	srv := server.New(server.NetworkWebsocket)
-	srv.RegConnectionReceiveWebsocketPacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte, messageType int) {
-		conn.Write(packet, messageType)
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet server.Packet) {
+		conn.Write(packet)
 	})
 	if err := srv.Run(":9999"); err != nil {
 		panic(err)
@@ -107,7 +107,6 @@ func main() {
 	srv.RegConnectionClosedEvent(nil)
 	srv.RegConnectionOpenedEvent(nil)
 	srv.RegConnectionReceivePacketEvent(nil)
-	srv.RegConnectionReceiveWebsocketPacketEvent(nil)
 	srv.RegReceiveCrossPacketEvent(nil)
 	srv.RegMessageErrorEvent(nil)
 	srv.RegMessageLowExecEvent(nil)
@@ -129,8 +128,6 @@ import (
 func main() {
 	server.New(server.NetworkWebsocket, 
 		server.WithTicker(50, false),
-		server.WithProd(),
-		server.WithMultiCore(3),
 		// ...
 	)
 }
