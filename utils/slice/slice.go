@@ -129,3 +129,30 @@ func Merge[V any](slices ...[]V) []V {
 	}
 	return slice
 }
+
+// GetStartPart 获取数组的前 n 个元素
+func GetStartPart[V any](slice []V, n int) []V {
+	if n > len(slice) {
+		n = len(slice)
+	}
+	return slice[:n]
+}
+
+// GetEndPart 获取数组的后 n 个元素
+func GetEndPart[V any](slice []V, n int) []V {
+	if n > len(slice) {
+		n = len(slice)
+	}
+	return slice[len(slice)-n:]
+}
+
+// GetPart 获取数组的部分元素
+func GetPart[V any](slice []V, start, end int) []V {
+	if start < 0 {
+		start = 0
+	}
+	if end > len(slice) {
+		end = len(slice)
+	}
+	return slice[start:end]
+}
