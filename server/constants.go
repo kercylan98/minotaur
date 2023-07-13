@@ -22,7 +22,7 @@ const (
 
 const (
 	DefaultMessageBufferSize     = 1024
-	DefaultMessageChannelSize    = 1024 * 4096
+	DefaultMessageChannelSize    = 1024 * 64
 	DefaultAsyncPoolSize         = 256
 	DefaultWebsocketReadDeadline = 30 * time.Second
 )

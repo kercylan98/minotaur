@@ -69,6 +69,7 @@ func WithWebsocketCompression(level int) Option {
 }
 
 // WithMessageChannelSize 通过指定消息通道大小的方式创建服务器
+//   - 足够大的消息通道可以确保服务器在短时间内接收到大量的消息而不至于阻塞
 //   - 默认值为 DefaultMessageChannelSize
 func WithMessageChannelSize(size int) Option {
 	return func(srv *Server) {
