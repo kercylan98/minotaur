@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.0.13](https://github.com/kercylan98/minotaur/compare/v0.0.12...v0.0.13) (2023-07-12)
+
+
+### Performance Improvements | 性能优化
+
+* 优化代码结构，去除无用代码，去除重复代码 ([47b8a33](https://github.com/kercylan98/minotaur/commit/47b8a333eb22c6bbfe1c6e533681c7dcb5ca34fd))
+
+
+### Other | 其他更改
+
+* 修改 server.Server 慢消息检测的异步消息判定条件为 1 秒 ([8917326](https://github.com/kercylan98/minotaur/commit/8917326a246d52599ef5de18f939a3e035c245db))
+
+
+### Code Refactoring | 重构
+
+* log 包重构，优化使用方式 ([98234e5](https://github.com/kercylan98/minotaur/commit/98234e5f861cecfe4fd30f3db51713201d19c725))
+* 任务 task 包重构 ([a23e48b](https://github.com/kercylan98/minotaur/commit/a23e48b087252995f8a42212bd77f3d0d8126578))
+
+
+### Features | 新特性
+
+* str 包增加内置字符 Dunno、CenterDot、Dot、Slash 和其 []byte 形式 ([94147e8](https://github.com/kercylan98/minotaur/commit/94147e8b9c99de298cc6a6d8957f286f9409f54f))
+* 可使用 super.NewStackGo 创建用于对上一个协程堆栈进行收集的收集器 ([a4a27ea](https://github.com/kercylan98/minotaur/commit/a4a27ea9da7d1d61ad1a5972077f888f309e8f4d))
+* 支持通过 super.StackGO 进行跨协程同步运行堆栈抓取 ([b5a4bc9](https://github.com/kercylan98/minotaur/commit/b5a4bc959df8aee316bedd4050ac34d77a858162))
+
+
+### Bug Fixes | 修复
+
+* 修复服务器消息报错不打印堆栈信息的问题 ([aa39d39](https://github.com/kercylan98/minotaur/commit/aa39d391606b0a1817b16886616d8803925c90cf))
+
 ## [0.0.12](https://github.com/kercylan98/minotaur/compare/v0.0.11...v0.0.12) (2023-07-11)
 
 
