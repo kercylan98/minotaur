@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // PathExist 路径是否存在
@@ -78,4 +79,50 @@ func ReadBlockHook(filePath string, bufferSize int, hook func(data []byte)) erro
 			return err
 		}
 	}
+}
+
+// LineCount 统计文件行数
+func LineCount(filePath string) int {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0
+	}
+
+	line := 0
+	reader := bufio.NewReader(file)
+	for {
+		_, isPrefix, err := reader.ReadLine()
+		if err != nil {
+			break
+		}
+		if !isPrefix {
+			line++
+		}
+	}
+	return line
+}
+
+// FilePaths 获取指定目录下的所有文件路径
+//   - 包括了子目录下的文件
+//   - 不包含目录
+func FilePaths(dir string) []string {
+	var paths []string
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return paths
+	}
+	files, err := os.ReadDir(abs)
+	if err != nil {
+		return paths
+	}
+
+	for _, file := range files {
+		fileAbs := filepath.Join(abs, file.Name())
+		if file.IsDir() {
+			paths = append(paths, FilePaths(fileAbs)...)
+			continue
+		}
+		paths = append(paths, fileAbs)
+	}
+	return paths
 }
