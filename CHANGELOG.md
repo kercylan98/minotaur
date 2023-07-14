@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.14](https://github.com/kercylan98/minotaur/compare/v0.0.13...v0.0.14) (2023-07-13)
+
+
+### Features | 新特性
+
+* slice 包支持获取数组的部分数据 ([c211d62](https://github.com/kercylan98/minotaur/commit/c211d626203b9355fb72e6796faa7aba8728ec0c))
+* 支持通过 file.FilePaths 获取目录下所有文件，通过 file.LineCount 统计文件行数 ([0c5ff89](https://github.com/kercylan98/minotaur/commit/0c5ff894f8c731a84b46d2c2b3bee91588d84efd))
+* 支持通过 server.NewPacket、 server.NewWSPacket、server.NewPacketString、server.NewWSPacketString 函数快捷创建数据包 ([26993d9](https://github.com/kercylan98/minotaur/commit/26993d94d90a5664c003cd8893a214e747d528df))
+* 支持通过 server.SetMessagePacketVisualizer 函数设置服务器数据包消息可视化函数 ([676b542](https://github.com/kercylan98/minotaur/commit/676b5429433cf73bb2bc9fe8b494de4906ade88a))
+
+
+### Performance Improvements | 性能优化
+
+* 调整 server.DefaultMessageChannelSize 为 65535，优化默认内存占用 ([3e9d56e](https://github.com/kercylan98/minotaur/commit/3e9d56ec5b49fde53e8e8ddf9577f619eed98922))
+
 ## [0.0.13](https://github.com/kercylan98/minotaur/compare/v0.0.12...v0.0.13) (2023-07-12)
 
 
