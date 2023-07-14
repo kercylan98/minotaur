@@ -6,10 +6,14 @@ import (
 	"sync"
 )
 
-func NewMap[Key comparable, value any]() *Map[Key, value] {
-	return &Map[Key, value]{
+func NewMap[Key comparable, value any](options ...MapOption[Key, value]) *Map[Key, value] {
+	m := &Map[Key, value]{
 		data: make(map[Key]value),
 	}
+	for _, option := range options {
+		option(m)
+	}
+	return m
 }
 
 // Map 并发安全的字典数据结构

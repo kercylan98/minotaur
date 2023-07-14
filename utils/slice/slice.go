@@ -1,6 +1,9 @@
 package slice
 
-import "math/rand"
+import (
+	"math/rand"
+	"reflect"
+)
 
 // Del 删除特定索引的元素
 func Del[V any](slice *[]V, index int) {
@@ -98,6 +101,24 @@ func Shuffle[V any](slice []V) {
 	}
 }
 
+// Distinct 去重
+func Distinct[V any](slice []V) []V {
+	var result []V
+	for i := range slice {
+		flag := true
+		for j := range result {
+			if reflect.DeepEqual(slice[i], result[j]) {
+				flag = false
+				break
+			}
+		}
+		if flag {
+			result = append(result, slice[i])
+		}
+	}
+	return result
+}
+
 // Swap 交换数组中的两个元素
 func Swap[V any](slice []V, i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
@@ -146,7 +167,7 @@ func GetEndPart[V any](slice []V, n int) []V {
 	return slice[len(slice)-n:]
 }
 
-// GetPart 获取数组的部分元素
+// GetPart 获取指定区间的元素
 func GetPart[V any](slice []V, start, end int) []V {
 	if start < 0 {
 		start = 0
@@ -155,4 +176,24 @@ func GetPart[V any](slice []V, start, end int) []V {
 		end = len(slice)
 	}
 	return slice[start:end]
+}
+
+// Contains 判断数组是否包含某个元素
+func Contains[V comparable](slice []V, value V) bool {
+	for _, v := range slice {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsAny 判断数组是否包含某个元素
+func ContainsAny[V any](slice []V, values V) bool {
+	for _, v := range slice {
+		if reflect.DeepEqual(v, values) {
+			return true
+		}
+	}
+	return false
 }

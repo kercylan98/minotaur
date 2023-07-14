@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/asynchronization"
+	"github.com/kercylan98/minotaur/utils/asynchronous"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
@@ -12,7 +12,7 @@ import (
 func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...RoomOption[PlayerID, Player]) *Room[PlayerID, Player] {
 	room := &Room[PlayerID, Player]{
 		guid:    guid,
-		players: asynchronization.NewMap[PlayerID, Player](),
+		players: asynchronous.NewMap[PlayerID, Player](),
 	}
 	for _, option := range options {
 		option(room)

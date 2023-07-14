@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/asynchronization"
+	"github.com/kercylan98/minotaur/utils/asynchronous"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/slice"
 	"sync"
@@ -12,7 +12,7 @@ import (
 func NewRoomSeat[PlayerID comparable, Player game.Player[PlayerID]](room game.Room[PlayerID, Player], options ...RoomSeatOption[PlayerID, Player]) *RoomSeat[PlayerID, Player] {
 	roomSeat := &RoomSeat[PlayerID, Player]{
 		Room:   room,
-		seatPS: asynchronization.NewMap[PlayerID, int](),
+		seatPS: asynchronous.NewMap[PlayerID, int](),
 	}
 	for _, option := range options {
 		option(roomSeat)

@@ -1,7 +1,7 @@
 package report
 
 import (
-	"github.com/kercylan98/minotaur/utils/asynchronization"
+	"github.com/kercylan98/minotaur/utils/asynchronous"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"sync"
 )
@@ -10,7 +10,7 @@ import (
 func NewDataBuried[DataID comparable, Data any](name string, hitLogic HitLogic[Data], options ...DataBuriedOption[DataID, Data]) *DataBuried[DataID, Data] {
 	buried := &DataBuried[DataID, Data]{
 		name:     name,
-		data:     asynchronization.NewMap[DataID, Data](),
+		data:     asynchronous.NewMap[DataID, Data](),
 		hitLogic: hitLogic,
 	}
 	buried.setData = func(id DataID, data Data) {

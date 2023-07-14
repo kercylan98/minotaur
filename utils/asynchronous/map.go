@@ -1,14 +1,18 @@
-package asynchronization
+package asynchronous
 
 import (
 	"encoding/json"
 	"github.com/kercylan98/minotaur/utils/hash"
 )
 
-func NewMap[Key comparable, value any]() *Map[Key, value] {
-	return &Map[Key, value]{
-		data: make(map[Key]value),
+func NewMap[Key comparable, Value any](options ...MapOption[Key, Value]) *Map[Key, Value] {
+	m := &Map[Key, Value]{
+		data: make(map[Key]Value),
 	}
+	for _, option := range options {
+		option(m)
+	}
+	return m
 }
 
 // Map 非并发安全的字典数据结构

@@ -37,3 +37,8 @@ func IntN(n int) int {
 	}
 	return rand.Intn(n)
 }
+
+// Bool 返回一个随机的布尔值
+func Bool() bool {
+	return rand.Intn(2) == 1
+}
