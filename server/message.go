@@ -21,6 +21,9 @@ const (
 
 	// MessageTypeAsync 异步消息类型
 	MessageTypeAsync
+
+	// MessageTypeSystem 系统消息类型
+	MessageTypeSystem
 )
 
 var messageNames = map[MessageType]string{
@@ -29,6 +32,7 @@ var messageNames = map[MessageType]string{
 	MessageTypeCross:  "MessageTypeCross",
 	MessageTypeTicker: "MessageTypeTicker",
 	MessageTypeAsync:  "MessageTypeAsync",
+	MessageTypeSystem: "MessageTypeSystem",
 }
 
 const (
@@ -143,6 +147,14 @@ func PushAsyncMessage(srv *Server, caller func() error, callback func(err error)
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeAsync
 	msg.attrs = append([]any{caller, callback}, mark...)
+	srv.pushMessage(msg)
+}
+
+// PushSystemMessage 向特定服务器中推送 MessageTypeSystem 消息
+func PushSystemMessage(srv *Server, handle func(), mark ...any) {
+	msg := srv.messagePool.Get()
+	msg.t = MessageTypeSystem
+	msg.attrs = append([]any{handle}, mark...)
 	srv.pushMessage(msg)
 }
 

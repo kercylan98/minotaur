@@ -114,6 +114,7 @@ func (slf *Server) Run(addr string) error {
 	slf.event.check()
 	slf.addr = addr
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
+	var messageInitFinish = make(chan struct{}, 1)
 	var connectionInitHandle = func(callback func()) {
 		slf.messagePool = synchronization.NewPool[*Message](slf.messagePoolSize,
 			func() *Message {
@@ -132,6 +133,7 @@ func (slf *Server) Run(addr string) error {
 			go callback()
 		}
 		go func() {
+			messageInitFinish <- struct{}{}
 			for message := range slf.messageChannel {
 				slf.dispatchMessage(message)
 			}
@@ -312,6 +314,10 @@ func (slf *Server) Run(addr string) error {
 		return ErrCanNotSupportNetwork
 	}
 
+	<-messageInitFinish
+	close(messageInitFinish)
+	messageInitFinish = nil
+	fmt.Println("messageInitFinish")
 	if slf.multiple == nil {
 		log.Info("Server", zap.String(serverMark, "===================================================================="))
 		log.Info("Server", zap.String(serverMark, "RunningInfo"),
@@ -568,6 +574,8 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		}); err != nil {
 			panic(err)
 		}
+	case MessageTypeSystem:
+		attrs[0].(func())()
 	default:
 		log.Warn("Server", zap.String("not support message type", msg.t.String()))
 	}

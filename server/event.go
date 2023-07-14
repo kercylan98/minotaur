@@ -6,6 +6,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"go.uber.org/zap"
 	"reflect"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -45,9 +46,11 @@ func (slf *event) RegStopEvent(handle StopEventHandle) {
 }
 
 func (slf *event) OnStopEvent() {
-	for _, handle := range slf.stopEventHandles {
-		handle(slf.Server)
-	}
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.stopEventHandles {
+			handle(slf.Server)
+		}
+	})
 }
 
 // RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
@@ -69,20 +72,22 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 }
 
 func (slf *event) OnConsoleCommandEvent(command string) {
-	handles, exist := slf.consoleCommandEventHandles[command]
-	if !exist {
-		switch command {
-		case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
-			log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
-			slf.Server.shutdown(nil)
-			return
+	PushSystemMessage(slf.Server, func() {
+		handles, exist := slf.consoleCommandEventHandles[command]
+		if !exist {
+			switch command {
+			case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
+				log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
+				slf.Server.shutdown(nil)
+				return
+			}
+			log.Warn("Server", zap.String("Command", "unregistered"))
+		} else {
+			for _, handle := range handles {
+				handle(slf.Server)
+			}
 		}
-		log.Warn("Server", zap.String("Command", "unregistered"))
-	} else {
-		for _, handle := range handles {
-			handle(slf.Server)
-		}
-	}
+	})
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -92,6 +97,12 @@ func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
 }
 
 func (slf *event) OnStartBeforeEvent() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error("Server", zap.String("OnStartBeforeEvent", fmt.Sprintf("%v", err)))
+			debug.PrintStack()
+		}
+	}()
 	for _, handle := range slf.startBeforeEventHandles {
 		handle(slf.Server)
 	}
@@ -104,9 +115,11 @@ func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle) {
 }
 
 func (slf *event) OnStartFinishEvent() {
-	for _, handle := range slf.startFinishEventHandles {
-		handle(slf.Server)
-	}
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.startFinishEventHandles {
+			handle(slf.Server)
+		}
+	})
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数
@@ -119,11 +132,13 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
-	for _, handle := range slf.connectionClosedEventHandles {
-		handle(slf.Server, conn, err)
-	}
-	conn.Close()
-	slf.Server.online.Delete(conn.GetID())
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.connectionClosedEventHandles {
+			handle(slf.Server, conn, err)
+		}
+		conn.Close()
+		slf.Server.online.Delete(conn.GetID())
+	})
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
@@ -136,10 +151,12 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
-	slf.Server.online.Set(conn.GetID(), conn)
-	for _, handle := range slf.connectionOpenedEventHandles {
-		handle(slf.Server, conn)
-	}
+	PushSystemMessage(slf.Server, func() {
+		slf.Server.online.Set(conn.GetID(), conn)
+		for _, handle := range slf.connectionOpenedEventHandles {
+			handle(slf.Server, conn)
+		}
+	})
 }
 
 // RegConnectionReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
@@ -176,9 +193,11 @@ func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle) {
 }
 
 func (slf *event) OnMessageErrorEvent(message *Message, err error) {
-	for _, handle := range slf.messageErrorEventHandles {
-		handle(slf.Server, message, err)
-	}
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.messageErrorEventHandles {
+			handle(slf.Server, message, err)
+		}
+	})
 }
 
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
@@ -188,9 +207,11 @@ func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle) {
 }
 
 func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
-	for _, handle := range slf.messageLowExecEventHandles {
-		handle(slf.Server, message, cost)
-	}
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.messageLowExecEventHandles {
+			handle(slf.Server, message, cost)
+		}
+	})
 }
 
 func (slf *event) check() {
