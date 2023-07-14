@@ -317,7 +317,6 @@ func (slf *Server) Run(addr string) error {
 	<-messageInitFinish
 	close(messageInitFinish)
 	messageInitFinish = nil
-	fmt.Println("messageInitFinish")
 	if slf.multiple == nil {
 		log.Info("Server", zap.String(serverMark, "===================================================================="))
 		log.Info("Server", zap.String(serverMark, "RunningInfo"),
@@ -566,10 +565,11 @@ func (slf *Server) dispatchMessage(msg *Message) {
 					slf.messagePool.Release(msg)
 				}
 			}()
-			if err := handle(); err != nil {
-				if cb {
-					callback(err)
-				}
+			err := handle()
+			if cb {
+				callback(err)
+			} else {
+				log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
 			panic(err)
