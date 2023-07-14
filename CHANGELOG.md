@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.0.15](https://github.com/kercylan98/minotaur/compare/v0.0.14...v0.0.15) (2023-07-14)
+
+
+### Bug Fixes | 修复
+
+* 修复 log 无法正确打印 Caller 的问题 ([349ec42](https://github.com/kercylan98/minotaur/commit/349ec42a7289879d830e592328970bd0ba77e817))
+
+
+### Other | 其他更改
+
+* mod 优化 ([8f9589d](https://github.com/kercylan98/minotaur/commit/8f9589df4270aa5248ee78a005bccf0ffe38c6f7))
+* 移除 tools 包 ([3faca36](https://github.com/kercylan98/minotaur/commit/3faca36d5173c79b2dd5f17b08907a44b127a3d0))
+
+
+### Features | 新特性
+
+* 新增 steram 包，支持 map 和 slice 的链式操作 ([10fcb54](https://github.com/kercylan98/minotaur/commit/10fcb54322e9afeb9eac61175780126bf753967e))
+
 ## [0.0.14](https://github.com/kercylan98/minotaur/compare/v0.0.13...v0.0.14) (2023-07-13)
 
 
