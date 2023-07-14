@@ -216,7 +216,7 @@ func (slf *Map[Key, Value]) Keys() []Key {
 		defer slf.lock.RUnlock()
 	}
 	var s = make([]Key, 0, len(slf.data))
-	for k, _ := range slf.data {
+	for k := range slf.data {
 		s = append(s, k)
 	}
 	return s

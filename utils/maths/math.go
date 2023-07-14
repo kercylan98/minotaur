@@ -27,7 +27,7 @@ func Pow(a, n int) int {
 	if n == 1 {
 		return a
 	}
-	var result int = 1
+	var result = 1
 	factor := a
 	for n != 0 {
 		if n&1 != 0 {

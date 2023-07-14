@@ -69,7 +69,7 @@ func ExampleNavMesh_FindPath() {
 
 			for x := sx; x <= bx; x++ {
 				for y := sy; y <= by; y++ {
-					fp.Put(geometry.NewPoint[int](int(x), int(y)), '+')
+					fp.Put(geometry.NewPoint[int](x, y), '+')
 				}
 			}
 		}

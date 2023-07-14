@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"text/template"
 )
@@ -39,11 +40,12 @@ func New(xlsxPath string) *ConfigExport {
 					zap.String("Info", "Excluded non-configuration table files"),
 				)
 			default:
-				log.ErrorHideStack("ConfigExport",
+				log.Error("ConfigExport",
 					zap.String("File", xlsxPath),
 					zap.String("Sheet", sheet.Name),
 					zap.String("Info", "Excluded non-configuration table files"),
 				)
+				debug.PrintStack()
 			}
 		} else {
 			if config == nil {

@@ -146,7 +146,7 @@ func (slf *Map[Key, Value]) rangeFree(handle func(key Key, value Value, skip fun
 
 func (slf *Map[Key, Value]) Keys() []Key {
 	var s = make([]Key, 0, len(slf.data))
-	for k, _ := range slf.data {
+	for k := range slf.data {
 		s = append(s, k)
 	}
 	return s
