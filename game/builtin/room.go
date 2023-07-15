@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/asynchronous"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
-	"go.uber.org/zap"
 )
 
 // NewRoom 创建一个默认的内置游戏房间 Room
@@ -90,7 +89,7 @@ func (slf *Room[PlayerID, Player]) Join(player Player) error {
 	}
 	slf.players.Set(playerId, player)
 	if !exist {
-		log.Debug("Room.Join", zap.Any("guid", slf.GetGuid()), zap.Any("player", playerId))
+		log.Debug("Room.Join", log.Any("guid", slf.GetGuid()), log.Any("player", playerId))
 		if slf.players.Size() == 1 && !slf.noMaster {
 			slf.owner = playerId
 		}
@@ -105,7 +104,7 @@ func (slf *Room[PlayerID, Player]) Leave(id PlayerID) {
 	if !exist {
 		return
 	}
-	log.Debug("Room.Leave", zap.Any("guid", slf.GetGuid()), zap.Any("player", id))
+	log.Debug("Room.Leave", log.Any("guid", slf.GetGuid()), log.Any("player", id))
 	slf.OnPlayerLeaveRoomEvent(player)
 	slf.players.Delete(id)
 }

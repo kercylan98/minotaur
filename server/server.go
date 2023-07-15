@@ -14,7 +14,6 @@ import (
 	"github.com/panjf2000/gnet"
 	"github.com/panjf2000/gnet/pkg/logging"
 	"github.com/xtaci/kcp-go/v5"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"net"
 	"net/http"
@@ -318,12 +317,12 @@ func (slf *Server) Run(addr string) error {
 	close(messageInitFinish)
 	messageInitFinish = nil
 	if slf.multiple == nil {
-		log.Info("Server", zap.String(serverMark, "===================================================================="))
-		log.Info("Server", zap.String(serverMark, "RunningInfo"),
-			zap.Any("network", slf.network),
-			zap.String("listen", slf.addr),
+		log.Info("Server", log.String(serverMark, "===================================================================="))
+		log.Info("Server", log.String(serverMark, "RunningInfo"),
+			log.Any("network", slf.network),
+			log.String("listen", slf.addr),
 		)
-		log.Info("Server", zap.String(serverMark, "===================================================================="))
+		log.Info("Server", log.String(serverMark, "===================================================================="))
 		slf.OnStartFinishEvent()
 
 		signal.Notify(slf.systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
@@ -422,15 +421,15 @@ func (slf *Server) shutdown(err error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if shutdownErr := slf.httpServer.Shutdown(ctx); shutdownErr != nil {
-			log.Error("Server", zap.Error(shutdownErr))
+			log.Error("Server", log.Err(shutdownErr))
 		}
 	}
 
 	if err != nil {
 		if slf.multiple != nil {
 			slf.multiple.RegExitEvent(func() {
-				log.Panic("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
-					zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+				log.Panic("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
+					log.String("action", "shutdown"), log.String("state", "exception"), log.Err(err))
 			})
 			for i, server := range slf.multiple.servers {
 				if server.addr == slf.addr {
@@ -439,12 +438,12 @@ func (slf *Server) shutdown(err error) {
 				}
 			}
 		} else {
-			log.Panic("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
-				zap.String("action", "shutdown"), zap.String("state", "exception"), zap.Error(err))
+			log.Panic("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
+				log.String("action", "shutdown"), log.String("state", "exception"), log.Err(err))
 		}
 	} else {
-		log.Info("Server", zap.Any("network", slf.network), zap.String("listen", slf.addr),
-			zap.String("action", "shutdown"), zap.String("state", "normal"))
+		log.Info("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
+			log.String("action", "shutdown"), log.String("state", "normal"))
 	}
 	if slf.gServer == nil {
 		slf.closeChannel <- struct{}{}
@@ -479,7 +478,7 @@ func (slf *Server) pushMessage(message *Message) {
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration) {
 	cost := time.Since(present)
 	if cost > expect {
-		log.Warn("Server", zap.String("type", "low-message"), zap.String("cost", cost.String()), zap.String("message", message.String()), zap.Stack("stack"))
+		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", message.String()), log.Stack("stack"))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -496,7 +495,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			select {
 			case <-ctx.Done():
 				if err := ctx.Err(); err == context.DeadlineExceeded {
-					log.Warn("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("SuspectedDeadlock", msg.attrs))
+					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.Any("SuspectedDeadlock", msg.attrs))
 				}
 			}
 		}()
@@ -506,7 +505,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	defer func() {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
-			log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("MessageAttrs", msg.attrs), zap.Any("error", err), zap.String("stack", stack))
+			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.attrs), log.Any("error", err), log.String("stack", stack))
 			fmt.Println(stack)
 			if e, ok := err.(error); ok {
 				slf.OnMessageErrorEvent(msg, e)
@@ -535,11 +534,11 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		err, action := attrs[0].(error), attrs[1].(MessageErrorAction)
 		switch action {
 		case MessageErrorActionNone:
-			log.Panic("Server", zap.Error(err))
+			log.Panic("Server", log.Err(err))
 		case MessageErrorActionShutdown:
 			slf.shutdown(err)
 		default:
-			log.Warn("Server", zap.String("not support message error action", action.String()))
+			log.Warn("Server", log.String("not support message error action", action.String()))
 		}
 	case MessageTypeCross:
 		slf.OnReceiveCrossPacketEvent(attrs[0].(int64), attrs[1].([]byte))
@@ -552,7 +551,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			defer func() {
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.String("stack", stack))
+					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
 					fmt.Println(stack)
 					if e, ok := err.(error); ok {
 						slf.OnMessageErrorEvent(msg, e)
@@ -569,7 +568,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			if cb {
 				callback(err)
 			} else {
-				log.Error("Server", zap.String("MessageType", messageNames[msg.t]), zap.Any("error", err), zap.String("stack", string(debug.Stack())))
+				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
 			panic(err)
@@ -577,6 +576,6 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	case MessageTypeSystem:
 		attrs[0].(func())()
 	default:
-		log.Warn("Server", zap.String("not support message type", msg.t.String()))
+		log.Warn("Server", log.String("not support message type", msg.t.String()))
 	}
 }

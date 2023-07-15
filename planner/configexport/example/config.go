@@ -25,12 +25,12 @@ func LoadConfig(handle func(filename string, config any) error) {
 	var err error
 	_IndexConfig = make(map[int]map[string]*IndexConfigDefine)
 	if err = handle("IndexConfig.json", &_IndexConfig); err != nil {
-		log.Error("Config", zap.String("Name", "IndexConfig"), zap.Bool("Invalid", true), zap.Error(err))
+		log.Err("Config", log.String("Name", "IndexConfig"), log.Bool("Invalid", true), log.Err(err))
 	}
 
 	_EasyConfig = new(EasyConfigDefine)
 	if err = handle("EasyConfig.json", _EasyConfig); err != nil {
-		log.Error("Config", zap.String("Name", "EasyConfig"), zap.Bool("Invalid", true), zap.Error(err))
+		log.Err("Config", log.String("Name", "EasyConfig"), log.Bool("Invalid", true), log.Err(err))
 	}
 
 }

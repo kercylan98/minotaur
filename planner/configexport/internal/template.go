@@ -59,11 +59,11 @@ func LoadConfig(handle func(filename string, config any) error) {
 	_{{$config.Name}} = {{$config.GetVariableGen}}
 {{if eq $config.IndexCount 0}}
 	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", _{{$config.Name}}); err != nil {
-			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
+			log.Err("Config", log.String("Name", "{{$config.Name}}"), log.Bool("Invalid", true), log.Err(err))
 	}
 {{else}}
 	if err = handle("{{$config.Prefix}}{{$config.Name}}.json", &_{{$config.Name}}); err != nil {
-			log.Error("Config", zap.String("Name", "{{$config.Name}}"), zap.Bool("Invalid", true), zap.Error(err))
+			log.Err("Config", log.String("Name", "{{$config.Name}}"), log.Bool("Invalid", true), log.Err(err))
 	}
 {{end}}
 {{end}}

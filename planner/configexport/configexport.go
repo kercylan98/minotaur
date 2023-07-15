@@ -8,7 +8,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/tealeg/xlsx"
-	"go.uber.org/zap"
 	"os/exec"
 	"path/filepath"
 	"runtime/debug"
@@ -29,21 +28,21 @@ func New(xlsxPath string) *ConfigExport {
 			switch err {
 			case internal.ErrReadConfigFailedSame:
 				log.Warn("ConfigExport",
-					zap.String("File", xlsxPath),
-					zap.String("Sheet", sheet.Name),
-					zap.String("Info", "A configuration with the same name exists, skipped"),
+					log.String("File", xlsxPath),
+					log.String("Sheet", sheet.Name),
+					log.String("Info", "A configuration with the same name exists, skipped"),
 				)
 			case internal.ErrReadConfigFailedIgnore:
 				log.Info("ConfigExport",
-					zap.String("File", xlsxPath),
-					zap.String("Sheet", sheet.Name),
-					zap.String("Info", "Excluded non-configuration table files"),
+					log.String("File", xlsxPath),
+					log.String("Sheet", sheet.Name),
+					log.String("Info", "Excluded non-configuration table files"),
 				)
 			default:
 				log.Error("ConfigExport",
-					zap.String("File", xlsxPath),
-					zap.String("Sheet", sheet.Name),
-					zap.String("Info", "Excluded non-configuration table files"),
+					log.String("File", xlsxPath),
+					log.String("Sheet", sheet.Name),
+					log.String("Info", "Excluded non-configuration table files"),
 				)
 				debug.PrintStack()
 			}
@@ -55,9 +54,9 @@ func New(xlsxPath string) *ConfigExport {
 			ce.exist[config.Name] = true
 
 			log.Info("ConfigExport",
-				zap.String("File", xlsxPath),
-				zap.String("Sheet", sheet.Name),
-				zap.String("Info", "Export successfully"),
+				log.String("File", xlsxPath),
+				log.String("Sheet", sheet.Name),
+				log.String("Info", "Export successfully"),
 			)
 		}
 	}
@@ -84,9 +83,9 @@ func Merge(exports ...*ConfigExport) *ConfigExport {
 		for _, config := range ce.configs {
 			if _, ok := export.exist[config.Name]; ok {
 				log.Warn("ConfigExport",
-					zap.String("File", ce.xlsxPath),
-					zap.String("Sheet", config.Name),
-					zap.String("Info", "A configuration with the same name exists, skipped"),
+					log.String("File", ce.xlsxPath),
+					log.String("Sheet", config.Name),
+					log.String("Info", "A configuration with the same name exists, skipped"),
 				)
 				continue
 			}

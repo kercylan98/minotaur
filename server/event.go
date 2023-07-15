@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
-	"go.uber.org/zap"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -42,7 +41,7 @@ type event struct {
 // RegStopEvent 服务器停止时将立即执行被注册的事件处理函数
 func (slf *event) RegStopEvent(handle StopEventHandle) {
 	slf.stopEventHandles = append(slf.stopEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnStopEvent() {
@@ -68,7 +67,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 		}()
 	})
 	slf.consoleCommandEventHandles[command] = append(slf.consoleCommandEventHandles[command], handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConsoleCommandEvent(command string) {
@@ -77,11 +76,11 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 		if !exist {
 			switch command {
 			case "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN":
-				log.Info("Console", zap.String("Receive", command), zap.String("Action", "Shutdown"))
+				log.Info("Console", log.String("Receive", command), log.String("Action", "Shutdown"))
 				slf.Server.shutdown(nil)
 				return
 			}
-			log.Warn("Server", zap.String("Command", "unregistered"))
+			log.Warn("Server", log.String("Command", "unregistered"))
 		} else {
 			for _, handle := range handles {
 				handle(slf.Server)
@@ -93,13 +92,13 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
 func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
 	slf.startBeforeEventHandles = append(slf.startBeforeEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnStartBeforeEvent() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error("Server", zap.String("OnStartBeforeEvent", fmt.Sprintf("%v", err)))
+			log.Error("Server", log.String("OnStartBeforeEvent", fmt.Sprintf("%v", err)))
 			debug.PrintStack()
 		}
 	}()
@@ -111,7 +110,7 @@ func (slf *event) OnStartBeforeEvent() {
 // RegStartFinishEvent 在服务器启动完成时将立刻执行被注册的事件处理函数
 func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle) {
 	slf.startFinishEventHandles = append(slf.startFinishEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnStartFinishEvent() {
@@ -128,7 +127,7 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionClosedEventHandles = append(slf.connectionClosedEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
@@ -147,7 +146,7 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionOpenedEventHandles = append(slf.connectionOpenedEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
@@ -165,7 +164,7 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 		panic(ErrNetworkIncompatibleHttp)
 	}
 	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet Packet) {
@@ -177,7 +176,7 @@ func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet Packet) {
 // RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
 func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle) {
 	slf.receiveCrossPacketEventHandles = append(slf.receiveCrossPacketEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
@@ -189,7 +188,7 @@ func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
 // RegMessageErrorEvent 在处理消息发生错误时将立即执行被注册的事件处理函数
 func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle) {
 	slf.messageErrorEventHandles = append(slf.messageErrorEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnMessageErrorEvent(message *Message, err error) {
@@ -203,7 +202,7 @@ func (slf *event) OnMessageErrorEvent(message *Message, err error) {
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
 func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle) {
 	slf.messageLowExecEventHandles = append(slf.messageLowExecEventHandles, handle)
-	log.Info("Server", zap.String("RegEvent", runtimes.CurrentRunningFuncName()), zap.String("handle", reflect.TypeOf(handle).String()))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
@@ -219,12 +218,12 @@ func (slf *event) check() {
 	case NetworkHttp, NetworkGRPC:
 	default:
 		if len(slf.connectionReceivePacketEventHandles) == 0 {
-			log.Warn("Server", zap.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
+			log.Warn("Server", log.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
 		}
 	}
 
 	if len(slf.receiveCrossPacketEventHandles) > 0 && slf.cross == nil {
-		log.Warn("Server", zap.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
+		log.Warn("Server", log.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
 	}
 
 }

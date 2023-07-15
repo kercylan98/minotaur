@@ -2,7 +2,6 @@ package notify
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
-	"go.uber.org/zap"
 	"reflect"
 )
 
@@ -20,19 +19,19 @@ func NewManager(senders ...Sender) *Manager {
 			case <-manager.closeChannel:
 				close(manager.closeChannel)
 				close(manager.notifyChannel)
-				log.Info("Manager", zap.String("state", "release"))
+				log.Info("Manager", log.String("state", "release"))
 				return
 			case notify := <-manager.notifyChannel:
 				for _, sender := range manager.senders {
 					if err := sender.Push(notify); err != nil {
-						log.Error("Manager", zap.String("sender", reflect.TypeOf(sender).String()), zap.Error(err))
+						log.Error("Manager", log.String("sender", reflect.TypeOf(sender).String()), log.Err(err))
 					}
 				}
 			}
 		}
 	}()
 
-	log.Info("Manager", zap.String("state", "running"))
+	log.Info("Manager", log.String("state", "running"))
 	return manager
 }
 

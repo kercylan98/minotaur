@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"sync"
@@ -60,14 +59,14 @@ func (slf *MultipleServer) Run() {
 	}
 	wait.Wait()
 
-	log.Info("Server", zap.String(serverMultipleMark, "===================================================================="))
+	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
 	for _, server := range slf.servers {
-		log.Info("Server", zap.String(serverMultipleMark, "RunningInfo"),
-			zap.Any("network", server.network),
-			zap.String("listen", server.addr),
+		log.Info("Server", log.String(serverMultipleMark, "RunningInfo"),
+			log.Any("network", server.network),
+			log.String("listen", server.addr),
 		)
 	}
-	log.Info("Server", zap.String(serverMultipleMark, "===================================================================="))
+	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
 
 	systemSignal := make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

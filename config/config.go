@@ -4,7 +4,6 @@ import (
 	jsonIter "github.com/json-iterator/go"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
-	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 	"sync"
@@ -51,7 +50,7 @@ func Load() {
 			return err
 		}
 		if err = json.Unmarshal(bytes, &config); err == nil && isInit {
-			log.Info("Config", zap.String("Name", filename), zap.Bool("LoadSuccess", true))
+			log.Info("Config", log.String("Name", filename), log.Bool("LoadSuccess", true))
 		}
 		return err
 	})

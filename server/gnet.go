@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -23,7 +22,7 @@ func (slf *gNet) OnShutdown(server gnet.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if err := gnet.Stop(ctx, fmt.Sprintf("%s://%s", slf.network, slf.addr)); err != nil {
-		log.Error("Server", zap.String("Minotaur GNet Server", "Shutdown"), zap.Error(err))
+		log.Error("Server", log.String("Minotaur GNet Server", "Shutdown"), log.Err(err))
 	}
 }
 
