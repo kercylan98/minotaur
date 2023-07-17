@@ -8,16 +8,25 @@ import (
 	"strings"
 )
 
-func NewXlsx(sheet *xlsx.Sheet) *Xlsx {
+type XlsxExportType int
+
+const (
+	XlsxExportTypeServer XlsxExportType = iota
+	XlsxExportTypeClient
+)
+
+func NewXlsx(sheet *xlsx.Sheet, exportType XlsxExportType) *Xlsx {
 	config := &Xlsx{
-		sheet: sheet,
+		sheet:      sheet,
+		exportType: exportType,
 	}
 	return config
 }
 
 // Xlsx 内置的 Xlsx 配置
 type Xlsx struct {
-	sheet *xlsx.Sheet
+	sheet      *xlsx.Sheet
+	exportType XlsxExportType
 }
 
 func (slf *Xlsx) GetConfigName() string {
@@ -41,12 +50,13 @@ func (slf *Xlsx) GetIndexCount() int {
 }
 
 func (slf *Xlsx) GetFields() []pce.DataField {
-	var handle = func(desc, name, fieldType, exportType *xlsx.Cell) (pce.DataField, bool) {
+	var handle = func(index int, desc, name, fieldType, exportType *xlsx.Cell) (pce.DataField, bool) {
 		var field pce.DataField
 		if desc == nil || name == nil || fieldType == nil || exportType == nil {
 			return field, false
 		}
 		field = pce.DataField{
+			Index:      index,
 			Name:       strings.ReplaceAll(strings.ReplaceAll(str.FirstUpper(name.String()), "\r", ""), "\n", ""),
 			Type:       fieldType.String(),
 			ExportType: exportType.String(),
@@ -65,13 +75,13 @@ func (slf *Xlsx) GetFields() []pce.DataField {
 	var fields []pce.DataField
 	if slf.GetIndexCount() > 0 {
 		for x := 1; x < slf.getWidth(); x++ {
-			if field, match := handle(slf.get(x, 3), slf.get(x, 4), slf.get(x, 5), slf.get(x, 6)); match {
+			if field, match := handle(x, slf.get(x, 3), slf.get(x, 4), slf.get(x, 5), slf.get(x, 6)); match {
 				fields = append(fields, field)
 			}
 		}
 	} else {
 		for y := 4; y < slf.getHeight(); y++ {
-			if field, match := handle(slf.get(0, y), slf.get(1, y), slf.get(2, y), slf.get(3, y)); match {
+			if field, match := handle(y, slf.get(0, y), slf.get(1, y), slf.get(2, y), slf.get(3, y)); match {
 				fields = append(fields, field)
 			}
 		}
@@ -86,32 +96,31 @@ func (slf *Xlsx) GetData() [][]pce.DataInfo {
 		for y := 7; y < slf.getHeight(); y++ {
 			var line []pce.DataInfo
 			var stop bool
-			for x := 0; x < slf.getWidth(); x++ {
-				if prefixCell := slf.get(x, y); prefixCell != nil {
-					prefix := prefixCell.String()
-					if strings.HasPrefix(prefix, "#") {
-						break
-					}
-				}
-				if x == 0 {
+
+			if prefixCell := slf.get(0, y); prefixCell != nil {
+				prefix := prefixCell.String()
+				if strings.HasPrefix(prefix, "#") {
 					continue
 				}
-				var isIndex = x-1 < slf.GetIndexCount()
+			}
+
+			for i, field := range slf.GetFields() {
+				var isIndex = i-1 < slf.GetIndexCount()
 
 				var value string
-				if valueCell := slf.get(x, y); valueCell != nil {
+				if valueCell := slf.get(field.Index, y); valueCell != nil {
 					value = valueCell.String()
 				} else if isIndex {
 					stop = true
 					break
 				}
-				valueCell := slf.get(x, y)
+				valueCell := slf.get(field.Index, y)
 				if valueCell == nil {
 					break
 				}
-				if len(fields) > x-1 {
+				if len(fields) > i-1 {
 					line = append(line, pce.DataInfo{
-						DataField: fields[x-1],
+						DataField: field,
 						Value:     value,
 					})
 				}
@@ -164,7 +173,15 @@ func (slf *Xlsx) get(x, y int) *xlsx.Cell {
 
 func (slf *Xlsx) checkFieldInvalid(field pce.DataField) bool {
 	switch strings.ToLower(field.ExportType) {
-	case "s", "c", "sc", "cs":
+	case "s":
+		if slf.exportType != XlsxExportTypeServer {
+			return true
+		}
+	case "c":
+		if slf.exportType != XlsxExportTypeClient {
+			return true
+		}
+	case "sc", "cs":
 	default:
 		return true
 	}

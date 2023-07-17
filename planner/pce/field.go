@@ -1,7 +1,6 @@
 package pce
 
 import (
-	"github.com/kercylan98/minotaur/utils/super"
 	"reflect"
 	"strings"
 )
@@ -20,6 +19,5 @@ type Field interface {
 func GetFieldGolangType(field Field) string {
 	typeOf := reflect.TypeOf(field).Elem()
 	kind := strings.ToLower(typeOf.Kind().String())
-	name := strings.ToLower(typeOf.Name())
-	return super.If(kind == name, kind, name)
+	return kind
 }

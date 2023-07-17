@@ -10,7 +10,7 @@ type Exporter struct{}
 
 // ExportStruct 导出结构
 func (slf *Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct) ([]byte, error) {
-	raw, err := tmpl.Render(tmplStruct)
+	raw, err := tmpl.Render(tmplStruct...)
 	if err != nil {
 		return nil, err
 	}

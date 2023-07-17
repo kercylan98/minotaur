@@ -40,11 +40,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		
 		var (
 			json = jsonIter.ConfigCompatibleWithStandardLibrary
-			configs map[Sign]any = map[Sign]any{
-				{{- range .Templates}}
-					{{.Name}}Sign: {{.Name}},
-				{{- end}}
-			}
+			configs map[Sign]any
 			signs = []Sign{
 				{{- range .Templates}}	
 					{{.Name}}Sign,
@@ -55,13 +51,33 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		
 		var (
 			{{- range .Templates}}
-				{{.Name}} {{$.GetVariable .}}
+				{{- if $.HasIndex .}}
+					{{.Name}} {{$.GetVariable .}}
+				{{- end}}
+			{{- end}}
+		)
+
+		var (
+			{{- range .Templates}}
+				{{- if $.HasIndex .}}{{- else}}
+					{{.Name}} *{{$.GetConfigName .}}
+				{{- end}}
 			{{- end}}
 		)
 		
 		var (
 			{{- range .Templates}}
-				_{{.Name}} {{$.GetVariable .}}
+				{{- if $.HasIndex .}}
+					_{{.Name}} {{$.GetVariable .}}
+				{{- end}}
+			{{- end}}
+		)
+
+		var (
+			{{- range .Templates}}
+				{{- if $.HasIndex .}}{{- else}}
+					_{{.Name}} *{{$.GetConfigName .}}
+				{{- end}}
 			{{- end}}
 		)
 		
@@ -121,14 +137,21 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 			mutex.Lock()
 			defer mutex.Unlock()
 			for _, sign := range signs {
-				{{- range .Templates}}
-					temp := make({{$.GetVariable .}})
-					if err := handle(sign, &temp, json);err != nil {
-						log.Error("Config", log.String("Name", "{{.Name}}"), log.Bool("Invalid", true), log.Err(err))
-					}else {
-						_{{.Name}} = temp
-					}
-				{{- end}}	
+				switch sign {
+					{{- range .Templates}}
+						case {{.Name}}Sign:
+							{{- if $.HasIndex .}}
+								temp := make({{$.GetVariable .}})
+							{{- else}}
+								temp := new({{$.GetConfigName .}})
+							{{- end}}
+							if err := handle(sign, &temp, json);err != nil {
+								log.Error("Config", log.String("Name", "{{.Name}}"), log.Bool("Invalid", true), log.Err(err))
+							}else {
+								_{{.Name}} = temp
+							}
+					{{- end}}	
+				}
 			}
 		}
 
@@ -137,7 +160,11 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 			switch sign {
 				{{- range .Templates}}
 					case {{.Name}}Sign:
-						temp := make({{$.GetVariable .}})
+						{{- if $.HasIndex .}}
+							temp := make({{$.GetVariable .}})
+						{{- else}}
+							temp := new({{$.GetConfigName .}})
+						{{- end}}
 						if err := json.Unmarshal(data, &{{.Name}}); err != nil {
 							log.Error("Config", log.String("Name", "{{.Name}}"), log.Bool("Invalid", true), log.Err(err))
 							return
@@ -151,10 +178,24 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		func Refresh() {
 			mutex.Lock()
 			defer mutex.Unlock()
+			cs := make(map[Sign]any)
+
 			{{- range .Templates}}
 				{{.Name}} = _{{.Name}}
-				_{{.Name}} = nil
+				cs[{{.Name}}Sign] = {{.Name}}
 			{{- end}}
+
+			configs = cs
+		}
+
+		// GetConfigs 获取所有配置
+		func GetConfigs() map[Sign]any {
+			return configs
+		}
+
+		// GetConfigSigns 获取所有配置的标识
+		func GetConfigSigns() []Sign {
+			return signs
 		}
 	`, slf)
 }
@@ -171,4 +212,8 @@ func (slf *Golang) GetVariable(config *pce.TmplStruct) string {
 
 func (slf *Golang) GetConfigName(config *pce.TmplStruct) string {
 	return strings.ReplaceAll(config.Name, "Config", "Configuration")
+}
+
+func (slf *Golang) HasIndex(config *pce.TmplStruct) bool {
+	return config.IndexCount > 0
 }

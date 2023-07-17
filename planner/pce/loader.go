@@ -26,13 +26,13 @@ type Loader struct {
 // LoadStruct 加载结构
 func (slf *Loader) LoadStruct(config Config) *TmplStruct {
 	var tmpl = &TmplStruct{
-		Name: str.FirstUpper(config.GetConfigName()),
-		Desc: config.GetDescription(),
+		Name:       str.FirstUpper(config.GetConfigName()),
+		Desc:       config.GetDescription(),
+		IndexCount: config.GetIndexCount(),
 	}
-	indexCount := config.GetIndexCount()
 	for i, field := range config.GetFields() {
 		f := tmpl.addField(tmpl.Name, str.FirstUpper(field.Name), field.Desc, field.Type, slf.fields)
-		if i < indexCount {
+		if i < tmpl.IndexCount {
 			f.isIndex = true
 		}
 	}
@@ -167,6 +167,7 @@ type DataInfo struct {
 
 // DataField 配置数据字段
 type DataField struct {
+	Index      int    // 字段索引
 	Name       string // 字段名称
 	Desc       string // 字段描述
 	Type       string // 字段类型

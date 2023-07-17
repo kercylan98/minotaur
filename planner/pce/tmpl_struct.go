@@ -6,9 +6,10 @@ import (
 
 // TmplStruct 模板结构
 type TmplStruct struct {
-	Name   string       // 结构名称
-	Desc   string       // 结构描述
-	Fields []*TmplField // 字段列表
+	Name       string       // 结构名称
+	Desc       string       // 结构描述
+	Fields     []*TmplField // 字段列表
+	IndexCount int          // 索引数量
 }
 
 // addField 添加字段
@@ -20,6 +21,8 @@ func (slf *TmplStruct) addField(parent, name, desc, fieldType string, fields map
 	}
 	if !hash.Exist(fields, fieldType) {
 		field.setStruct(parent, name, desc, fieldType, fields)
+	} else {
+		field.Type = GetFieldGolangType(fields[fieldType])
 	}
 	slf.Fields = append(slf.Fields, field)
 	return field
