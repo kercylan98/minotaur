@@ -34,7 +34,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 
 		const (
 			{{- range .Templates}}
-				{{.Name}}Sign Sign = "{{.Name}}"
+				{{.Name}}Sign Sign = "{{.Name}}" // {{.Desc}}
 			{{- end}}
 		)
 		
@@ -52,7 +52,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}
-					{{.Name}} {{$.GetVariable .}}
+					{{.Name}} {{$.GetVariable .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
@@ -60,7 +60,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}{{- else}}
-					{{.Name}} *{{$.GetConfigName .}}
+					{{.Name}} *{{$.GetConfigName .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
@@ -68,7 +68,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}
-					_{{.Name}} {{$.GetVariable .}}
+					_{{.Name}} {{$.GetVariable .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
@@ -76,12 +76,13 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}{{- else}}
-					_{{.Name}} *{{$.GetConfigName .}}
+					_{{.Name}} *{{$.GetConfigName .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
 		
 		{{- range .Templates}}
+			// {{$.GetConfigName .}} {{.Desc}}
 			type {{$.GetConfigName .}} struct {
 				{{- range .Fields}}
 					{{- if .IsSlice}}
@@ -110,6 +111,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 
 		{{- range .Templates}}
 			{{- range .AllChildren}}
+				// {{.Name}} {{.Desc}}
 				type {{.Name}} struct {
 					{{- range .Fields}}
 						{{- if .IsSlice}}

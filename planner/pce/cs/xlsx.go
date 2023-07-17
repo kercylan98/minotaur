@@ -38,7 +38,7 @@ func (slf *Xlsx) GetDisplayName() string {
 }
 
 func (slf *Xlsx) GetDescription() string {
-	return "暂无描述"
+	return slf.GetDisplayName()
 }
 
 func (slf *Xlsx) GetIndexCount() int {
@@ -57,10 +57,10 @@ func (slf *Xlsx) GetFields() []pce.DataField {
 		}
 		field = pce.DataField{
 			Index:      index,
-			Name:       strings.ReplaceAll(strings.ReplaceAll(str.FirstUpper(name.String()), "\r", ""), "\n", ""),
+			Name:       strings.ReplaceAll(strings.ReplaceAll(str.FirstUpper(name.String()), "\r", " "), "\n", " "),
 			Type:       fieldType.String(),
 			ExportType: exportType.String(),
-			Desc:       strings.ReplaceAll(strings.ReplaceAll(desc.String(), "\r", ""), "\n", ""),
+			Desc:       strings.ReplaceAll(strings.ReplaceAll(desc.String(), "\r", " "), "\n", " "),
 		}
 		if len(field.Name) == 0 || len(field.Type) == 0 || len(field.ExportType) == 0 {
 			return field, false
