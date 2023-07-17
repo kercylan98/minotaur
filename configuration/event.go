@@ -1,4 +1,4 @@
-package config
+package configuration
 
 // RefreshEventHandle 配置刷新事件处理函数
 type RefreshEventHandle func()
