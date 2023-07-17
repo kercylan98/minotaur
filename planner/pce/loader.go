@@ -8,22 +8,19 @@ import (
 
 // NewLoader 创建加载器
 //   - 加载器被用于加载配置表的数据和结构信息
-func NewLoader() *Loader {
-	return &Loader{
+func NewLoader(fields []Field) *Loader {
+	loader := &Loader{
 		fields: make(map[string]Field),
 	}
+	for _, f := range fields {
+		loader.fields[f.TypeName()] = f
+	}
+	return loader
 }
 
 // Loader 配置加载器
 type Loader struct {
 	fields map[string]Field
-}
-
-// BindField 绑定字段
-func (slf *Loader) BindField(fields ...Field) {
-	for _, field := range fields {
-		slf.fields[field.TypeName()] = field
-	}
 }
 
 // LoadStruct 加载结构
@@ -77,6 +74,8 @@ func (slf *Loader) LoadData(config Config) map[any]any {
 				}
 			} else if index == indexCount {
 				action[value] = item
+			} else if indexCount == -1 {
+				source = item
 			}
 		}
 		action = source
@@ -160,14 +159,14 @@ func (slf *Loader) structInterpreter(fieldType, fieldValue string) any {
 	return data
 }
 
-// dataInfo 配置数据
-type dataInfo struct {
-	dataField        // 字段
+// DataInfo 配置数据
+type DataInfo struct {
+	DataField        // 字段
 	Value     string // 字段值
 }
 
-// dataField 配置数据字段
-type dataField struct {
+// DataField 配置数据字段
+type DataField struct {
 	Name       string // 字段名称
 	Desc       string // 字段描述
 	Type       string // 字段类型

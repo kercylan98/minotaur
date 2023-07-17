@@ -6,6 +6,41 @@ import (
 	"strconv"
 )
 
+var fields = []Field{
+	new(Int),
+	new(Int8),
+	new(Int16),
+	new(Int32),
+	new(Int64),
+	new(Uint),
+	new(Uint8),
+	new(Uint16),
+	new(Uint32),
+	new(Uint64),
+	new(Float32),
+	new(Float64),
+	new(String),
+	new(Bool),
+	new(Byte),
+	new(Rune),
+	new(Complex64),
+	new(Complex128),
+	new(Uintptr),
+	new(Double),
+	new(Float),
+	new(Long),
+	new(Short),
+	new(Char),
+	new(Number),
+	new(Integer),
+	new(Boolean),
+}
+
+// GetFields 获取所有内置支持的字段
+func GetFields() []Field {
+	return fields
+}
+
 type Int int
 
 func (slf Int) TypeName() string {

@@ -1,53 +1,28 @@
 package pce
 
-import (
-	"github.com/kercylan98/minotaur/utils/file"
-	"os/exec"
-	"path/filepath"
-)
-
 // NewExporter 创建导出器
-func NewExporter(filePath string) *Exporter {
-	return &Exporter{
-		filePath: filePath,
-	}
+func NewExporter() *Exporter {
+	return &Exporter{}
 }
 
 // Exporter 导出器
-type Exporter struct {
-	filePath string
-}
+type Exporter struct{}
 
 // ExportStruct 导出结构
-func (slf *Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct) error {
-	filePath, err := filepath.Abs(slf.filePath)
-	if err != nil {
-		return err
-	}
+func (slf *Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct) ([]byte, error) {
 	raw, err := tmpl.Render(tmplStruct)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err = file.WriterFile(filePath, []byte(raw)); err != nil {
-		return err
-	}
-
-	cmd := exec.Command("gofmt", "-w", filePath)
-	return cmd.Run()
+	return []byte(raw), nil
 }
 
 // ExportData 导出数据
-func (slf *Exporter) ExportData(tmpl DataTmpl, data map[any]any) error {
-	filePath, err := filepath.Abs(slf.filePath)
-	if err != nil {
-		return err
-	}
+func (slf *Exporter) ExportData(tmpl DataTmpl, data map[any]any) ([]byte, error) {
 	raw, err := tmpl.Render(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err = file.WriterFile(filePath, []byte(raw)); err != nil {
-		return err
-	}
-	return nil
+
+	return []byte(raw), nil
 }
