@@ -10,7 +10,7 @@ import (
 func TestFilePaths(t *testing.T) {
 	var line int
 	var fileCount int
-	for _, path := range file.FilePaths(`D:\sources\minotaur`) {
+	for _, path := range file.Paths(`D:\sources\minotaur`) {
 		if !strings.HasSuffix(path, ".go") {
 			continue
 		}

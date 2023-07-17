@@ -102,10 +102,10 @@ func LineCount(filePath string) int {
 	return line
 }
 
-// FilePaths 获取指定目录下的所有文件路径
+// Paths 获取指定目录下的所有文件路径
 //   - 包括了子目录下的文件
 //   - 不包含目录
-func FilePaths(dir string) []string {
+func Paths(dir string) []string {
 	var paths []string
 	abs, err := filepath.Abs(dir)
 	if err != nil {
@@ -119,7 +119,7 @@ func FilePaths(dir string) []string {
 	for _, file := range files {
 		fileAbs := filepath.Join(abs, file.Name())
 		if file.IsDir() {
-			paths = append(paths, FilePaths(fileAbs)...)
+			paths = append(paths, Paths(fileAbs)...)
 			continue
 		}
 		paths = append(paths, fileAbs)

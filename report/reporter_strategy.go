@@ -9,9 +9,9 @@ import (
 // ReporterStrategy 上报器策略
 type ReporterStrategy func(reporter *Reporter)
 
-// ReportStrategyLoop 循环上报
+// StrategyLoop 循环上报
 //   - 将在创建后上报一次，并且在每隔一段时间后继续上报
-func ReportStrategyLoop(t time.Duration) ReporterStrategy {
+func StrategyLoop(t time.Duration) ReporterStrategy {
 	return func(reporter *Reporter) {
 		reporter.ticker.Loop(fmt.Sprintf("ReportStrategyLoop_%d", t.Milliseconds()), timer.Instantly, t, timer.Forever, func() {
 			if err := reporter.Report(); err != nil && reporter.errorHandle != nil {
@@ -21,8 +21,8 @@ func ReportStrategyLoop(t time.Duration) ReporterStrategy {
 	}
 }
 
-// ReportStrategyFixedTime 将在每天的固定时间上报
-func ReportStrategyFixedTime(hour, min, sec int) ReporterStrategy {
+// StrategyFixedTime 将在每天的固定时间上报
+func StrategyFixedTime(hour, min, sec int) ReporterStrategy {
 	return func(reporter *Reporter) {
 		now := time.Now()
 		current := now.Unix()

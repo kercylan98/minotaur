@@ -156,4 +156,7 @@ var (
 	// Any 接受一个键和一个任意值，并选择将它们表示为字段的最佳方式，仅在必要时才回退到基于反射的方法。
 	// 由于 byteuint8 和 runeint32 是别名，Any 无法区分它们。为了尽量减少意外情况，[]byte 值被视为二进制 blob，字节值被视为 uint8，而 runes 始终被视为整数
 	Any = zap.Any
+
+	// Err 是常见习语 NamedError("error", err) 的简写
+	Err = zap.Error
 )

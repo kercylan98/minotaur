@@ -183,7 +183,7 @@ func (slf *MapSegment[Key, Value]) RangeFree(handle func(key Key, value Value, s
 func (slf *MapSegment[Key, Value]) Keys() []Key {
 	var s = make([]Key, 0, len(slf.cache))
 	slf.lock.RLock()
-	for k, _ := range slf.cache {
+	for k := range slf.cache {
 		s = append(s, k)
 	}
 	defer slf.lock.RUnlock()

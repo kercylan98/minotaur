@@ -55,7 +55,7 @@ func (slf *SortMap[K, V]) For(handle func(key K, value V) bool) {
 
 func (slf *SortMap[K, V]) ForSort(handle func(key K, value V) bool) {
 	var indexes []int
-	for i, _ := range slf.s {
+	for i := range slf.s {
 		indexes = append(indexes, i)
 	}
 	sort.Ints(indexes)
@@ -85,7 +85,7 @@ func (slf *SortMap[K, V]) ToSlice() []V {
 
 func (slf *SortMap[K, V]) ToSliceSort() []V {
 	var indexes []int
-	for i, _ := range slf.s {
+	for i := range slf.s {
 		indexes = append(indexes, i)
 	}
 	sort.Ints(indexes)

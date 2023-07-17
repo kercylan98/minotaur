@@ -272,7 +272,7 @@ func (slf *Attrs) GetAttrInt64(id int) int64 {
 	case int32:
 		return int64(value)
 	case int64:
-		return int64(value)
+		return value
 	}
 	return 0
 }

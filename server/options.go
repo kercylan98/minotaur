@@ -4,7 +4,6 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"reflect"
 	"time"
@@ -87,7 +86,7 @@ func WithDeadlockDetect(t time.Duration) Option {
 	return func(srv *Server) {
 		if t > 0 {
 			srv.deadlockDetect = t
-			log.Info("DeadlockDetect", zap.String("Time", t.String()))
+			log.Info("DeadlockDetect", log.String("Time", t.String()))
 		}
 	}
 }
@@ -153,11 +152,11 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 				srv.pushMessage(msg)
 			})
 			if err != nil {
-				log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()), zap.String("State", "WaitNatsRun"))
+				log.Info("Cross", log.Int64("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()), log.String("State", "WaitNatsRun"))
 				time.Sleep(1 * time.Second)
 				goto start
 			}
-			log.Info("Cross", zap.Int64("ServerID", serverId), zap.String("Cross", reflect.TypeOf(cross).String()))
+			log.Info("Cross", log.Int64("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()))
 		}
 	}
 }

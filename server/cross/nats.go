@@ -7,7 +7,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/nats-io/nats.go"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -47,10 +46,10 @@ func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, p
 				nats.ReconnectWait(time.Second*5),
 				nats.MaxReconnects(-1),
 				nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
-					log.Error(nasMark, zap.String("info", "disconnect"), zap.Error(err))
+					log.Error(nasMark, log.String("info", "disconnect"), log.Err(err))
 				}),
 				nats.ReconnectHandler(func(conn *nats.Conn) {
-					log.Info(nasMark, zap.String("info", "reconnect"))
+					log.Info(nasMark, log.String("info", "reconnect"))
 				}),
 			)
 		}
@@ -63,7 +62,7 @@ func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, p
 		message := slf.messagePool.Get()
 		defer slf.messagePool.Release(message)
 		if err := json.Unmarshal(msg.Data, &message); err != nil {
-			log.Error(nasMark, zap.Error(err))
+			log.Error(nasMark, log.Err(err))
 			return
 		}
 		packetHandle(message.ServerId, message.Packet)
