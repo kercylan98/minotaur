@@ -104,12 +104,16 @@ func (slf *Xlsx) GetData() [][]pce.DataInfo {
 				}
 			}
 
-			for i, field := range slf.GetFields() {
-				var isIndex = i-1 < slf.GetIndexCount()
+			for i, field := range fields {
+				var isIndex = i < slf.GetIndexCount()
 
 				var value string
 				if valueCell := slf.get(field.Index, y); valueCell != nil {
 					value = valueCell.String()
+					if isIndex && len(strings.TrimSpace(value)) == 0 {
+						stop = true
+						break
+					}
 				} else if isIndex {
 					stop = true
 					break
@@ -118,12 +122,10 @@ func (slf *Xlsx) GetData() [][]pce.DataInfo {
 				if valueCell == nil {
 					break
 				}
-				if len(fields) > i-1 {
-					line = append(line, pce.DataInfo{
-						DataField: field,
-						Value:     value,
-					})
-				}
+				line = append(line, pce.DataInfo{
+					DataField: field,
+					Value:     value,
+				})
 			}
 			if len(line) > 0 {
 				data = append(data, line)

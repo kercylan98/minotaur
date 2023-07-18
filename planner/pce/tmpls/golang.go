@@ -27,6 +27,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		import (
 			jsonIter "github.com/json-iterator/go"
 			"github.com/kercylan98/minotaur/utils/log"
+			"github.com/kercylan98/minotaur/utils/hash"
 			"sync"
 		)
 
@@ -192,13 +193,22 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 
 		// GetConfigs 获取所有配置
 		func GetConfigs() map[Sign]any {
-			return configs
+			mutex.Lock()
+			defer mutex.Unlock()
+			return hash.Copy(configs)
 		}
 
 		// GetConfigSigns 获取所有配置的标识
 		func GetConfigSigns() []Sign {
 			return signs
 		}
+
+		// Sync 同步操作配置
+		func Sync(handle func(configs map[Sign]any)) {
+			mutex.Lock()
+			defer mutex.Unlock()
+			handle(hash.Copy(configs))
+		}	
 	`, slf)
 }
 
