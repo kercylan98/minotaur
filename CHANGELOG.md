@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.0.16](https://github.com/kercylan98/minotaur/compare/v0.0.15...v0.0.16) (2023-07-17)
+
+
+### Bug Fixes | 修复
+
+* 修复 server.Server 部分事件中发生 panic 导致程序退出的问题 ([0215d9f](https://github.com/kercylan98/minotaur/commit/0215d9ff8c6771bc398149fbaca35ae3862aa329))
+
+
+### Styling | 可读性优化
+
+* 去除部分无用字段，优化整体可读性 ([c1e3c65](https://github.com/kercylan98/minotaur/commit/c1e3c65c1cba9edd91268c99943bce64b904b428))
+
+
+### Other | 其他更改
+
+* pce.ce 包提供内置的 xlsx 配置表 ([91b2b52](https://github.com/kercylan98/minotaur/commit/91b2b52fc8229959c18d048c0c33d49da8b7b4ae))
+* 日志字段调用由 zap.Field 更改为 log.Field ([8e2b4eb](https://github.com/kercylan98/minotaur/commit/8e2b4ebc89ed56a3e1e091a8905641ee3461f1c2))
+* 配置导出 Golang 结构体注释优化 ([9349e3c](https://github.com/kercylan98/minotaur/commit/9349e3cdbedfdc7d9a4e3a68294afce8ca63da1d))
+* 配置导表优化 ([130869a](https://github.com/kercylan98/minotaur/commit/130869af4eb0cec045730d7bc85cf11c0137a236))
+
+
+### Features | 新特性
+
+* super 包支持 match 控制函数 ([25ed712](https://github.com/kercylan98/minotaur/commit/25ed712fc9ba1f18fe2c1ce5524e2917160ae295))
+* super 包支持使用 super.GoFormat 函数格式化 go 文件 ([3ee638f](https://github.com/kercylan98/minotaur/commit/3ee638f4df459f36a05190b3874502f68e815fd2))
+* 修复 server.PushAsyncMessage 无法正确调用回调函数的问题 ([1b9ec9f](https://github.com/kercylan98/minotaur/commit/1b9ec9f2b69b3d2eadbca05447b4d69d1a97a232))
+* 重构 config 和 configexport 包 ([7e7a504](https://github.com/kercylan98/minotaur/commit/7e7a504421ba430537f3b70e78334fc30a4a1681))
+
 ## [0.0.15](https://github.com/kercylan98/minotaur/compare/v0.0.14...v0.0.15) (2023-07-14)
 
 
