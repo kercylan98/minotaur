@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.17](https://github.com/kercylan98/minotaur/compare/v0.0.16...v0.0.17) (2023-07-18)
+
+
+### Bug Fixes | 修复
+
+* 修复主键为空的数据被导出的问题 ([ab0a7cb](https://github.com/kercylan98/minotaur/commit/ab0a7cbbbc786f198ab71aed4515ed8422a78cdf))
+
+
+### Features | 新特性
+
+* 增加部分字符串转换函数 ([28c6097](https://github.com/kercylan98/minotaur/commit/28c60970447da65180a74c69cc47dfa25cce4cac))
+* 通过 golang 模板生成的配置结构代码支持通过 Sync 函数执行安全的配置操作，避免配置被刷新造成的异常 ([8bbd495](https://github.com/kercylan98/minotaur/commit/8bbd49554f6df0b9b6e0eacbe8d0eb9ba9f839bf))
+
 ## [0.0.16](https://github.com/kercylan98/minotaur/compare/v0.0.15...v0.0.16) (2023-07-17)
 
 
