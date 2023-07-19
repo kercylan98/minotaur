@@ -45,11 +45,9 @@ func (slf *event) RegStopEvent(handle StopEventHandle) {
 }
 
 func (slf *event) OnStopEvent() {
-	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.stopEventHandles {
-			handle(slf.Server)
-		}
-	})
+	for _, handle := range slf.stopEventHandles {
+		handle(slf.Server)
+	}
 }
 
 // RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
