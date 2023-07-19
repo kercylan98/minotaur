@@ -19,6 +19,10 @@ func (slf *Player[ID]) GetID() ID {
 	return slf.id
 }
 
+func (slf *Player[ID]) GetConn() *server.Conn {
+	return slf.conn
+}
+
 func (slf *Player[ID]) UseConn(conn *server.Conn) {
 	if conn == nil {
 		return
