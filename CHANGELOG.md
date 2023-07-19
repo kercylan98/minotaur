@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.18](https://github.com/kercylan98/minotaur/compare/v0.0.17...v0.0.18) (2023-07-19)
+
+
+### Features | 新特性
+
+* builtin.Player 可以通过 GetConn 函数获取到网络连接 ([31ad0ee](https://github.com/kercylan98/minotaur/commit/31ad0ee4fbfe8c0fe1d4225c11b250559154d21c))
+* storage 添加内置实现的文件存储器，可以通过 storages 包进行使用 ([c447c8a](https://github.com/kercylan98/minotaur/commit/c447c8afb395558a2dd85117b3fac8e093a8cfa7))
+* 支持使用 super.RegError 函数为错误注册全局错误码，使用 super.GetErrorCode 根据错误获取全局错误码 ([1dcbd0a](https://github.com/kercylan98/minotaur/commit/1dcbd0a2203c5b0384969836bf4083f3fedce418))
+* 支持通过 timer.CalcNextTimeWithRefer 计算下一个整点时间 ([8835e4a](https://github.com/kercylan98/minotaur/commit/8835e4a88bd80bb795a93dfe2494445d8acf0d95))
+* 新增 storage 支持数据持久化 ([f59354d](https://github.com/kercylan98/minotaur/commit/f59354db3f244e76faf3590f6865088e5ed6e226))
+
+
+### Tests | 新增或优化测试用例
+
+* 新增 GlobalDataFileStorage 和 IndexDataFileStorage 的测试用例 ([4378aa0](https://github.com/kercylan98/minotaur/commit/4378aa0eb79f08052121c7ec6f3648aa2248d3dd))
+
 ## [0.0.17](https://github.com/kercylan98/minotaur/compare/v0.0.16...v0.0.17) (2023-07-18)
 
 
