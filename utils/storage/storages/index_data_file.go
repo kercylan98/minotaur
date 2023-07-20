@@ -8,14 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 const (
 	// IndexDataFileDefaultSuffix 是 IndexDataFileStorage 的文件默认后缀
 	IndexDataFileDefaultSuffix = "stock"
 
-	indexNameFormat = "%s.%v.%s"
+	indexNameFormat     = "%s.%v.%s"
+	indexNameFormatTemp = "%s.%v.%s.temp"
 )
 
 // NewIndexDataFileStorage 创建索引数据文件存储器
@@ -83,19 +83,30 @@ func (slf *IndexDataFileStorage[I, T]) Save(name string, index I, data T) error 
 	return file.WriterFile(filepath.Join(slf.dir, fmt.Sprintf(indexNameFormat, name, index, slf.suffix)), bytes)
 }
 
-func (slf *IndexDataFileStorage[I, T]) SaveAll(name string, data map[I]T, errHandle func(err error) bool, retryInterval time.Duration) {
+func (slf *IndexDataFileStorage[I, T]) SaveAll(name string, data map[I]T) error {
+	var temps = make([]string, 0, len(data))
+	defer func() {
+		for _, temp := range temps {
+			_ = os.Remove(temp)
+		}
+	}()
 	for index, data := range data {
-		for {
-			if err := slf.Save(name, index, data); err != nil {
-				if !errHandle(err) {
-					time.Sleep(retryInterval)
-					continue
-				}
-				break
-			}
-			break
+		bytes, err := slf.encoder(data)
+		if err != nil {
+			return err
+		}
+		path := filepath.Join(slf.dir, fmt.Sprintf(indexNameFormatTemp, name, index, slf.suffix))
+		temps = append(temps, path)
+		if err = file.WriterFile(path, bytes); err != nil {
+			return err
 		}
 	}
+	for _, temp := range temps {
+		if err := os.Rename(temp, strings.TrimSuffix(temp, ".temp")); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (slf *IndexDataFileStorage[I, T]) Delete(name string, index I) {

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
-	"time"
 )
 
 // NewIndexData 创建索引数据
@@ -69,8 +68,8 @@ func (slf *IndexData[I, T]) SaveData(index I) error {
 
 // SaveAllData 保存所有数据
 //   - errHandle 错误处理中如果返回 false 将重试，否则跳过当前保存下一个
-func (slf *IndexData[I, T]) SaveAllData(errHandle func(err error) bool, retryInterval time.Duration) {
-	slf.storage.SaveAll(slf.GetName(), slf.GetAllData(), errHandle, retryInterval)
+func (slf *IndexData[I, T]) SaveAllData() error {
+	return slf.storage.SaveAll(slf.GetName(), slf.GetAllData())
 }
 
 // DeleteData 删除数据

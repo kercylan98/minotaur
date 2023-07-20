@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/kercylan98/minotaur/utils/generic"
-	"time"
 )
 
 // IndexDataStorage 全局数据存储器接口
@@ -15,7 +14,7 @@ type IndexDataStorage[I generic.Ordered, T IndexDataItem[I]] interface {
 	// Save 保存特定索引数据
 	Save(name string, index I, data T) error
 	// SaveAll 保存所有数据
-	SaveAll(name string, data map[I]T, errHandle func(err error) bool, retryInterval time.Duration)
+	SaveAll(name string, data map[I]T) error
 	// Delete 删除特定索引数据
 	Delete(name string, index I)
 	// DeleteAll 删除所有数据
