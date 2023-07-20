@@ -392,7 +392,9 @@ func (slf *Server) Shutdown() {
 
 // shutdown 停止运行服务器
 func (slf *Server) shutdown(err error) {
-	slf.OnStopEvent()
+	if slf.multiple == nil {
+		slf.OnStopEvent()
+	}
 	defer func() {
 		if slf.multipleRuntimeErrorChan != nil {
 			slf.multipleRuntimeErrorChan <- err

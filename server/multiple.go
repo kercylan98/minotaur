@@ -72,6 +72,9 @@ func (slf *MultipleServer) Run() {
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	select {
 	case err := <-exceptionChannel:
+		for _, server := range slf.servers {
+			server.OnStopEvent()
+		}
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
 			server.shutdown(err)
@@ -79,6 +82,9 @@ func (slf *MultipleServer) Run() {
 		}
 		break
 	case <-runtimeExceptionChannel:
+		for _, server := range slf.servers {
+			server.OnStopEvent()
+		}
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
 			server.multipleRuntimeErrorChan = nil
@@ -87,6 +93,9 @@ func (slf *MultipleServer) Run() {
 		}
 		break
 	case <-systemSignal:
+		for _, server := range slf.servers {
+			server.OnStopEvent()
+		}
 		for len(slf.servers) > 0 {
 			server := slf.servers[0]
 			server.multipleRuntimeErrorChan = nil
