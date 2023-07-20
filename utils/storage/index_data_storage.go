@@ -16,7 +16,7 @@ type IndexDataStorage[I generic.Ordered, T IndexDataItem[I]] interface {
 	// SaveAll 保存所有数据
 	SaveAll(name string, data map[I]T) error
 	// Delete 删除特定索引数据
-	Delete(name string, index I)
+	Delete(name string, index I) error
 	// DeleteAll 删除所有数据
-	DeleteAll(name string)
+	DeleteAll(name string) error
 }

@@ -109,19 +109,22 @@ func (slf *IndexDataFileStorage[I, T]) SaveAll(name string, data map[I]T) error 
 	return nil
 }
 
-func (slf *IndexDataFileStorage[I, T]) Delete(name string, index I) {
-	_ = os.Remove(filepath.Join(slf.dir, fmt.Sprintf(indexNameFormat, name, index, slf.suffix)))
+func (slf *IndexDataFileStorage[I, T]) Delete(name string, index I) error {
+	return os.Remove(filepath.Join(slf.dir, fmt.Sprintf(indexNameFormat, name, index, slf.suffix)))
 }
 
-func (slf *IndexDataFileStorage[I, T]) DeleteAll(name string) {
+func (slf *IndexDataFileStorage[I, T]) DeleteAll(name string) error {
 	files, err := os.ReadDir(slf.dir)
 	if err != nil {
-		return
+		return err
 	}
 	for _, entry := range files {
 		if entry.IsDir() || !strings.HasPrefix(entry.Name(), name) || !strings.HasSuffix(entry.Name(), slf.suffix) {
 			continue
 		}
-		_ = os.Remove(filepath.Join(slf.dir, entry.Name()))
+		if err := os.Remove(filepath.Join(slf.dir, entry.Name())); err != nil {
+			return err
+		}
 	}
+	return nil
 }
