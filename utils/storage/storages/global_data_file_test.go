@@ -15,28 +15,28 @@ type GlobalData struct {
 
 func TestGlobalDataFileStorage_Save(t *testing.T) {
 	Convey("TestGlobalDataFileStorage_Save", t, func() {
-		data := storage.NewGlobalData[*GlobalData]("global_data_file_test", storages.NewGlobalDataFileStorage[*GlobalData]("./example-data", func(name string) *GlobalData {
+		data, err := storage.NewGlobalData[*GlobalData]("global_data_file_test", storages.NewGlobalDataFileStorage[*GlobalData]("./example-data", func(name string) *GlobalData {
 			return &GlobalData{
 				CreateAt: time.Now(),
 			}
 		}))
+		So(err, ShouldBeNil)
 		data.Handle(func(name string, data *GlobalData) {
 			data.TotalCount = 10
 		})
-		if err := data.SaveData(); err != nil {
-			t.Fatal(err)
-		}
+		So(data.SaveData(), ShouldBeNil)
 		So(data.GetData().TotalCount, ShouldEqual, 10)
 	})
 }
 
 func TestGlobalDataFileStorage_Load(t *testing.T) {
 	Convey("TestGlobalDataFileStorage_Load", t, func() {
-		data := storage.NewGlobalData[*GlobalData]("global_data_file_test", storages.NewGlobalDataFileStorage[*GlobalData]("./example-data", func(name string) *GlobalData {
+		data, err := storage.NewGlobalData[*GlobalData]("global_data_file_test", storages.NewGlobalDataFileStorage[*GlobalData]("./example-data", func(name string) *GlobalData {
 			return &GlobalData{
 				CreateAt: time.Now(),
 			}
 		}))
+		So(err, ShouldBeNil)
 		So(data.GetData().TotalCount, ShouldEqual, 10)
 	})
 }

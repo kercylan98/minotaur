@@ -1,14 +1,17 @@
 package storage
 
 // NewGlobalData 创建全局数据
-func NewGlobalData[T any](name string, storage GlobalDataStorage[T]) *GlobalData[T] {
+func NewGlobalData[T any](name string, storage GlobalDataStorage[T]) (*GlobalData[T], error) {
 	data := &GlobalData[T]{
 		storage: storage,
 		name:    name,
-		data:    storage.Load(name),
 	}
-	globalDataSaveHandles = append(globalDataSaveHandles, data.SaveData)
-	return data
+	var err error
+	data.data, err = storage.Load(name)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // GlobalData 全局数据
@@ -29,8 +32,13 @@ func (slf *GlobalData[T]) GetData() T {
 }
 
 // LoadData 加载数据
-func (slf *GlobalData[T]) LoadData() {
-	slf.data = slf.storage.Load(slf.GetName())
+func (slf *GlobalData[T]) LoadData() error {
+	data, err := slf.storage.Load(slf.GetName())
+	if err != nil {
+		return err
+	}
+	slf.data = data
+	return nil
 }
 
 // SaveData 保存数据

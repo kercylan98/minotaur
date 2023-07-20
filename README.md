@@ -13,12 +13,12 @@ mindmap
   root((Minotaur))
     /component 通用组件接口定义
       /components 通用组件内置实现
-    /config 针对配置导表的配置加载
+    /configuration 配置管理功能
     /game 游戏通用功能接口定义
       /builtin 游戏通用功能内置实现
     /notify 通知功能接口定义
     /planner 策划相关工具目录
-      /configexport 配置导表功能实现
+      /pce 配置导表功能实现
     /report 数据埋点及上报功能
     /server 网络服务器支持
       /cross 内置跨服功能实现
@@ -113,7 +113,6 @@ func main() {
 ```
 其他的一些支持事件的结构体（非所有）：
  - `game.Room` 游戏房间实现
- - `synchronization.Map` 并发安全的`Map`实现
  - ...
 ### 可选项
 大部分的 `New` 函数均可使用可选项进行创建，具体函数前缀通常为 `With`。

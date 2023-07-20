@@ -44,21 +44,20 @@ type IndexDataFileStorage[I generic.Ordered, T storage.IndexDataItem[I]] struct 
 	decoder      FileStorageDecoder[T]
 }
 
-func (slf *IndexDataFileStorage[I, T]) Load(name string, index I) T {
+func (slf *IndexDataFileStorage[I, T]) Load(name string, index I) (T, error) {
 	bytes, err := file.ReadOnce(filepath.Join(slf.dir, fmt.Sprintf(indexNameFormat, name, index, slf.suffix)))
 	if err != nil {
-		return slf.generate(name, index)
+		return slf.generate(name, index), nil
 	}
 	var data = slf.generate(name, index)
-	_ = slf.decoder(bytes, data)
-	return data
+	return data, slf.decoder(bytes, data)
 }
 
-func (slf *IndexDataFileStorage[I, T]) LoadAll(name string) map[I]T {
+func (slf *IndexDataFileStorage[I, T]) LoadAll(name string) (map[I]T, error) {
 	var result = make(map[I]T)
 	files, err := os.ReadDir(slf.dir)
 	if err != nil {
-		return result
+		return result, err
 	}
 	for _, entry := range files {
 		if entry.IsDir() || !strings.HasPrefix(entry.Name(), name) || !strings.HasSuffix(entry.Name(), slf.suffix) {
@@ -73,7 +72,7 @@ func (slf *IndexDataFileStorage[I, T]) LoadAll(name string) map[I]T {
 			result[data.GetIndex()] = data
 		}
 	}
-	return result
+	return result, err
 }
 
 func (slf *IndexDataFileStorage[I, T]) Save(name string, index I, data T) error {

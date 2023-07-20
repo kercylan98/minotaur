@@ -43,14 +43,13 @@ type GlobalDataFileStorage[T any] struct {
 }
 
 // Load 从文件中加载数据，如果文件不存在则使用 generate 生成数据
-func (slf *GlobalDataFileStorage[T]) Load(name string) T {
+func (slf *GlobalDataFileStorage[T]) Load(name string) (T, error) {
 	bytes, err := file.ReadOnce(filepath.Join(slf.dir, fmt.Sprintf("%s.%s", name, slf.suffix)))
 	if err != nil {
-		return slf.generate(name)
+		return slf.generate(name), nil
 	}
 	var data = slf.generate(name)
-	_ = slf.decoder(bytes, data)
-	return data
+	return data, slf.decoder(bytes, data)
 }
 
 // Save 将数据保存到文件中

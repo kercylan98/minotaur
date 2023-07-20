@@ -6,13 +6,17 @@ import (
 )
 
 // NewIndexData 创建索引数据
-func NewIndexData[I generic.Ordered, T IndexDataItem[I]](name string, storage IndexDataStorage[I, T]) *IndexData[I, T] {
+func NewIndexData[I generic.Ordered, T IndexDataItem[I]](name string, storage IndexDataStorage[I, T]) (*IndexData[I, T], error) {
 	data := &IndexData[I, T]{
 		storage: storage,
 		name:    name,
-		data:    storage.LoadAll(name),
 	}
-	return data
+	var err error
+	data.data, err = storage.LoadAll(name)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // IndexData 全局数据
@@ -29,11 +33,7 @@ func (slf *IndexData[I, T]) GetName() string {
 
 // GetData 获取数据
 func (slf *IndexData[I, T]) GetData(index I) T {
-	data, exist := slf.data[index]
-	if !exist {
-		slf.LoadData(index)
-		data = slf.data[index]
-	}
+	data, _ := slf.data[index]
 	return data
 }
 
@@ -43,13 +43,23 @@ func (slf *IndexData[I, T]) GetAllData() map[I]T {
 }
 
 // LoadData 加载数据
-func (slf *IndexData[I, T]) LoadData(index I) {
-	slf.data[index] = slf.storage.Load(slf.GetName(), index)
+func (slf *IndexData[I, T]) LoadData(index I) error {
+	data, err := slf.storage.Load(slf.GetName(), index)
+	if err != nil {
+		return err
+	}
+	slf.data[index] = data
+	return nil
 }
 
 // LoadAllData 加载所有数据
-func (slf *IndexData[I, T]) LoadAllData() {
-	slf.data = slf.storage.LoadAll(slf.GetName())
+func (slf *IndexData[I, T]) LoadAllData() error {
+	data, err := slf.storage.LoadAll(slf.GetName())
+	if err != nil {
+		return err
+	}
+	slf.data = data
+	return nil
 }
 
 // SaveData 保存数据
