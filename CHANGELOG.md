@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.19](https://github.com/kercylan98/minotaur/compare/v0.0.18...v0.0.19) (2023-07-20)
+
+
+### Bug Fixes | 修复
+
+* 修复 onStop 无法等待逻辑执行完成的问题 ([037c9b7](https://github.com/kercylan98/minotaur/commit/037c9b7bbd43f6b893b528df693855b12942cb4e))
+
 ## [0.0.18](https://github.com/kercylan98/minotaur/compare/v0.0.17...v0.0.18) (2023-07-19)
 
 
