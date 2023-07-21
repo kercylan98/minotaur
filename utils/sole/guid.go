@@ -1,37 +1,43 @@
 package sole
 
-import "sync"
-
-var (
-	global    int64
-	namespace map[any]int64
-	mutex     sync.Mutex
+import (
+	"sync/atomic"
 )
 
-func init() {
-	namespace = map[any]int64{}
+var (
+	global    atomic.Int64              // 全局唯一标识符
+	namespace = map[any]*atomic.Int64{} // 唯一标识符命名空间
+)
+
+// RegNameSpace 注册特定命名空间的唯一标识符
+func RegNameSpace(name any) {
+	if namespace == nil {
+		namespace = map[any]*atomic.Int64{}
+	}
+	namespace[name] = new(atomic.Int64)
 }
 
+// UnRegNameSpace 解除注销特定命名空间的唯一标识符
+func UnRegNameSpace(name any) {
+	delete(namespace, name)
+}
+
+// Get 获取全局唯一标识符
 func Get() int64 {
-	global++
-	return global
+	return global.Add(1)
 }
 
+// Reset 重置全局唯一标识符
+func Reset() {
+	global.Store(0)
+}
+
+// GetWith 获取特定命名空间的唯一标识符
 func GetWith(name any) int64 {
-	namespace[name]++
-	return namespace[name]
+	return namespace[name].Add(1)
 }
 
-func GetSync() int64 {
-	mutex.Lock()
-	defer mutex.Unlock()
-	global++
-	return global
-}
-
-func GetSyncWith(name any) int64 {
-	mutex.Lock()
-	defer mutex.Unlock()
-	namespace[name]++
-	return namespace[name]
+// ResetWith 重置特定命名空间的唯一标识符
+func ResetWith(name any) {
+	namespace[name].Store(0)
 }
