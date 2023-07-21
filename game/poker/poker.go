@@ -68,3 +68,23 @@ func GetCardsColor(cards ...Card) []Color {
 	}
 	return colors
 }
+
+// IsContain 一组扑克牌是否包含某张牌
+func IsContain(cards []Card, card Card) bool {
+	for _, c := range cards {
+		if c.Equal(card) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsContainAll 一组扑克牌是否包含另一组扑克牌
+func IsContainAll(cards []Card, cards2 []Card) bool {
+	for _, card := range cards2 {
+		if !IsContain(cards, card) {
+			return false
+		}
+	}
+	return true
+}

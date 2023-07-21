@@ -1,4 +1,4 @@
-package synchronization
+package concurrent
 
 import (
 	"github.com/kercylan98/minotaur/utils/slice"

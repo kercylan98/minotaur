@@ -1,9 +1,5 @@
 package game
 
-import (
-	"github.com/kercylan98/minotaur/utils/hash"
-)
-
 // Room 房间类似于简版的游戏世界(World)，不过没有游戏实体
 type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetGuid 获取房间的唯一标识符
@@ -13,7 +9,7 @@ type Room[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetPlayer 根据玩家id获取玩家
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取房间中的所有玩家
-	GetPlayers() hash.MapReadonly[PlayerID, P]
+	GetPlayers() map[PlayerID]P
 	// GetPlayerCount 获取玩家数量
 	GetPlayerCount() int
 	// IsExistPlayer 检查房间中是否存在特定玩家

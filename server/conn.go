@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/kercylan98/minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
@@ -75,7 +75,7 @@ type Conn struct {
 	kcp        *kcp.UDPSession
 	data       map[any]any
 	mutex      sync.Mutex
-	packetPool *synchronization.Pool[*connPacket]
+	packetPool *concurrent.Pool[*connPacket]
 	packets    []*connPacket
 }
 
@@ -187,7 +187,7 @@ func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error), mess
 
 // writeLoop 写循环
 func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
-	slf.packetPool = synchronization.NewPool[*connPacket](10*1024,
+	slf.packetPool = concurrent.NewPool[*connPacket](10*1024,
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {

@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/asynchronous"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/slice"
 	"sync"
@@ -12,7 +12,7 @@ import (
 func NewRoomSeat[PlayerID comparable, Player game.Player[PlayerID]](room game.Room[PlayerID, Player], options ...RoomSeatOption[PlayerID, Player]) *RoomSeat[PlayerID, Player] {
 	roomSeat := &RoomSeat[PlayerID, Player]{
 		Room:   room,
-		seatPS: asynchronous.NewMap[PlayerID, int](),
+		seatPS: concurrent.NewBalanceMap[PlayerID, int](),
 	}
 	for _, option := range options {
 		option(roomSeat)
@@ -26,7 +26,7 @@ type RoomSeat[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	game.Room[PlayerID, Player]
 	mutex         sync.RWMutex
 	vacancy       []int
-	seatPS        hash.Map[PlayerID, int]
+	seatPS        *concurrent.BalanceMap[PlayerID, int]
 	seatSP        []*PlayerID
 	duplicateLock bool
 	fillIn        bool
@@ -236,6 +236,41 @@ func (slf *RoomSeat[PlayerID, Player]) GetNextSeatVacancy(seat int) int {
 	seat++
 	if seat >= l {
 		seat = 0
+	}
+	return seat
+}
+
+// GetPrevSeat 获取特定座位号上一个未缺席的座位号
+func (slf *RoomSeat[PlayerID, Player]) GetPrevSeat(seat int) int {
+	l := len(slf.seatSP)
+	if l == 0 || seat >= l || seat < 0 {
+		return -1
+	}
+	var target = seat
+	for {
+		target--
+		if target < 0 {
+			target = l - 1
+		}
+		if target == seat {
+			return seat
+		}
+		if slf.seatSP[target] != nil {
+			return target
+		}
+	}
+}
+
+// GetPrevSeatVacancy 获取特定座位号上一个座位号
+//   - 缺席将不会被忽略
+func (slf *RoomSeat[PlayerID, Player]) GetPrevSeatVacancy(seat int) int {
+	l := len(slf.seatSP)
+	if l == 0 || seat >= l || seat < 0 {
+		return -1
+	}
+	seat--
+	if seat < 0 {
+		seat = l - 1
 	}
 	return seat
 }

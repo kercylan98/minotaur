@@ -1,9 +1,8 @@
 package stream
 
 import (
-	"github.com/kercylan98/minotaur/utils/asynchronous"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 	"reflect"
 )
 
@@ -17,11 +16,6 @@ func WithMap[K comparable, V any](m map[K]V) Map[K, V] {
 //   - 该函数不会影响到传入的 map
 func WithMapCopy[K comparable, V any](m map[K]V) Map[K, V] {
 	return hash.Copy(m)
-}
-
-// WithHashMap 使用传入的 map 执行链式操作
-func WithHashMap[K comparable, V any](m hash.Map[K, V]) Map[K, V] {
-	return m.Map()
 }
 
 // Map 提供了 map 的链式操作
@@ -180,14 +174,9 @@ func (slf Map[K, V]) ToSliceStreamWithKey() Slice[K] {
 	return hash.KeyToSlice(slf)
 }
 
-// ToSyncMap 将当前 Map 转换为 synchronization.Map
-func (slf Map[K, V]) ToSyncMap() *synchronization.Map[K, V] {
-	return synchronization.NewMap[K, V](synchronization.WithMapSource(slf))
-}
-
-// ToAsyncMap 将当前 Map 转换为 asynchronous.Map
-func (slf Map[K, V]) ToAsyncMap() *asynchronous.Map[K, V] {
-	return asynchronous.NewMap[K, V](asynchronous.WithMapSource(slf))
+// ToSyncMap 将当前 Map 转换为 concurrent.BalanceMap
+func (slf Map[K, V]) ToSyncMap() *concurrent.BalanceMap[K, V] {
+	return concurrent.NewBalanceMap[K, V](concurrent.WithBalanceMapSource(slf))
 }
 
 // ToMap 将当前 Map 转换为 map

@@ -36,4 +36,12 @@ type RoomSeat[PlayerID comparable, P Player[PlayerID]] interface {
 	//  - 超出范围将返回-1
 	//  - 当没有下一个座位号时将始终返回本身
 	GetNextSeatVacancy(seat int) int
+	// GetPrevSeat 获取上一个座位号，空缺的位置将会被跳过
+	//  - 超出范围将返回-1
+	//  - 当没有上一个座位号时将始终返回本身
+	GetPrevSeat(seat int) int
+	// GetPrevSeatVacancy 获取上一个座位号，空缺的位置将被保留
+	//  - 超出范围将返回-1
+	//  - 当没有上一个座位号时将始终返回本身
+	GetPrevSeatVacancy(seat int) int
 }

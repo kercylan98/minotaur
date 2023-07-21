@@ -1,9 +1,5 @@
 package game
 
-import (
-	"github.com/kercylan98/minotaur/utils/hash"
-)
-
 // World 游戏世界接口定义
 type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetGuid 获取世界的唯一标识符
@@ -13,15 +9,15 @@ type World[PlayerID comparable, P Player[PlayerID]] interface {
 	// GetPlayer 根据玩家id获取玩家
 	GetPlayer(id PlayerID) P
 	// GetPlayers 获取世界中的所有玩家
-	GetPlayers() hash.MapReadonly[PlayerID, P]
+	GetPlayers() map[PlayerID]P
 	// GetActor 根据唯一标识符获取世界中的游戏对象
 	GetActor(guid int64) Actor
 	// GetActors 获取世界中的所有游戏对象
-	GetActors() hash.MapReadonly[int64, Actor]
+	GetActors() map[int64]Actor
 	// GetPlayerActor 获取游戏世界中归属特定玩家的特定游戏对象
 	GetPlayerActor(id PlayerID, guid int64) Actor
 	// GetPlayerActors 获取游戏世界中归属特定玩家的所有游戏对象
-	GetPlayerActors(id PlayerID) hash.MapReadonly[int64, Actor]
+	GetPlayerActors(id PlayerID) map[int64]Actor
 	// IsExistPlayer 检查游戏世界中是否存在特定玩家
 	IsExistPlayer(id PlayerID) bool
 	// IsExistActor 检查游戏世界中是否存在特定游戏对象

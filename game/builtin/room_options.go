@@ -2,7 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 )
 
 // RoomOption 房间构建可选项
@@ -11,7 +11,7 @@ type RoomOption[PlayerID comparable, Player game.Player[PlayerID]] func(room *Ro
 // WithRoomSync 通过线程安全的方式创建房间
 func WithRoomSync[PlayerID comparable, Player game.Player[PlayerID]]() RoomOption[PlayerID, Player] {
 	return func(room *Room[PlayerID, Player]) {
-		room.players = synchronization.NewMap[PlayerID, Player]()
+		room.players = concurrent.NewBalanceMap[PlayerID, Player]()
 	}
 }
 

@@ -3,15 +3,15 @@ package builtin
 import (
 	"encoding/json"
 	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 )
 
 // NewRankingList 创建一个排名从0开始的排行榜
 func NewRankingList[CompetitorID comparable, Score generic.Ordered](options ...RankingListOption[CompetitorID, Score]) *RankingList[CompetitorID, Score] {
 	rankingList := &RankingList[CompetitorID, Score]{
 		rankCount:   100,
-		competitors: synchronization.NewMap[CompetitorID, Score](),
+		competitors: concurrent.NewBalanceMap[CompetitorID, Score](),
 	}
 	for _, option := range options {
 		option(rankingList)
@@ -22,7 +22,7 @@ func NewRankingList[CompetitorID comparable, Score generic.Ordered](options ...R
 type RankingList[CompetitorID comparable, Score generic.Ordered] struct {
 	asc         bool
 	rankCount   int
-	competitors *synchronization.Map[CompetitorID, Score]
+	competitors *concurrent.BalanceMap[CompetitorID, Score]
 	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
 
 	rankChangeEventHandles      []game.RankChangeEventHandle[CompetitorID, Score]
@@ -244,11 +244,11 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 
 func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	var t struct {
-		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
-		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
-		Asc         bool                                      `json:"asc,omitempty"`
+		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
+		Asc         bool                                        `json:"asc,omitempty"`
 	}
-	t.Competitors = synchronization.NewMap[CompetitorID, Score]()
+	t.Competitors = concurrent.NewBalanceMap[CompetitorID, Score]()
 	if err := json.Unmarshal(bytes, &t); err != nil {
 		return err
 	}
@@ -260,9 +260,9 @@ func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 
 func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	var t struct {
-		Competitors *synchronization.Map[CompetitorID, Score] `json:"competitors,omitempty"`
-		Scores      []*scoreItem[CompetitorID, Score]         `json:"scores,omitempty"`
-		Asc         bool                                      `json:"asc,omitempty"`
+		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
+		Asc         bool                                        `json:"asc,omitempty"`
 	}
 	t.Competitors = slf.competitors
 	t.Scores = slf.scores
