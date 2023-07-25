@@ -197,3 +197,125 @@ func ContainsAny[V any](slice []V, values V) bool {
 	}
 	return false
 }
+
+// GetIndex 判断数组是否包含某个元素，如果包含则返回索引
+func GetIndex[V comparable](slice []V, value V) int {
+	for i, v := range slice {
+		if v == value {
+			return i
+		}
+	}
+	return -1
+}
+
+// GetIndexAny 判断数组是否包含某个元素，如果包含则返回索引
+func GetIndexAny[V any](slice []V, values V) int {
+	for i, v := range slice {
+		if reflect.DeepEqual(v, values) {
+			return i
+		}
+	}
+	return -1
+}
+
+// Combinations 获取给定数组的所有组合，包括重复元素的组合
+func Combinations[T any](a []T) [][]T {
+	n := len(a)
+
+	// 去除重复元素，保留唯一元素
+	uniqueSet := make(map[uintptr]bool)
+	uniqueSlice := make([]T, 0, n)
+	for _, val := range a {
+		ptr := reflect.ValueOf(val).Pointer()
+		if !uniqueSet[ptr] {
+			uniqueSet[ptr] = true
+			uniqueSlice = append(uniqueSlice, val)
+		}
+	}
+
+	n = len(uniqueSlice)        // 去重后的数组长度
+	totalCombinations := 1 << n // 2的n次方
+	var result [][]T
+	for i := 0; i < totalCombinations; i++ {
+		var currentCombination []T
+		for j := 0; j < n; j++ {
+			if (i & (1 << j)) != 0 {
+				currentCombination = append(currentCombination, uniqueSlice[j])
+			}
+		}
+		result = append(result, currentCombination)
+	}
+	return result
+}
+
+// LimitedCombinations 获取给定数组的所有组合，且每个组合的成员数量限制在指定范围内
+func LimitedCombinations[T any](a []T, minSize, maxSize int) [][]T {
+	n := len(a)
+	if n == 0 || minSize <= 0 || maxSize <= 0 || minSize > maxSize {
+		return nil
+	}
+
+	var result [][]T
+	var currentCombination []T
+
+	var backtrack func(startIndex int, currentSize int)
+	backtrack = func(startIndex int, currentSize int) {
+		if currentSize >= minSize && currentSize <= maxSize {
+			combination := make([]T, len(currentCombination))
+			copy(combination, currentCombination)
+			result = append(result, combination)
+		}
+
+		for i := startIndex; i < n; i++ {
+			currentCombination = append(currentCombination, a[i])
+			backtrack(i+1, currentSize+1)
+			currentCombination = currentCombination[:len(currentCombination)-1]
+		}
+	}
+
+	backtrack(0, 0)
+	return result
+}
+
+// IsIntersectWithCheck 判断两个切片是否有交集
+func IsIntersectWithCheck[T any](a, b []T, checkHandle func(a, b T) bool) bool {
+	for _, a := range a {
+		for _, b := range b {
+			if checkHandle(a, b) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsIntersect 判断两个切片是否有交集
+func IsIntersect[T any](a, b []T) bool {
+	for _, a := range a {
+		for _, b := range b {
+			if reflect.DeepEqual(a, b) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// SubWithCheck 获取移除指定元素后的切片
+//   - checkHandle 返回 true 表示需要移除
+func SubWithCheck[T any](a, b []T, checkHandle func(a, b T) bool) []T {
+	var result []T
+	for _, a := range a {
+		flag := false
+		for _, b := range b {
+			if checkHandle(a, b) {
+				flag = true
+				break
+			}
+		}
+		if !flag {
+			result = append(result, a)
+		}
+	}
+	return result
+}
