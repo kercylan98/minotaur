@@ -2,8 +2,7 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/asynchronous"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 )
 
@@ -11,7 +10,7 @@ import (
 func NewRoom[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...RoomOption[PlayerID, Player]) *Room[PlayerID, Player] {
 	room := &Room[PlayerID, Player]{
 		guid:    guid,
-		players: asynchronous.NewMap[PlayerID, Player](),
+		players: concurrent.NewBalanceMap[PlayerID, Player](),
 	}
 	for _, option := range options {
 		option(room)
@@ -27,7 +26,7 @@ type Room[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	owner           PlayerID
 	noMaster        bool
 	playerLimit     int
-	players         hash.Map[PlayerID, Player]
+	players         *concurrent.BalanceMap[PlayerID, Player]
 	kickCheckHandle func(room *Room[PlayerID, Player], id, target PlayerID) error
 
 	playerJoinRoomEventHandles  []game.PlayerJoinRoomEventHandle[PlayerID, Player]
@@ -51,8 +50,8 @@ func (slf *Room[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 }
 
 // GetPlayers 获取所有玩家
-func (slf *Room[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
-	return slf.players.(hash.MapReadonly[PlayerID, Player])
+func (slf *Room[PlayerID, Player]) GetPlayers() map[PlayerID]Player {
+	return slf.players.Map()
 }
 
 // GetPlayerCount 获取玩家数量

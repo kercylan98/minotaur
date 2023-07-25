@@ -3,7 +3,7 @@ package components
 import (
 	"encoding/json"
 	"github.com/kercylan98/minotaur/component"
-	"github.com/kercylan98/minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
 	"sync/atomic"
@@ -13,8 +13,8 @@ import (
 // NewLockstep 创建一个锁步（帧）同步默认实现的组件(Lockstep)进行返回
 func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[ClientID, Command]) *Lockstep[ClientID, Command] {
 	lockstep := &Lockstep[ClientID, Command]{
-		clients:   synchronization.NewMap[ClientID, component.LockstepClient[ClientID]](),
-		frames:    synchronization.NewMap[int, []Command](),
+		clients:   concurrent.NewBalanceMap[ClientID, component.LockstepClient[ClientID]](),
+		frames:    concurrent.NewBalanceMap[int, []Command](),
 		ticker:    timer.GetTicker(10),
 		frameRate: 15,
 		serialization: func(frame int, commands []Command) []byte {
@@ -25,7 +25,7 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 			data, _ := json.Marshal(frameStruct)
 			return data
 		},
-		clientCurrentFrame: synchronization.NewMap[ClientID, int](),
+		clientCurrentFrame: concurrent.NewBalanceMap[ClientID, int](),
 	}
 	for _, option := range options {
 		option(lockstep)
@@ -40,12 +40,12 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 //   - 从特定帧开始追帧
 //   - 兼容各种基于TCP/UDP/Unix的网络类型，可通过客户端实现其他网络类型同步
 type Lockstep[ClientID comparable, Command any] struct {
-	clients            *synchronization.Map[ClientID, component.LockstepClient[ClientID]] // 接受广播的客户端
-	frames             *synchronization.Map[int, []Command]                               // 所有帧指令
-	ticker             *timer.Ticker                                                      // 定时器
-	frameMutex         sync.Mutex                                                         // 帧锁
-	currentFrame       int                                                                // 当前帧
-	clientCurrentFrame *synchronization.Map[ClientID, int]                                // 客户端当前帧数
+	clients            *concurrent.BalanceMap[ClientID, component.LockstepClient[ClientID]] // 接受广播的客户端
+	frames             *concurrent.BalanceMap[int, []Command]                               // 所有帧指令
+	ticker             *timer.Ticker                                                        // 定时器
+	frameMutex         sync.Mutex                                                           // 帧锁
+	currentFrame       int                                                                  // 当前帧
+	clientCurrentFrame *concurrent.BalanceMap[ClientID, int]                                // 客户端当前帧数
 	running            atomic.Bool
 
 	frameRate     int                                        // 帧率（每秒N帧）
@@ -123,8 +123,8 @@ func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 
 // AddCommand 添加命令到当前帧
 func (slf *Lockstep[ClientID, Command]) AddCommand(command Command) {
-	slf.frames.AtomGetSet(slf.currentFrame, func(value []Command, exist bool) (newValue []Command, isSet bool) {
-		return append(value, command), true
+	slf.frames.Atom(func(m map[int][]Command) {
+		m[slf.currentFrame] = append(m[slf.currentFrame], command)
 	})
 }
 

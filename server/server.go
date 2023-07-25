@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/kercylan98/minotaur/utils/times"
 	"github.com/panjf2000/ants/v2"
@@ -33,7 +33,7 @@ func New(network Network, options ...Option) *Server {
 		runtime:      &runtime{messagePoolSize: DefaultMessageBufferSize, messageChannelSize: DefaultMessageChannelSize},
 		option:       &option{},
 		network:      network,
-		online:       synchronization.NewMap[string, *Conn](),
+		online:       concurrent.NewBalanceMap[string, *Conn](),
 		closeChannel: make(chan struct{}, 1),
 		systemSignal: make(chan os.Signal, 1),
 	}
@@ -72,26 +72,26 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                       // 事件
-	*runtime                                                     // 运行时
-	*option                                                      // 可选项
-	network                  Network                             // 网络类型
-	addr                     string                              // 侦听地址
-	systemSignal             chan os.Signal                      // 系统信号
-	online                   *synchronization.Map[string, *Conn] // 在线连接
-	ginServer                *gin.Engine                         // HTTP模式下的路由器
-	httpServer               *http.Server                        // HTTP模式下的服务器
-	grpcServer               *grpc.Server                        // GRPC模式下的服务器
-	gServer                  *gNet                               // TCP或UDP模式下的服务器
-	isRunning                bool                                // 是否正在运行
-	isShutdown               atomic.Bool                         // 是否已关闭
-	closeChannel             chan struct{}                       // 关闭信号
-	ants                     *ants.Pool                          // 协程池
-	messagePool              *synchronization.Pool[*Message]     // 消息池
-	messageChannel           chan *Message                       // 消息管道
-	multiple                 *MultipleServer                     // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                          // 多服务器模式下的运行时错误
-	runMode                  RunMode                             // 运行模式
+	*event                                                         // 事件
+	*runtime                                                       // 运行时
+	*option                                                        // 可选项
+	network                  Network                               // 网络类型
+	addr                     string                                // 侦听地址
+	systemSignal             chan os.Signal                        // 系统信号
+	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
+	ginServer                *gin.Engine                           // HTTP模式下的路由器
+	httpServer               *http.Server                          // HTTP模式下的服务器
+	grpcServer               *grpc.Server                          // GRPC模式下的服务器
+	gServer                  *gNet                                 // TCP或UDP模式下的服务器
+	isRunning                bool                                  // 是否正在运行
+	isShutdown               atomic.Bool                           // 是否已关闭
+	closeChannel             chan struct{}                         // 关闭信号
+	ants                     *ants.Pool                            // 协程池
+	messagePool              *concurrent.Pool[*Message]            // 消息池
+	messageChannel           chan *Message                         // 消息管道
+	multiple                 *MultipleServer                       // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
+	runMode                  RunMode                               // 运行模式
 }
 
 // Run 使用特定地址运行服务器
@@ -115,7 +115,7 @@ func (slf *Server) Run(addr string) error {
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var messageInitFinish = make(chan struct{}, 1)
 	var connectionInitHandle = func(callback func()) {
-		slf.messagePool = synchronization.NewPool[*Message](slf.messagePoolSize,
+		slf.messagePool = concurrent.NewPool[*Message](slf.messagePoolSize,
 			func() *Message {
 				return &Message{}
 			},

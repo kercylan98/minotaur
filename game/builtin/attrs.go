@@ -2,18 +2,18 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/huge"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 )
 
 func NewAttrs() *Attrs {
 	return &Attrs{
-		attrs: synchronization.NewMap[int, any](),
+		attrs: concurrent.NewBalanceMap[int, any](),
 	}
 }
 
 type Attrs struct {
-	attrs *synchronization.Map[int, any]
+	attrs *concurrent.BalanceMap[int, any]
 
 	attrChangeEventHandles   []game.AttrChangeEventHandle
 	attrIdChangeEventHandles map[int][]game.AttrChangeEventHandle

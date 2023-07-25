@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kercylan98/minotaur/server"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 	"github.com/nats-io/nats.go"
 	"time"
 )
@@ -18,7 +18,7 @@ func NewNats(url string, options ...NatsOption) *Nats {
 	n := &Nats{
 		url:     url,
 		subject: "MINOTAUR_CROSS",
-		messagePool: synchronization.NewPool[*Message](1024*100, func() *Message {
+		messagePool: concurrent.NewPool[*Message](1024*100, func() *Message {
 			return new(Message)
 		}, func(data *Message) {
 			data.ServerId = 0
@@ -36,7 +36,7 @@ type Nats struct {
 	url         string
 	subject     string
 	options     []nats.Option
-	messagePool *synchronization.Pool[*Message]
+	messagePool *concurrent.Pool[*Message]
 }
 
 func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, packet []byte)) (err error) {

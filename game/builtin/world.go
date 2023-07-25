@@ -2,9 +2,8 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/synchronization"
 	"sync/atomic"
 )
 
@@ -12,10 +11,10 @@ import (
 func NewWorld[PlayerID comparable, Player game.Player[PlayerID]](guid int64, options ...WorldOption[PlayerID, Player]) *World[PlayerID, Player] {
 	world := &World[PlayerID, Player]{
 		guid:         guid,
-		players:      synchronization.NewMap[PlayerID, Player](),
-		playerActors: synchronization.NewMap[PlayerID, hash.Map[int64, game.Actor]](),
-		owners:       synchronization.NewMap[int64, PlayerID](),
-		actors:       synchronization.NewMap[int64, game.Actor](),
+		players:      concurrent.NewBalanceMap[PlayerID, Player](),
+		playerActors: concurrent.NewBalanceMap[PlayerID, *concurrent.BalanceMap[int64, game.Actor]](),
+		owners:       concurrent.NewBalanceMap[int64, PlayerID](),
+		actors:       concurrent.NewBalanceMap[int64, game.Actor](),
 	}
 	for _, option := range options {
 		option(world)
@@ -28,10 +27,10 @@ type World[PlayerID comparable, Player game.Player[PlayerID]] struct {
 	guid         int64
 	actorGuid    atomic.Int64
 	playerLimit  int
-	players      hash.Map[PlayerID, Player]
-	playerActors hash.Map[PlayerID, hash.Map[int64, game.Actor]]
-	owners       hash.Map[int64, PlayerID]
-	actors       hash.Map[int64, game.Actor]
+	players      *concurrent.BalanceMap[PlayerID, Player]
+	playerActors *concurrent.BalanceMap[PlayerID, *concurrent.BalanceMap[int64, game.Actor]]
+	owners       *concurrent.BalanceMap[int64, PlayerID]
+	actors       *concurrent.BalanceMap[int64, game.Actor]
 
 	playerJoinWorldEventHandles   []game.PlayerJoinWorldEventHandle[PlayerID, Player]
 	playerLeaveWorldEventHandles  []game.PlayerLeaveWorldEventHandle[PlayerID, Player]
@@ -56,16 +55,16 @@ func (slf *World[PlayerID, Player]) GetPlayer(id PlayerID) Player {
 	return slf.players.Get(id)
 }
 
-func (slf *World[PlayerID, Player]) GetPlayers() hash.MapReadonly[PlayerID, Player] {
-	return slf.players.(hash.MapReadonly[PlayerID, Player])
+func (slf *World[PlayerID, Player]) GetPlayers() map[PlayerID]Player {
+	return slf.players.Map()
 }
 
 func (slf *World[PlayerID, Player]) GetActor(guid int64) game.Actor {
 	return slf.actors.Get(guid)
 }
 
-func (slf *World[PlayerID, Player]) GetActors() hash.MapReadonly[int64, game.Actor] {
-	return slf.actors.(hash.MapReadonly[int64, game.Actor])
+func (slf *World[PlayerID, Player]) GetActors() map[int64]game.Actor {
+	return slf.actors.Map()
 }
 
 func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game.Actor {
@@ -75,8 +74,8 @@ func (slf *World[PlayerID, Player]) GetPlayerActor(id PlayerID, guid int64) game
 	return nil
 }
 
-func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) hash.MapReadonly[int64, game.Actor] {
-	return slf.playerActors.Get(id).(hash.MapReadonly[int64, game.Actor])
+func (slf *World[PlayerID, Player]) GetPlayerActors(id PlayerID) map[int64]game.Actor {
+	return slf.playerActors.Get(id).Map()
 }
 
 func (slf *World[PlayerID, Player]) IsExistPlayer(id PlayerID) bool {
@@ -105,7 +104,7 @@ func (slf *World[PlayerID, Player]) Join(player Player) error {
 	log.Debug("World.Join", log.Int64("guid", slf.GetGuid()), log.Any("player", player.GetID()))
 	slf.players.Set(player.GetID(), player)
 	if actors := slf.playerActors.Get(player.GetID()); actors == nil {
-		actors = synchronization.NewMap[int64, game.Actor]()
+		actors = concurrent.NewBalanceMap[int64, game.Actor]()
 		slf.playerActors.Set(player.GetID(), actors)
 	}
 	slf.OnPlayerJoinWorldEvent(player)
@@ -119,9 +118,10 @@ func (slf *World[PlayerID, Player]) Leave(id PlayerID) {
 	}
 	log.Debug("World.Leave", log.Int64("guid", slf.GetGuid()), log.Any("player", player.GetID()))
 	slf.OnPlayerLeaveWorldEvent(player)
-	slf.playerActors.Get(player.GetID()).Range(func(guid int64, actor game.Actor) {
+	slf.playerActors.Get(player.GetID()).Range(func(guid int64, actor game.Actor) bool {
 		slf.OnActorAnnihilationEvent(actor)
 		slf.owners.Delete(guid)
+		return false
 	})
 	slf.playerActors.Delete(player.GetID())
 	slf.players.Delete(player.GetID())
@@ -171,8 +171,9 @@ func (slf *World[PlayerID, Player]) RemoveActorOwner(guid int64) {
 func (slf *World[PlayerID, Player]) Reset() {
 	log.Debug("World", log.Int64("Reset", slf.guid))
 	slf.players.Clear()
-	slf.playerActors.Range(func(id PlayerID, actors hash.Map[int64, game.Actor]) {
+	slf.playerActors.Range(func(id PlayerID, actors *concurrent.BalanceMap[int64, game.Actor]) bool {
 		actors.Clear()
+		return false
 	})
 	slf.playerActors.Clear()
 	slf.owners.Clear()

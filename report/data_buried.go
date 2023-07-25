@@ -1,8 +1,7 @@
 package report
 
 import (
-	"github.com/kercylan98/minotaur/utils/asynchronous"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"sync"
 )
 
@@ -10,7 +9,7 @@ import (
 func NewDataBuried[DataID comparable, Data any](name string, hitLogic HitLogic[Data], options ...DataBuriedOption[DataID, Data]) *DataBuried[DataID, Data] {
 	buried := &DataBuried[DataID, Data]{
 		name:     name,
-		data:     asynchronous.NewMap[DataID, Data](),
+		data:     concurrent.NewBalanceMap[DataID, Data](),
 		hitLogic: hitLogic,
 	}
 	buried.setData = func(id DataID, data Data) {
@@ -29,7 +28,7 @@ func NewDataBuried[DataID comparable, Data any](name string, hitLogic HitLogic[D
 //   - 数据埋点通常用于统计不同类型的数据，例如用户数据、商城数据等
 type DataBuried[DataID comparable, Data any] struct {
 	name     string
-	data     hash.Map[DataID, Data]
+	data     *concurrent.BalanceMap[DataID, Data]
 	hitLogic HitLogic[Data]
 	getData  func(DataID) Data
 	setData  func(id DataID, data Data)

@@ -2,20 +2,20 @@ package builtin
 
 import (
 	"github.com/kercylan98/minotaur/game"
-	"github.com/kercylan98/minotaur/utils/synchronization"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"sync/atomic"
 )
 
 func NewRoomManager[PlayerID comparable, Room game.Room[PlayerID, game.Player[PlayerID]]]() *RoomManager[PlayerID, Room] {
 	return &RoomManager[PlayerID, Room]{
-		rooms: synchronization.NewMap[int64, Room](),
+		rooms: concurrent.NewBalanceMap[int64, Room](),
 	}
 }
 
 // RoomManager 房间管理器
 type RoomManager[PlayerID comparable, Room game.Room[PlayerID, game.Player[PlayerID]]] struct {
 	guid  atomic.Int64
-	rooms *synchronization.Map[int64, Room]
+	rooms *concurrent.BalanceMap[int64, Room]
 }
 
 // GenGuid 生成一个新的房间guid

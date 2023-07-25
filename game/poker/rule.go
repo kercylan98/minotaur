@@ -1,16 +1,17 @@
 package poker
 
 import (
+	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/maths"
 	"sort"
 )
 
-func NewRule(options ...Option) *Rule {
-	poker := &Rule{
-		pokerHand:      map[string]HandHandle{},
-		pointSort:      hash.Copy(defaultPointSort),
-		colorSort:      hash.Copy(defaultColorSort),
+func NewRule[P, C generic.Number, T Card[P, C]](options ...Option[P, C, T]) *Rule[P, C, T] {
+	poker := &Rule[P, C, T]{
+		pokerHand: map[string]HandHandle[P, C, T]{},
+		//pointSort:      hash.Copy(defaultPointSort),
+		//colorSort:      hash.Copy(defaultColorSort),
 		pokerHandValue: map[string]int{},
 		restraint:      map[string]map[string]struct{}{},
 	}
@@ -23,19 +24,19 @@ func NewRule(options ...Option) *Rule {
 	return poker
 }
 
-type Rule struct {
-	pokerHand              map[string]HandHandle
+type Rule[P, C generic.Number, T Card[P, C]] struct {
+	pokerHand              map[string]HandHandle[P, C, T]
 	pokerHandValue         map[string]int
-	pointValue             map[Point]int
-	colorValue             map[Color]int
-	pointSort              map[Point]int
-	colorSort              map[Color]int
-	excludeContinuityPoint map[Point]struct{}
+	pointValue             map[P]int
+	colorValue             map[C]int
+	pointSort              map[P]int
+	colorSort              map[C]int
+	excludeContinuityPoint map[P]struct{}
 	restraint              map[string]map[string]struct{}
 }
 
 // GetCardCountWithPointMaximumNumber 获取指定点数的牌的数量
-func (slf *Rule) GetCardCountWithPointMaximumNumber(cards []Card, point Point, maximumNumber int) int {
+func (slf *Rule[P, C, T]) GetCardCountWithPointMaximumNumber(cards []T, point P, maximumNumber int) int {
 	count := 0
 	for _, card := range cards {
 		if card.GetPoint() == point {
@@ -49,7 +50,7 @@ func (slf *Rule) GetCardCountWithPointMaximumNumber(cards []Card, point Point, m
 }
 
 // GetCardCountWithColorMaximumNumber 获取指定花色的牌的数量
-func (slf *Rule) GetCardCountWithColorMaximumNumber(cards []Card, color Color, maximumNumber int) int {
+func (slf *Rule[P, C, T]) GetCardCountWithColorMaximumNumber(cards []T, color C, maximumNumber int) int {
 	count := 0
 	for _, card := range cards {
 		if card.GetColor() == color {
@@ -63,10 +64,10 @@ func (slf *Rule) GetCardCountWithColorMaximumNumber(cards []Card, color Color, m
 }
 
 // GetCardCountWithMaximumNumber 获取指定牌的数量
-func (slf *Rule) GetCardCountWithMaximumNumber(cards []Card, card Card, maximumNumber int) int {
+func (slf *Rule[P, C, T]) GetCardCountWithMaximumNumber(cards []T, card T, maximumNumber int) int {
 	count := 0
 	for _, c := range cards {
-		if c.Equal(card) {
+		if Equal[P, C, T](c, card) {
 			count++
 			if count >= maximumNumber {
 				return count
@@ -77,7 +78,7 @@ func (slf *Rule) GetCardCountWithMaximumNumber(cards []Card, card Card, maximumN
 }
 
 // GetCardCountWithPoint 获取指定点数的牌的数量
-func (slf *Rule) GetCardCountWithPoint(cards []Card, point Point) int {
+func (slf *Rule[P, C, T]) GetCardCountWithPoint(cards []T, point P) int {
 	count := 0
 	for _, card := range cards {
 		if card.GetPoint() == point {
@@ -88,7 +89,7 @@ func (slf *Rule) GetCardCountWithPoint(cards []Card, point Point) int {
 }
 
 // GetCardCountWithColor 获取指定花色的牌的数量
-func (slf *Rule) GetCardCountWithColor(cards []Card, color Color) int {
+func (slf *Rule[P, C, T]) GetCardCountWithColor(cards []T, color C) int {
 	count := 0
 	for _, card := range cards {
 		if card.GetColor() == color {
@@ -99,10 +100,10 @@ func (slf *Rule) GetCardCountWithColor(cards []Card, color Color) int {
 }
 
 // GetCardCount 获取指定牌的数量
-func (slf *Rule) GetCardCount(cards []Card, card Card) int {
+func (slf *Rule[P, C, T]) GetCardCount(cards []T, card T) int {
 	count := 0
 	for _, c := range cards {
-		if c.Equal(card) {
+		if Equal[P, C, T](c, card) {
 			count++
 		}
 	}
@@ -110,7 +111,7 @@ func (slf *Rule) GetCardCount(cards []Card, card Card) int {
 }
 
 // PokerHandIsMatch 检查两组扑克牌牌型是否匹配
-func (slf *Rule) PokerHandIsMatch(cardsA, cardsB []Card) bool {
+func (slf *Rule[P, C, T]) PokerHandIsMatch(cardsA, cardsB []T) bool {
 	handA, exist := slf.PokerHand(cardsA...)
 	if !exist {
 		return false
@@ -126,7 +127,7 @@ func (slf *Rule) PokerHandIsMatch(cardsA, cardsB []Card) bool {
 }
 
 // PokerHand 获取一组扑克的牌型
-func (slf *Rule) PokerHand(cards ...Card) (pokerHand string, hit bool) {
+func (slf *Rule[P, C, T]) PokerHand(cards ...T) (pokerHand string, hit bool) {
 	for phn := range slf.pokerHandValue {
 		if slf.pokerHand[phn](slf, cards) {
 			return phn, true
@@ -136,11 +137,11 @@ func (slf *Rule) PokerHand(cards ...Card) (pokerHand string, hit bool) {
 }
 
 // IsPointContinuity 检查一组扑克牌点数是否连续，count 表示了每个点数的数量
-func (slf *Rule) IsPointContinuity(count int, cards ...Card) bool {
+func (slf *Rule[P, C, T]) IsPointContinuity(count int, cards ...T) bool {
 	if len(cards) == 0 {
 		return false
 	}
-	group := GroupByPoint(cards...)
+	group := GroupByPoint[P, C, T](cards...)
 	var values []int
 	for point, cards := range group {
 		if _, exist := slf.excludeContinuityPoint[point]; exist {
@@ -155,7 +156,7 @@ func (slf *Rule) IsPointContinuity(count int, cards ...Card) bool {
 }
 
 // IsSameColor 检查一组扑克牌是否同花
-func (slf *Rule) IsSameColor(cards ...Card) bool {
+func (slf *Rule[P, C, T]) IsSameColor(cards ...T) bool {
 	length := len(cards)
 	if length == 0 {
 		return false
@@ -173,7 +174,7 @@ func (slf *Rule) IsSameColor(cards ...Card) bool {
 }
 
 // IsSamePoint 检查一组扑克牌是否同点
-func (slf *Rule) IsSamePoint(cards ...Card) bool {
+func (slf *Rule[P, C, T]) IsSamePoint(cards ...T) bool {
 	length := len(cards)
 	if length == 0 {
 		return false
@@ -191,7 +192,7 @@ func (slf *Rule) IsSamePoint(cards ...Card) bool {
 }
 
 // SortByPointDesc 将扑克牌按照点数从大到小排序
-func (slf *Rule) SortByPointDesc(cards []Card) []Card {
+func (slf *Rule[P, C, T]) SortByPointDesc(cards []T) []T {
 	sort.Slice(cards, func(i, j int) bool {
 		return slf.pointSort[cards[i].GetPoint()] > slf.pointSort[cards[j].GetPoint()]
 	})
@@ -199,7 +200,7 @@ func (slf *Rule) SortByPointDesc(cards []Card) []Card {
 }
 
 // SortByPointAsc 将扑克牌按照点数从小到大排序
-func (slf *Rule) SortByPointAsc(cards []Card) []Card {
+func (slf *Rule[P, C, T]) SortByPointAsc(cards []T) []T {
 	sort.Slice(cards, func(i, j int) bool {
 		return slf.pointSort[cards[i].GetPoint()] < slf.pointSort[cards[j].GetPoint()]
 	})
@@ -207,7 +208,7 @@ func (slf *Rule) SortByPointAsc(cards []Card) []Card {
 }
 
 // SortByColorDesc 将扑克牌按照花色从大到小排序
-func (slf *Rule) SortByColorDesc(cards []Card) []Card {
+func (slf *Rule[P, C, T]) SortByColorDesc(cards []T) []T {
 	sort.Slice(cards, func(i, j int) bool {
 		return slf.colorSort[cards[i].GetColor()] > slf.colorSort[cards[j].GetColor()]
 	})
@@ -215,7 +216,7 @@ func (slf *Rule) SortByColorDesc(cards []Card) []Card {
 }
 
 // SortByColorAsc 将扑克牌按照花色从小到大排序
-func (slf *Rule) SortByColorAsc(cards []Card) []Card {
+func (slf *Rule[P, C, T]) SortByColorAsc(cards []T) []T {
 	sort.Slice(cards, func(i, j int) bool {
 		return slf.colorSort[cards[i].GetColor()] < slf.colorSort[cards[j].GetColor()]
 	})
@@ -223,13 +224,13 @@ func (slf *Rule) SortByColorAsc(cards []Card) []Card {
 }
 
 // GetValueWithPokerHand 获取扑克牌的牌型牌值
-func (slf *Rule) GetValueWithPokerHand(hand string, cards ...Card) int {
+func (slf *Rule[P, C, T]) GetValueWithPokerHand(hand string, cards ...T) int {
 	hv := slf.pokerHandValue[hand]
 	return hv * slf.GetValueWithCards(cards...)
 }
 
 // GetValueWithCards 获取扑克牌的牌值
-func (slf *Rule) GetValueWithCards(cards ...Card) int {
+func (slf *Rule[P, C, T]) GetValueWithCards(cards ...T) int {
 	var value int
 	for _, card := range cards {
 		value += slf.GetValueWithPoint(card.GetPoint())
@@ -239,16 +240,16 @@ func (slf *Rule) GetValueWithCards(cards ...Card) int {
 }
 
 // GetValueWithPoint 获取扑克牌的点数牌值
-func (slf *Rule) GetValueWithPoint(point Point) int {
+func (slf *Rule[P, C, T]) GetValueWithPoint(point P) int {
 	return slf.pointValue[point]
 }
 
 // GetValueWithColor 获取扑克牌的花色牌值
-func (slf *Rule) GetValueWithColor(color Color) int {
+func (slf *Rule[P, C, T]) GetValueWithColor(color C) int {
 	return slf.colorValue[color]
 }
 
 // CompareValueWithCards 根据特定的条件表达式比较两组扑克牌的牌值
-func (slf *Rule) CompareValueWithCards(cards1 []Card, expression maths.CompareExpression, cards2 []Card) bool {
+func (slf *Rule[P, C, T]) CompareValueWithCards(cards1 []T, expression maths.CompareExpression, cards2 []T) bool {
 	return maths.Compare(slf.GetValueWithCards(cards1...), expression, slf.GetValueWithCards(cards2...))
 }

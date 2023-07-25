@@ -1,4 +1,4 @@
-package synchronization
+package concurrent
 
 type SliceOption[T any] func(slice *Slice[T])
 
