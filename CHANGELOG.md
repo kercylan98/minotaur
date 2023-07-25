@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.20](https://github.com/kercylan98/minotaur/compare/v0.0.19...v0.0.20) (2023-07-25)
+
+
+### Reverts | 回退
+
+* 移除 storage 包，不合理的设计 ([3e956b6](https://github.com/kercylan98/minotaur/commit/3e956b64cf097894fac6aba8c4bc0f103bd705c7))
+
+
+### Features | 新特性
+
+* super 包支持注册第三方错误，将第三方错误转换为特定错误代码和信息 ([2cbffbf](https://github.com/kercylan98/minotaur/commit/2cbffbf967aef46b58596ea89924c09ce54470d9))
+* super 包添加 []byte、string 零拷贝转换函数 ([506e0f2](https://github.com/kercylan98/minotaur/commit/506e0f2ee411e91d96695880cd81d2acc41464af))
+
+
+### Code Refactoring | 重构
+
+* map 移除适配 ([d446ff1](https://github.com/kercylan98/minotaur/commit/d446ff18b97aa2534303049396257dcca6b22b48))
+* storage 中的 Delete 要求返回 error ([a43fb4f](https://github.com/kercylan98/minotaur/commit/a43fb4faea167b7a94ef7714ce9e69c18ca06b01))
+* storage 包重新实现 ([b6f28dd](https://github.com/kercylan98/minotaur/commit/b6f28dd7431ca0d59292b9c3f993ae23320db63b))
+* storage 要求 Load 等函数返回错误信息 ([0d1a985](https://github.com/kercylan98/minotaur/commit/0d1a985e691fdc4f6af7bc4c23fab7687fc86238))
+* 优化 solo.guid 的使用，命名空间需要注册 ([6238883](https://github.com/kercylan98/minotaur/commit/6238883dc97839b089fb36544252614c4d5860ff))
+* 去除 storage 中的 errHandle 参数 ([3befe64](https://github.com/kercylan98/minotaur/commit/3befe645b71473799e73127f76a2e91c7e67fa5e))
+* 移除分段锁map实现及 hash.Map、hash.ReadonlyMap 接口，移除 asynchronous 包，同步包更名为 concurrent ([d0d2087](https://github.com/kercylan98/minotaur/commit/d0d2087fee823e5821fe6c88c871bb94e5fa69cc))
+* 重构 poker 包为全泛型包，支持通过 poker.Matcher 根据一组扑克牌选出最佳组合 ([d71d843](https://github.com/kercylan98/minotaur/commit/d71d8434b6c431327fd405535843ca52c65c9973))
+
 ## [0.0.19](https://github.com/kercylan98/minotaur/compare/v0.0.18...v0.0.19) (2023-07-20)
 
 
