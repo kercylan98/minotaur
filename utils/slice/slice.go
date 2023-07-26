@@ -248,6 +248,19 @@ func Combinations[T any](a []T) [][]T {
 	return result
 }
 
+// CombinationsPari 从给定的两个数组中按照特定数量得到所有组合后，再将两个数组的组合进行组合
+//   - 例如从数组 A 中得到所有数量为2的组合，从数组 B 中得到所有数量为3的组合，再将两个组合进行组合，得到所有数量为5的组合
+func CombinationsPari[T any](a, b []T, aCount, bCount int) [][]T {
+	var combinations [][]T
+	var as, bs = LimitedCombinations(a, aCount, aCount), LimitedCombinations(b, bCount, bCount)
+	for _, asi := range as {
+		for _, bsi := range bs {
+			combinations = append(combinations, append(asi, bsi...))
+		}
+	}
+	return combinations
+}
+
 // LimitedCombinations 获取给定数组的所有组合，且每个组合的成员数量限制在指定范围内
 func LimitedCombinations[T any](a []T, minSize, maxSize int) [][]T {
 	n := len(a)
