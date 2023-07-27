@@ -1,24 +1,25 @@
-package builtin
+package aoi
 
 import (
-	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/geometry"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"math"
 	"sync"
 )
 
-func NewAOI2D(width, height, areaWidth, areaHeight int) *AOI2D {
-	aoi := &AOI2D{
+func NewTwoDimensional[E TwoDimensionalEntity](width, height, areaWidth, areaHeight int) *TwoDimensional[E] {
+	aoi := &TwoDimensional[E]{
+		event:  new(event[E]),
 		width:  float64(width),
 		height: float64(height),
-		focus:  map[int64]map[int64]game.AOIEntity2D{},
+		focus:  map[int64]map[int64]E{},
 	}
 	aoi.SetAreaSize(areaWidth, areaHeight)
 	return aoi
 }
 
-type AOI2D struct {
+type TwoDimensional[E TwoDimensionalEntity] struct {
+	*event[E]
 	rw               sync.RWMutex
 	width            float64
 	height           float64
@@ -26,39 +27,36 @@ type AOI2D struct {
 	areaHeight       float64
 	areaWidthLimit   int
 	areaHeightLimit  int
-	areas            [][]map[int64]game.AOIEntity2D
-	focus            map[int64]map[int64]game.AOIEntity2D
+	areas            [][]map[int64]E
+	focus            map[int64]map[int64]E
 	repartitionQueue []func()
-
-	entityJoinVisionEventHandles  []game.EntityJoinVisionEventHandle
-	entityLeaveVisionEventHandles []game.EntityLeaveVisionEventHandle
 }
 
-func (slf *AOI2D) AddEntity(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) AddEntity(entity E) {
 	slf.rw.Lock()
 	slf.addEntity(entity)
 	slf.rw.Unlock()
 }
 
-func (slf *AOI2D) DeleteEntity(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) DeleteEntity(entity E) {
 	slf.rw.Lock()
 	slf.deleteEntity(entity)
 	slf.rw.Unlock()
 }
 
-func (slf *AOI2D) Refresh(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) Refresh(entity E) {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
 	slf.refresh(entity)
 }
 
-func (slf *AOI2D) GetFocus(guid int64) map[int64]game.AOIEntity2D {
+func (slf *TwoDimensional[E]) GetFocus(guid int64) map[int64]E {
 	slf.rw.RLock()
 	defer slf.rw.RUnlock()
 	return hash.Copy(slf.focus[guid])
 }
 
-func (slf *AOI2D) SetSize(width, height int) {
+func (slf *TwoDimensional[E]) SetSize(width, height int) {
 	fw, fh := float64(width), float64(height)
 	if fw == slf.width && fh == slf.height {
 		return
@@ -70,7 +68,7 @@ func (slf *AOI2D) SetSize(width, height int) {
 	slf.setAreaSize(int(slf.areaWidth), int(slf.areaHeight))
 }
 
-func (slf *AOI2D) SetAreaSize(width, height int) {
+func (slf *TwoDimensional[E]) SetAreaSize(width, height int) {
 	fw, fh := float64(width), float64(height)
 	if fw == slf.areaWidth && fh == slf.areaHeight {
 		return
@@ -80,35 +78,15 @@ func (slf *AOI2D) SetAreaSize(width, height int) {
 	slf.setAreaSize(width, height)
 }
 
-func (slf *AOI2D) RegEntityJoinVisionEvent(handle game.EntityJoinVisionEventHandle) {
-	slf.entityJoinVisionEventHandles = append(slf.entityJoinVisionEventHandles, handle)
-}
-
-func (slf *AOI2D) OnEntityJoinVisionEvent(entity, target game.AOIEntity2D) {
-	for _, handle := range slf.entityJoinVisionEventHandles {
-		handle(entity, target)
-	}
-}
-
-func (slf *AOI2D) RegEntityLeaveVisionEvent(handle game.EntityLeaveVisionEventHandle) {
-	slf.entityLeaveVisionEventHandles = append(slf.entityLeaveVisionEventHandles, handle)
-}
-
-func (slf *AOI2D) OnEntityLeaveVisionEvent(entity, target game.AOIEntity2D) {
-	for _, handle := range slf.entityLeaveVisionEventHandles {
-		handle(entity, target)
-	}
-}
-
-func (slf *AOI2D) setAreaSize(width, height int) {
+func (slf *TwoDimensional[E]) setAreaSize(width, height int) {
 
 	// 旧分区备份
-	var oldAreas = make([][]map[int64]game.AOIEntity2D, len(slf.areas))
+	var oldAreas = make([][]map[int64]E, len(slf.areas))
 	for w := 0; w < len(slf.areas); w++ {
 		hs := slf.areas[w]
-		ohs := make([]map[int64]game.AOIEntity2D, len(hs))
+		ohs := make([]map[int64]E, len(hs))
 		for h := 0; h < len(hs); h++ {
-			es := map[int64]game.AOIEntity2D{}
+			es := map[int64]E{}
 			for g, e := range hs[h] {
 				es[g] = e
 			}
@@ -133,11 +111,11 @@ func (slf *AOI2D) setAreaSize(width, height int) {
 	slf.areaHeight = float64(height)
 	slf.areaWidthLimit = int(math.Ceil(slf.width / slf.areaWidth))
 	slf.areaHeightLimit = int(math.Ceil(slf.height / slf.areaHeight))
-	areas := make([][]map[int64]game.AOIEntity2D, slf.areaWidthLimit+1)
+	areas := make([][]map[int64]E, slf.areaWidthLimit+1)
 	for i := 0; i < len(areas); i++ {
-		entities := make([]map[int64]game.AOIEntity2D, slf.areaHeightLimit+1)
+		entities := make([]map[int64]E, slf.areaHeightLimit+1)
 		for e := 0; e < len(entities); e++ {
-			entities[e] = map[int64]game.AOIEntity2D{}
+			entities[e] = map[int64]E{}
 		}
 		areas[i] = entities
 	}
@@ -155,22 +133,22 @@ func (slf *AOI2D) setAreaSize(width, height int) {
 	}
 }
 
-func (slf *AOI2D) addEntity(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) addEntity(entity E) {
 	x, y := entity.GetPosition()
 	widthArea := int(x / slf.areaWidth)
 	heightArea := int(y / slf.areaHeight)
 	guid := entity.GetGuid()
 	slf.areas[widthArea][heightArea][guid] = entity
-	focus := map[int64]game.AOIEntity2D{}
+	focus := map[int64]E{}
 	slf.focus[guid] = focus
-	slf.rangeVisionAreaEntities(entity, func(eg int64, e game.AOIEntity2D) {
+	slf.rangeVisionAreaEntities(entity, func(eg int64, e E) {
 		focus[eg] = e
 		slf.OnEntityJoinVisionEvent(entity, e)
 		slf.refresh(e)
 	})
 }
 
-func (slf *AOI2D) refresh(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) refresh(entity E) {
 	x, y := entity.GetPosition()
 	vision := entity.GetVision()
 	guid := entity.GetGuid()
@@ -183,7 +161,7 @@ func (slf *AOI2D) refresh(entity game.AOIEntity2D) {
 		}
 	}
 
-	slf.rangeVisionAreaEntities(entity, func(guid int64, e game.AOIEntity2D) {
+	slf.rangeVisionAreaEntities(entity, func(guid int64, e E) {
 		if _, exist := focus[guid]; !exist {
 			focus[guid] = e
 			slf.OnEntityJoinVisionEvent(entity, e)
@@ -191,7 +169,7 @@ func (slf *AOI2D) refresh(entity game.AOIEntity2D) {
 	})
 }
 
-func (slf *AOI2D) rangeVisionAreaEntities(entity game.AOIEntity2D, handle func(guid int64, entity game.AOIEntity2D)) {
+func (slf *TwoDimensional[E]) rangeVisionAreaEntities(entity E, handle func(guid int64, entity E)) {
 	x, y := entity.GetPosition()
 	widthArea := int(x / slf.areaWidth)
 	heightArea := int(y / slf.areaHeight)
@@ -259,7 +237,7 @@ func (slf *AOI2D) rangeVisionAreaEntities(entity game.AOIEntity2D, handle func(g
 	}
 }
 
-func (slf *AOI2D) deleteEntity(entity game.AOIEntity2D) {
+func (slf *TwoDimensional[E]) deleteEntity(entity E) {
 	x, y := entity.GetPosition()
 	widthArea := int(x / slf.areaWidth)
 	heightArea := int(y / slf.areaHeight)

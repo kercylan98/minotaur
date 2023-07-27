@@ -1,8 +1,8 @@
-package builtin_test
+package aoi_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game/builtin"
+	"github.com/kercylan98/minotaur/game/aoi"
 	"github.com/kercylan98/minotaur/utils/random"
 	"testing"
 	"time"
@@ -29,12 +29,12 @@ func (slf *Ent) GetVision() float64 {
 	return slf.vision
 }
 
-func TestNewAOI2D(t *testing.T) {
-	aoi := builtin.NewAOI2D(10000, 10000, 100, 100)
+func TestNewTwoDimensional(t *testing.T) {
+	aoiTW := aoi.NewTwoDimensional[*Ent](10000, 10000, 100, 100)
 
 	start := time.Now()
 	for i := 0; i < 50000; i++ {
-		aoi.AddEntity(&Ent{
+		aoiTW.AddEntity(&Ent{
 			guid:   int64(i),
 			x:      float64(random.Int(0, 10000)),
 			y:      float64(random.Int(0, 10000)),
@@ -44,9 +44,9 @@ func TestNewAOI2D(t *testing.T) {
 	fmt.Println("添加耗时：", time.Since(start))
 
 	//start = time.Now()
-	//aoi.SetAreaSize(1000, 1000)
+	//aoiTW.SetAreaSize(1000, 1000)
 	//fmt.Println("重设区域大小耗时：", time.Since(start))
 	start = time.Now()
-	aoi.SetSize(10100, 10100)
+	aoiTW.SetSize(10100, 10100)
 	fmt.Println("重设大小耗时：", time.Since(start))
 }
