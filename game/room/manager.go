@@ -13,6 +13,7 @@ func NewManager[PID comparable, P game.Player[PID], R Room]() *Manager[PID, P, R
 		rooms:   concurrent.NewBalanceMap[int64, *info[PID, P, R]](),
 		players: concurrent.NewBalanceMap[PID, P](),
 		pr:      concurrent.NewBalanceMap[PID, map[int64]struct{}](),
+		rp:      concurrent.NewBalanceMap[int64, map[PID]struct{}](),
 	}
 
 	return manager
