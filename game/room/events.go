@@ -4,26 +4,26 @@ import "github.com/kercylan98/minotaur/game"
 
 type (
 	// PlayerJoinRoomEventHandle 玩家加入房间事件处理函数
-	PlayerJoinRoomEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, player P)
+	PlayerJoinRoomEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P)
 	// PlayerLeaveRoomEventHandle 玩家离开房间事件处理函数
-	PlayerLeaveRoomEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, player P)
+	PlayerLeaveRoomEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P)
 	// PlayerKickedOutEventHandle 玩家被踢出房间事件处理函数
-	PlayerKickedOutEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, executor, kicked P, reason string)
+	PlayerKickedOutEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, executor, kicked P, reason string)
 	// PlayerUpgradeOwnerEventHandle 玩家成为房主事件处理函数
-	PlayerUpgradeOwnerEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, oldOwner, newOwner P)
+	PlayerUpgradeOwnerEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, oldOwner, newOwner P)
 	// CancelOwnerEventHandle 取消房主事件处理函数
-	CancelOwnerEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, oldOwner P)
+	CancelOwnerEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, oldOwner P)
 	// ChangePlayerLimitEventHandle 改变房间人数上限事件处理函数
-	ChangePlayerLimitEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, oldLimit, newLimit int)
+	ChangePlayerLimitEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, oldLimit, newLimit int)
 	// PlayerSeatChangeEventHandle 玩家座位改变事件处理函数
-	PlayerSeatChangeEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, player P, oldSeat, newSeat int)
+	PlayerSeatChangeEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P, oldSeat, newSeat int)
 	// PlayerSeatSetEventHandle 玩家座位设置事件处理函数
-	PlayerSeatSetEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, player P, seat int)
+	PlayerSeatSetEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P, seat int)
 	// PlayerSeatCancelEventHandle 玩家座位取消事件处理函数
-	PlayerSeatCancelEventHandle[PID comparable, P game.Player[PID], R Room[PID, P]] func(room R, player P, seat int)
+	PlayerSeatCancelEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P, seat int)
 )
 
-func newEvent[PID comparable, P game.Player[PID], R Room[PID, P]]() *event[PID, P, R] {
+func newEvent[PID comparable, P game.Player[PID], R Room]() *event[PID, P, R] {
 	return &event[PID, P, R]{
 		playerJoinRoomEventRoomHandles:     make(map[int64][]PlayerJoinRoomEventHandle[PID, P, R]),
 		playerLeaveRoomEventRoomHandles:    make(map[int64][]PlayerLeaveRoomEventHandle[PID, P, R]),
@@ -36,7 +36,7 @@ func newEvent[PID comparable, P game.Player[PID], R Room[PID, P]]() *event[PID, 
 	}
 }
 
-type event[PID comparable, P game.Player[PID], R Room[PID, P]] struct {
+type event[PID comparable, P game.Player[PID], R Room] struct {
 	playerJoinRoomEventHandles         []PlayerJoinRoomEventHandle[PID, P, R]
 	playerJoinRoomEventRoomHandles     map[int64][]PlayerJoinRoomEventHandle[PID, P, R]
 	playerLeaveRoomEventHandles        []PlayerLeaveRoomEventHandle[PID, P, R]

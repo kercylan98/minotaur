@@ -3,10 +3,11 @@ package room
 import (
 	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/generic"
 )
 
 // NewManager 创建房间管理器
-func NewManager[PID comparable, P game.Player[PID], R Room[PID, P]]() *Manager[PID, P, R] {
+func NewManager[PID comparable, P game.Player[PID], R Room]() *Manager[PID, P, R] {
 	manager := &Manager[PID, P, R]{
 		event:   newEvent[PID, P, R](),
 		rooms:   concurrent.NewBalanceMap[int64, *info[PID, P, R]](),
@@ -18,7 +19,7 @@ func NewManager[PID comparable, P game.Player[PID], R Room[PID, P]]() *Manager[P
 }
 
 // Manager 房间管理器
-type Manager[PID comparable, P game.Player[PID], R Room[PID, P]] struct {
+type Manager[PID comparable, P game.Player[PID], R Room] struct {
 	*event[PID, P, R]
 	rooms   *concurrent.BalanceMap[int64, *info[PID, P, R]] // 所有房间
 	players *concurrent.BalanceMap[PID, P]                  // 所有加入房间的玩家
@@ -78,7 +79,7 @@ func (slf *Manager[PID, P, R]) CancelOwner(roomId int64) {
 			info.owner = nil
 		}
 	})
-	if oldOwner != nil {
+	if !generic.IsNil(oldOwner) {
 		slf.OnCancelOwnerEvent(room, oldOwner)
 	}
 }
@@ -99,7 +100,7 @@ func (slf *Manager[PID, P, R]) SetOwner(roomId int64, owner PID) error {
 			oldOwner = slf.GetRoomPlayer(roomId, *info.owner)
 		}
 		newOwner = slf.GetRoomPlayer(roomId, owner)
-		if newOwner == nil {
+		if generic.IsNil(newOwner) {
 			err = ErrRoomOrPlayerNotExist
 			return
 		}
@@ -270,7 +271,7 @@ func (slf *Manager[PID, P, R]) Leave(roomId int64, player P) {
 }
 
 // Join 使玩家加入房间
-func (slf *Manager[PID, P, R]) Join(player P, roomId int64) error {
+func (slf *Manager[PID, P, R]) Join(roomId int64, player P) error {
 	var err error
 	var roomInfo *info[PID, P, R]
 	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
@@ -315,12 +316,12 @@ func (slf *Manager[PID, P, R]) KickOut(roomId int64, executor, kicked PID, reaso
 	var executorPlayer, kickedPlayer P
 	slf.rp.Atom(func(m map[int64]map[PID]struct{}) {
 		executorPlayer, kickedPlayer = slf.GetRoomPlayer(roomId, executor), slf.GetRoomPlayer(roomId, kicked)
-		if executorPlayer == nil || kickedPlayer == nil {
+		if generic.IsHasNil(executorPlayer, kickedPlayer) {
 			err = ErrRoomOrPlayerNotExist
 			return
 		}
 		room = slf.rooms.Get(roomId).room
-		if room == nil {
+		if generic.IsNil(room) {
 			err = ErrRoomNotExist
 			return
 		}

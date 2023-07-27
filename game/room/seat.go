@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func newSeat[PlayerID comparable, P game.Player[PlayerID], R Room[PlayerID, P]](manager *Manager[PlayerID, P, R], room R, event *event[PlayerID, P, R]) *Seat[PlayerID, P, R] {
+func newSeat[PlayerID comparable, P game.Player[PlayerID], R Room](manager *Manager[PlayerID, P, R], room R, event *event[PlayerID, P, R]) *Seat[PlayerID, P, R] {
 	roomSeat := &Seat[PlayerID, P, R]{
 		manager: manager,
 		room:    room,
@@ -18,7 +18,7 @@ func newSeat[PlayerID comparable, P game.Player[PlayerID], R Room[PlayerID, P]](
 }
 
 // Seat 房间座位信息
-type Seat[PlayerID comparable, P game.Player[PlayerID], R Room[PlayerID, P]] struct {
+type Seat[PlayerID comparable, P game.Player[PlayerID], R Room] struct {
 	manager       *Manager[PlayerID, P, R]
 	room          R
 	event         *event[PlayerID, P, R]
