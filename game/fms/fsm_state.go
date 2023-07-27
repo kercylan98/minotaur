@@ -1,4 +1,4 @@
-package builtin
+package fms
 
 import "github.com/kercylan98/minotaur/game"
 
