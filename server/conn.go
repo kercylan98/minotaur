@@ -65,6 +65,21 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	return c
 }
 
+// NewEmptyConn 创建一个适用于测试的空连接
+func NewEmptyConn(server *Server) *Conn {
+	c := &Conn{
+		server:     server,
+		remoteAddr: &net.TCPAddr{},
+		ip:         "0.0.0.0:0",
+		data:       map[any]any{},
+	}
+	var wait = new(sync.WaitGroup)
+	wait.Add(1)
+	go c.writeLoop(wait)
+	wait.Wait()
+	return c
+}
+
 // Conn 服务器连接
 type Conn struct {
 	server     *Server

@@ -20,6 +20,7 @@ type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packe
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 type ConsoleCommandEventHandle func(srv *Server)
+type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
 
 type event struct {
 	*Server
@@ -32,9 +33,9 @@ type event struct {
 	receiveCrossPacketEventHandles      []ReceiveCrossPacketEventHandle
 	messageErrorEventHandles            []MessageErrorEventHandle
 	messageLowExecEventHandles          []MessageLowExecEventHandle
+	connectionOpenedAfterEventHandles   []ConnectionOpenedAfterEventHandle
 
-	consoleCommandEventHandles map[string][]ConsoleCommandEventHandle
-
+	consoleCommandEventHandles        map[string][]ConsoleCommandEventHandle
 	consoleCommandEventHandleInitOnce sync.Once
 }
 
@@ -207,6 +208,23 @@ func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
 	PushSystemMessage(slf.Server, func() {
 		for _, handle := range slf.messageLowExecEventHandles {
 			handle(slf.Server, message, cost)
+		}
+	})
+}
+
+// RegConnectionOpenedAfterEvent 在连接打开事件处理完成后将立刻执行被注册的事件处理函数
+func (slf *event) RegConnectionOpenedAfterEvent(handle ConnectionOpenedAfterEventHandle) {
+	if slf.network == NetworkHttp {
+		panic(ErrNetworkIncompatibleHttp)
+	}
+	slf.connectionOpenedAfterEventHandles = append(slf.connectionOpenedAfterEventHandles, handle)
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnConnectionOpenedAfterEvent(conn *Conn) {
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.connectionOpenedAfterEventHandles {
+			handle(slf.Server, conn)
 		}
 	})
 }

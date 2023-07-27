@@ -184,6 +184,7 @@ func (slf *Server) Run(addr string) error {
 
 				conn := newKcpConn(slf, session)
 				slf.OnConnectionOpenedEvent(conn)
+				slf.OnConnectionOpenedAfterEvent(conn)
 
 				go func(conn *Conn) {
 					defer func() {
