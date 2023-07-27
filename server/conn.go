@@ -94,6 +94,11 @@ type Conn struct {
 	packets    []*connPacket
 }
 
+// IsEmpty 是否是空连接
+func (slf *Conn) IsEmpty() bool {
+	return slf.ws == nil && slf.gn == nil && slf.kcp == nil
+}
+
 // Reuse 重用连接
 //   - 重用连接时，会将当前连接的数据复制到新连接中
 //   - 通常在于连接断开后，重新连接时使用
@@ -174,6 +179,7 @@ func (slf *Conn) IsWebsocket() bool {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet Packet) {
+	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
 	if slf.packetPool == nil {
 		return
 	}
@@ -187,7 +193,8 @@ func (slf *Conn) Write(packet Packet) {
 
 // WriteWithCallback 与 Write 相同，但是会在写入完成后调用 callback
 //   - 当 callback 为 nil 时，与 Write 相同
-func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error), messageType ...int) {
+func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error)) {
+	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
 	if slf.packetPool == nil {
 		return
 	}

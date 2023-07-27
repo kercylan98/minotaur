@@ -21,6 +21,7 @@ type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 type ConsoleCommandEventHandle func(srv *Server)
 type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
+type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet Packet) Packet
 
 type event struct {
 	*Server
@@ -34,6 +35,7 @@ type event struct {
 	messageErrorEventHandles            []MessageErrorEventHandle
 	messageLowExecEventHandles          []MessageLowExecEventHandle
 	connectionOpenedAfterEventHandles   []ConnectionOpenedAfterEventHandle
+	connectionWritePacketBeforeHandles  []ConnectionWritePacketBeforeEventHandle
 
 	consoleCommandEventHandles        map[string][]ConsoleCommandEventHandle
 	consoleCommandEventHandleInitOnce sync.Once
@@ -227,6 +229,26 @@ func (slf *event) OnConnectionOpenedAfterEvent(conn *Conn) {
 			handle(slf.Server, conn)
 		}
 	}, "ConnectionOpenedAfterEvent")
+}
+
+// RegConnectionWritePacketBeforeEvent 在发送数据包前将立刻执行被注册的事件处理函数
+func (slf *event) RegConnectionWritePacketBeforeEvent(handle ConnectionWritePacketBeforeEventHandle) {
+	if slf.network == NetworkHttp {
+		panic(ErrNetworkIncompatibleHttp)
+	}
+	slf.connectionWritePacketBeforeHandles = append(slf.connectionWritePacketBeforeHandles, handle)
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet Packet) (newPacket Packet) {
+	if len(slf.connectionWritePacketBeforeHandles) == 0 {
+		return packet
+	}
+	newPacket = packet
+	for _, handle := range slf.connectionWritePacketBeforeHandles {
+		newPacket = handle(slf.Server, conn, packet)
+	}
+	return newPacket
 }
 
 func (slf *event) check() {
