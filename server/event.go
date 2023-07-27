@@ -85,7 +85,7 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 				handle(slf.Server)
 			}
 		}
-	})
+	}, "ConsoleCommandEvent")
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -117,7 +117,7 @@ func (slf *event) OnStartFinishEvent() {
 		for _, handle := range slf.startFinishEventHandles {
 			handle(slf.Server)
 		}
-	})
+	}, "StartFinishEvent")
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数
@@ -136,7 +136,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 		}
 		conn.Close()
 		slf.Server.online.Delete(conn.GetID())
-	})
+	}, "ConnectionClosedEvent")
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
@@ -154,7 +154,7 @@ func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
 		for _, handle := range slf.connectionOpenedEventHandles {
 			handle(slf.Server, conn)
 		}
-	})
+	}, "ConnectionOpenedEvent")
 }
 
 // RegConnectionReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
@@ -195,7 +195,7 @@ func (slf *event) OnMessageErrorEvent(message *Message, err error) {
 		for _, handle := range slf.messageErrorEventHandles {
 			handle(slf.Server, message, err)
 		}
-	})
+	}, "MessageErrorEvent")
 }
 
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
@@ -209,7 +209,7 @@ func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
 		for _, handle := range slf.messageLowExecEventHandles {
 			handle(slf.Server, message, cost)
 		}
-	})
+	}, "MessageLowExecEvent")
 }
 
 // RegConnectionOpenedAfterEvent 在连接打开事件处理完成后将立刻执行被注册的事件处理函数
@@ -226,7 +226,7 @@ func (slf *event) OnConnectionOpenedAfterEvent(conn *Conn) {
 		for _, handle := range slf.connectionOpenedAfterEventHandles {
 			handle(slf.Server, conn)
 		}
-	})
+	}, "ConnectionOpenedAfterEvent")
 }
 
 func (slf *event) check() {
