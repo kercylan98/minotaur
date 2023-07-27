@@ -2,12 +2,11 @@ package fms
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game"
 )
 
 func NewFSM[State comparable, Data any](data Data) *FSM[State, Data] {
 	return &FSM[State, Data]{
-		states: map[State]game.FSMState[State, Data]{},
+		states: map[State]*FSMState[State, Data]{},
 		data:   data,
 	}
 }
@@ -15,7 +14,7 @@ func NewFSM[State comparable, Data any](data Data) *FSM[State, Data] {
 type FSM[State comparable, Data any] struct {
 	current State
 	data    Data
-	states  map[State]game.FSMState[State, Data]
+	states  map[State]*FSMState[State, Data]
 }
 
 func (slf *FSM[State, Data]) Update() {
@@ -23,7 +22,7 @@ func (slf *FSM[State, Data]) Update() {
 	state.Update(slf.data)
 }
 
-func (slf *FSM[State, Data]) Register(state game.FSMState[State, Data]) {
+func (slf *FSM[State, Data]) Register(state *FSMState[State, Data]) {
 	slf.states[state.GetState()] = state
 }
 
