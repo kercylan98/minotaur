@@ -1,15 +1,15 @@
-package builtin
+package ranking
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/generic"
 )
 
-// NewRankingList 创建一个排名从0开始的排行榜
-func NewRankingList[CompetitorID comparable, Score generic.Ordered](options ...RankingListOption[CompetitorID, Score]) *RankingList[CompetitorID, Score] {
-	rankingList := &RankingList[CompetitorID, Score]{
+// NewList 创建一个排名从0开始的排行榜
+func NewList[CompetitorID comparable, Score generic.Ordered](options ...ListOption[CompetitorID, Score]) *List[CompetitorID, Score] {
+	rankingList := &List[CompetitorID, Score]{
+		event:       new(event[CompetitorID, Score]),
 		rankCount:   100,
 		competitors: concurrent.NewBalanceMap[CompetitorID, Score](),
 	}
@@ -19,14 +19,15 @@ func NewRankingList[CompetitorID comparable, Score generic.Ordered](options ...R
 	return rankingList
 }
 
-type RankingList[CompetitorID comparable, Score generic.Ordered] struct {
+type List[CompetitorID comparable, Score generic.Ordered] struct {
+	*event[CompetitorID, Score]
 	asc         bool
 	rankCount   int
 	competitors *concurrent.BalanceMap[CompetitorID, Score]
 	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
 
-	rankChangeEventHandles      []game.RankChangeEventHandle[CompetitorID, Score]
-	rankClearBeforeEventHandles []game.RankClearBeforeEventHandle[CompetitorID, Score]
+	rankChangeEventHandles      []RankChangeEventHandle[CompetitorID, Score]
+	rankClearBeforeEventHandles []RankClearBeforeEventHandle[CompetitorID, Score]
 }
 
 type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
@@ -36,7 +37,7 @@ type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
 
 // Competitor 声明排行榜竞争者
 //   - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
-func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
+func (slf *List[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
 	v, exist := slf.competitors.GetExist(competitorId)
 	if exist {
 		if slf.Cmp(v, score) == 0 {
@@ -65,7 +66,7 @@ func (slf *RankingList[CompetitorID, Score]) Competitor(competitorId CompetitorI
 }
 
 // RemoveCompetitor 删除特定竞争者
-func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
+func (slf *List[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
 	if !slf.competitors.Exist(competitorId) {
 		return
 	}
@@ -82,16 +83,16 @@ func (slf *RankingList[CompetitorID, Score]) RemoveCompetitor(competitorId Compe
 }
 
 // Size 获取竞争者数量
-func (slf *RankingList[CompetitorID, Score]) Size() int {
+func (slf *List[CompetitorID, Score]) Size() int {
 	return slf.competitors.Size()
 }
 
 // GetRank 获取竞争者排名
 //   - 排名从 0 开始
-func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
+func (slf *List[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
 	competitorScore, exist := slf.competitors.GetExist(competitorId)
 	if !exist {
-		return 0, ErrRankingListNotExistCompetitor
+		return 0, ErrListNotExistCompetitor
 	}
 
 	low, high := 0, len(slf.scores)-1
@@ -120,25 +121,25 @@ func (slf *RankingList[CompetitorID, Score]) GetRank(competitorId CompetitorID) 
 			low = mid + 1
 		}
 	}
-	return 0, ErrRankingListIndexErr
+	return 0, ErrListIndexErr
 }
 
 // GetCompetitor 获取特定排名的竞争者
-func (slf *RankingList[CompetitorID, Score]) GetCompetitor(rank int) (competitorId CompetitorID, err error) {
+func (slf *List[CompetitorID, Score]) GetCompetitor(rank int) (competitorId CompetitorID, err error) {
 	if rank < 0 || rank >= len(slf.scores) {
-		return competitorId, ErrRankingListNonexistentRanking
+		return competitorId, ErrListNonexistentRanking
 	}
 	return slf.scores[rank].CompetitorId, nil
 }
 
 // GetCompetitorWithRange 获取第start名到第end名竞争者
-func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
+func (slf *List[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
 	if start < 1 || end < start {
-		return nil, ErrRankingListNonexistentRanking
+		return nil, ErrListNonexistentRanking
 	}
 	total := len(slf.scores)
 	if start > total {
-		return nil, ErrRankingListNonexistentRanking
+		return nil, ErrListNonexistentRanking
 	}
 	if end > total {
 		end = total
@@ -151,17 +152,17 @@ func (slf *RankingList[CompetitorID, Score]) GetCompetitorWithRange(start, end i
 }
 
 // GetScore 获取竞争者成绩
-func (slf *RankingList[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score Score, err error) {
+func (slf *List[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score Score, err error) {
 	data, ok := slf.competitors.GetExist(competitorId)
 	if !ok {
-		return score, ErrRankingListNotExistCompetitor
+		return score, ErrListNotExistCompetitor
 	}
 	return data, nil
 }
 
 // GetAllCompetitor 获取所有竞争者ID
 //   - 结果为名次有序的
-func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
+func (slf *List[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	var result []CompetitorID
 	for _, data := range slf.scores {
 		result = append(result, data.CompetitorId)
@@ -170,13 +171,13 @@ func (slf *RankingList[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 }
 
 // Clear 清空排行榜
-func (slf *RankingList[CompetitorID, Score]) Clear() {
+func (slf *List[CompetitorID, Score]) Clear() {
 	slf.OnRankClearBeforeEvent()
 	slf.competitors.Clear()
 	slf.scores = make([]*scoreItem[CompetitorID, Score], 0)
 }
 
-func (slf *RankingList[CompetitorID, Score]) Cmp(s1, s2 Score) int {
+func (slf *List[CompetitorID, Score]) Cmp(s1, s2 Score) int {
 	var result int
 	if s1 > s2 {
 		result = 1
@@ -192,7 +193,7 @@ func (slf *RankingList[CompetitorID, Score]) Cmp(s1, s2 Score) int {
 	}
 }
 
-func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorID, oldScore Score, oldRank int, score Score, low, high int) {
+func (slf *List[CompetitorID, Score]) competitor(competitorId CompetitorID, oldScore Score, oldRank int, score Score, low, high int) {
 	for low <= high {
 		mid := (low + high) / 2
 		data := slf.scores[mid]
@@ -242,7 +243,7 @@ func (slf *RankingList[CompetitorID, Score]) competitor(competitorId CompetitorI
 	slf.scores = slf.scores[0:count]
 }
 
-func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
+func (slf *List[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	var t struct {
 		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
@@ -258,7 +259,7 @@ func (slf *RankingList[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
+func (slf *List[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	var t struct {
 		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
@@ -271,21 +272,21 @@ func (slf *RankingList[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&t)
 }
 
-func (slf *RankingList[CompetitorID, Score]) RegRankChangeEvent(handle game.RankChangeEventHandle[CompetitorID, Score]) {
+func (slf *List[CompetitorID, Score]) RegRankChangeEvent(handle RankChangeEventHandle[CompetitorID, Score]) {
 	slf.rankChangeEventHandles = append(slf.rankChangeEventHandles, handle)
 }
 
-func (slf *RankingList[CompetitorID, Score]) OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score) {
+func (slf *List[CompetitorID, Score]) OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score) {
 	for _, handle := range slf.rankChangeEventHandles {
 		handle(slf, competitorId, oldRank, newRank, oldScore, newScore)
 	}
 }
 
-func (slf *RankingList[CompetitorID, Score]) RegRankClearBeforeEvent(handle game.RankClearBeforeEventHandle[CompetitorID, Score]) {
+func (slf *List[CompetitorID, Score]) RegRankClearBeforeEvent(handle RankClearBeforeEventHandle[CompetitorID, Score]) {
 	slf.rankClearBeforeEventHandles = append(slf.rankClearBeforeEventHandles, handle)
 }
 
-func (slf *RankingList[CompetitorID, Score]) OnRankClearBeforeEvent() {
+func (slf *List[CompetitorID, Score]) OnRankClearBeforeEvent() {
 	for _, handle := range slf.rankClearBeforeEventHandles {
 		handle(slf)
 	}

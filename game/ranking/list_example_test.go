@@ -1,20 +1,20 @@
-package builtin_test
+package ranking_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game/builtin"
+	"github.com/kercylan98/minotaur/game/ranking"
 )
 
-func ExampleNewRankingList() {
-	ranklingList := builtin.NewRankingList[string, int](builtin.WithRankingListCount[string, int](10))
+func ExampleNewList() {
+	ranklingList := ranking.NewList[string, int](ranking.WithListCount[string, int](10))
 
 	fmt.Println(ranklingList != nil)
 	// Output:
 	// true
 }
 
-func ExampleRankingList_Competitor() {
-	ranklingList := builtin.NewRankingList[string, int](builtin.WithRankingListCount[string, int](10))
+func ExampleList_Competitor() {
+	ranklingList := ranking.NewList[string, int](ranking.WithListCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
@@ -38,8 +38,8 @@ func ExampleRankingList_Competitor() {
 	// 9 competitor_ 8
 }
 
-func ExampleRankingList_RemoveCompetitor() {
-	ranklingList := builtin.NewRankingList[string, int](builtin.WithRankingListCount[string, int](10))
+func ExampleList_RemoveCompetitor() {
+	ranklingList := ranking.NewList[string, int](ranking.WithListCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
@@ -62,8 +62,8 @@ func ExampleRankingList_RemoveCompetitor() {
 	// 8 competitor_ 8
 }
 
-func ExampleRankingList_GetRank() {
-	ranklingList := builtin.NewRankingList[string, int](builtin.WithRankingListCount[string, int](10))
+func ExampleList_GetRank() {
+	ranklingList := ranking.NewList[string, int](ranking.WithListCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
