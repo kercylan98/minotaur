@@ -139,3 +139,34 @@ func ToContinuous[V generic.Integer](nums []V) map[V]V {
 	}
 	return result
 }
+
+// CountDigits 接收一个整数 num 作为输入，并返回该数字的位数
+func CountDigits(num int) int {
+	// 处理0的特殊情况
+	if num == 0 {
+		return 1
+	}
+
+	// 取绝对值
+	absNum := int(math.Abs(float64(num)))
+
+	// 计算位数
+	count := 0
+	for absNum > 0 {
+		absNum /= 10
+		count++
+	}
+
+	return count
+}
+
+// GetDigitValue 接收一个整数 num 和一个表示目标位数的整数 digit 作为输入，并返
+// 回数字 num 在指定位数上的数值。我们使用 math.Abs() 函数获取 num 的绝对值，并通
+// 过除以10的操作将 num 移动到目标位数上。然后，通过取余运算得到位数上的数值
+func GetDigitValue(num, digit int) int {
+	absNum := int(math.Abs(float64(num)))
+	for i := 0; i < digit; i++ {
+		absNum /= 10
+	}
+	return absNum % 10
+}
