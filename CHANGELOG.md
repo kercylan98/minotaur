@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.0.21](https://github.com/kercylan98/minotaur/compare/v0.0.20...v0.0.21) (2023-07-27)
+
+
+### Reverts | 回退
+
+* 移除 attrs，设计不合理 ([87f26dd](https://github.com/kercylan98/minotaur/commit/87f26dd394ad99f48cd75dda61cbce6e946ab733))
+* 移除 gameplay，设计不合理 ([41ea022](https://github.com/kercylan98/minotaur/commit/41ea0222612972f925746bf06bc1f4441176a11d))
+* 移除 terrain 和 world，设计不合理 ([361e269](https://github.com/kercylan98/minotaur/commit/361e269f125eb81176c36d3f816495dddd75c667))
+
+
+### Features | 新特性
+
+* generic 包支持更多的空指针判断函数 ([d06c840](https://github.com/kercylan98/minotaur/commit/d06c840c463810f56b2023751ea15261c5298b85))
+* hash 包新增 Set 数据结构 ([9fcc75e](https://github.com/kercylan98/minotaur/commit/9fcc75e0d7545fcbdb65f87ec9e1a12b03b7bce0))
+* maths 包新增 CountDigits 和 GetDigitValue 函数，用于计算一个数字的位数和获取特定位数上的值 ([3f94f38](https://github.com/kercylan98/minotaur/commit/3f94f38e99d304eaa02a74d5bd8063c75919bbf0))
+* room 包添加更多的事件，添加座位号支持 ([c8f181f](https://github.com/kercylan98/minotaur/commit/c8f181f63eaad5310d263621f222985baad35fd1))
+* server 异步消息支持将 callback 设置为 nil ([b63975e](https://github.com/kercylan98/minotaur/commit/b63975ea09cff8510118b0772cca66452168a6ff))
+* server.Server 事件消息添加 mark 标记，方便问题定位 ([471ee48](https://github.com/kercylan98/minotaur/commit/471ee48644eee5e5b527c5ad8e24761498bfdce5))
+* server.Server 新增 ConnectionOpenedAfterEvent ([8dde18a](https://github.com/kercylan98/minotaur/commit/8dde18a36ed99e02a45c7b63e8c0d8887447ea78))
+* server.Server 新增对连接写入事件前的处理函数 ([5e26467](https://github.com/kercylan98/minotaur/commit/5e26467deef2e2dcf6d0b04c918e59193942d432))
+* slice 包新增 CombinationsPari 函数，用于从给定的两个数组中按照特定数量得到所有组合后，再将两个数组的组合进行组合 ([d26ef3a](https://github.com/kercylan98/minotaur/commit/d26ef3aca6ded00f91bc912488453948dbe3d9c2))
+* super 包支持无错的 json 序列化 ([11ad997](https://github.com/kercylan98/minotaur/commit/11ad997eaa4bb16e0a1e64f967761ed5e1c6a7c6))
+* 房间管理器实现 ([45c855a](https://github.com/kercylan98/minotaur/commit/45c855a5160e1918707c2a6bef422b261486af72))
+
+
+### Bug Fixes | 修复
+
+* 修复 room.NewManager 没有初始化 rp 字段的问题 ([5c3c959](https://github.com/kercylan98/minotaur/commit/5c3c9592c538ec4d3c1b757d9f0482ee6b266abb))
+
+
+### Docs | 文档优化
+
+* game 包文档优化 ([054b3a7](https://github.com/kercylan98/minotaur/commit/054b3a7ec9f2e30adf61f1c0db77778b790608c7))
+
+
+### Code Refactoring | 重构
+
+* kcrypto 包更名为 crypto，与目录名对应 ([1ae14f0](https://github.com/kercylan98/minotaur/commit/1ae14f0d7be64ae3c8eb8d522f29a26442e50f7d))
+* RankingList 更名为 List，并且移动至 ranking 包中 ([ed8ee4a](https://github.com/kercylan98/minotaur/commit/ed8ee4a542228278376d5592a18775fa8b5bd6d6))
+* 从 builtin 包中单独抽离到 aoi 包，更名为 TwoDimensional ([bca8a98](https://github.com/kercylan98/minotaur/commit/bca8a98463ba19fa9722e486fd612757123cfe78))
+* 状态机从 builtin 包中单独抽离到 fsm 包 ([6fb24da](https://github.com/kercylan98/minotaur/commit/6fb24da8c186db0a567cb4527ed7ba3610bc3f79))
+* 移除原有的 builtin 中的各类 room 实现 ([ee18934](https://github.com/kercylan98/minotaur/commit/ee18934768507a621406399d9b4c2e4f5d5ccfa7))
+
 ## [0.0.20](https://github.com/kercylan98/minotaur/compare/v0.0.19...v0.0.20) (2023-07-25)
 
 
