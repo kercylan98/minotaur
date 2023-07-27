@@ -1,4 +1,4 @@
-package kcrypto
+package crypto
 
 import (
 	"hash/crc32"

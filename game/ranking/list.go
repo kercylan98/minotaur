@@ -6,7 +6,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/generic"
 )
 
-// NewList 创建一个排名从0开始的排行榜
+// NewList 创建一个排名从 0 开始的排行榜
 func NewList[CompetitorID comparable, Score generic.Ordered](options ...ListOption[CompetitorID, Score]) *List[CompetitorID, Score] {
 	rankingList := &List[CompetitorID, Score]{
 		event:       new(event[CompetitorID, Score]),

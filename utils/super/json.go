@@ -8,6 +8,7 @@ import (
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 // MarshalJSON 将对象转换为 json
+//   - 当转换失败时，将返回 json 格式的空对象
 func MarshalJSON(v interface{}) []byte {
 	b, err := json.Marshal(v)
 	if err != nil {
