@@ -124,6 +124,19 @@ func UnMerge[V generic.SignedNumber](refer, num V) (a, b V) {
 	return a, b
 }
 
+// MergeInt64 将两个 int64 数字合并为一个 int64 数字
+func MergeInt64(a int64, b int64) int64 {
+	mergedNumber := (a << 32) | (b & 0xFFFFFFFF)
+	return mergedNumber
+}
+
+// UnMergeInt64 将一个 int64 数字拆分为两个 int64 数字
+func UnMergeInt64(n int64) (int64, int64) {
+	a := n >> 32
+	b := n & 0xFFFFFFFF
+	return a, b
+}
+
 // ToContinuous 将一组非连续的数字转换为从1开始的连续数字
 //   - 返回值是一个 map，key 是从 1 开始的连续数字，value 是原始数字
 func ToContinuous[V generic.Integer](nums []V) map[V]V {
@@ -141,14 +154,14 @@ func ToContinuous[V generic.Integer](nums []V) map[V]V {
 }
 
 // CountDigits 接收一个整数 num 作为输入，并返回该数字的位数
-func CountDigits(num int) int {
+func CountDigits[V generic.Number](num V) int {
 	// 处理0的特殊情况
 	if num == 0 {
 		return 1
 	}
 
 	// 取绝对值
-	absNum := int(math.Abs(float64(num)))
+	absNum := V(math.Abs(float64(num)))
 
 	// 计算位数
 	count := 0
@@ -163,10 +176,20 @@ func CountDigits(num int) int {
 // GetDigitValue 接收一个整数 num 和一个表示目标位数的整数 digit 作为输入，并返
 // 回数字 num 在指定位数上的数值。我们使用 math.Abs() 函数获取 num 的绝对值，并通
 // 过除以10的操作将 num 移动到目标位数上。然后，通过取余运算得到位数上的数值
-func GetDigitValue(num, digit int) int {
-	absNum := int(math.Abs(float64(num)))
+func GetDigitValue(num int64, digit int) int64 {
+	absNum := int64(math.Abs(float64(num)))
 	for i := 0; i < digit; i++ {
 		absNum /= 10
 	}
 	return absNum % 10
+}
+
+// JoinNumbers 将一组数字连接起来
+func JoinNumbers[V generic.Number](num1 V, n ...V) V {
+	var v = num1
+	for _, v2 := range n {
+		base := V(math.Pow10(int(math.Log10(float64(v2))) + 1))
+		v = v*base + v2
+	}
+	return v
 }
