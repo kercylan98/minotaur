@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.22](https://github.com/kercylan98/minotaur/compare/v0.0.21...v0.0.22) (2023-07-28)
+
+
+### Features | 新特性
+
+* maths 包新增支持 int64 的数字合并函数 ([a6fb7fb](https://github.com/kercylan98/minotaur/commit/a6fb7fb8dc69962ef3c969c66775574ca1a3f081))
+* room 支持获取座位上的玩家数量 ([24f54a1](https://github.com/kercylan98/minotaur/commit/24f54a1536620d88de5319c1dee14b85cdfe3a61))
+* super 包支持使用 Convert 强制转换数据类型 ([867d1ec](https://github.com/kercylan98/minotaur/commit/867d1ecf82d95cc1f468bf190d1018367c1362ef))
+* times 包新增 SystemNewDay 和 OffsetTimeNewDay 事件 ([2a0c5b8](https://github.com/kercylan98/minotaur/commit/2a0c5b84a83e8bf6db6263dcd329cf225ed8d79f))
+
+
+### Bug Fixes | 修复
+
+* fms 包迁移问题处理 ([996f5af](https://github.com/kercylan98/minotaur/commit/996f5af8bd48e998987146a8615f6a795692381f))
+
+
+### Code Refactoring | 重构
+
+* room 包移除大量 error 返回，增加易于房间操作 Helper 数据结构，可通过 Manager.GetHelper 和 room.NewHelper 获取 ([3dec407](https://github.com/kercylan98/minotaur/commit/3dec4075d5929dcd4a064350dcdfbe8e3287b7e4))
+
+
+### Tests | 新增或优化测试用例
+
+* test:  ([930fe15](https://github.com/kercylan98/minotaur/commit/930fe159bffc22e15f462febcadf89ce7a4648ff))
+
 ## [0.0.21](https://github.com/kercylan98/minotaur/compare/v0.0.20...v0.0.21) (2023-07-27)
 
 
