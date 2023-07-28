@@ -35,6 +35,12 @@ type Seat[PlayerID comparable, P game.Player[PlayerID], R Room] struct {
 	autoSitDown   bool
 }
 
+// GetSeatPlayerCount 获取座位上的玩家数量
+//   - 该数量不包括空缺的座位
+func (slf *Seat[PlayerID, P, R]) GetSeatPlayerCount() int {
+	return slf.seatPS.Size()
+}
+
 // AddSeat 为特定玩家添加座位
 //   - 当座位存在空缺的时候，玩家将会优先在空缺位置坐下，否则将会在末位追加
 func (slf *Seat[PlayerID, P, R]) AddSeat(id PlayerID) {
