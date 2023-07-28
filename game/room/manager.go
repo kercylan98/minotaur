@@ -10,10 +10,11 @@ import (
 func NewManager[PID comparable, P game.Player[PID], R Room]() *Manager[PID, P, R] {
 	manager := &Manager[PID, P, R]{
 		event:   newEvent[PID, P, R](),
-		rooms:   concurrent.NewBalanceMap[int64, *info[PID, P, R]](),
+		rooms:   concurrent.NewBalanceMap[int64, *Info[PID, P, R]](),
 		players: concurrent.NewBalanceMap[PID, P](),
 		pr:      concurrent.NewBalanceMap[PID, map[int64]struct{}](),
 		rp:      concurrent.NewBalanceMap[int64, map[PID]struct{}](),
+		helpers: concurrent.NewBalanceMap[int64, *Helper[PID, P, R]](),
 	}
 
 	return manager
@@ -22,18 +23,32 @@ func NewManager[PID comparable, P game.Player[PID], R Room]() *Manager[PID, P, R
 // Manager 房间管理器
 type Manager[PID comparable, P game.Player[PID], R Room] struct {
 	*event[PID, P, R]
-	rooms   *concurrent.BalanceMap[int64, *info[PID, P, R]] // 所有房间
-	players *concurrent.BalanceMap[PID, P]                  // 所有加入房间的玩家
-	pr      *concurrent.BalanceMap[PID, map[int64]struct{}] // 玩家所在房间
-	rp      *concurrent.BalanceMap[int64, map[PID]struct{}] // 房间中的玩家
+	rooms   *concurrent.BalanceMap[int64, *Info[PID, P, R]]   // 所有房间
+	players *concurrent.BalanceMap[PID, P]                    // 所有加入房间的玩家
+	pr      *concurrent.BalanceMap[PID, map[int64]struct{}]   // 玩家所在房间
+	rp      *concurrent.BalanceMap[int64, map[PID]struct{}]   // 房间中的玩家
+	helpers *concurrent.BalanceMap[int64, *Helper[PID, P, R]] // 房间助手
+}
 
+// GetHelper 获取房间助手
+func (slf *Manager[PID, P, R]) GetHelper(room R) *Helper[PID, P, R] {
+	helper, exist := slf.helpers.GetExist(room.GetGuid())
+	if exist {
+		return helper
+	}
+	helper = NewHelper[PID, P, R](slf, room)
+	slf.helpers.Set(room.GetGuid(), helper)
+	return helper
 }
 
 // CreateRoom 创建房间
-func (slf *Manager[PID, P, R]) CreateRoom(room R) {
-	roomInfo := &info[PID, P, R]{
+func (slf *Manager[PID, P, R]) CreateRoom(room R, options ...Option[PID, P, R]) {
+	roomInfo := &Info[PID, P, R]{
 		room: room,
 		seat: newSeat[PID, P, R](slf, room, slf.event),
+	}
+	for _, option := range options {
+		option(roomInfo)
 	}
 	slf.rooms.Set(room.GetGuid(), roomInfo)
 }
@@ -42,6 +57,16 @@ func (slf *Manager[PID, P, R]) CreateRoom(room R) {
 func (slf *Manager[PID, P, R]) ReleaseRoom(guid int64) {
 	slf.unReg(guid)
 	slf.rooms.Delete(guid)
+	slf.helpers.Delete(guid)
+	slf.rp.Atom(func(m map[int64]map[PID]struct{}) {
+		players := m[guid]
+		slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
+			for playerId := range players {
+				delete(m[playerId], guid)
+			}
+		})
+	})
+	slf.rp.Delete(guid)
 }
 
 // SetPlayerLimit 设置房间人数上限
@@ -51,7 +76,7 @@ func (slf *Manager[PID, P, R]) SetPlayerLimit(roomId int64, limit int) {
 	}
 	var room R
 	var oldLimit int
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		info, ok := m[roomId]
 		if !ok {
 			return
@@ -69,7 +94,7 @@ func (slf *Manager[PID, P, R]) SetPlayerLimit(roomId int64, limit int) {
 func (slf *Manager[PID, P, R]) CancelOwner(roomId int64) {
 	var room R
 	var oldOwner P
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		info, ok := m[roomId]
 		if !ok {
 			return
@@ -85,15 +110,81 @@ func (slf *Manager[PID, P, R]) CancelOwner(roomId int64) {
 	}
 }
 
-// SetOwner 设置房主
-func (slf *Manager[PID, P, R]) SetOwner(roomId int64, owner PID) error {
-	var err error
-	var oldOwner, newOwner P
-	var room R
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+// GetPlayerRooms 获取玩家所在的房间
+func (slf *Manager[PID, P, R]) GetPlayerRooms(playerId PID) (rooms map[int64]R) {
+	rooms = map[int64]R{}
+	slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
+		for roomId := range m[playerId] {
+			room, ok := slf.rooms.GetExist(roomId)
+			if !ok {
+				continue
+			}
+			rooms[roomId] = room.room
+		}
+	})
+	return
+}
+
+// GetPlayerRoomHelpers 获取玩家所在的房间助手
+func (slf *Manager[PID, P, R]) GetPlayerRoomHelpers(playerId PID) (helpers map[int64]*Helper[PID, P, R]) {
+	helpers = map[int64]*Helper[PID, P, R]{}
+	slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
+		for roomId := range m[playerId] {
+			room, ok := slf.rooms.GetExist(roomId)
+			if !ok {
+				continue
+			}
+			helpers[roomId] = slf.GetHelper(room.room)
+		}
+	})
+	return
+}
+
+// IsOwner 检查玩家是否是房主
+func (slf *Manager[PID, P, R]) IsOwner(roomId int64, playerId PID) bool {
+	var isOwner bool
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		info, ok := m[roomId]
 		if !ok {
-			err = ErrRoomNotExist
+			return
+		}
+		isOwner = info.owner != nil && *info.owner == playerId
+	})
+	return isOwner
+}
+
+// HasOwner 检查房间是否有房主
+func (slf *Manager[PID, P, R]) HasOwner(roomId int64) bool {
+	var hasOwner bool
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
+		info, ok := m[roomId]
+		if !ok {
+			return
+		}
+		hasOwner = info.owner != nil
+	})
+	return hasOwner
+}
+
+// GetOwner 获取房主
+func (slf *Manager[PID, P, R]) GetOwner(roomId int64) (player P) {
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
+		info, ok := m[roomId]
+		if !ok || info.owner == nil {
+			return
+		}
+		player = slf.GetRoomPlayer(roomId, *info.owner)
+	})
+	return
+}
+
+// SetOwner 设置房主
+func (slf *Manager[PID, P, R]) SetOwner(roomId int64, owner PID) {
+	var oldOwner, newOwner P
+	var room R
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
+		info, ok := m[roomId]
+		if !ok {
 			return
 		}
 		room = info.room
@@ -102,13 +193,14 @@ func (slf *Manager[PID, P, R]) SetOwner(roomId int64, owner PID) error {
 		}
 		newOwner = slf.GetRoomPlayer(roomId, owner)
 		if generic.IsNil(newOwner) {
-			err = ErrRoomOrPlayerNotExist
 			return
 		}
 		info.owner = &owner
 	})
+	if generic.IsNil(newOwner) {
+		return
+	}
 	slf.OnPlayerUpgradeOwnerEvent(room, oldOwner, newOwner)
-	return err
 }
 
 // GetRoom 获取房间
@@ -124,7 +216,7 @@ func (slf *Manager[PID, P, R]) Exist(guid int64) bool {
 // GetRooms 获取所有房间
 func (slf *Manager[PID, P, R]) GetRooms() map[int64]R {
 	var rooms = make(map[int64]R)
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		for id, info := range m {
 			rooms[id] = info.room
 		}
@@ -152,7 +244,7 @@ func (slf *Manager[PID, P, R]) ExistPlayer(id PID) bool {
 }
 
 // InRoom 检查玩家是否在指定房间内
-func (slf *Manager[PID, P, R]) InRoom(id PID, guid int64) bool {
+func (slf *Manager[PID, P, R]) InRoom(guid int64, id PID) bool {
 	var in bool
 	slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
 		rooms, exist := m[id]
@@ -242,8 +334,8 @@ func (slf *Manager[PID, P, R]) GetRoomPlayerLimit(guid int64) int {
 
 // Leave 使玩家离开房间
 func (slf *Manager[PID, P, R]) Leave(roomId int64, player P) {
-	var roomInfo *info[PID, P, R]
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	var roomInfo *Info[PID, P, R]
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		room, exist := m[roomId]
 		if !exist {
 			return
@@ -254,7 +346,11 @@ func (slf *Manager[PID, P, R]) Leave(roomId int64, player P) {
 		return
 	}
 	slf.OnPlayerLeaveRoomEvent(roomInfo.room, player)
-	roomInfo.seat.removePlayerSeat(player.GetID())
+	seat := roomInfo.seat.GetSeat(player.GetID())
+	if seat != NoSeat && slf.IsOwner(roomId, player.GetID()) && slf.GetPlayerCount() > 1 {
+		slf.SetOwner(roomId, roomInfo.seat.GetPlayerIDWithSeat(roomInfo.seat.GetNextSeat(seat)))
+	}
+	roomInfo.seat.RemoveSeat(player.GetID())
 	slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
 		rooms, exist := m[player.GetID()]
 		if !exist {
@@ -274,8 +370,8 @@ func (slf *Manager[PID, P, R]) Leave(roomId int64, player P) {
 // Join 使玩家加入房间
 func (slf *Manager[PID, P, R]) Join(roomId int64, player P) error {
 	var err error
-	var roomInfo *info[PID, P, R]
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	var roomInfo *Info[PID, P, R]
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		room, exist := m[roomId]
 		if !exist {
 			err = ErrRoomNotExist
@@ -304,7 +400,9 @@ func (slf *Manager[PID, P, R]) Join(roomId int64, player P) error {
 		slf.players.Set(player.GetID(), player)
 		roomInfo = room
 	})
-	roomInfo.seat.addSeat(player.GetID())
+	if roomInfo.seat.autoSitDown {
+		roomInfo.seat.AddSeat(player.GetID())
+	}
 	slf.OnPlayerJoinRoomEvent(roomInfo.room, player)
 	return err
 }
@@ -336,16 +434,14 @@ func (slf *Manager[PID, P, R]) KickOut(roomId int64, executor, kicked PID, reaso
 }
 
 // GetSeatInfo 获取座位信息
-func (slf *Manager[PID, P, R]) GetSeatInfo(roomId int64) (*Seat[PID, P, R], error) {
+func (slf *Manager[PID, P, R]) GetSeatInfo(roomId int64) *Seat[PID, P, R] {
 	var result *Seat[PID, P, R]
-	var err error
-	slf.rooms.Atom(func(m map[int64]*info[PID, P, R]) {
+	slf.rooms.Atom(func(m map[int64]*Info[PID, P, R]) {
 		room, exist := m[roomId]
 		if !exist {
-			err = ErrRoomNotExist
 			return
 		}
 		result = room.seat
 	})
-	return result, err
+	return result
 }

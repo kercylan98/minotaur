@@ -19,19 +19,19 @@ func NewManager(senders ...Sender) *Manager {
 			case <-manager.closeChannel:
 				close(manager.closeChannel)
 				close(manager.notifyChannel)
-				log.Info("Manager", log.String("state", "release"))
+				log.Info("m", log.String("state", "release"))
 				return
 			case notify := <-manager.notifyChannel:
 				for _, sender := range manager.senders {
 					if err := sender.Push(notify); err != nil {
-						log.Error("Manager", log.String("sender", reflect.TypeOf(sender).String()), log.Err(err))
+						log.Error("m", log.String("sender", reflect.TypeOf(sender).String()), log.Err(err))
 					}
 				}
 			}
 		}
 	}()
 
-	log.Info("Manager", log.String("state", "running"))
+	log.Info("m", log.String("state", "running"))
 	return manager
 }
 

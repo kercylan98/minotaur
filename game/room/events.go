@@ -195,6 +195,7 @@ func (slf *event[PID, P, R]) RegPlayerSeatChangeEvent(handle PlayerSeatChangeEve
 }
 
 // RegPlayerSeatChangeEventWithRoom 玩家座位改变时将立即执行被注册的事件处理函数
+//   - 当玩家之前没有座位时，oldSeat 为 NoSeat
 func (slf *event[PID, P, R]) RegPlayerSeatChangeEventWithRoom(room R, handle PlayerSeatChangeEventHandle[PID, P, R]) {
 	slf.playerSeatChangeEventRoomHandles[room.GetGuid()] = append(slf.playerSeatChangeEventRoomHandles[room.GetGuid()], handle)
 }
