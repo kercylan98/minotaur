@@ -147,17 +147,23 @@ func WithMatcherNCarryM[T Item, E generic.Ordered](n, m int, getType func(item T
 				if len(group) != n {
 					continue
 				}
-				ms := slice.Combinations(slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) }))
-				for i := 0; i < len(ms); i++ {
-					ts := make(map[E][]T)
-					for _, t := range ms[i] {
-						tt := getType(t)
-						ts[tt] = append(ts[tt], t)
-					}
-					for _, cs := range ts {
-						if len(cs) == m {
-							combinations = append(combinations, slice.Merge(group, cs))
+				other := slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) })
+				ms := slice.LimitedCombinations(other, m, m)
+				for _, otherGroup := range ms {
+					var t E
+					var init = true
+					var same = true
+					for _, item := range otherGroup {
+						if init {
+							init = false
+							t = getType(item)
+						} else if getType(item) != t {
+							same = false
+							break
 						}
+					}
+					if same {
+						combinations = append(combinations, slice.Merge(group, otherGroup))
 					}
 				}
 			}
@@ -185,12 +191,9 @@ func WithMatcherNCarryIndependentM[T Item, E generic.Ordered](n, m int, getType 
 				if len(group) != n {
 					continue
 				}
-				ms := slice.Combinations(slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) }))
-				for i := 0; i < len(ms); i++ {
-					is := ms[i]
-					if len(is) == m {
-						combinations = append(combinations, slice.Merge(group, is))
-					}
+				ms := slice.LimitedCombinations(slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) }), m, m)
+				for _, otherGroup := range ms {
+					combinations = append(combinations, slice.Merge(group, otherGroup))
 				}
 			}
 			return combinations

@@ -40,9 +40,20 @@ func TestCombination_Best(t *testing.T) {
 		{Point: 5, Color: 3},
 		{Point: 6, Color: 4},
 		{Point: 7, Color: 1},
+		{Point: 8, Color: 2},
+		{Point: 9, Color: 3},
+		{Point: 10, Color: 4},
+		{Point: 11, Color: 1},
+		{Point: 12, Color: 2},
+		{Point: 13, Color: 3},
+		{Point: 10, Color: 3},
+		{Point: 11, Color: 2},
+		{Point: 12, Color: 1},
+		{Point: 13, Color: 4},
+		{Point: 10, Color: 2},
 	}
 
-	name, result := combine.Best(cards)
+	name, result := combine.Worst(cards)
 	fmt.Println("best:", name)
 	for _, item := range result {
 		fmt.Println(item)

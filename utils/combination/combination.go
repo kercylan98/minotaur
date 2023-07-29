@@ -88,6 +88,9 @@ func (slf *Combination[T]) Best(items []T) (name string, result []T) {
 	for _, n := range slf.priority {
 		matcher := slf.matchers[n]
 		matcherBest := matcher.Best(items)
+		if len(matcherBest) == 0 {
+			continue
+		}
 		if score := matcher.evaluate(matcherBest); score > best || best == -1 {
 			best = score
 			name = n
@@ -103,6 +106,9 @@ func (slf *Combination[T]) Worst(items []T) (name string, result []T) {
 	for _, n := range slf.priority {
 		matcher := slf.matchers[n]
 		matcherWorst := matcher.Worst(items)
+		if len(matcherWorst) == 0 {
+			continue
+		}
 		if score := matcher.evaluate(matcherWorst); score < worst || worst == -1 {
 			worst = score
 			name = n

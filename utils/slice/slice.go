@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 )
@@ -223,10 +224,10 @@ func Combinations[T any](a []T) [][]T {
 	n := len(a)
 
 	// 去除重复元素，保留唯一元素
-	uniqueSet := make(map[uintptr]bool)
+	uniqueSet := make(map[string]bool)
 	uniqueSlice := make([]T, 0, n)
 	for _, val := range a {
-		ptr := reflect.ValueOf(val).Pointer()
+		ptr := fmt.Sprintf("%p", val)
 		if !uniqueSet[ptr] {
 			uniqueSet[ptr] = true
 			uniqueSlice = append(uniqueSlice, val)
