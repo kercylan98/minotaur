@@ -124,17 +124,18 @@ func UnMerge[V generic.SignedNumber](refer, num V) (a, b V) {
 	return a, b
 }
 
-// MergeInt64 将两个 int64 数字合并为一个 int64 数字
-func MergeInt64(a int64, b int64) int64 {
+// MergeToInt64 将两个数字合并为一个 int64 数字
+func MergeToInt64[V generic.SignedNumber](v1 V, v2 V) int64 {
+	a, b := int64(v1), int64(v2)
 	mergedNumber := (a << 32) | (b & 0xFFFFFFFF)
 	return mergedNumber
 }
 
-// UnMergeInt64 将一个 int64 数字拆分为两个 int64 数字
-func UnMergeInt64(n int64) (int64, int64) {
+// UnMergeInt64 将一个 int64 数字拆分为两个数字
+func UnMergeInt64[V generic.SignedNumber](n int64) (V, V) {
 	a := n >> 32
 	b := n & 0xFFFFFFFF
-	return a, b
+	return V(a), V(b)
 }
 
 // ToContinuous 将一组非连续的数字转换为从1开始的连续数字
