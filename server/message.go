@@ -143,6 +143,9 @@ func PushTickerMessage(srv *Server, caller func(), mark ...any) {
 }
 
 // PushAsyncMessage 向特定服务器中推送 MessageTypeAsync 消息
+//   - 异步消息将在服务器的异步消息队列中进行处理，处理完成 caller 的阻塞操作后，将会通过系统消息执行 callback 函数
+//   - callback 函数将在异步消息处理完成后进行调用，无论过程是否产生 err，都将被执行，允许为 nil
+//   - 需要注意的是，为了避免并发问题，caller 函数请仅处理阻塞操作，其他操作应该在 callback 函数中进行
 func PushAsyncMessage(srv *Server, caller func() error, callback func(err error), mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeAsync
