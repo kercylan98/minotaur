@@ -5,7 +5,7 @@ import (
 )
 
 // NewCombination 创建一个新的组合器
-func NewCombination[T Item](options ...CombinationOption[T]) *Combination[T] {
+func NewCombination[T Item](options ...Option[T]) *Combination[T] {
 	combination := &Combination[T]{
 		matchers: make(map[string]*Matcher[T]),
 	}

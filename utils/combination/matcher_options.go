@@ -12,7 +12,7 @@ type MatcherOption[T Item] func(matcher *Matcher[T])
 
 // WithMatcherEvaluation 设置匹配器评估函数
 //   - 用于对组合进行评估，返回一个分值的评价函数
-//   - 通过该选项将覆盖匹配器的默认(WithCombinationEvaluation)评估函数
+//   - 通过该选项将覆盖匹配器的默认(WithEvaluation)评估函数
 func WithMatcherEvaluation[T Item](evaluate func(items []T) float64) MatcherOption[T] {
 	return func(m *Matcher[T]) {
 		m.evaluate = evaluate

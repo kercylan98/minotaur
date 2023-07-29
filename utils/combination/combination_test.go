@@ -12,7 +12,7 @@ type Poker struct {
 }
 
 func TestCombination_Best(t *testing.T) {
-	combine := combination.NewCombination(combination.WithCombinationEvaluation(func(items []*Poker) float64 {
+	combine := combination.NewCombination(combination.WithEvaluation(func(items []*Poker) float64 {
 		var total float64
 		for _, item := range items {
 			total += float64(item.Point)
