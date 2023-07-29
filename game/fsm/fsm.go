@@ -5,44 +5,44 @@ import (
 )
 
 // NewFSM 创建一个新的状态机
-func NewFSM[State comparable, Data any](data Data) *FSM[State, Data] {
-	return &FSM[State, Data]{
-		states: map[State]*State[State, Data]{},
+func NewFSM[S comparable, Data any](data Data) *FSM[S, Data] {
+	return &FSM[S, Data]{
+		states: map[S]*State[S, Data]{},
 		data:   data,
 	}
 }
 
 // FSM 状态机
-type FSM[State comparable, Data any] struct {
-	current State
+type FSM[S comparable, Data any] struct {
+	current S
 	data    Data
-	states  map[State]*State[State, Data]
+	states  map[S]*State[S, Data]
 }
 
 // Update 触发当前状态
-func (slf *FSM[State, Data]) Update() {
+func (slf *FSM[S, Data]) Update() {
 	state := slf.states[slf.current]
 	state.Update(slf.data)
 }
 
 // Register 注册状态
-func (slf *FSM[State, Data]) Register(state *State[State, Data]) {
+func (slf *FSM[S, Data]) Register(state *State[S, Data]) {
 	slf.states[state.GetState()] = state
 }
 
 // Unregister 反注册状态
-func (slf *FSM[State, Data]) Unregister(state State) {
+func (slf *FSM[S, Data]) Unregister(state S) {
 	delete(slf.states, state)
 }
 
 // HasState 检查状态机是否存在特定状态
-func (slf *FSM[State, Data]) HasState(state State) bool {
+func (slf *FSM[S, Data]) HasState(state S) bool {
 	_, has := slf.states[state]
 	return has
 }
 
 // Change 改变状态机状态到新的状态
-func (slf *FSM[State, Data]) Change(state State) {
+func (slf *FSM[S, Data]) Change(state S) {
 	current := slf.states[slf.current]
 	current.Exit(slf.data)
 
