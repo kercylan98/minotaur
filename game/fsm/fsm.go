@@ -2,54 +2,116 @@ package fsm
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/hash"
 )
 
 // NewFSM 创建一个新的状态机
-func NewFSM[S comparable, Data any](data Data) *FSM[S, Data] {
-	return &FSM[S, Data]{
-		states: map[S]*State[S, Data]{},
+func NewFSM[State comparable, Data any](data Data) *FSM[State, Data] {
+	return &FSM[State, Data]{
+		states: map[State]struct{}{},
 		data:   data,
 	}
 }
 
 // FSM 状态机
-type FSM[S comparable, Data any] struct {
-	current S
+type FSM[State comparable, Data any] struct {
+	prev    *State
+	current *State
 	data    Data
-	states  map[S]*State[S, Data]
+	states  map[State]struct{}
+
+	enterBeforeEventHandles map[State][]func(state *FSM[State, Data])
+	enterAfterEventHandles  map[State][]func(state *FSM[State, Data])
+	updateEventHandles      map[State][]func(state *FSM[State, Data])
+	exitBeforeEventHandles  map[State][]func(state *FSM[State, Data])
+	exitAfterEventHandles   map[State][]func(state *FSM[State, Data])
 }
 
 // Update 触发当前状态
-func (slf *FSM[S, Data]) Update() {
-	state := slf.states[slf.current]
-	state.Update(slf.data)
+func (slf *FSM[State, Data]) Update() {
+	if slf.current == nil {
+		return
+	}
+	for _, event := range slf.updateEventHandles[*slf.current] {
+		event(slf)
+	}
 }
 
 // Register 注册状态
-func (slf *FSM[S, Data]) Register(state *State[S, Data]) {
-	slf.states[state.GetState()] = state
+func (slf *FSM[State, Data]) Register(state State, options ...Option[State, Data]) {
+	slf.states[state] = struct{}{}
+	for _, option := range options {
+		option(slf, state)
+	}
 }
 
 // Unregister 反注册状态
-func (slf *FSM[S, Data]) Unregister(state S) {
+func (slf *FSM[State, Data]) Unregister(state State) {
+	if !slf.HasState(state) {
+		return
+	}
 	delete(slf.states, state)
+	delete(slf.enterBeforeEventHandles, state)
+	delete(slf.enterAfterEventHandles, state)
+	delete(slf.updateEventHandles, state)
+	delete(slf.exitBeforeEventHandles, state)
+	delete(slf.exitAfterEventHandles, state)
 }
 
 // HasState 检查状态机是否存在特定状态
-func (slf *FSM[S, Data]) HasState(state S) bool {
-	_, has := slf.states[state]
-	return has
+func (slf *FSM[State, Data]) HasState(state State) bool {
+	return hash.Exist(slf.states, state)
 }
 
 // Change 改变状态机状态到新的状态
-func (slf *FSM[S, Data]) Change(state S) {
-	current := slf.states[slf.current]
-	current.Exit(slf.data)
+func (slf *FSM[State, Data]) Change(state State) {
+	if !slf.IsZero() {
+		for _, event := range slf.exitBeforeEventHandles[*slf.current] {
+			event(slf)
+		}
+	}
 
-	next := slf.states[state]
-	if next == nil {
+	slf.prev = slf.current
+	slf.current = &state
+
+	if !slf.PrevIsZero() {
+		for _, event := range slf.exitAfterEventHandles[*slf.prev] {
+			event(slf)
+		}
+	}
+
+	if !slf.HasState(state) {
 		panic(fmt.Errorf("FSM object is attempting to switch to an invalid / undefined state: %v", state))
 	}
 
-	next.Enter(slf.data)
+	for _, event := range slf.enterBeforeEventHandles[*slf.current] {
+		event(slf)
+	}
+
+	for _, event := range slf.enterAfterEventHandles[*slf.current] {
+		event(slf)
+	}
+}
+
+// Current 获取当前状态
+func (slf *FSM[State, Data]) Current() (state State) {
+	if slf.current == nil {
+		return
+	}
+	return *slf.current
+}
+
+// GetData 获取状态机数据
+func (slf *FSM[State, Data]) GetData() Data {
+	return slf.data
+}
+
+// IsZero 检查状态机是否无状态
+func (slf *FSM[State, Data]) IsZero() bool {
+	return slf.current == nil
+}
+
+// PrevIsZero 检查状态机上一个状态是否无状态
+func (slf *FSM[State, Data]) PrevIsZero() bool {
+	return slf.prev == nil
 }

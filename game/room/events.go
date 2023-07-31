@@ -21,8 +21,8 @@ type (
 	PlayerSeatSetEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P, seat int)
 	// PlayerSeatCancelEventHandle 玩家座位取消事件处理函数
 	PlayerSeatCancelEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, player P, seat int)
-	// RoomCreateEventHandle 房间创建事件处理函数
-	RoomCreateEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, helper *Helper[PID, P, R])
+	// CreateEventHandle 房间创建事件处理函数
+	CreateEventHandle[PID comparable, P game.Player[PID], R Room] func(room R, helper *Helper[PID, P, R])
 )
 
 func newEvent[PID comparable, P game.Player[PID], R Room]() *event[PID, P, R] {
@@ -57,7 +57,7 @@ type event[PID comparable, P game.Player[PID], R Room] struct {
 	playerSeatSetEventRoomHandles      map[int64][]PlayerSeatSetEventHandle[PID, P, R]
 	playerSeatCancelEventHandles       []PlayerSeatCancelEventHandle[PID, P, R]
 	playerSeatCancelEventRoomHandles   map[int64][]PlayerSeatCancelEventHandle[PID, P, R]
-	roomCreateEventHandles             []RoomCreateEventHandle[PID, P, R]
+	roomCreateEventHandles             []CreateEventHandle[PID, P, R]
 }
 
 func (slf *event[PID, P, R]) unReg(guid int64) {
@@ -254,7 +254,7 @@ func (slf *event[PID, P, R]) OnPlayerSeatCancelEvent(room R, player P, seat int)
 }
 
 // RegRoomCreateEvent 房间创建时将立即执行被注册的事件处理函数
-func (slf *event[PID, P, R]) RegRoomCreateEvent(handle RoomCreateEventHandle[PID, P, R]) {
+func (slf *event[PID, P, R]) RegRoomCreateEvent(handle CreateEventHandle[PID, P, R]) {
 	slf.roomCreateEventHandles = append(slf.roomCreateEventHandles, handle)
 }
 
