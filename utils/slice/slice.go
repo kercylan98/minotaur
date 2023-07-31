@@ -220,27 +220,13 @@ func GetIndexAny[V any](slice []V, values V) int {
 
 // Combinations 获取给定数组的所有组合，包括重复元素的组合
 func Combinations[T any](a []T) [][]T {
-	n := len(a)
-
-	// 去除重复元素，保留唯一元素
-	uniqueSet := make(map[uintptr]bool)
-	uniqueSlice := make([]T, 0, n)
-	for _, val := range a {
-		ptr := reflect.ValueOf(val).Pointer()
-		if !uniqueSet[ptr] {
-			uniqueSet[ptr] = true
-			uniqueSlice = append(uniqueSlice, val)
-		}
-	}
-
-	n = len(uniqueSlice)        // 去重后的数组长度
-	totalCombinations := 1 << n // 2的n次方
 	var result [][]T
-	for i := 0; i < totalCombinations; i++ {
+	n := len(a)
+	for i := 0; i < (1 << n); i++ {
 		var currentCombination []T
 		for j := 0; j < n; j++ {
 			if (i & (1 << j)) != 0 {
-				currentCombination = append(currentCombination, uniqueSlice[j])
+				currentCombination = append(currentCombination, a[j])
 			}
 		}
 		result = append(result, currentCombination)

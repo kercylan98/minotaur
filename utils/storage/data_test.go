@@ -3,6 +3,7 @@ package storage_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/slice"
 	"github.com/kercylan98/minotaur/utils/storage"
 	"testing"
 )
@@ -42,4 +43,14 @@ func TestData_Struct(t *testing.T) {
 	}
 
 	fmt.Println(string(bytes))
+}
+
+func TestData_Handle(t *testing.T) {
+	var is []int
+	for i := 1; i <= 23; i++ {
+		is = append(is, i)
+	}
+
+	res := slice.LimitedCombinations(is, 5, 5)
+	fmt.Println("Count:", len(res))
 }

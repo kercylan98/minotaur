@@ -51,6 +51,7 @@ func (slf *Manager[PID, P, R]) CreateRoom(room R, options ...Option[PID, P, R]) 
 		option(roomInfo)
 	}
 	slf.rooms.Set(room.GetGuid(), roomInfo)
+	slf.OnRoomCreateEvent(room, slf.GetHelper(room))
 }
 
 // ReleaseRoom 释放房间

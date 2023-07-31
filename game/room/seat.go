@@ -3,6 +3,7 @@ package room
 import (
 	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"sync"
 )
@@ -91,7 +92,7 @@ func (slf *Seat[PlayerID, P, R]) SetSeat(id PlayerID, seat int) int {
 	}()
 	oldSeat := slf.GetSeat(id)
 	player := slf.GetPlayerWithSeat(seat)
-	if player != nil {
+	if generic.IsNil(player) {
 		if oldSeat == NoSeat {
 			maxSeat := len(slf.seatSP) - 1
 			if seat > maxSeat {

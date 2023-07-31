@@ -194,3 +194,13 @@ func JoinNumbers[V generic.Number](num1 V, n ...V) V {
 	}
 	return v
 }
+
+// IsOdd 返回 n 是否为奇数
+func IsOdd[V generic.Integer](n V) bool {
+	return 0 != (int64(n) & 1)
+}
+
+// IsEven 返回 n 是否为偶数
+func IsEven[V generic.Integer](n V) bool {
+	return 0 == (int64(n) & 1)
+}

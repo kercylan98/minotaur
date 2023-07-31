@@ -569,7 +569,9 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			}()
 			err := handle()
 			if cb && callback != nil {
-				callback(err)
+				PushSystemMessage(slf, func() {
+					callback(err)
+				}, "AsyncCallback")
 			} else {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
