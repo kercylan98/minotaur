@@ -57,6 +57,7 @@ func (slf *CardPile[P, C, T]) GetCard(guid int64) T {
 
 // Reset 重置牌堆的扑克牌数量及顺序
 func (slf *CardPile[P, C, T]) Reset() {
+	slf.guid = 0
 	var cards = make([]T, 0, 54*slf.size)
 	for i := 0; i < slf.size; i++ {
 		for _, joker := range slf.jokers {
