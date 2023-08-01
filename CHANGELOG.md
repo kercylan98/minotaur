@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.0.23](https://github.com/kercylan98/minotaur/compare/v0.0.22...v0.0.23) (2023-08-01)
+
+
+### Other | 其他更改
+
+* 优化 combination 包命名，删除无用文件 ([57936b2](https://github.com/kercylan98/minotaur/commit/57936b2b25426055de409659b5f5a2a018f9031e))
+
+
+### Reverts | 回退
+
+* 移除 poker 包的 matcher，改为使用 combination 包 ([8b92921](https://github.com/kercylan98/minotaur/commit/8b929212303e020db4476842566449f7a3b605fc))
+
+
+### Features | 新特性
+
+* fight 包的 Round 新增操作超时事件，优化事件逻辑 ([9198faa](https://github.com/kercylan98/minotaur/commit/9198faa06140404f947bf954e36d3d94975ee46a))
+* maths 包支持奇偶数判断 ([ac43963](https://github.com/kercylan98/minotaur/commit/ac43963a864a74c499450838ed7f1d8c53700826))
+* room 包新增房间创建事件 ([87c6695](https://github.com/kercylan98/minotaur/commit/87c66954a3ea1215b587aa3a22b464e6d2066321))
+* 新增 combination 包，用于数组组合筛选（抽离自 poker 包） ([48d9c11](https://github.com/kercylan98/minotaur/commit/48d9c1131627087b39456b9f376d3148942ad259))
+* 新增 fight 包，提供了回合制战斗的功能实现 ([df8f6fc](https://github.com/kercylan98/minotaur/commit/df8f6fc53e5bfdc481351c962f4f10a3585d3796))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 异步消息的 callback 的并发问题 ([1297ae7](https://github.com/kercylan98/minotaur/commit/1297ae7a8f246f8929131b299ba6cfcffc585c4e))
+* 修复泛型对象 player 不能判断 nil 的表达式错误 ([4dddd14](https://github.com/kercylan98/minotaur/commit/4dddd1422bc00f40be43050f53cd7525f9a73341))
+* 修复牌堆重置时不会重置 guid 的问题 ([39ccad4](https://github.com/kercylan98/minotaur/commit/39ccad42411774058e14a520fcfc16960e22a9f5))
+* 状态机 fsm 包名修复，优化注释 ([cee067e](https://github.com/kercylan98/minotaur/commit/cee067e246942024acf44261a3e7d549b4b85b7a))
+* 状态机 State 名称修复 ([de76411](https://github.com/kercylan98/minotaur/commit/de76411726854f0f11ffad405ded8dc5e1b89ec4))
+
+
+### Docs | 文档优化
+
+* server.PushAsyncMessage 注意事项补全 ([2482d2e](https://github.com/kercylan98/minotaur/commit/2482d2e7f0dcfd3bea2be2474102dcd7b10d6da5))
+
+
+### Code Refactoring | 重构
+
+* fsm 包状态机事件优化，新增部分获取状态机信息的函数 ([0fad041](https://github.com/kercylan98/minotaur/commit/0fad0417c7cbd27a228b199c58c209de71ebbb0f))
+
+
+### Performance Improvements | 性能优化
+
+* 优化 combination 包 NCarryM 性能 ([abd1db5](https://github.com/kercylan98/minotaur/commit/abd1db55860a26d3cad0d12e7cf7aa66304e852a))
+* 优化 slice.Combinations 效率 ([03028b1](https://github.com/kercylan98/minotaur/commit/03028b1a41567b2a9bfa1f4c4f8d4d5e6cc4264c))
+
 ## [0.0.22](https://github.com/kercylan98/minotaur/compare/v0.0.21...v0.0.22) (2023-07-28)
 
 
