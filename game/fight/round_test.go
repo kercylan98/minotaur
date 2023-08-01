@@ -1,6 +1,7 @@
 package fight
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -17,14 +18,11 @@ func TestName(t *testing.T) {
 	},
 		WithRoundActionTimeout[string](time.Second),
 		WithRoundSwapEntityEvent[string](func(round *Round[string], campId, entity int) {
-			t.Log(time.Now(), "swap entity", round.GetRound(), campId, entity)
+			fmt.Println(campId, entity)
+			if campId == 1 && entity == 2 {
+				round.SetCurrent(1, 1)
+			}
 		}),
-		WithRoundGameOverEvent[string](func(round *Round[string]) {
-			t.Log(time.Now(), "game over", round.GetRound())
-			wait.Done()
-		}),
-		WithRoundCampCounterclockwise[string](),
-		WithRoundEntityCounterclockwise[string](),
 	)
 
 	wait.Add(1)

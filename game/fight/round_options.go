@@ -9,10 +9,11 @@ import (
 type RoundOption[Data RoundData] func(round *Round[Data])
 
 type (
-	RoundSwapCampEvent[Data RoundData]   func(round *Round[Data], campId int)
-	RoundSwapEntityEvent[Data RoundData] func(round *Round[Data], campId, entity int)
-	RoundGameOverEvent[Data RoundData]   func(round *Round[Data])
-	RoundChangeEvent[Data RoundData]     func(round *Round[Data])
+	RoundSwapCampEvent[Data RoundData]      func(round *Round[Data], campId int)
+	RoundSwapEntityEvent[Data RoundData]    func(round *Round[Data], campId, entity int)
+	RoundGameOverEvent[Data RoundData]      func(round *Round[Data])
+	RoundChangeEvent[Data RoundData]        func(round *Round[Data])
+	RoundActionTimeoutEvent[Data RoundData] func(round *Round[Data], campId, entity int)
 )
 
 // WithRoundTicker 设置游戏的计时器
@@ -37,6 +38,7 @@ func WithRoundShareAction[Data RoundData](share bool) RoundOption[Data] {
 }
 
 // WithRoundSwapCampEvent 设置游戏的阵营交换事件
+//   - 该事件在触发时已经完成了阵营的交换
 func WithRoundSwapCampEvent[Data RoundData](swapCampEventHandle RoundSwapCampEvent[Data]) RoundOption[Data] {
 	return func(round *Round[Data]) {
 		round.swapCampEventHandles = append(round.swapCampEventHandles, swapCampEventHandle)
@@ -44,6 +46,7 @@ func WithRoundSwapCampEvent[Data RoundData](swapCampEventHandle RoundSwapCampEve
 }
 
 // WithRoundSwapEntityEvent 设置游戏的实体交换事件
+//   - 该事件在触发时已经完成了实体的交换
 func WithRoundSwapEntityEvent[Data RoundData](swapEntityEventHandle RoundSwapEntityEvent[Data]) RoundOption[Data] {
 	return func(round *Round[Data]) {
 		round.swapEntityEventHandles = append(round.swapEntityEventHandles, swapEntityEventHandle)
@@ -58,9 +61,17 @@ func WithRoundGameOverEvent[Data RoundData](gameOverEventHandle RoundGameOverEve
 }
 
 // WithRoundChangeEvent 设置游戏的回合变更事件
+//   - 该事件在触发时已经完成了回合的变更
 func WithRoundChangeEvent[Data RoundData](changeEventHandle RoundChangeEvent[Data]) RoundOption[Data] {
 	return func(round *Round[Data]) {
 		round.changeEventHandles = append(round.changeEventHandles, changeEventHandle)
+	}
+}
+
+// WithRoundActionTimeoutEvent 设置游戏的超时事件
+func WithRoundActionTimeoutEvent[Data RoundData](timeoutEventHandle RoundActionTimeoutEvent[Data]) RoundOption[Data] {
+	return func(round *Round[Data]) {
+		round.actionTimeoutEventHandles = append(round.actionTimeoutEventHandles, timeoutEventHandle)
 	}
 }
 
