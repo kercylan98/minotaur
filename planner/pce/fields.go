@@ -366,7 +366,7 @@ func (slf Uintptr) Zero() any {
 }
 
 func (slf Uintptr) Parse(value string) any {
-	v, _ := strconv.ParseUint(value, 10, 64)
+	v, _ := strconv.ParseInt(value, 10, 64)
 	return uintptr(v)
 }
 
