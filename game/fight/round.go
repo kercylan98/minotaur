@@ -47,6 +47,7 @@ type Round[Data RoundData] struct {
 	campOrder                 []int                           // 阵营顺序
 	actionTimeout             time.Duration                   // 行动超时时间
 	actionTimeoutTickerName   string                          // 行动超时计时器名称
+	actionTimeoutTime         int64                           // 行动超时时间
 	round                     int                             // 回合数
 	roundCount                int                             // 回合计数
 	currentCamp               int                             // 当前行动阵营
@@ -137,6 +138,7 @@ func (slf *Round[Data]) SkipCamp() {
 // ActionRefresh 刷新行动超时时间
 func (slf *Round[Data]) ActionRefresh() {
 	slf.currentEndTime = time.Now().Unix()
+	slf.actionTimeoutTime = time.Now().Add(slf.actionTimeout).Unix()
 	slf.ticker.After(slf.actionTimeoutTickerName, slf.actionTimeout, slf.loop, true)
 }
 
@@ -152,6 +154,11 @@ func (slf *Round[Data]) ActionFinish() {
 // GetRound 获取当前回合数
 func (slf *Round[Data]) GetRound() int {
 	return slf.round
+}
+
+// GetActionTimeoutTime 获取行动超时时间
+func (slf *Round[Data]) GetActionTimeoutTime() int64 {
+	return slf.actionTimeoutTime
 }
 
 // AllowAction 是否允许行动
