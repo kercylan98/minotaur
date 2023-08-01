@@ -72,26 +72,29 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                         // 事件
-	*runtime                                                       // 运行时
-	*option                                                        // 可选项
-	network                  Network                               // 网络类型
-	addr                     string                                // 侦听地址
-	systemSignal             chan os.Signal                        // 系统信号
-	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
-	ginServer                *gin.Engine                           // HTTP模式下的路由器
-	httpServer               *http.Server                          // HTTP模式下的服务器
-	grpcServer               *grpc.Server                          // GRPC模式下的服务器
-	gServer                  *gNet                                 // TCP或UDP模式下的服务器
-	isRunning                bool                                  // 是否正在运行
-	isShutdown               atomic.Bool                           // 是否已关闭
-	closeChannel             chan struct{}                         // 关闭信号
-	ants                     *ants.Pool                            // 协程池
-	messagePool              *concurrent.Pool[*Message]            // 消息池
-	messageChannel           chan *Message                         // 消息管道
-	multiple                 *MultipleServer                       // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
-	runMode                  RunMode                               // 运行模式
+	*event                                                                     // 事件
+	*runtime                                                                   // 运行时
+	*option                                                                    // 可选项
+	network                  Network                                           // 网络类型
+	addr                     string                                            // 侦听地址
+	systemSignal             chan os.Signal                                    // 系统信号
+	online                   *concurrent.BalanceMap[string, *Conn]             // 在线连接
+	ginServer                *gin.Engine                                       // HTTP模式下的路由器
+	httpServer               *http.Server                                      // HTTP模式下的服务器
+	grpcServer               *grpc.Server                                      // GRPC模式下的服务器
+	gServer                  *gNet                                             // TCP或UDP模式下的服务器
+	isRunning                bool                                              // 是否正在运行
+	isShutdown               atomic.Bool                                       // 是否已关闭
+	closeChannel             chan struct{}                                     // 关闭信号
+	ants                     *ants.Pool                                        // 协程池
+	messagePool              *concurrent.Pool[*Message]                        // 消息池
+	messageChannel           chan *Message                                     // 消息管道
+	multiple                 *MultipleServer                                   // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                                        // 多服务器模式下的运行时错误
+	runMode                  RunMode                                           // 运行模式
+	shuntChannels            *concurrent.BalanceMap[int64, chan *Message]      // 分流管道
+	channelGenerator         func(guid int64) chan *Message                    // 消息管道生成器
+	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool) // 分流管道匹配器
 }
 
 // Run 使用特定地址运行服务器
@@ -417,6 +420,14 @@ func (slf *Server) shutdown(err error) {
 		slf.messagePool.Close()
 		slf.messageChannel = nil
 	}
+	if slf.shuntChannels != nil {
+		slf.shuntChannels.Range(func(key int64, c chan *Message) bool {
+			close(c)
+			return false
+		})
+		slf.shuntChannels.Clear()
+		slf.shuntChannels = nil
+	}
 	if slf.grpcServer != nil && slf.isRunning {
 		slf.grpcServer.GracefulStop()
 	}
@@ -469,11 +480,41 @@ func (slf *Server) HttpRouter() gin.IRouter {
 	return slf.ginServer
 }
 
+// ShuntChannelFreed 释放分流通道
+func (slf *Server) ShuntChannelFreed(channelGuid int64) {
+	if slf.shuntChannels == nil {
+		return
+	}
+	channel, exist := slf.shuntChannels.GetExist(channelGuid)
+	if exist {
+		close(channel)
+		slf.shuntChannels.Delete(channelGuid)
+	}
+}
+
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) pushMessage(message *Message) {
 	if slf.messagePool.IsClose() {
 		slf.messagePool.Release(message)
 		return
+	}
+	if slf.shuntChannels != nil && (message.t == MessageTypePacket) {
+		conn := message.attrs[0].(*Conn)
+		channelGuid, allowToCreate := slf.shuntMatcher(conn)
+		channel, exist := slf.shuntChannels.GetExist(channelGuid)
+		if !exist && allowToCreate {
+			channel = slf.channelGenerator(channelGuid)
+			slf.shuntChannels.Set(channelGuid, channel)
+			go func(channel chan *Message) {
+				for message := range channel {
+					slf.dispatchMessage(message)
+				}
+			}(channel)
+		}
+		if channel != nil {
+			channel <- message
+			return
+		}
 	}
 	slf.messageChannel <- message
 }

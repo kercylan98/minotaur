@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gin-contrib/pprof"
+	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"google.golang.org/grpc"
@@ -227,5 +228,24 @@ func WithPProf(pattern ...string) Option {
 			return
 		}
 		pprof.Register(srv.ginServer, pattern...)
+	}
+}
+
+// WithShunt 通过连接数据包分流的方式创建服务器
+//   - 在分流的情况下，将会使用分流通道处理数据包，而不是使用系统通道，消息的执行将转移到对应的分流通道内进行串行处理，默认情况下所有消息都是串行处理的，适用于例如不同游戏房间并行处理，游戏房间内部消息串行处理的情况
+//   - channelGenerator：用于生成分流通道的函数
+//   - shuntMatcher：用于匹配连接的函数，返回值为分流通道的 GUID 和是否允许创建新的分流通道，当返回不允许创建新的分流通道时，将会使用使用默认的系统通道
+//
+// 将被分流的消息类型（更多类型有待斟酌）：
+//   - MessageTypePacket
+func WithShunt(channelGenerator func(guid int64) chan *Message, shuntMatcher func(conn *Conn) (guid int64, allowToCreate bool)) Option {
+	return func(srv *Server) {
+		if channelGenerator == nil || shuntMatcher == nil {
+			log.Warn("WithShunt", log.String("State", "Ignore"), log.String("Reason", "channelGenerator or shuntMatcher is nil"))
+			return
+		}
+		srv.shuntChannels = concurrent.NewBalanceMap[int64, chan *Message]()
+		srv.channelGenerator = channelGenerator
+		srv.shuntMatcher = shuntMatcher
 	}
 }
