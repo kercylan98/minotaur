@@ -1,15 +1,14 @@
-package components
+package moving
 
 import (
-	"github.com/kercylan98/minotaur/component"
 	"github.com/kercylan98/minotaur/utils/geometry"
 	"sync"
 	"time"
 )
 
-// NewMoving2D 创建一个用于2D对象移动的实例(Moving2D)
-func NewMoving2D(options ...Moving2DOption) *Moving2D {
-	moving2D := &Moving2D{
+// NewTwoDimensional 创建一个用于2D对象移动的实例(TwoDimensional)
+func NewTwoDimensional(options ...TwoDimensionalOption) *TwoDimensional {
+	moving2D := &TwoDimensional{
 		entities: map[int64]*moving2DTarget{},
 		timeUnit: float64(time.Millisecond),
 		idle:     time.Millisecond * 100,
@@ -22,11 +21,11 @@ func NewMoving2D(options ...Moving2DOption) *Moving2D {
 	return moving2D
 }
 
-// Moving2D 用于2D对象移动的数据结构
+// TwoDimensional 用于2D对象移动的数据结构
 //   - 通过对象调用 MoveTo 方法后将开始执行该对象的移动
-//   - 移动将在根据设置的每次移动间隔时间(WithMoving2DInterval)进行移动，当无对象移动需要移动时将会进入短暂的休眠
+//   - 移动将在根据设置的每次移动间隔时间(WithTwoDimensionalInterval)进行移动，当无对象移动需要移动时将会进入短暂的休眠
 //   - 当对象移动速度永久为0时，将会导致永久无法完成的移动
-type Moving2D struct {
+type TwoDimensional struct {
 	rw       sync.RWMutex
 	entities map[int64]*moving2DTarget
 	timeUnit float64
@@ -34,13 +33,13 @@ type Moving2D struct {
 	interval time.Duration
 	close    bool
 
-	position2DChangeEventHandles      []component.Position2DChangeEventHandle
-	position2DDestinationEventHandles []component.Position2DDestinationEventHandle
-	position2DStopMoveEventHandles    []component.Position2DStopMoveEventHandle
+	position2DChangeEventHandles      []Position2DChangeEventHandle
+	position2DDestinationEventHandles []Position2DDestinationEventHandle
+	position2DStopMoveEventHandles    []Position2DStopMoveEventHandle
 }
 
 // MoveTo 设置对象移动到特定位置
-func (slf *Moving2D) MoveTo(entity component.Moving2DEntity, x float64, y float64) {
+func (slf *TwoDimensional) MoveTo(entity TwoDimensionalEntity, x float64, y float64) {
 	guid := entity.GetGuid()
 	current := time.Now().UnixMilli()
 	slf.rw.Lock()
@@ -51,10 +50,10 @@ func (slf *Moving2D) MoveTo(entity component.Moving2DEntity, x float64, y float6
 	entityTarget, exist := slf.entities[guid]
 	if !exist {
 		entityTarget = &moving2DTarget{
-			Moving2DEntity: entity,
-			x:              x,
-			y:              y,
-			lastMoveTime:   current,
+			TwoDimensionalEntity: entity,
+			x:                    x,
+			y:                    y,
+			lastMoveTime:         current,
 		}
 		slf.entities[guid] = entityTarget
 		return
@@ -65,7 +64,7 @@ func (slf *Moving2D) MoveTo(entity component.Moving2DEntity, x float64, y float6
 }
 
 // StopMove 停止特定对象的移动
-func (slf *Moving2D) StopMove(guid int64) {
+func (slf *TwoDimensional) StopMove(guid int64) {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
 	entity, exist := slf.entities[guid]
@@ -76,52 +75,52 @@ func (slf *Moving2D) StopMove(guid int64) {
 }
 
 // RegPosition2DChangeEvent 在对象位置改变时将执行注册的事件处理函数
-func (slf *Moving2D) RegPosition2DChangeEvent(handle component.Position2DChangeEventHandle) {
+func (slf *TwoDimensional) RegPosition2DChangeEvent(handle Position2DChangeEventHandle) {
 	slf.position2DChangeEventHandles = append(slf.position2DChangeEventHandles, handle)
 }
 
-func (slf *Moving2D) OnPosition2DChangeEvent(entity component.Moving2DEntity, oldX, oldY float64) {
+func (slf *TwoDimensional) OnPosition2DChangeEvent(entity TwoDimensionalEntity, oldX, oldY float64) {
 	for _, handle := range slf.position2DChangeEventHandles {
 		handle(slf, entity, oldX, oldY)
 	}
 }
 
 // RegPosition2DDestinationEvent 在对象到达终点时将执行被注册的事件处理函数
-func (slf *Moving2D) RegPosition2DDestinationEvent(handle component.Position2DDestinationEventHandle) {
+func (slf *TwoDimensional) RegPosition2DDestinationEvent(handle Position2DDestinationEventHandle) {
 	slf.position2DDestinationEventHandles = append(slf.position2DDestinationEventHandles, handle)
 }
 
-func (slf *Moving2D) OnPosition2DDestinationEvent(entity component.Moving2DEntity) {
+func (slf *TwoDimensional) OnPosition2DDestinationEvent(entity TwoDimensionalEntity) {
 	for _, handle := range slf.position2DDestinationEventHandles {
 		handle(slf, entity)
 	}
 }
 
 // RegPosition2DStopMoveEvent 在对象停止移动时将执行被注册的事件处理函数
-func (slf *Moving2D) RegPosition2DStopMoveEvent(handle component.Position2DStopMoveEventHandle) {
+func (slf *TwoDimensional) RegPosition2DStopMoveEvent(handle Position2DStopMoveEventHandle) {
 	slf.position2DStopMoveEventHandles = append(slf.position2DStopMoveEventHandles, handle)
 }
 
-func (slf *Moving2D) OnPosition2DStopMoveEvent(entity component.Moving2DEntity) {
+func (slf *TwoDimensional) OnPosition2DStopMoveEvent(entity TwoDimensionalEntity) {
 	for _, handle := range slf.position2DStopMoveEventHandles {
 		handle(slf, entity)
 	}
 }
 
 type moving2DTarget struct {
-	component.Moving2DEntity
+	TwoDimensionalEntity
 	x, y         float64
 	lastMoveTime int64
 }
 
 // Release 释放对象移动对象所占用的资源
-func (slf *Moving2D) Release() {
+func (slf *TwoDimensional) Release() {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
 	slf.close = true
 }
 
-func (slf *Moving2D) handle() {
+func (slf *TwoDimensional) handle() {
 	for {
 		slf.rw.Lock()
 		if slf.close {

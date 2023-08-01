@@ -1,9 +1,8 @@
-package components_test
+package moving_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/component"
-	"github.com/kercylan98/minotaur/component/components"
+	"github.com/kercylan98/minotaur/game/moving"
 	"sync"
 	"testing"
 	"time"
@@ -41,30 +40,30 @@ func NewEntity(guid int64, speed float64) *MoveEntity {
 	}
 }
 
-func TestNewMoving2D(t *testing.T) {
-	moving := components.NewMoving2D()
+func TestNewTwoDimensional(t *testing.T) {
+	m := moving.NewTwoDimensional()
 	defer func() {
-		moving.Release()
+		m.Release()
 	}()
 }
 
-func TestMoving2D_StopMove(t *testing.T) {
+func TestTwoDimensional_StopMove(t *testing.T) {
 	var wait sync.WaitGroup
 
-	moving := components.NewMoving2D(components.WithMoving2DTimeUnit(time.Second))
+	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit(time.Second))
 	defer func() {
-		moving.Release()
+		m.Release()
 	}()
 
-	moving.RegPosition2DChangeEvent(func(moving component.Moving2D, entity component.Moving2DEntity, oldX, oldY float64) {
+	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity, oldX, oldY float64) {
 		x, y := entity.GetPosition()
 		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetGuid(), time.Now().UnixMilli(), oldX, oldY, x, y))
 	})
-	moving.RegPosition2DDestinationEvent(func(moving component.Moving2D, entity component.Moving2DEntity) {
+	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
 		fmt.Println(fmt.Sprintf("%d : %d | destination", entity.GetGuid(), time.Now().UnixMilli()))
 		wait.Done()
 	})
-	moving.RegPosition2DStopMoveEvent(func(moving component.Moving2D, entity component.Moving2DEntity) {
+	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
 		fmt.Println(fmt.Sprintf("%d : %d | stop", entity.GetGuid(), time.Now().UnixMilli()))
 		wait.Done()
 	})
@@ -72,13 +71,13 @@ func TestMoving2D_StopMove(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		wait.Add(1)
 		entity := NewEntity(int64(i)+1, float64(10+i))
-		moving.MoveTo(entity, 50, 30)
+		m.MoveTo(entity, 50, 30)
 	}
 
 	time.Sleep(time.Second * 1)
 
 	for i := 0; i < 10; i++ {
-		moving.StopMove(int64(i) + 1)
+		m.StopMove(int64(i) + 1)
 	}
 
 	wait.Wait()
