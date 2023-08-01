@@ -489,6 +489,7 @@ func (slf *Server) ShuntChannelFreed(channelGuid int64) {
 	if exist {
 		close(channel)
 		slf.shuntChannels.Delete(channelGuid)
+		slf.OnShuntChannelClosedEvent(channelGuid)
 	}
 }
 
@@ -510,6 +511,7 @@ func (slf *Server) pushMessage(message *Message) {
 					slf.dispatchMessage(message)
 				}
 			}(channel)
+			defer slf.OnShuntChannelCreatedEvent(channelGuid)
 		}
 		if channel != nil {
 			channel <- message

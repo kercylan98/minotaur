@@ -22,6 +22,8 @@ type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Dur
 type ConsoleCommandEventHandle func(srv *Server)
 type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
 type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet Packet) Packet
+type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
+type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
 
 type event struct {
 	*Server
@@ -36,6 +38,8 @@ type event struct {
 	messageLowExecEventHandles          []MessageLowExecEventHandle
 	connectionOpenedAfterEventHandles   []ConnectionOpenedAfterEventHandle
 	connectionWritePacketBeforeHandles  []ConnectionWritePacketBeforeEventHandle
+	shuntChannelCreatedEventHandles     []ShuntChannelCreatedEventHandle
+	shuntChannelClosedEventHandles      []ShuntChannelClosedEventHandle
 
 	consoleCommandEventHandles        map[string][]ConsoleCommandEventHandle
 	consoleCommandEventHandleInitOnce sync.Once
@@ -249,6 +253,34 @@ func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet Packet) 
 		newPacket = handle(slf.Server, conn, packet)
 	}
 	return newPacket
+}
+
+// RegShuntChannelCreatedEvent 在分流通道创建时将立刻执行被注册的事件处理函数
+func (slf *event) RegShuntChannelCreatedEvent(handle ShuntChannelCreatedEventHandle) {
+	slf.shuntChannelCreatedEventHandles = append(slf.shuntChannelCreatedEventHandles, handle)
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnShuntChannelCreatedEvent(guid int64) {
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.shuntChannelCreatedEventHandles {
+			handle(slf.Server, guid)
+		}
+	}, "ShuntChannelCreatedEvent")
+}
+
+// RegShuntChannelCloseEvent 在分流通道关闭时将立刻执行被注册的事件处理函数
+func (slf *event) RegShuntChannelCloseEvent(handle ShuntChannelClosedEventHandle) {
+	slf.shuntChannelClosedEventHandles = append(slf.shuntChannelClosedEventHandles, handle)
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnShuntChannelClosedEvent(guid int64) {
+	PushSystemMessage(slf.Server, func() {
+		for _, handle := range slf.shuntChannelClosedEventHandles {
+			handle(slf.Server, guid)
+		}
+	}, "ShuntChannelCloseEvent")
 }
 
 func (slf *event) check() {

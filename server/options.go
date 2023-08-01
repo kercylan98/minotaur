@@ -238,6 +238,9 @@ func WithPProf(pattern ...string) Option {
 //
 // 将被分流的消息类型（更多类型有待斟酌）：
 //   - MessageTypePacket
+//
+// 注意事项：
+//   - 需要在分流通道使用完成后主动调用 Server.ShuntChannelFreed 函数释放分流通道，避免内存泄漏
 func WithShunt(channelGenerator func(guid int64) chan *Message, shuntMatcher func(conn *Conn) (guid int64, allowToCreate bool)) Option {
 	return func(srv *Server) {
 		if channelGenerator == nil || shuntMatcher == nil {
