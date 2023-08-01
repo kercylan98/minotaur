@@ -32,6 +32,9 @@ type Manager[PID comparable, P game.Player[PID], R Room] struct {
 
 // GetHelper 获取房间助手
 func (slf *Manager[PID, P, R]) GetHelper(room R) *Helper[PID, P, R] {
+	if generic.IsNil(room) {
+		return nil
+	}
 	helper, exist := slf.helpers.GetExist(room.GetGuid())
 	if exist {
 		return helper
