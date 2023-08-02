@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.0.24](https://github.com/kercylan98/minotaur/compare/v0.0.23...v0.0.24) (2023-08-02)
+
+
+### Features | 新特性
+
+* fight.Round 新增操作刷新事件 ([d96ed58](https://github.com/kercylan98/minotaur/commit/d96ed58548ed87ec0e2730ed90aa32b11a2c3394))
+* fight.Round 新增获取当前操作超时时间的函数 ([060fb05](https://github.com/kercylan98/minotaur/commit/060fb05fb8cdeff4008706527806193f808d48f4))
+* random 包新增 Dice 掷骰子和 Probability 概率函数 ([d9d0392](https://github.com/kercylan98/minotaur/commit/d9d0392db39cff582d1af1e78286d62570bb1979))
+* room.Helper 新增获取玩家切片、广播所有玩家、广播在座玩家的函数 ([ab180f3](https://github.com/kercylan98/minotaur/commit/ab180f384b8ee6272e2d8abe21dd73e802007bed))
+* server.Server 支持通过 WithShunt 函数对服务器消息进行分流 ([c92f16c](https://github.com/kercylan98/minotaur/commit/c92f16c17060d940346b17000d5d59fd660269e7))
+* server.Server 新增分流通道创建和关闭事件 ([b9d9533](https://github.com/kercylan98/minotaur/commit/b9d953338f7efdac1d9ca97c7494a3ff0718adcd))
+* 新增 deck 包，用于对牌堆、麻将牌堆、一组数据等情况的管理 ([ace17a6](https://github.com/kercylan98/minotaur/commit/ace17a6a76b7b4324135f1e5a476dead6a7281e3))
+
+
+### Bug Fixes | 修复
+
+* configuration 包字段类型转换修复 ([aef7740](https://github.com/kercylan98/minotaur/commit/aef7740f5c0d44325aadfc17edf1b565c5d16fa5))
+* 修复 room 包中通过 Manager 获取 Helper 时，当传入的 room 为空依旧会返回不为空指针的 Helper 问题 ([e8c2cf2](https://github.com/kercylan98/minotaur/commit/e8c2cf28357dbff94293b8a9247ba6de084467b8))
+
+
+### Code Refactoring | 重构
+
+* moving2d 移动到 game 包中 ([e3224d0](https://github.com/kercylan98/minotaur/commit/e3224d010b0017a3e1eb80f0c15f002778e0b9f9))
+* 移除 component 包，lockstep 迁移至 server/lockstep ([1b8d041](https://github.com/kercylan98/minotaur/commit/1b8d041ae0b5400c008a1e255f80a096a56bb425))
+
+
+### Tests | 新增或优化测试用例
+
+* fight.Round 单元测试函数名变更 ([ffd8d04](https://github.com/kercylan98/minotaur/commit/ffd8d047f9cd101d52a25cffd9f35dce9a25144a))
+
 ## [0.0.23](https://github.com/kercylan98/minotaur/compare/v0.0.22...v0.0.23) (2023-08-01)
 
 
