@@ -91,7 +91,7 @@ func (slf *Helper[PID, P, R]) BroadcastSeat(handle func(player P), except ...PID
 
 // BroadcastExcept 向房间中的所有玩家广播消息，根据特定表达式排除指定玩家
 //   - 当 except 返回 true 时，排除该玩家
-func (slf *Helper[PID, P, R]) BroadcastExcept(handle func(player P) bool, except func(player P) bool) {
+func (slf *Helper[PID, P, R]) BroadcastExcept(handle func(player P), except func(player P) bool) {
 	for _, player := range slf.GetPlayers() {
 		if except(player) {
 			continue
