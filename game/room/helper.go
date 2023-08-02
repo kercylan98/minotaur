@@ -89,6 +89,17 @@ func (slf *Helper[PID, P, R]) BroadcastSeat(handle func(player P), except ...PID
 	}
 }
 
+// BroadcastExcept 向房间中的所有玩家广播消息，根据特定表达式排除指定玩家
+//   - 当 except 返回 true 时，排除该玩家
+func (slf *Helper[PID, P, R]) BroadcastExcept(handle func(player P) bool, except func(player P) bool) {
+	for _, player := range slf.GetPlayers() {
+		if except(player) {
+			continue
+		}
+		handle(player)
+	}
+}
+
 // SetPlayerLimit 设置房间中的玩家数量上限
 func (slf *Helper[PID, P, R]) SetPlayerLimit(limit int) {
 	slf.m.SetPlayerLimit(slf.room.GetGuid(), limit)
