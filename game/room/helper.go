@@ -3,6 +3,7 @@ package room
 import (
 	"github.com/kercylan98/minotaur/game"
 	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/slice"
 )
 
 // NewHelper 创建房间助手
@@ -54,6 +55,38 @@ func (slf *Helper[PID, P, R]) GetPlayerRooms(playerId PID) map[int64]R {
 // GetPlayerRoomHelpers 获取玩家所在的所有房间助手
 func (slf *Helper[PID, P, R]) GetPlayerRoomHelpers(playerId PID) map[int64]*Helper[PID, P, R] {
 	return slf.m.GetPlayerRoomHelpers(playerId)
+}
+
+// GetPlayersSlice 获取房间中的所有玩家
+func (slf *Helper[PID, P, R]) GetPlayersSlice() []P {
+	seat := slf.GetSeatInfoMap()
+	var players = make([]P, 0, len(seat))
+	for _, v := range seat {
+		players = append(players, slf.GetPlayer(v))
+	}
+	return players
+}
+
+// Broadcast 向房间中的所有玩家广播消息
+func (slf *Helper[PID, P, R]) Broadcast(handle func(player P), except ...PID) {
+	var exceptMap = slice.ToSet(except)
+	for _, player := range slf.GetPlayers() {
+		if hash.Exist(exceptMap, player.GetID()) {
+			continue
+		}
+		handle(player)
+	}
+}
+
+// BroadcastSeat 向房间中所有座位上的玩家广播消息
+func (slf *Helper[PID, P, R]) BroadcastSeat(handle func(player P), except ...PID) {
+	var exceptMap = slice.ToSet(except)
+	for _, playerId := range slf.GetSeatInfoMap() {
+		if hash.Exist(exceptMap, playerId) {
+			continue
+		}
+		handle(slf.GetPlayer(playerId))
+	}
 }
 
 // SetPlayerLimit 设置房间中的玩家数量上限
