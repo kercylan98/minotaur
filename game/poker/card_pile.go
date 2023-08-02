@@ -11,6 +11,8 @@ import (
 
 // NewCardPile 返回一个新的牌堆，其中 size 表示了该牌堆由多少副牌组成
 //   - 在不洗牌的情况下，默认牌堆顶部到底部为从大到小排列
+//
+// Deprecated: 从 Minotaur 0.0.25 开始，由于设计原因已弃用，请尝试考虑使用 deck.Deck 或 deck.Group 代替，构建函数为 deck.NewDeck 或 deck.NewGroup
 func NewCardPile[P, C generic.Number, T Card[P, C]](size int, jokers [2]P, points [13]P, colors [4]C, generateCard func(guid int64, point P, color C) T, options ...CardPileOption[P, C, T]) *CardPile[P, C, T] {
 	pile := &CardPile[P, C, T]{
 		size:         size,

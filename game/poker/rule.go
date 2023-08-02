@@ -7,6 +7,7 @@ import (
 	"sort"
 )
 
+// Deprecated: 从 Minotaur 0.0.25 开始，由于设计原因已弃用，请尝试考虑使用 combination.Combination、combination.Matcher、combination.Validator 代替
 func NewRule[P, C generic.Number, T Card[P, C]](options ...Option[P, C, T]) *Rule[P, C, T] {
 	poker := &Rule[P, C, T]{
 		pokerHand: map[string]HandHandle[P, C, T]{},
