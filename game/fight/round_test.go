@@ -26,6 +26,6 @@ func TestName(t *testing.T) {
 	)
 
 	wait.Add(1)
-	r.Run()
+	r.Start()
 	wait.Wait()
 }
