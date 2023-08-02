@@ -1,8 +1,9 @@
-package components
+package lockstep
 
 import (
 	"encoding/json"
 	"github.com/kercylan98/minotaur/component"
+	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
@@ -11,19 +12,19 @@ import (
 )
 
 // NewLockstep 创建一个锁步（帧）同步默认实现的组件(Lockstep)进行返回
-func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[ClientID, Command]) *Lockstep[ClientID, Command] {
+func NewLockstep[ClientID comparable, Command any](options ...Option[ClientID, Command]) *Lockstep[ClientID, Command] {
 	lockstep := &Lockstep[ClientID, Command]{
-		clients:   concurrent.NewBalanceMap[ClientID, component.LockstepClient[ClientID]](),
+		clients:   concurrent.NewBalanceMap[ClientID, Client[ClientID]](),
 		frames:    concurrent.NewBalanceMap[int, []Command](),
 		ticker:    timer.GetTicker(10),
 		frameRate: 15,
-		serialization: func(frame int, commands []Command) []byte {
+		serialization: func(frame int, commands []Command) server.Packet {
 			frameStruct := struct {
 				Frame    int       `json:"frame"`
 				Commands []Command `json:"commands"`
 			}{frame, commands}
 			data, _ := json.Marshal(frameStruct)
-			return data
+			return server.NewPacket(data)
 		},
 		clientCurrentFrame: concurrent.NewBalanceMap[ClientID, int](),
 	}
@@ -34,36 +35,36 @@ func NewLockstep[ClientID comparable, Command any](options ...LockstepOption[Cli
 }
 
 // Lockstep 锁步（帧）同步默认实现
-//   - 支持最大帧上限 WithLockstepFrameLimit
-//   - 自定逻辑帧频率，默认为每秒15帧(帧/66ms) WithLockstepFrameRate
-//   - 自定帧序列化方式 WithLockstepSerialization
+//   - 支持最大帧上限 WithFrameLimit
+//   - 自定逻辑帧频率，默认为每秒15帧(帧/66ms) WithFrameRate
+//   - 自定帧序列化方式 WithSerialization
 //   - 从特定帧开始追帧
 //   - 兼容各种基于TCP/UDP/Unix的网络类型，可通过客户端实现其他网络类型同步
 type Lockstep[ClientID comparable, Command any] struct {
-	clients            *concurrent.BalanceMap[ClientID, component.LockstepClient[ClientID]] // 接受广播的客户端
-	frames             *concurrent.BalanceMap[int, []Command]                               // 所有帧指令
-	ticker             *timer.Ticker                                                        // 定时器
-	frameMutex         sync.Mutex                                                           // 帧锁
-	currentFrame       int                                                                  // 当前帧
-	clientCurrentFrame *concurrent.BalanceMap[ClientID, int]                                // 客户端当前帧数
+	clients            *concurrent.BalanceMap[ClientID, Client[ClientID]] // 接受广播的客户端
+	frames             *concurrent.BalanceMap[int, []Command]             // 所有帧指令
+	ticker             *timer.Ticker                                      // 定时器
+	frameMutex         sync.Mutex                                         // 帧锁
+	currentFrame       int                                                // 当前帧
+	clientCurrentFrame *concurrent.BalanceMap[ClientID, int]              // 客户端当前帧数
 	running            atomic.Bool
 
-	frameRate     int                                        // 帧率（每秒N帧）
-	frameLimit    int                                        // 帧上限
-	serialization func(frame int, commands []Command) []byte // 序列化函数
+	frameRate     int                                               // 帧率（每秒N帧）
+	frameLimit    int                                               // 帧上限
+	serialization func(frame int, commands []Command) server.Packet // 序列化函数
 
 	lockstepStoppedEventHandles []component.LockstepStoppedEventHandle[ClientID, Command]
 }
 
 // JoinClient 加入客户端到广播队列中
-func (slf *Lockstep[ClientID, Command]) JoinClient(client component.LockstepClient[ClientID]) {
+func (slf *Lockstep[ClientID, Command]) JoinClient(client Client[ClientID]) {
 	slf.clients.Set(client.GetID(), client)
 }
 
 // JoinClientWithFrame 加入客户端到广播队列中，并从特定帧开始追帧
 //   - 可用于重连及状态同步、帧同步混用的情况
 //   - 混用：服务端记录指令时同时做一次状态计算，新客户端加入时直接同步当前状态，之后从特定帧开始广播
-func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client component.LockstepClient[ClientID], frameIndex int) {
+func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client Client[ClientID], frameIndex int) {
 	slf.clients.Set(client.GetID(), client)
 	if frameIndex > slf.currentFrame {
 		frameIndex = slf.currentFrame
@@ -99,7 +100,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		for clientId, client := range slf.clients.Map() {
 			var i = slf.clientCurrentFrame.Get(clientId)
 			for ; i < currentFrame; i++ {
-				client.Send(slf.serialization(i, frames[i]))
+				client.Write(slf.serialization(i, frames[i]))
 			}
 			slf.clientCurrentFrame.Set(clientId, i)
 
