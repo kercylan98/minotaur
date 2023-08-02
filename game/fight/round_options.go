@@ -14,6 +14,7 @@ type (
 	RoundGameOverEvent[Data RoundData]      func(round *Round[Data])
 	RoundChangeEvent[Data RoundData]        func(round *Round[Data])
 	RoundActionTimeoutEvent[Data RoundData] func(round *Round[Data], campId, entity int)
+	RoundActionRefreshEvent[Data RoundData] func(round *Round[Data], campId, entity int)
 )
 
 // WithRoundTicker 设置游戏的计时器
@@ -86,5 +87,12 @@ func WithRoundCampCounterclockwise[Data RoundData]() RoundOption[Data] {
 func WithRoundEntityCounterclockwise[Data RoundData]() RoundOption[Data] {
 	return func(round *Round[Data]) {
 		round.entityCounterclockwise = true
+	}
+}
+
+// WithRoundActionRefreshEvent 设置游戏的行动刷新事件
+func WithRoundActionRefreshEvent[Data RoundData](refreshEventHandle RoundActionRefreshEvent[Data]) RoundOption[Data] {
+	return func(round *Round[Data]) {
+		round.actionRefreshEventHandles = append(round.actionRefreshEventHandles, refreshEventHandle)
 	}
 }

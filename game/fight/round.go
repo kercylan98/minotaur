@@ -29,6 +29,7 @@ func NewRound[Data RoundData](data Data, camps []*RoundCamp, roundGameOverVerify
 		round.camps[camp.campId] = camp.entities
 		round.campOrder = append(round.campOrder, camp.campId)
 	}
+	round.campOrderSource = slice.Copy(round.campOrder)
 	for _, option := range options {
 		option(round)
 	}
@@ -45,6 +46,7 @@ type Round[Data RoundData] struct {
 	ticker                    *timer.Ticker                   // 计时器
 	camps                     map[int][]int                   // 阵营
 	campOrder                 []int                           // 阵营顺序
+	campOrderSource           []int                           // 阵营顺序源
 	actionTimeout             time.Duration                   // 行动超时时间
 	actionTimeoutTickerName   string                          // 行动超时计时器名称
 	actionTimeoutTime         int64                           // 行动超时时间
@@ -52,7 +54,6 @@ type Round[Data RoundData] struct {
 	roundCount                int                             // 回合计数
 	currentCamp               int                             // 当前行动阵营
 	currentEntity             int                             // 当前行动的阵营实体索引
-	currentEndTime            int64                           // 当前行动结束时间
 	shareAction               bool                            // 是否共享行动（同阵营共享行动时间）
 	roundGameOverVerifyHandle RoundGameOverVerifyHandle[Data] // 游戏结束验证函数
 	campCounterclockwise      bool                            // 是否阵营逆时针
@@ -63,6 +64,7 @@ type Round[Data RoundData] struct {
 	gameOverEventHandles      []RoundGameOverEvent[Data]      // 游戏结束事件
 	changeEventHandles        []RoundChangeEvent[Data]        // 游戏回合变更事件
 	actionTimeoutEventHandles []RoundActionTimeoutEvent[Data] // 行动超时事件
+	actionRefreshEventHandles []RoundActionRefreshEvent[Data] // 行动刷新事件
 }
 
 // GetData 获取游戏数据
@@ -70,15 +72,32 @@ func (slf *Round[Data]) GetData() Data {
 	return slf.data
 }
 
-// Run 运行游戏
+// Start 开始回合
 //   - 将通过传入的 Camp 进行初始化，Camp 为一个二维数组，每个数组内的元素都是一个行动标识
-func (slf *Round[Data]) Run() {
+func (slf *Round[Data]) Start() {
 	slf.currentEntity = -1
 	slf.round = 1
 	slf.loop(false)
 }
 
-// Release 释放游戏
+// Stop 停止回合
+//   - 停止回合时仅会停止行动超时计时器，其他所有数据均会保留
+//   - 若要重置回合，需要调用 Reset 方法
+func (slf *Round[Data]) Stop() {
+	slf.ticker.StopTimer(slf.actionTimeoutTickerName)
+}
+
+// Reset 重置回合
+func (slf *Round[Data]) Reset() {
+	slf.ticker.StopTimer(slf.actionTimeoutTickerName)
+	slf.currentCamp = 0
+	slf.currentEntity = 0
+	slf.round = 0
+	slf.roundCount = 0
+	slf.campOrder = slice.Copy(slf.campOrderSource)
+}
+
+// Release 释放资源
 func (slf *Round[Data]) Release() {
 	if slf.mark == slf.ticker.Mark() {
 		slf.ticker.Release()
@@ -137,7 +156,6 @@ func (slf *Round[Data]) SkipCamp() {
 
 // ActionRefresh 刷新行动超时时间
 func (slf *Round[Data]) ActionRefresh() {
-	slf.currentEndTime = time.Now().Unix()
 	slf.actionTimeoutTime = time.Now().Add(slf.actionTimeout).Unix()
 	slf.ticker.After(slf.actionTimeoutTickerName, slf.actionTimeout, slf.loop, true)
 }
@@ -221,6 +239,13 @@ func (slf *Round[Data]) OnChangeEvent() {
 // OnActionTimeoutEvent 触发行动超时事件
 func (slf *Round[Data]) OnActionTimeoutEvent() {
 	for _, handle := range slf.actionTimeoutEventHandles {
+		handle(slf, slf.currentCamp, slf.camps[slf.currentCamp][slf.currentEntity])
+	}
+}
+
+// OnActionRefreshEvent 触发行动刷新事件
+func (slf *Round[Data]) OnActionRefreshEvent() {
+	for _, handle := range slf.actionRefreshEventHandles {
 		handle(slf, slf.currentCamp, slf.camps[slf.currentCamp][slf.currentEntity])
 	}
 }
