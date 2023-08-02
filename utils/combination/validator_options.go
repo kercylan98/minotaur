@@ -191,3 +191,76 @@ func WithValidatorHandleGroupContinuousN[T Item, E generic.Ordered, Index generi
 		return maths.IsContinuityWithSort(index)
 	})
 }
+
+// WithValidatorHandleNCarryM  校验组合成员是否匹配 N 携带相同的 M 的组合
+//   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
+//   - m: 组合中元素的数量，表示需要匹配的组合数量，m 的类型需要全部相同
+//   - getType: 用于获取组合中元素的类型，用于判断是否相同
+func WithValidatorHandleNCarryM[T Item, E generic.Ordered](n, m int, getType func(item T) E) ValidatorOption[T] {
+	return WithValidatorHandle[T](func(items []T) bool {
+		if len(items) != n+m {
+			return false // 总数量不符合 n + m
+		}
+
+		typeCount := make(map[E]int)
+		for _, item := range items {
+			t := getType(item)
+			typeCount[t]++
+		}
+
+		// 检查是否有 n 个相同类型的元素
+		foundN := false
+		for _, count := range typeCount {
+			if count == n {
+				foundN = true
+				break
+			}
+		}
+
+		if !foundN {
+			return false // 没有找到 n 个相同类型的元素
+		}
+
+		// 检查剩余的元素数量是否为 m
+		remaining := len(items) - n
+		if remaining != m {
+			return false // 剩余元素数量不为 m
+		}
+
+		return true // 符合 N 带 M 的条件
+	})
+}
+
+// WithValidatorHandleNCarryIndependentM 校验组合成员是否匹配 N 携带独立的 M 的组合
+//   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
+//   - m: 组合中元素的数量，表示需要匹配的组合数量，m 的类型无需全部相同
+//   - getType: 用于获取组合中元素的类型，用于判断是否相同
+func WithValidatorHandleNCarryIndependentM[T Item, E generic.Ordered](n, m int, getType func(item T) E) ValidatorOption[T] {
+	return WithValidatorHandle[T](func(items []T) bool {
+		if len(items) != n+m {
+			return false // 总数量不符合 n + m
+		}
+
+		typeCount := make(map[E]int)
+		for _, item := range items {
+			t := getType(item)
+			typeCount[t]++
+		}
+
+		if len(typeCount) != 2 {
+			return false
+		}
+
+		foundN := false
+		foundM := false
+		for _, count := range typeCount {
+			if count == n {
+				foundN = true
+			} else if count == m {
+				foundM = true
+			}
+		}
+
+		return foundN && foundM
+	})
+}
