@@ -8,9 +8,11 @@ import (
 // NewArrangement 创建一个新的编排
 func NewArrangement[ID comparable, AreaInfo any](options ...Option[ID, AreaInfo]) *Arrangement[ID, AreaInfo] {
 	arrangement := &Arrangement[ID, AreaInfo]{
-		items:    map[ID]Item[ID]{},
-		fixed:    map[ID]ItemFixedAreaHandle[AreaInfo]{},
-		priority: map[ID][]ItemPriorityHandle[ID, AreaInfo]{},
+		items:        map[ID]Item[ID]{},
+		fixed:        map[ID]ItemFixedAreaHandle[AreaInfo]{},
+		priority:     map[ID][]ItemPriorityHandle[ID, AreaInfo]{},
+		itemNotAllow: map[ID][]ItemNotAllowVerifyHandle[ID, AreaInfo]{},
+		threshold:    10,
 	}
 	for _, option := range options {
 		option(arrangement)
@@ -23,11 +25,12 @@ func NewArrangement[ID comparable, AreaInfo any](options ...Option[ID, AreaInfo]
 //   - 目前我能想到的用途只有我的过往经历：排课
 //   - 如果是在游戏领域，或许适用于多人小队匹配编排等类似情况
 type Arrangement[ID comparable, AreaInfo any] struct {
-	areas     []*Area[ID, AreaInfo]                     // 所有的编排区域
-	items     map[ID]Item[ID]                           // 所有的成员
-	fixed     map[ID]ItemFixedAreaHandle[AreaInfo]      // 固定编排区域的成员
-	priority  map[ID][]ItemPriorityHandle[ID, AreaInfo] // 成员的优先级函数
-	threshold int                                       // 重试次数阈值
+	areas        []*Area[ID, AreaInfo]                           // 所有的编排区域
+	items        map[ID]Item[ID]                                 // 所有的成员
+	fixed        map[ID]ItemFixedAreaHandle[AreaInfo]            // 固定编排区域的成员
+	priority     map[ID][]ItemPriorityHandle[ID, AreaInfo]       // 成员的优先级函数
+	itemNotAllow map[ID][]ItemNotAllowVerifyHandle[ID, AreaInfo] // 成员的不允的编排区域检测函数
+	threshold    int                                             // 重试次数阈值
 
 	constraintHandles []ConstraintHandle[ID, AreaInfo]
 	conflictHandles   []ConflictHandle[ID, AreaInfo]
@@ -116,7 +119,7 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange() (areas []*Area[ID, AreaInfo], no
 		}
 
 		if area == nil { // 无法通过优先级找到合适的编排区域
-			for i, a := range slf.areas {
+			for i, a := range editor.GetAreasWithScoreDesc(current) {
 				if _, exist := itemAreaPriority[current.GetID()][i]; exist {
 					continue
 				}
@@ -158,6 +161,17 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange() (areas []*Area[ID, AreaInfo], no
 
 // try 尝试将 current 编排到 a 中
 func (slf *Arrangement[ID, AreaInfo]) try(editor *Editor[ID, AreaInfo], a *Area[ID, AreaInfo], current Item[ID]) bool {
+	allow := true
+	for _, verify := range slf.itemNotAllow[current.GetID()] {
+		if verify(a.GetAreaInfo(), current) {
+			allow = false
+			break
+		}
+	}
+	if !allow {
+		return false
+	}
+
 	err, conflictItems, allow := a.IsAllow(current)
 	if !allow {
 		if err != nil {

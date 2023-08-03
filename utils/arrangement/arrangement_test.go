@@ -48,7 +48,7 @@ func TestArrangement_Arrange(t *testing.T) {
 		a.AddItem(&Player{ID: i + 1})
 	}
 
-	res, no := a.Arrange(50)
+	res, no := a.Arrange()
 	for _, area := range res {
 		var str = fmt.Sprintf("area %d: ", area.GetAreaInfo().ID)
 		for id := range area.GetItems() {

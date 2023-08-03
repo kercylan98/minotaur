@@ -3,9 +3,10 @@ package arrangement
 import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/slice"
+	"sort"
 )
 
-// Editor 编排器
+// Editor 提供了大量辅助函数的编辑器
 type Editor[ID comparable, AreaInfo any] struct {
 	a          *Arrangement[ID, AreaInfo]
 	pending    []Item[ID]
@@ -44,6 +45,24 @@ func (slf *Editor[ID, AreaInfo]) GetAreas() []*Area[ID, AreaInfo] {
 	return slice.Copy(slf.a.areas)
 }
 
+// GetAreasWithScoreAsc 获取所有的编排区域，并按照分数升序排序
+func (slf *Editor[ID, AreaInfo]) GetAreasWithScoreAsc(extra ...Item[ID]) []*Area[ID, AreaInfo] {
+	areas := slice.Copy(slf.a.areas)
+	sort.Slice(areas, func(i, j int) bool {
+		return areas[i].GetScore(extra...) < areas[j].GetScore(extra...)
+	})
+	return areas
+}
+
+// GetAreasWithScoreDesc 获取所有的编排区域，并按照分数降序排序
+func (slf *Editor[ID, AreaInfo]) GetAreasWithScoreDesc(extra ...Item[ID]) []*Area[ID, AreaInfo] {
+	areas := slice.Copy(slf.a.areas)
+	sort.Slice(areas, func(i, j int) bool {
+		return areas[i].GetScore(extra...) > areas[j].GetScore(extra...)
+	})
+	return areas
+}
+
 // GetRetryCount 获取重试次数
 func (slf *Editor[ID, AreaInfo]) GetRetryCount() int {
 	return slf.retryCount
@@ -52,4 +71,94 @@ func (slf *Editor[ID, AreaInfo]) GetRetryCount() int {
 // GetThresholdProgressRate 获取重试次数阈值进度
 func (slf *Editor[ID, AreaInfo]) GetThresholdProgressRate() float64 {
 	return float64(slf.retryCount) / float64(slf.a.threshold)
+}
+
+// GetAllowAreas 获取允许的编排区域
+func (slf *Editor[ID, AreaInfo]) GetAllowAreas(item Item[ID]) []*Area[ID, AreaInfo] {
+	var areas []*Area[ID, AreaInfo]
+	for _, area := range slf.a.areas {
+		if _, _, allow := area.IsAllow(item); allow {
+			areas = append(areas, area)
+		}
+	}
+	return areas
+}
+
+// GetNoAllowAreas 获取不允许的编排区域
+func (slf *Editor[ID, AreaInfo]) GetNoAllowAreas(item Item[ID]) []*Area[ID, AreaInfo] {
+	var areas []*Area[ID, AreaInfo]
+	for _, area := range slf.a.areas {
+		if _, _, allow := area.IsAllow(item); !allow {
+			areas = append(areas, area)
+		}
+	}
+	return areas
+}
+
+// GetBestAllowArea 获取最佳的允许的编排区域，如果不存在，则返回 nil
+func (slf *Editor[ID, AreaInfo]) GetBestAllowArea(item Item[ID]) *Area[ID, AreaInfo] {
+	var areas = slf.GetAllowAreas(item)
+	if len(areas) == 0 {
+		return nil
+	}
+	var bestArea = areas[0]
+	var score = bestArea.GetScore(item)
+	for _, area := range areas {
+		if area.GetScore(item) > score {
+			bestArea = area
+			score = area.GetScore(item)
+		}
+	}
+	return bestArea
+}
+
+// GetBestNoAllowArea 获取最佳的不允许的编排区域，如果不存在，则返回 nil
+func (slf *Editor[ID, AreaInfo]) GetBestNoAllowArea(item Item[ID]) *Area[ID, AreaInfo] {
+	var areas = slf.GetNoAllowAreas(item)
+	if len(areas) == 0 {
+		return nil
+	}
+	var bestArea = areas[0]
+	var score = bestArea.GetScore(item)
+	for _, area := range areas {
+		if area.GetScore(item) > score {
+			bestArea = area
+			score = area.GetScore(item)
+		}
+	}
+	return bestArea
+}
+
+// GetWorstAllowArea 获取最差的允许的编排区域，如果不存在，则返回 nil
+func (slf *Editor[ID, AreaInfo]) GetWorstAllowArea(item Item[ID]) *Area[ID, AreaInfo] {
+	var areas = slf.GetAllowAreas(item)
+	if len(areas) == 0 {
+		return nil
+	}
+	var worstArea = areas[0]
+	var score = worstArea.GetScore(item)
+	for _, area := range areas {
+		if area.GetScore(item) < score {
+			worstArea = area
+			score = area.GetScore(item)
+		}
+	}
+	return worstArea
+}
+
+// GetWorstNoAllowArea 获取最差的不允许的编排区域，如果不存在，则返回 nil
+func (slf *Editor[ID, AreaInfo]) GetWorstNoAllowArea(item Item[ID]) *Area[ID, AreaInfo] {
+	var areas = slf.GetNoAllowAreas(item)
+	if len(areas) == 0 {
+		return nil
+	}
+	var worstArea = areas[0]
+	var score = worstArea.GetScore(item)
+	for _, area := range areas {
+		if area.GetScore(item) < score {
+			worstArea = area
+			score = area.GetScore(item)
+		}
+	}
+	return worstArea
 }
