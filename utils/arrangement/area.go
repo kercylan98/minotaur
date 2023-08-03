@@ -7,6 +7,7 @@ type Area[ID comparable, AreaInfo any] struct {
 	info        AreaInfo
 	items       map[ID]Item[ID]
 	constraints []AreaConstraintHandle[ID, AreaInfo]
+	conflicts   []AreaConflictHandle[ID, AreaInfo]
 	evaluate    AreaEvaluateHandle[ID, AreaInfo]
 }
 
@@ -21,13 +22,55 @@ func (slf *Area[ID, AreaInfo]) GetItems() map[ID]Item[ID] {
 }
 
 // IsAllow 检测一个成员是否可以被添加到该编排区域中
-func (slf *Area[ID, AreaInfo]) IsAllow(item Item[ID]) (Item[ID], bool) {
+func (slf *Area[ID, AreaInfo]) IsAllow(item Item[ID]) (constraintErr error, conflictItems map[ID]Item[ID], allow bool) {
 	for _, constraint := range slf.constraints {
-		if item, allow := constraint(slf, item); !allow {
-			return item, false
+		if err := constraint(slf, item); err != nil {
+			return err, nil, false
 		}
 	}
-	return nil, true
+	for _, conflict := range slf.conflicts {
+		if items := conflict(slf, item); len(items) > 0 {
+			if conflictItems == nil {
+				conflictItems = make(map[ID]Item[ID])
+			}
+			for id, item := range items {
+				conflictItems[id] = item
+			}
+		}
+	}
+	return nil, conflictItems, len(conflictItems) == 0
+}
+
+// IsConflict 检测一个成员是否会造成冲突
+func (slf *Area[ID, AreaInfo]) IsConflict(item Item[ID]) bool {
+	if hash.Exist(slf.items, item.GetID()) {
+		return false
+	}
+	for _, conflict := range slf.conflicts {
+		if items := conflict(slf, item); len(items) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// GetConflictItems 获取与一个成员产生冲突的所有其他成员
+func (slf *Area[ID, AreaInfo]) GetConflictItems(item Item[ID]) map[ID]Item[ID] {
+	if hash.Exist(slf.items, item.GetID()) {
+		return nil
+	}
+	var conflictItems map[ID]Item[ID]
+	for _, conflict := range slf.conflicts {
+		if items := conflict(slf, item); len(items) > 0 {
+			if conflictItems == nil {
+				conflictItems = make(map[ID]Item[ID])
+			}
+			for id, item := range items {
+				conflictItems[id] = item
+			}
+		}
+	}
+	return conflictItems
 }
 
 // GetScore 获取该编排区域的评估分数

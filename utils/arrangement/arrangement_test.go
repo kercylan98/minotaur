@@ -1,6 +1,7 @@
 package arrangement_test
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/arrangement"
 	"testing"
@@ -24,14 +25,23 @@ type Team struct {
 
 func TestArrangement_Arrange(t *testing.T) {
 	var a = arrangement.NewArrangement[int, *Team]()
-	a.AddArea(&Team{ID: 1}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) (arrangement.Item[int], bool) {
-		return nil, len(area.GetItems()) < 2
+	a.AddArea(&Team{ID: 1}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 2 {
+			return errors.New("too many")
+		}
+		return nil
 	}))
-	a.AddArea(&Team{ID: 2}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) (arrangement.Item[int], bool) {
-		return nil, len(area.GetItems()) < 1
+	a.AddArea(&Team{ID: 2}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 1 {
+			return errors.New("too many")
+		}
+		return nil
 	}))
-	a.AddArea(&Team{ID: 3}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) (arrangement.Item[int], bool) {
-		return nil, len(area.GetItems()) < 2
+	a.AddArea(&Team{ID: 3}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 2 {
+			return errors.New("too many")
+		}
+		return nil
 	}))
 	//a.AddArea(&Team{ID: 3})
 	for i := 0; i < 10; i++ {

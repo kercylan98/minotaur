@@ -23,10 +23,14 @@ func NewArrangement[ID comparable, AreaInfo any](options ...Option[ID, AreaInfo]
 //   - 目前我能想到的用途只有我的过往经历：排课
 //   - 如果是在游戏领域，或许适用于多人小队匹配编排等类似情况
 type Arrangement[ID comparable, AreaInfo any] struct {
-	areas    []*Area[ID, AreaInfo]                     // 所有的编排区域
-	items    map[ID]Item[ID]                           // 所有的成员
-	fixed    map[ID]ItemFixedAreaHandle[AreaInfo]      // 固定编排区域的成员
-	priority map[ID][]ItemPriorityHandle[ID, AreaInfo] // 成员的优先级函数
+	areas     []*Area[ID, AreaInfo]                     // 所有的编排区域
+	items     map[ID]Item[ID]                           // 所有的成员
+	fixed     map[ID]ItemFixedAreaHandle[AreaInfo]      // 固定编排区域的成员
+	priority  map[ID][]ItemPriorityHandle[ID, AreaInfo] // 成员的优先级函数
+	threshold int                                       // 重试次数阈值
+
+	constraintHandles []ConstraintHandle[ID, AreaInfo]
+	conflictHandles   []ConflictHandle[ID, AreaInfo]
 }
 
 // AddArea 添加一个编排区域
@@ -47,13 +51,11 @@ func (slf *Arrangement[ID, AreaInfo]) AddItem(item Item[ID]) {
 }
 
 // Arrange 编排
-func (slf *Arrangement[ID, AreaInfo]) Arrange(threshold int) (areas []*Area[ID, AreaInfo], noSolution map[ID]Item[ID]) {
+func (slf *Arrangement[ID, AreaInfo]) Arrange() (areas []*Area[ID, AreaInfo], noSolution map[ID]Item[ID]) {
 	if len(slf.areas) == 0 {
 		return slf.areas, slf.items
 	}
-	if threshold <= 0 {
-		threshold = 10
-	}
+
 	var items = hash.Copy(slf.items)
 	var fixed = hash.Copy(slf.fixed)
 
@@ -87,24 +89,26 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange(threshold int) (areas []*Area[ID, 
 			}
 		}
 	}
-	var pending = hash.ToSlice(items)
-	sort.Slice(pending, func(i, j int) bool {
-		return priorityInfo[pending[i].GetID()] > priorityInfo[pending[j].GetID()]
+	var editor = &Editor[ID, AreaInfo]{
+		a:       slf,
+		pending: hash.ToSlice(items),
+		falls:   map[ID]struct{}{},
+	}
+	sort.Slice(editor.pending, func(i, j int) bool {
+		return priorityInfo[editor.pending[i].GetID()] > priorityInfo[editor.pending[j].GetID()]
 	})
 
 	var current Item[ID]
-	var fails []Item[ID]
-	var retryCount = 0
-	for len(pending) > 0 {
-		current = pending[0]
-		pending = pending[1:]
+	for editor.GetPendingCount() > 0 {
+		current = editor.pending[0]
+		editor.pending = editor.pending[1:]
 
 		var maxPriority = float64(0)
 		var area *Area[ID, AreaInfo]
 		for areaIndex, priority := range itemAreaPriority[current.GetID()] {
 			if priority > maxPriority {
 				a := slf.areas[areaIndex]
-				if _, allow := a.IsAllow(current); allow {
+				if slf.try(editor, a, current) {
 					maxPriority = priority
 					area = a
 				}
@@ -116,33 +120,33 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange(threshold int) (areas []*Area[ID, 
 				if _, exist := itemAreaPriority[current.GetID()][i]; exist {
 					continue
 				}
-				if _, allow := a.IsAllow(current); allow {
+				if slf.try(editor, a, current) {
 					area = a
-					break
 				}
 			}
 			if area == nil {
-				fails = append(fails, current)
+				editor.fails = append(editor.fails, current)
 				goto end
 			}
 		}
 
 		area.items[current.GetID()] = current
+		editor.falls[current.GetID()] = struct{}{}
 
 	end:
 		{
-			if len(fails) > 0 {
+			if len(editor.fails) > 0 {
 				noSolution = map[ID]Item[ID]{}
-				for _, item := range fails {
+				for _, item := range editor.fails {
 					noSolution[item.GetID()] = item
 				}
 			}
 
-			if len(pending) == 0 && len(fails) > 0 {
-				pending = fails
-				fails = fails[:0]
-				retryCount++
-				if retryCount > threshold {
+			if len(editor.pending) == 0 && len(editor.fails) > 0 {
+				editor.pending = editor.fails
+				editor.fails = editor.fails[:0]
+				editor.retryCount++
+				if editor.retryCount > slf.threshold {
 					break
 				}
 			}
@@ -150,4 +154,44 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange(threshold int) (areas []*Area[ID, 
 	}
 
 	return slf.areas, noSolution
+}
+
+// try 尝试将 current 编排到 a 中
+func (slf *Arrangement[ID, AreaInfo]) try(editor *Editor[ID, AreaInfo], a *Area[ID, AreaInfo], current Item[ID]) bool {
+	err, conflictItems, allow := a.IsAllow(current)
+	if !allow {
+		if err != nil {
+			var solve = err
+			for _, handle := range slf.constraintHandles {
+				if solve = handle(editor, a, current, solve); solve == nil {
+					err, conflictItems, allow = a.IsAllow(current)
+					if allow {
+						break
+					} else {
+						// 当 err 依旧不为 nil 时，发生约束处理函数欺骗行为，不做任何处理
+						if len(conflictItems) > 0 {
+							goto conflictHandle
+						}
+					}
+					break
+				}
+			}
+		}
+	conflictHandle:
+		{
+			if err == nil && len(conflictItems) > 0 { // 硬性约束未解决时，不考虑冲突解决
+				var solve = conflictItems
+				for _, handle := range slf.conflictHandles {
+					if solve = handle(editor, a, current, solve); len(solve) == 0 {
+						if a.IsConflict(current) {
+							allow = true
+							break
+						}
+						// 依旧存在冲突时，表明冲突处理函数存在欺骗行为，不做任何处理
+					}
+				}
+			}
+		}
+	}
+	return allow
 }
