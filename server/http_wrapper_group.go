@@ -57,6 +57,6 @@ func (slf *HttpWrapperGroup[CTX]) OPTIONS(relativePath string, handlers ...HttpW
 func (slf *HttpWrapperGroup[CTX]) Group(relativePath string, handlers ...HttpWrapperHandleFunc[CTX]) *HttpWrapperGroup[CTX] {
 	return &HttpWrapperGroup[CTX]{
 		wrapper: slf.wrapper,
-		group:   slf.wrapper.server.Group(relativePath, handlersToGinHandlers(slf.wrapper.packHandle, handlers)...),
+		group:   slf.group.Group(relativePath, handlersToGinHandlers(slf.wrapper.packHandle, handlers)...),
 	}
 }
