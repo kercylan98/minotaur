@@ -1,6 +1,6 @@
 module github.com/kercylan98/minotaur
 
-go 1.20
+go 1.21
 
 require (
 	github.com/RussellLuo/timingwheel v0.0.0-20220218152713-54845bda3108
