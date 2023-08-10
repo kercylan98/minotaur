@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.26](https://github.com/kercylan98/minotaur/compare/v0.0.25...v0.0.26) (2023-08-10)
+
+
+### Features | 新特性
+
+* arrangement 新增冲突、冲突处理函数、约束处理函数 ([84f36ea](https://github.com/kercylan98/minotaur/commit/84f36eaabaaafa072777c393eafd27d03e6ebf2a))
+* arrangement.Engine 新增更多的辅助函数 ([822ffc7](https://github.com/kercylan98/minotaur/commit/822ffc7041c3a4d97c457cff0a6fc0da5183f17a))
+* server 包新增 HTTP 包装器 ([cec7e5b](https://github.com/kercylan98/minotaur/commit/cec7e5b341d508aaead33a471ec86b665dd8a8c5))
+* 新增 reflects 包，包含反射相关辅助函数 ([340b00e](https://github.com/kercylan98/minotaur/commit/340b00eb76135bb5323d9736906f4a19ea4a82f2))
+
+
+### Bug Fixes | 修复
+
+* http 包装器 group 修复 ([dbf7ed7](https://github.com/kercylan98/minotaur/commit/dbf7ed717ab6b6305013eeb3d5bf515d73b8acb0))
+
+
+### Build System | 影响构建的修改
+
+* 升级 go 至 1.21 版本 ([9596320](https://github.com/kercylan98/minotaur/commit/9596320e6508c87616a8e202aab3e3db64252a50))
+
 ## [0.0.25](https://github.com/kercylan98/minotaur/compare/v0.0.24...v0.0.25) (2023-08-03)
 
 
