@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.25](https://github.com/kercylan98/minotaur/compare/v0.0.24...v0.0.25) (2023-08-03)
+
+
+### Features | 新特性
+
+* combination 包新增 Validator 校验器，用于校验组合是否匹配，取代 poker.Rule ([f6873bd](https://github.com/kercylan98/minotaur/commit/f6873bd5dc59af9ec2997029ba30063d18b15238))
+* combination 包新增 WithValidatorHandleNCarryM、WithValidatorHandleNCarryIndependentM 函数 ([87a1ca9](https://github.com/kercylan98/minotaur/commit/87a1ca90bd80f9a2ff4ef06d56d3e7c0ce77a4b3))
+* room.Helper 支持通过 BroadcastExcept 向被排除表达式命中外的玩家广播消息 ([0804508](https://github.com/kercylan98/minotaur/commit/08045088e612009ccad91eb120c835365e552b06))
+* 新增 arrangement 包，用于针对多条数据进行合理编排的数据结构 ([1f5f95a](https://github.com/kercylan98/minotaur/commit/1f5f95ae6de5df7849318ae2b27c79689f240d77))
+
+
+### Bug Fixes | 修复
+
+* combination.WithValidatorHandleNCarryM 修复 M 允许类型不同的问题 ([0db1e5c](https://github.com/kercylan98/minotaur/commit/0db1e5c30b768a4918f4b2be9e3f03cfe29d9f8e))
+* room.Helper.BroadcastExcept 函数返回值修复 ([faac7b2](https://github.com/kercylan98/minotaur/commit/faac7b27bbd57e7602a62acd699bc556e748d9c5))
+
+
+### Docs | 文档优化
+
+* poker 包过时标记 ([553c436](https://github.com/kercylan98/minotaur/commit/553c4362e3160e76bf0866092802fd2001e3118f))
+* README.md 及 CONTRIBUTING.md 完善 ([7cfdbb1](https://github.com/kercylan98/minotaur/commit/7cfdbb12a4b62d4c618261a70ee567055dae80ff))
+
 ## [0.0.24](https://github.com/kercylan98/minotaur/compare/v0.0.23...v0.0.24) (2023-08-02)
 
 
