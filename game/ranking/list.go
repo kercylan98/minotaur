@@ -87,6 +87,16 @@ func (slf *List[CompetitorID, Score]) Size() int {
 	return slf.competitors.Size()
 }
 
+// GetRankDefault 获取竞争者排名，如果竞争者不存在则返回默认值
+//   - 排名从 0 开始
+func (slf *List[CompetitorID, Score]) GetRankDefault(competitorId CompetitorID, defaultValue int) int {
+	rank, err := slf.GetRank(competitorId)
+	if err != nil {
+		return defaultValue
+	}
+	return rank
+}
+
 // GetRank 获取竞争者排名
 //   - 排名从 0 开始
 func (slf *List[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
@@ -158,6 +168,15 @@ func (slf *List[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score
 		return score, ErrListNotExistCompetitor
 	}
 	return data, nil
+}
+
+// GetScoreDefault 获取竞争者成绩，不存在时返回默认值
+func (slf *List[CompetitorID, Score]) GetScoreDefault(competitorId CompetitorID, defaultValue Score) Score {
+	score, err := slf.GetScore(competitorId)
+	if err != nil {
+		return defaultValue
+	}
+	return score
 }
 
 // GetAllCompetitor 获取所有竞争者ID
