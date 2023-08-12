@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/super"
 	"math"
 	"strconv"
+	"strings"
 )
 
 var fields = []Field{
@@ -267,6 +268,10 @@ func (slf String) Zero() any {
 }
 
 func (slf String) Parse(value string) any {
+	if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
+		value = value[1:]
+		value = value[:len(value)-1]
+	}
 	return value
 }
 
