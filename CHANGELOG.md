@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.27](https://github.com/kercylan98/minotaur/compare/v0.0.26...v0.0.27) (2023-08-14)
+
+
+### Features | 新特性
+
+* ranking.List 新增支持默认值的获取排名和分数的函数 ([57ee7ff](https://github.com/kercylan98/minotaur/commit/57ee7ff3ef634f754945c701fd4ae7336290d53b))
+* sole 包新增 Once 结构体，用于数据取值去重 ([0f31173](https://github.com/kercylan98/minotaur/commit/0f31173291efafd4cb5594f56d54fb68903179a6))
+
+
+### Bug Fixes | 修复
+
+* 修复配置显示声明的字符串时，导出的数据包含双引号的问题 ([31cd79c](https://github.com/kercylan98/minotaur/commit/31cd79c2218674fee5431d6b25586f937f76d716))
+
 ## [0.0.26](https://github.com/kercylan98/minotaur/compare/v0.0.25...v0.0.26) (2023-08-10)
 
 
