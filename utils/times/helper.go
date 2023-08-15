@@ -115,3 +115,19 @@ func GetTimeFromString(timeStr, layout string) time.Time {
 func GetDayZero(t time.Time, day int) time.Time {
 	return GetToday(t.AddDate(0, 0, day))
 }
+
+// GetYesterday 获取昨天
+func GetYesterday(t time.Time) time.Time {
+	return GetDayZero(t, -1)
+}
+
+// GetDayLast 获取某天的最后一刻
+//   - 最后一刻即 23:59:59
+func GetDayLast(t time.Time) time.Time {
+	return GetDayZero(t, 1).Add(-time.Second)
+}
+
+// GetYesterdayLast 获取昨天最后一刻
+func GetYesterdayLast(t time.Time) time.Time {
+	return GetDayLast(GetYesterday(t))
+}
