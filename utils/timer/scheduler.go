@@ -38,12 +38,14 @@ func (slf *Scheduler) Next(prev time.Time) time.Time {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
 
-	if slf.kill || (slf.total > 0 && slf.trigger >= slf.total) {
+	if slf.kill || (slf.total > 0 && slf.trigger > slf.total) {
 		return time.Time{}
 	}
 	if slf.trigger == 0 {
+		slf.trigger++
 		return prev.Add(slf.after)
 	}
+	slf.trigger++
 	return prev.Add(slf.interval)
 }
 
@@ -56,8 +58,7 @@ func (slf *Scheduler) Caller() {
 		return
 	}
 
-	slf.trigger++
-	if slf.total > 0 && slf.trigger >= slf.total {
+	if slf.total > 0 && slf.trigger > slf.total {
 		slf.lock.Unlock()
 		slf.ticker.StopTimer(slf.name)
 	} else {
