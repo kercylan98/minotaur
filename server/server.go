@@ -573,9 +573,12 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:
+		var conn = attrs[0].(*Conn)
 		var packet = attrs[1].([]byte)
 		var wst = int(packet[len(packet)-1])
-		slf.OnConnectionReceivePacketEvent(attrs[0].(*Conn), Packet{Data: packet[:len(packet)-1], WebsocketType: wst})
+		if !slf.OnConnectionPacketPreprocessEvent(conn, packet, func(newPacket []byte) { packet = newPacket }) {
+			slf.OnConnectionReceivePacketEvent(conn, Packet{Data: packet[:len(packet)-1], WebsocketType: wst})
+		}
 	case MessageTypeError:
 		err, action := attrs[0].(error), attrs[1].(MessageErrorAction)
 		switch action {

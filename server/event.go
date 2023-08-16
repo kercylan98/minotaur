@@ -24,22 +24,24 @@ type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
 type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet Packet) Packet
 type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
 type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
+type ConnectionPacketPreprocessEventHandle func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
 
 type event struct {
 	*Server
-	startBeforeEventHandles             []StartBeforeEventHandle
-	startFinishEventHandles             []StartFinishEventHandle
-	stopEventHandles                    []StopEventHandle
-	connectionReceivePacketEventHandles []ConnectionReceivePacketEventHandle
-	connectionOpenedEventHandles        []ConnectionOpenedEventHandle
-	connectionClosedEventHandles        []ConnectionClosedEventHandle
-	receiveCrossPacketEventHandles      []ReceiveCrossPacketEventHandle
-	messageErrorEventHandles            []MessageErrorEventHandle
-	messageLowExecEventHandles          []MessageLowExecEventHandle
-	connectionOpenedAfterEventHandles   []ConnectionOpenedAfterEventHandle
-	connectionWritePacketBeforeHandles  []ConnectionWritePacketBeforeEventHandle
-	shuntChannelCreatedEventHandles     []ShuntChannelCreatedEventHandle
-	shuntChannelClosedEventHandles      []ShuntChannelClosedEventHandle
+	startBeforeEventHandles                []StartBeforeEventHandle
+	startFinishEventHandles                []StartFinishEventHandle
+	stopEventHandles                       []StopEventHandle
+	connectionReceivePacketEventHandles    []ConnectionReceivePacketEventHandle
+	connectionOpenedEventHandles           []ConnectionOpenedEventHandle
+	connectionClosedEventHandles           []ConnectionClosedEventHandle
+	receiveCrossPacketEventHandles         []ReceiveCrossPacketEventHandle
+	messageErrorEventHandles               []MessageErrorEventHandle
+	messageLowExecEventHandles             []MessageLowExecEventHandle
+	connectionOpenedAfterEventHandles      []ConnectionOpenedAfterEventHandle
+	connectionWritePacketBeforeHandles     []ConnectionWritePacketBeforeEventHandle
+	shuntChannelCreatedEventHandles        []ShuntChannelCreatedEventHandle
+	shuntChannelClosedEventHandles         []ShuntChannelClosedEventHandle
+	connectionPacketPreprocessEventHandles []ConnectionPacketPreprocessEventHandle
 
 	consoleCommandEventHandles        map[string][]ConsoleCommandEventHandle
 	consoleCommandEventHandleInitOnce sync.Once
@@ -281,6 +283,33 @@ func (slf *event) OnShuntChannelClosedEvent(guid int64) {
 			handle(slf.Server, guid)
 		}
 	}, "ShuntChannelCloseEvent")
+}
+
+// RegConnectionPacketPreprocessEvent 在接收到数据包后将立刻执行被注册的事件处理函数
+//   - 预处理函数可以用于对数据包进行预处理，如解密、解压缩等
+//   - 在调用 abort() 后，将不会再调用后续的预处理函数，也不会调用 OnConnectionReceivePacketEvent 函数
+//   - 在调用 usePacket() 后，将使用新的数据包，而不会使用原始数据包，同时阻止后续的预处理函数的调用
+//
+// 场景：
+//   - 数据包格式校验
+//   - 数据包分包等情况处理
+func (slf *event) RegConnectionPacketPreprocessEvent(handle ConnectionPacketPreprocessEventHandle) {
+	slf.connectionPacketPreprocessEventHandles = append(slf.connectionPacketPreprocessEventHandles, handle)
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+func (slf *event) OnConnectionPacketPreprocessEvent(conn *Conn, packet []byte, usePacket func(newPacket []byte)) bool {
+	if len(slf.connectionPacketPreprocessEventHandles) == 0 {
+		return false
+	}
+	var abort = false
+	for _, handle := range slf.connectionPacketPreprocessEventHandles {
+		handle(slf.Server, conn, packet, func() { abort = true }, usePacket)
+		if abort {
+			return abort
+		}
+	}
+	return abort
 }
 
 func (slf *event) check() {
