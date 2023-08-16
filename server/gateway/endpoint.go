@@ -49,12 +49,14 @@ func (slf *Endpoint) Write(packet server.Packet) {
 	slf.client.Write(packet)
 }
 
+// onConnectionClosed 与端点连接断开事件
 func (slf *Endpoint) onConnectionClosed(conn *client.Websocket, err any) {
 	if !slf.offline {
 		go slf.Connect()
 	}
 }
 
+// onConnectionReceivePacket 解说到来自端点的数据包事件
 func (slf *Endpoint) onConnectionReceivePacket(conn *client.Websocket, packet server.Packet) {
 	p := UnpackGatewayPacket(packet)
 	packet.Data = p.Data

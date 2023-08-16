@@ -6,10 +6,13 @@ import (
 )
 
 // NewGateway 基于 server.Server 创建网关服务器
-func NewGateway(srv *server.Server) *Gateway {
+func NewGateway(srv *server.Server, options ...Option) *Gateway {
 	gateway := &Gateway{
 		srv:             srv,
 		EndpointManager: NewEndpointManager(),
+	}
+	for _, option := range options {
+		option(gateway)
 	}
 	return gateway
 }

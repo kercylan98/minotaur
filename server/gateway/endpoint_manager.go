@@ -3,7 +3,7 @@ package gateway
 import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/concurrent"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/random"
 )
 
 // NewEndpointManager 创建网关端点管理器
@@ -11,6 +11,9 @@ func NewEndpointManager() *EndpointManager {
 	em := &EndpointManager{
 		endpoints: concurrent.NewBalanceMap[string, []*Endpoint](),
 		memory:    concurrent.NewBalanceMap[string, *Endpoint](),
+		selector: func(endpoints []*Endpoint) *Endpoint {
+			return endpoints[random.Int(0, len(endpoints)-1)]
+		},
 	}
 	return em
 }
@@ -19,6 +22,7 @@ func NewEndpointManager() *EndpointManager {
 type EndpointManager struct {
 	endpoints *concurrent.BalanceMap[string, []*Endpoint]
 	memory    *concurrent.BalanceMap[string, *Endpoint]
+	selector  func([]*Endpoint) *Endpoint
 }
 
 // GetEndpoint 获取端点
@@ -35,15 +39,16 @@ func (slf *EndpointManager) GetEndpoint(name string, conn *server.Conn) (*Endpoi
 		if len(endpoints) == 0 {
 			return
 		}
-		// 随机获取
-		endpoints = slice.Copy(endpoints)
-		slice.Shuffle(endpoints)
+		var available = make([]*Endpoint, 0, len(endpoints))
 		for _, e := range endpoints {
-			if e.offline || e.state <= 0 {
-				continue
+			if !e.offline && e.state > 0 {
+				available = append(available, e)
 			}
-			endpoint = e
 		}
+		if len(available) == 0 {
+			return
+		}
+		endpoint = slf.selector(available)
 	})
 	if endpoint == nil {
 		return nil, ErrEndpointNotExists
