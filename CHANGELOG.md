@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.28](https://github.com/kercylan98/minotaur/compare/v0.0.27...v0.0.28) (2023-08-16)
+
+
+### Features | 新特性
+
+* gateway 网关支持通过可选项自定义端点选择器 ([e0f43c5](https://github.com/kercylan98/minotaur/commit/e0f43c5bfb96654fb682de22ad07af91c8c40958))
+* server 目录中新增 client 包，提供了 Websocket 客户端实例 ([322938a](https://github.com/kercylan98/minotaur/commit/322938accf969509967c81e29f026aeca3af1d33))
+* server 目录中新增 gateway 包，提供了基本的 Websocket 网关实现 ([5ff74b6](https://github.com/kercylan98/minotaur/commit/5ff74b623d13734eb65ad9f7d72a749297427e6a))
+* server.Server 新增 RegConnectionPacketPreprocessEvent 函数用于对数据包进行预处理操作 ([b3e4bb6](https://github.com/kercylan98/minotaur/commit/b3e4bb6166c3abd3faffb49cddfd19fce5afc0e1))
+* times 包增加部分时间处理函数 ([157b6b5](https://github.com/kercylan98/minotaur/commit/157b6b5aafb645ee61336b47c046b96f746d4e11))
+
+
+### Bug Fixes | 修复
+
+* 修复 timer.Ticker.Loop 函数首次触发时会触发两次的问题 ([2bd6aa5](https://github.com/kercylan98/minotaur/commit/2bd6aa50cbbbc370b93b32c867fadaaf1a18bb02))
+
 ## [0.0.27](https://github.com/kercylan98/minotaur/compare/v0.0.26...v0.0.27) (2023-08-14)
 
 
