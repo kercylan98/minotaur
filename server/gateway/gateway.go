@@ -55,5 +55,8 @@ func (slf *Gateway) onConnectionReceivePacket(srv *server.Server, conn *server.C
 	}
 	pd := super.MarshalJSON(&gp)
 	packet.Data = append(pd, 0xff)
-	conn.GetData("endpoint").(*Endpoint).Write(packet)
+	var endpoint, exist = conn.GetData("endpoint").(*Endpoint)
+	if exist {
+		endpoint.Write(packet)
+	}
 }

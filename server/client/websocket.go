@@ -28,6 +28,8 @@ type Websocket struct {
 	mutex      sync.Mutex
 	packetPool *concurrent.Pool[*websocketPacket]
 	packets    []*websocketPacket
+
+	accumulate []server.Packet
 }
 
 // Run 启动
@@ -88,6 +90,7 @@ func (slf *Websocket) SetData(key string, value any) {
 //   - messageType: websocket模式中指定消息类型
 func (slf *Websocket) Write(packet server.Packet) {
 	if slf.packetPool == nil {
+		slf.accumulate = append(slf.accumulate, packet)
 		return
 	}
 	cp := slf.packetPool.Get()
@@ -109,6 +112,15 @@ func (slf *Websocket) writeLoop(wait *sync.WaitGroup) {
 			data.callback = nil
 		},
 	)
+	slf.mutex.Lock()
+	for _, packet := range slf.accumulate {
+		cp := slf.packetPool.Get()
+		cp.websocketMessageType = packet.WebsocketType
+		cp.packet = packet.Data
+		slf.packets = append(slf.packets, cp)
+	}
+	slf.accumulate = nil
+	slf.mutex.Unlock()
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close()
@@ -118,6 +130,7 @@ func (slf *Websocket) writeLoop(wait *sync.WaitGroup) {
 	for {
 		slf.mutex.Lock()
 		if slf.packetPool == nil {
+			slf.mutex.Unlock()
 			return
 		}
 		if len(slf.packets) == 0 {
