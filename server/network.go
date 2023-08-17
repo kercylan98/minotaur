@@ -1,5 +1,7 @@
 package server
 
+import "github.com/kercylan98/minotaur/utils/slice"
+
 type Network string
 
 const (
@@ -19,3 +21,14 @@ const (
 	NetworkKcp       Network = "kcp"
 	NetworkGRPC      Network = "grpc"
 )
+
+var (
+	networks = []Network{
+		NetworkNone, NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix, NetworkHttp, NetworkWebsocket, NetworkKcp, NetworkGRPC,
+	}
+)
+
+// GetNetworks 获取所有支持的网络模式
+func GetNetworks() []Network {
+	return slice.Copy(networks)
+}

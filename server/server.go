@@ -96,6 +96,7 @@ type Server struct {
 	shuntChannels            *concurrent.BalanceMap[int64, chan *Message]      // 分流管道
 	channelGenerator         func(guid int64) chan *Message                    // 消息管道生成器
 	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool) // 分流管道匹配器
+	messageCounter           atomic.Int64                                      // 消息计数器
 }
 
 // Run 使用特定地址运行服务器
@@ -411,6 +412,12 @@ func (slf *Server) Shutdown() {
 
 // shutdown 停止运行服务器
 func (slf *Server) shutdown(err error) {
+	slf.isShutdown.Store(true)
+	for slf.messageCounter.Load() > 0 {
+		log.Info("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
+			log.String("action", "shutdown"), log.String("state", "waiting"), log.Int64("message", slf.messageCounter.Load()))
+		time.Sleep(time.Second)
+	}
 	if slf.multiple == nil {
 		slf.OnStopEvent()
 	}
@@ -419,7 +426,6 @@ func (slf *Server) shutdown(err error) {
 			slf.multipleRuntimeErrorChan <- err
 		}
 	}()
-	slf.isShutdown.Store(true)
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
@@ -453,6 +459,11 @@ func (slf *Server) shutdown(err error) {
 			log.Error("Server", log.Err(shutdownErr))
 		}
 	}
+	if slf.gServer != nil && slf.isRunning {
+		if shutdownErr := gnet.Stop(context.Background(), fmt.Sprintf("%s://%s", slf.network, slf.addr)); err != nil {
+			log.Error("Server", log.Err(shutdownErr))
+		}
+	}
 
 	if err != nil {
 		if slf.multiple != nil {
@@ -474,9 +485,7 @@ func (slf *Server) shutdown(err error) {
 		log.Info("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
 			log.String("action", "shutdown"), log.String("state", "normal"))
 	}
-	if slf.gServer == nil {
-		slf.closeChannel <- struct{}{}
-	}
+	slf.closeChannel <- struct{}{}
 }
 
 // GRPCServer 当网络类型为 NetworkGRPC 时将被允许获取 grpc 服务器，否则将会发生 panic
@@ -514,6 +523,9 @@ func (slf *Server) pushMessage(message *Message) {
 		slf.messagePool.Release(message)
 		return
 	}
+	if slf.isShutdown.Load() {
+		return
+	}
 	if slf.shuntChannels != nil && (message.t == MessageTypePacket) {
 		conn := message.attrs[0].(*Conn)
 		channelGuid, allowToCreate := slf.shuntMatcher(conn)
@@ -546,6 +558,7 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *Message) {
+	slf.messageCounter.Add(1)
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -579,6 +592,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 
 		super.Handle(cancel)
 		slf.low(msg, present, time.Millisecond*100)
+		slf.messageCounter.Add(-1)
 
 		if !slf.isShutdown.Load() {
 			slf.messagePool.Release(msg)
@@ -623,6 +637,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 				}
 				super.Handle(cancel)
 				slf.low(msg, present, time.Second)
+				slf.messageCounter.Add(-1)
 
 				if !slf.isShutdown.Load() {
 					slf.messagePool.Release(msg)
