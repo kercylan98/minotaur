@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/kercylan98/minotaur/utils/times"
@@ -99,17 +100,21 @@ type Server struct {
 
 // Run 使用特定地址运行服务器
 //
-//	server.NetworkTcp (addr:":8888")
-//	server.NetworkTcp4 (addr:":8888")
-//	server.NetworkTcp6 (addr:":8888")
-//	server.NetworkUdp (addr:":8888")
-//	server.NetworkUdp4 (addr:":8888")
-//	server.NetworkUdp6 (addr:":8888")
-//	server.NetworkUnix (addr:"socketPath")
-//	server.NetworkHttp (addr:":8888")
-//	server.NetworkWebsocket (addr:":8888/ws")
-//	server.NetworkKcp (addr:":8888")
+//		server.NetworkTcp (addr:":8888")
+//		server.NetworkTcp4 (addr:":8888")
+//		server.NetworkTcp6 (addr:":8888")
+//		server.NetworkUdp (addr:":8888")
+//		server.NetworkUdp4 (addr:":8888")
+//		server.NetworkUdp6 (addr:":8888")
+//		server.NetworkUnix (addr:"socketPath")
+//		server.NetworkHttp (addr:":8888")
+//		server.NetworkWebsocket (addr:":8888/ws")
+//		server.NetworkKcp (addr:":8888")
+//	 server.NetworkNone (addr:"")
 func (slf *Server) Run(addr string) error {
+	if slf.network == NetworkNone {
+		addr = "-"
+	}
 	if slf.event == nil {
 		return ErrConstructed
 	}
@@ -143,6 +148,11 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	switch slf.network {
+	case NetworkNone:
+		go connectionInitHandle(func() {
+			slf.isRunning = true
+			slf.OnStartBeforeEvent()
+		})
 	case NetworkGRPC:
 		listener, err := net.Listen(string(NetworkTcp), slf.addr)
 		if err != nil {
@@ -344,6 +354,11 @@ func (slf *Server) Run(addr string) error {
 	}
 
 	return nil
+}
+
+// RunNone 是 Run("") 的简写，仅适用于运行 NetworkNone 服务器
+func (slf *Server) RunNone() error {
+	return slf.Run(str.None)
 }
 
 // GetOnlineCount 获取在线人数

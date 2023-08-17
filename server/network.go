@@ -3,6 +3,8 @@ package server
 type Network string
 
 const (
+	// NetworkNone 该模式下不监听任何网络端口，仅开启消息队列，适用于纯粹的跨服服务器等情况
+	NetworkNone Network = "none"
 	NetworkTcp  Network = "tcp"
 	NetworkTcp4 Network = "tcp4"
 	NetworkTcp6 Network = "tcp6"

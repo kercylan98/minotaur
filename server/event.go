@@ -314,7 +314,7 @@ func (slf *event) OnConnectionPacketPreprocessEvent(conn *Conn, packet []byte, u
 
 func (slf *event) check() {
 	switch slf.network {
-	case NetworkHttp, NetworkGRPC:
+	case NetworkHttp, NetworkGRPC, NetworkNone:
 	default:
 		if len(slf.connectionReceivePacketEventHandles) == 0 {
 			log.Warn("Server", log.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
