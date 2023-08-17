@@ -568,10 +568,16 @@ func (slf *Server) pushMessage(message *Message) {
 	slf.messageChannel <- message
 }
 
-func (slf *Server) low(message *Message, present time.Time, expect time.Duration) {
+func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
 	cost := time.Since(present)
 	if cost > expect {
-		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", message.String()), log.Stack("stack"))
+		var m = "unknown"
+		if message != nil {
+			m = message.String()
+		} else if len(messageReplace) > 0 {
+			m = messageReplace[0]
+		}
+		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", m), log.Stack("stack"))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }

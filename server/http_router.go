@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type HandlerFunc[Context any] func(ctx Context)
@@ -24,7 +25,9 @@ func (slf *HttpRouter[Context]) handlesConvert(handlers []HandlerFunc[Context]) 
 				slf.srv.messageCounter.Add(-1)
 			}()
 			hc := slf.packer(ctx)
+			var now = time.Now()
 			handler(hc)
+			slf.srv.low(nil, now, time.Second, "HTTP ["+ctx.Request.Method+"] "+ctx.Request.RequestURI)
 		})
 	}
 	return handles
