@@ -48,27 +48,12 @@ func (slf *Gateway) onConnectionOpened(srv *server.Server, conn *server.Conn) {
 
 // onConnectionReceivePacket 连接接收数据包事件
 func (slf *Gateway) onConnectionReceivePacket(srv *server.Server, conn *server.Conn, packet server.Packet) {
-	conn.GetData("endpoint").(*Endpoint).Write(PackGatewayPacket(conn.GetID(), packet.WebsocketType, packet.Data))
-}
-
-// PackGatewayPacket 打包网关数据包
-func PackGatewayPacket(connID string, websocketType int, data []byte) server.Packet {
-	var gatewayPacket = Packet{
-		ConnID:        connID,
-		WebsocketType: websocketType,
-		Data:          data,
+	var gp = server.GP{
+		C:  conn.GetID(),
+		WT: packet.WebsocketType,
+		D:  packet.Data,
 	}
-	return server.Packet{
-		WebsocketType: websocketType,
-		Data:          super.MarshalJSON(&gatewayPacket),
-	}
-}
-
-// UnpackGatewayPacket 解包网关数据包
-func UnpackGatewayPacket(packet server.Packet) Packet {
-	var gatewayPacket Packet
-	if err := super.UnmarshalJSON(packet.Data, &gatewayPacket); err != nil {
-		panic(err)
-	}
-	return gatewayPacket
+	pd := super.MarshalJSON(&gp)
+	packet.Data = append(pd, 0xff)
+	conn.GetData("endpoint").(*Endpoint).Write(packet)
 }

@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
@@ -65,6 +66,26 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	return c
 }
 
+// newGatewayConn 创建一个处理网关消息的连接
+func newGatewayConn(conn *Conn, connId string) *Conn {
+	c := &Conn{
+		server: conn.server,
+		data:   map[any]any{},
+	}
+	c.gw = func(packet Packet) {
+		var gp = GP{
+			C:  connId,
+			WT: packet.WebsocketType,
+			D:  packet.Data,
+			T:  time.Now().UnixNano(),
+		}
+		pd := super.MarshalJSON(&gp)
+		packet.Data = append(pd, 0xff)
+		conn.Write(packet)
+	}
+	return c
+}
+
 // NewEmptyConn 创建一个适用于测试的空连接
 func NewEmptyConn(server *Server) *Conn {
 	c := &Conn{
@@ -88,6 +109,7 @@ type Conn struct {
 	ws         *websocket.Conn
 	gn         gnet.Conn
 	kcp        *kcp.UDPSession
+	gw         func(packet Packet)
 	data       map[any]any
 	mutex      sync.Mutex
 	packetPool *concurrent.Pool[*connPacket]
@@ -96,7 +118,7 @@ type Conn struct {
 
 // IsEmpty 是否是空连接
 func (slf *Conn) IsEmpty() bool {
-	return slf.ws == nil && slf.gn == nil && slf.kcp == nil
+	return slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
 }
 
 // Reuse 重用连接
@@ -179,6 +201,10 @@ func (slf *Conn) IsWebsocket() bool {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet Packet) {
+	if slf.gw != nil {
+		slf.gw(packet)
+		return
+	}
 	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
 	if slf.packetPool == nil {
 		return
@@ -194,6 +220,10 @@ func (slf *Conn) Write(packet Packet) {
 // WriteWithCallback 与 Write 相同，但是会在写入完成后调用 callback
 //   - 当 callback 为 nil 时，与 Write 相同
 func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error)) {
+	if slf.gw != nil {
+		slf.gw(packet)
+		return
+	}
 	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
 	if slf.packetPool == nil {
 		return

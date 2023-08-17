@@ -10,8 +10,7 @@ import (
 func TestGateway_RunEndpointServer(t *testing.T) {
 	srv := server.New(server.NetworkWebsocket)
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet server.Packet) {
-		p := gateway2.UnpackGatewayPacket(packet)
-		fmt.Println("endpoint receive packet", string(p.Data))
+		fmt.Println("endpoint receive packet", string(packet.Data))
 		conn.Write(packet)
 	})
 	if err := srv.Run(":8889"); err != nil {
