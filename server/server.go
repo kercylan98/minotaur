@@ -497,11 +497,31 @@ func (slf *Server) GRPCServer() *grpc.Server {
 }
 
 // HttpRouter 当网络类型为 NetworkHttp 时将被允许获取路由器进行路由注册，否则将会发生 panic
+//   - 通过该函数注册的路由将无法在服务器关闭时正常等待请求结束
+//
+// Deprecated: 从 Minotaur 0.0.29 开始，由于设计原因已弃用，该函数将直接返回 *gin.Server 对象，导致无法正常的对请求结束时进行处理
 func (slf *Server) HttpRouter() gin.IRouter {
 	if slf.ginServer == nil {
 		panic(ErrNetworkOnlySupportHttp)
 	}
 	return slf.ginServer
+}
+
+// HttpServer 替代 HttpRouter 的函数，返回一个 *Http[*HttpContext] 对象
+//   - 通过该函数注册的路由将在服务器关闭时正常等待请求结束
+//   - 如果需要自行包装 Context 对象，可以使用 NewHttpHandleWrapper 方法
+func (slf *Server) HttpServer() *Http[*HttpContext] {
+	if slf.ginServer == nil {
+		panic(ErrNetworkOnlySupportHttp)
+	}
+	return NewHttpHandleWrapper(slf, func(ctx *gin.Context) *HttpContext {
+		return NewHttpContext(ctx)
+	})
+}
+
+// GetMessageCount 获取当前服务器中消息的数量
+func (slf *Server) GetMessageCount() int64 {
+	return slf.messageCounter.Load()
 }
 
 // ShuntChannelFreed 释放分流通道
@@ -648,7 +668,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 				PushSystemMessage(slf, func() {
 					callback(err)
 				}, "AsyncCallback")
-			} else {
+			} else if err != nil {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
