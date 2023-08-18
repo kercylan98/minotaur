@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.29](https://github.com/kercylan98/minotaur/compare/v0.0.28...v0.0.29) (2023-08-17)
+
+
+### Features | 新特性
+
+* server 新增 NetworkNone 网络类型，该模式下不监听任何网络端口，仅开启消息队列，适用于纯粹的跨服服务器等情况 ([dcfb3da](https://github.com/kercylan98/minotaur/commit/dcfb3da534b15ee2d3792ea5fcff61e669be058d))
+* server.Server 新增 HttpServer 函数，用于替代 HttpRouter ([b87df07](https://github.com/kercylan98/minotaur/commit/b87df072fc0b3982ce8c144ad32ad1ff5b77a414))
+* server.Server 的 HTTP 请求支持慢消息检测 ([36a3333](https://github.com/kercylan98/minotaur/commit/36a333379e1d5f7906003089d994fa04575b882b))
+
+
+### Bug Fixes | 修复
+
+* server 包优化 Shutdown 逻辑，修复服务器关闭时不会等待消息执行完毕的问题 ([93c5f36](https://github.com/kercylan98/minotaur/commit/93c5f3695f8e43e84aa7b94d6bedb4d9f4bf0a9b))
+
 ## [0.0.28](https://github.com/kercylan98/minotaur/compare/v0.0.27...v0.0.28) (2023-08-16)
 
 
