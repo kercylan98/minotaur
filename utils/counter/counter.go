@@ -1,6 +1,7 @@
 package counter
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"sync"
 	"time"
@@ -30,7 +31,39 @@ type Counter[K comparable, V generic.Number] struct {
 	lock sync.RWMutex
 	sub  bool
 	dr   map[K]int64
+	drm  map[string]int64
 	c    map[K]any
+}
+
+// AddWithMark 添加计数，根据 mark 判断是否重复计数
+func (slf *Counter[K, V]) AddWithMark(mark, key K, value V, expired time.Duration) {
+	slf.lock.Lock()
+	if expired > 0 {
+		now := time.Now().Unix()
+		mk := fmt.Sprintf("%v_%v", mark, key)
+		expiredTime, exist := slf.drm[mk]
+		if exist {
+			if expiredTime > now {
+				slf.lock.Unlock()
+				return
+			}
+		}
+		slf.drm[mk] = now + int64(expired/time.Second)
+	}
+
+	v, exist := slf.c[key]
+	if !exist {
+		slf.c[key] = value
+		slf.lock.Unlock()
+		return
+	}
+	if v, ok := v.(V); !ok {
+		slf.lock.Unlock()
+		panic("counter value is sub counter")
+	} else {
+		slf.c[key] = v + value
+	}
+	slf.lock.Unlock()
 }
 
 // Add 添加计数
@@ -38,7 +71,7 @@ type Counter[K comparable, V generic.Number] struct {
 //   - 需要注意的是，当第一次设置了 expired，第二次未设置时，第二次的计数将生效
 func (slf *Counter[K, V]) Add(key K, value V, expired ...time.Duration) {
 	slf.lock.Lock()
-	if len(expired) > 0 {
+	if len(expired) > 0 && expired[0] > 0 {
 		now := time.Now().Unix()
 		expiredTime, exist := slf.dr[key]
 		if exist {
