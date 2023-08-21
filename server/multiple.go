@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -38,12 +39,12 @@ func (slf *MultipleServer) Run() {
 		wait.Add(1)
 		go func(address string, server *Server) {
 			var startFinish bool
-			server.startFinishEventHandles = append(server.startFinishEventHandles, func(srv *Server) {
+			server.startFinishEventHandles.Append(func(srv *Server) {
 				if !startFinish {
 					startFinish = true
 					wait.Done()
 				}
-			})
+			}, math.MaxInt)
 			server.multiple = slf
 			server.multipleRuntimeErrorChan = runtimeExceptionChannel
 			if err := server.Run(address); err != nil {

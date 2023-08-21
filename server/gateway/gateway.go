@@ -3,6 +3,7 @@ package gateway
 import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/super"
+	"math"
 )
 
 // NewGateway 基于 server.Server 创建网关服务器
@@ -25,8 +26,8 @@ type Gateway struct {
 
 // Run 运行网关
 func (slf *Gateway) Run(addr string) error {
-	slf.srv.RegConnectionOpenedEvent(slf.onConnectionOpened)
-	slf.srv.RegConnectionReceivePacketEvent(slf.onConnectionReceivePacket)
+	slf.srv.RegConnectionOpenedEvent(slf.onConnectionOpened, math.MinInt)
+	slf.srv.RegConnectionReceivePacketEvent(slf.onConnectionReceivePacket, math.MinInt)
 	return slf.srv.Run(addr)
 }
 

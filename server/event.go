@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
+	"github.com/kercylan98/minotaur/utils/slice"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -26,45 +27,66 @@ type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
 type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
 type ConnectionPacketPreprocessEventHandle func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
 
+func newEvent(srv *Server) *event {
+	return &event{
+		Server:                                 srv,
+		startBeforeEventHandles:                slice.NewPriority[StartBeforeEventHandle](),
+		startFinishEventHandles:                slice.NewPriority[StartFinishEventHandle](),
+		stopEventHandles:                       slice.NewPriority[StopEventHandle](),
+		connectionReceivePacketEventHandles:    slice.NewPriority[ConnectionReceivePacketEventHandle](),
+		connectionOpenedEventHandles:           slice.NewPriority[ConnectionOpenedEventHandle](),
+		connectionClosedEventHandles:           slice.NewPriority[ConnectionClosedEventHandle](),
+		receiveCrossPacketEventHandles:         slice.NewPriority[ReceiveCrossPacketEventHandle](),
+		messageErrorEventHandles:               slice.NewPriority[MessageErrorEventHandle](),
+		messageLowExecEventHandles:             slice.NewPriority[MessageLowExecEventHandle](),
+		connectionOpenedAfterEventHandles:      slice.NewPriority[ConnectionOpenedAfterEventHandle](),
+		connectionWritePacketBeforeHandles:     slice.NewPriority[ConnectionWritePacketBeforeEventHandle](),
+		shuntChannelCreatedEventHandles:        slice.NewPriority[ShuntChannelCreatedEventHandle](),
+		shuntChannelClosedEventHandles:         slice.NewPriority[ShuntChannelClosedEventHandle](),
+		connectionPacketPreprocessEventHandles: slice.NewPriority[ConnectionPacketPreprocessEventHandle](),
+	}
+}
+
 type event struct {
 	*Server
-	startBeforeEventHandles                []StartBeforeEventHandle
-	startFinishEventHandles                []StartFinishEventHandle
-	stopEventHandles                       []StopEventHandle
-	connectionReceivePacketEventHandles    []ConnectionReceivePacketEventHandle
-	connectionOpenedEventHandles           []ConnectionOpenedEventHandle
-	connectionClosedEventHandles           []ConnectionClosedEventHandle
-	receiveCrossPacketEventHandles         []ReceiveCrossPacketEventHandle
-	messageErrorEventHandles               []MessageErrorEventHandle
-	messageLowExecEventHandles             []MessageLowExecEventHandle
-	connectionOpenedAfterEventHandles      []ConnectionOpenedAfterEventHandle
-	connectionWritePacketBeforeHandles     []ConnectionWritePacketBeforeEventHandle
-	shuntChannelCreatedEventHandles        []ShuntChannelCreatedEventHandle
-	shuntChannelClosedEventHandles         []ShuntChannelClosedEventHandle
-	connectionPacketPreprocessEventHandles []ConnectionPacketPreprocessEventHandle
+	startBeforeEventHandles                *slice.Priority[StartBeforeEventHandle]
+	startFinishEventHandles                *slice.Priority[StartFinishEventHandle]
+	stopEventHandles                       *slice.Priority[StopEventHandle]
+	connectionReceivePacketEventHandles    *slice.Priority[ConnectionReceivePacketEventHandle]
+	connectionOpenedEventHandles           *slice.Priority[ConnectionOpenedEventHandle]
+	connectionClosedEventHandles           *slice.Priority[ConnectionClosedEventHandle]
+	receiveCrossPacketEventHandles         *slice.Priority[ReceiveCrossPacketEventHandle]
+	messageErrorEventHandles               *slice.Priority[MessageErrorEventHandle]
+	messageLowExecEventHandles             *slice.Priority[MessageLowExecEventHandle]
+	connectionOpenedAfterEventHandles      *slice.Priority[ConnectionOpenedAfterEventHandle]
+	connectionWritePacketBeforeHandles     *slice.Priority[ConnectionWritePacketBeforeEventHandle]
+	shuntChannelCreatedEventHandles        *slice.Priority[ShuntChannelCreatedEventHandle]
+	shuntChannelClosedEventHandles         *slice.Priority[ShuntChannelClosedEventHandle]
+	connectionPacketPreprocessEventHandles *slice.Priority[ConnectionPacketPreprocessEventHandle]
 
-	consoleCommandEventHandles        map[string][]ConsoleCommandEventHandle
+	consoleCommandEventHandles        map[string]*slice.Priority[ConsoleCommandEventHandle]
 	consoleCommandEventHandleInitOnce sync.Once
 }
 
 // RegStopEvent 服务器停止时将立即执行被注册的事件处理函数
-func (slf *event) RegStopEvent(handle StopEventHandle) {
-	slf.stopEventHandles = append(slf.stopEventHandles, handle)
+func (slf *event) RegStopEvent(handle StopEventHandle, priority ...int) {
+	slf.stopEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnStopEvent() {
-	for _, handle := range slf.stopEventHandles {
-		handle(slf.Server)
-	}
+	slf.stopEventHandles.RangeValue(func(index int, value StopEventHandle) bool {
+		value(slf.Server)
+		return true
+	})
 }
 
 // RegConsoleCommandEvent 控制台收到指令时将立即执行被注册的事件处理函数
 //   - 默认将注册 "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN" 指令作为关闭服务器的指令
 //   - 可通过注册默认指令进行默认行为的覆盖
-func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle) {
+func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle, priority ...int) {
 	slf.consoleCommandEventHandleInitOnce.Do(func() {
-		slf.consoleCommandEventHandles = map[string][]ConsoleCommandEventHandle{}
+		slf.consoleCommandEventHandles = map[string]*slice.Priority[ConsoleCommandEventHandle]{}
 		go func() {
 			for {
 				var input string
@@ -73,7 +95,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 			}
 		}()
 	})
-	slf.consoleCommandEventHandles[command] = append(slf.consoleCommandEventHandles[command], handle)
+	slf.consoleCommandEventHandles[command].Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
@@ -89,16 +111,17 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 			}
 			log.Warn("Server", log.String("Command", "unregistered"))
 		} else {
-			for _, handle := range handles {
-				handle(slf.Server)
-			}
+			handles.RangeValue(func(index int, value ConsoleCommandEventHandle) bool {
+				value(slf.Server)
+				return true
+			})
 		}
 	}, "ConsoleCommandEvent")
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
-func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle) {
-	slf.startBeforeEventHandles = append(slf.startBeforeEventHandles, handle)
+func (slf *event) RegStartBeforeEvent(handle StartBeforeEventHandle, priority ...int) {
+	slf.startBeforeEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
@@ -109,179 +132,191 @@ func (slf *event) OnStartBeforeEvent() {
 			debug.PrintStack()
 		}
 	}()
-	for _, handle := range slf.startBeforeEventHandles {
-		handle(slf.Server)
-	}
+	slf.startBeforeEventHandles.RangeValue(func(index int, value StartBeforeEventHandle) bool {
+		value(slf.Server)
+		return true
+	})
 }
 
 // RegStartFinishEvent 在服务器启动完成时将立刻执行被注册的事件处理函数
-func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle) {
-	slf.startFinishEventHandles = append(slf.startFinishEventHandles, handle)
+func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle, priority ...int) {
+	slf.startFinishEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnStartFinishEvent() {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.startFinishEventHandles {
-			handle(slf.Server)
-		}
+		slf.startFinishEventHandles.RangeValue(func(index int, value StartFinishEventHandle) bool {
+			value(slf.Server)
+			return true
+		})
 	}, "StartFinishEvent")
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle) {
+func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle, priority ...int) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionClosedEventHandles = append(slf.connectionClosedEventHandles, handle)
+	slf.connectionClosedEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.connectionClosedEventHandles {
-			handle(slf.Server, conn, err)
-		}
+		slf.connectionClosedEventHandles.RangeValue(func(index int, value ConnectionClosedEventHandle) bool {
+			value(slf.Server, conn, err)
+			return true
+		})
 		conn.Close()
 		slf.Server.online.Delete(conn.GetID())
 	}, "ConnectionClosedEvent")
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle) {
+func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle, priority ...int) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionOpenedEventHandles = append(slf.connectionOpenedEventHandles, handle)
+	slf.connectionOpenedEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
 	PushSystemMessage(slf.Server, func() {
 		slf.Server.online.Set(conn.GetID(), conn)
-		for _, handle := range slf.connectionOpenedEventHandles {
-			handle(slf.Server, conn)
-		}
+		slf.connectionOpenedEventHandles.RangeValue(func(index int, value ConnectionOpenedEventHandle) bool {
+			value(slf.Server, conn)
+			return true
+		})
 	}, "ConnectionOpenedEvent")
 }
 
 // RegConnectionReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacketEventHandle) {
+func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacketEventHandle, priority ...int) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionReceivePacketEventHandles = append(slf.connectionReceivePacketEventHandles, handle)
+	slf.connectionReceivePacketEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet Packet) {
-	for _, handle := range slf.connectionReceivePacketEventHandles {
-		handle(slf.Server, conn, packet)
-	}
+	slf.connectionReceivePacketEventHandles.RangeValue(func(index int, value ConnectionReceivePacketEventHandle) bool {
+		value(slf.Server, conn, packet)
+		return true
+	})
 }
 
 // RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
-func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle) {
-	slf.receiveCrossPacketEventHandles = append(slf.receiveCrossPacketEventHandles, handle)
+func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle, priority ...int) {
+	slf.receiveCrossPacketEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
-	for _, handle := range slf.receiveCrossPacketEventHandles {
-		handle(slf.Server, serverId, packet)
-	}
+	slf.receiveCrossPacketEventHandles.RangeValue(func(index int, value ReceiveCrossPacketEventHandle) bool {
+		value(slf.Server, serverId, packet)
+		return true
+	})
 }
 
 // RegMessageErrorEvent 在处理消息发生错误时将立即执行被注册的事件处理函数
-func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle) {
-	slf.messageErrorEventHandles = append(slf.messageErrorEventHandles, handle)
+func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle, priority ...int) {
+	slf.messageErrorEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnMessageErrorEvent(message *Message, err error) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.messageErrorEventHandles {
-			handle(slf.Server, message, err)
-		}
+		slf.messageErrorEventHandles.RangeValue(func(index int, value MessageErrorEventHandle) bool {
+			value(slf.Server, message, err)
+			return true
+		})
 	}, "MessageErrorEvent")
 }
 
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
-func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle) {
-	slf.messageLowExecEventHandles = append(slf.messageLowExecEventHandles, handle)
+func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle, priority ...int) {
+	slf.messageLowExecEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.messageLowExecEventHandles {
-			handle(slf.Server, message, cost)
-		}
+		slf.messageLowExecEventHandles.RangeValue(func(index int, value MessageLowExecEventHandle) bool {
+			value(slf.Server, message, cost)
+			return true
+		})
 	}, "MessageLowExecEvent")
 }
 
 // RegConnectionOpenedAfterEvent 在连接打开事件处理完成后将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionOpenedAfterEvent(handle ConnectionOpenedAfterEventHandle) {
+func (slf *event) RegConnectionOpenedAfterEvent(handle ConnectionOpenedAfterEventHandle, priority ...int) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionOpenedAfterEventHandles = append(slf.connectionOpenedAfterEventHandles, handle)
+	slf.connectionOpenedAfterEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionOpenedAfterEvent(conn *Conn) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.connectionOpenedAfterEventHandles {
-			handle(slf.Server, conn)
-		}
+		slf.connectionOpenedAfterEventHandles.RangeValue(func(index int, value ConnectionOpenedAfterEventHandle) bool {
+			value(slf.Server, conn)
+			return true
+		})
 	}, "ConnectionOpenedAfterEvent")
 }
 
 // RegConnectionWritePacketBeforeEvent 在发送数据包前将立刻执行被注册的事件处理函数
-func (slf *event) RegConnectionWritePacketBeforeEvent(handle ConnectionWritePacketBeforeEventHandle) {
+func (slf *event) RegConnectionWritePacketBeforeEvent(handle ConnectionWritePacketBeforeEventHandle, priority ...int) {
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionWritePacketBeforeHandles = append(slf.connectionWritePacketBeforeHandles, handle)
+	slf.connectionWritePacketBeforeHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet Packet) (newPacket Packet) {
-	if len(slf.connectionWritePacketBeforeHandles) == 0 {
+	if slf.connectionWritePacketBeforeHandles.Len() == 0 {
 		return packet
 	}
 	newPacket = packet
-	for _, handle := range slf.connectionWritePacketBeforeHandles {
-		newPacket = handle(slf.Server, conn, packet)
-	}
+	slf.connectionWritePacketBeforeHandles.RangeValue(func(index int, value ConnectionWritePacketBeforeEventHandle) bool {
+		newPacket = value(slf.Server, conn, newPacket)
+		return true
+	})
 	return newPacket
 }
 
 // RegShuntChannelCreatedEvent 在分流通道创建时将立刻执行被注册的事件处理函数
-func (slf *event) RegShuntChannelCreatedEvent(handle ShuntChannelCreatedEventHandle) {
-	slf.shuntChannelCreatedEventHandles = append(slf.shuntChannelCreatedEventHandles, handle)
+func (slf *event) RegShuntChannelCreatedEvent(handle ShuntChannelCreatedEventHandle, priority ...int) {
+	slf.shuntChannelCreatedEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnShuntChannelCreatedEvent(guid int64) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.shuntChannelCreatedEventHandles {
-			handle(slf.Server, guid)
-		}
+		slf.shuntChannelCreatedEventHandles.RangeValue(func(index int, value ShuntChannelCreatedEventHandle) bool {
+			value(slf.Server, guid)
+			return true
+		})
 	}, "ShuntChannelCreatedEvent")
 }
 
 // RegShuntChannelCloseEvent 在分流通道关闭时将立刻执行被注册的事件处理函数
-func (slf *event) RegShuntChannelCloseEvent(handle ShuntChannelClosedEventHandle) {
-	slf.shuntChannelClosedEventHandles = append(slf.shuntChannelClosedEventHandles, handle)
+func (slf *event) RegShuntChannelCloseEvent(handle ShuntChannelClosedEventHandle, priority ...int) {
+	slf.shuntChannelClosedEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnShuntChannelClosedEvent(guid int64) {
 	PushSystemMessage(slf.Server, func() {
-		for _, handle := range slf.shuntChannelClosedEventHandles {
-			handle(slf.Server, guid)
-		}
+		slf.shuntChannelClosedEventHandles.RangeValue(func(index int, value ShuntChannelClosedEventHandle) bool {
+			value(slf.Server, guid)
+			return true
+		})
 	}, "ShuntChannelCloseEvent")
 }
 
@@ -293,22 +328,23 @@ func (slf *event) OnShuntChannelClosedEvent(guid int64) {
 // 场景：
 //   - 数据包格式校验
 //   - 数据包分包等情况处理
-func (slf *event) RegConnectionPacketPreprocessEvent(handle ConnectionPacketPreprocessEventHandle) {
-	slf.connectionPacketPreprocessEventHandles = append(slf.connectionPacketPreprocessEventHandles, handle)
+func (slf *event) RegConnectionPacketPreprocessEvent(handle ConnectionPacketPreprocessEventHandle, priority ...int) {
+	slf.connectionPacketPreprocessEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
 func (slf *event) OnConnectionPacketPreprocessEvent(conn *Conn, packet []byte, usePacket func(newPacket []byte)) bool {
-	if len(slf.connectionPacketPreprocessEventHandles) == 0 {
+	if slf.connectionPacketPreprocessEventHandles.Len() == 0 {
 		return false
 	}
 	var abort = false
-	for _, handle := range slf.connectionPacketPreprocessEventHandles {
-		handle(slf.Server, conn, packet, func() { abort = true }, usePacket)
+	slf.connectionPacketPreprocessEventHandles.RangeValue(func(index int, value ConnectionPacketPreprocessEventHandle) bool {
+		value(slf.Server, conn, packet, func() { abort = true }, usePacket)
 		if abort {
-			return abort
+			return false
 		}
-	}
+		return true
+	})
 	return abort
 }
 
@@ -316,12 +352,12 @@ func (slf *event) check() {
 	switch slf.network {
 	case NetworkHttp, NetworkGRPC, NetworkNone:
 	default:
-		if len(slf.connectionReceivePacketEventHandles) == 0 {
+		if slf.connectionReceivePacketEventHandles.Len() == 0 {
 			log.Warn("Server", log.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
 		}
 	}
 
-	if len(slf.receiveCrossPacketEventHandles) > 0 && slf.cross == nil {
+	if slf.receiveCrossPacketEventHandles.Len() > 0 && slf.cross == nil {
 		log.Warn("Server", log.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
 	}
 

@@ -30,7 +30,6 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		event:        &event{},
 		runtime:      &runtime{messagePoolSize: DefaultMessageBufferSize, messageChannelSize: DefaultMessageChannelSize},
 		option:       &option{},
 		network:      network,
@@ -38,7 +37,7 @@ func New(network Network, options ...Option) *Server {
 		closeChannel: make(chan struct{}, 1),
 		systemSignal: make(chan os.Signal, 1),
 	}
-	server.event.Server = server
+	server.event = newEvent(server)
 
 	switch network {
 	case NetworkHttp:

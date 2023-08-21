@@ -90,6 +90,9 @@ func (slf *Priority[V]) SetPriority(index int, priority int) {
 
 // Action 直接操作切片，如果返回值不为 nil，则替换切片
 func (slf *Priority[V]) Action(action func(items []*PriorityItem[V]) []*PriorityItem[V]) {
+	if len(slf.items) == 0 {
+		return
+	}
 	if replace := action(slf.items); replace != nil {
 		slf.items = replace
 		slf.sort()
