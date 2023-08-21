@@ -2,6 +2,7 @@ package concurrent
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -27,7 +28,20 @@ type Pool[T any] struct {
 	bufferSize int
 	generator  func() T
 	releaser   func(data T)
-	warn       int
+	warn       int64
+}
+
+// EAC 动态调整缓冲区大小，适用于突发场景使用
+//   - 当 size <= 0 时，不进行调整
+//   - 当缓冲区大小不足时，会导致大量的新对象生成、销毁，增加 GC 压力。此时应考虑调整缓冲区大小
+//   - 当缓冲区大小过大时，会导致大量的对象占用内存，增加内存压力。此时应考虑调整缓冲区大小
+func (slf *Pool[T]) EAC(size int) {
+	if size <= 0 {
+		return
+	}
+	slf.mutex.Lock()
+	slf.bufferSize = size
+	slf.mutex.Unlock()
 }
 
 func (slf *Pool[T]) Get() T {
@@ -38,10 +52,10 @@ func (slf *Pool[T]) Get() T {
 		slf.mutex.Unlock()
 		return data
 	}
-	slf.mutex.Unlock()
 	slf.warn++
-	if slf.warn >= 100 {
-		log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"))
+	slf.mutex.Unlock()
+	if slf.warn >= 256 {
+		log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), zap.Stack("stack"))
 		slf.warn = 0
 	}
 	return slf.generator()
