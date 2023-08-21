@@ -124,10 +124,27 @@ func (slf *Counter[K, V]) Reset(key K) {
 	slf.lock.Unlock()
 }
 
+// ResetMark 重置特定 mark 的 key 的计数
+func (slf *Counter[K, V]) ResetMark(mark, key K) {
+	slf.lock.Lock()
+	mk := fmt.Sprintf("%v_%v", mark, key)
+	delete(slf.c, key)
+	delete(slf.drm, mk)
+	slf.lock.Unlock()
+}
+
 // ResetExpired 重置特定 key 的过期时间
 func (slf *Counter[K, V]) ResetExpired(key K) {
 	slf.lock.Lock()
 	delete(slf.dr, key)
+	slf.lock.Unlock()
+}
+
+// ResetExpiredMark 重置特定 mark 的 key 的过期时间
+func (slf *Counter[K, V]) ResetExpiredMark(mark, key K) {
+	slf.lock.Lock()
+	mk := fmt.Sprintf("%v_%v", mark, key)
+	delete(slf.drm, mk)
 	slf.lock.Unlock()
 }
 
@@ -136,6 +153,7 @@ func (slf *Counter[K, V]) ResetAll() {
 	slf.lock.Lock()
 	clear(slf.c)
 	clear(slf.dr)
+	clear(slf.drm)
 	slf.lock.Unlock()
 }
 
