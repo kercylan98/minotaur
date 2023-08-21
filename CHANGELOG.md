@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.30](https://github.com/kercylan98/minotaur/compare/v0.0.29...v0.0.30) (2023-08-21)
+
+
+### Features | 新特性
+
+* gateway 数据包支持像普通数据包一样处理，并且支持自定义端点健康评估函数 ([3512570](https://github.com/kercylan98/minotaur/commit/351257033ec6cbf13a6e172eb36800e7816b0dc5))
+* server 包支持设置注册事件的优先级 ([3c6ce9c](https://github.com/kercylan98/minotaur/commit/3c6ce9cfdf5a40c00edc9f132d3209d81802f816))
+* slice 包新增 GetValue 和 GetValueHandle 函数，用于获取特定索引的元素，如果索引超出范围将返回零值 ([2dd5dd5](https://github.com/kercylan98/minotaur/commit/2dd5dd5c6c96809dc8623863be6dba8adaabe25c))
+* slice 包新增优先级切片 ([93e63b1](https://github.com/kercylan98/minotaur/commit/93e63b1ace526018c767c24dd1c2fa75716e3c79))
+* 新增 counter 包，用于创建支持特定时间内去重的计数器 ([1005d74](https://github.com/kercylan98/minotaur/commit/1005d7458d2e32c45a170449b0fe5b276d6d39ea))
+
+
+### Bug Fixes | 修复
+
+* 修复 count.Shadow 函数死锁问题 ([34ca7f0](https://github.com/kercylan98/minotaur/commit/34ca7f07d25ad4fa3896e5ba7515c3c0ddeef5e8))
+* 修复 websocket 客户端死锁问题 ([7bf4e82](https://github.com/kercylan98/minotaur/commit/7bf4e82183c7f1b259e12cf329796812d5da296f))
+
 ## [0.0.29](https://github.com/kercylan98/minotaur/compare/v0.0.28...v0.0.29) (2023-08-17)
 
 
