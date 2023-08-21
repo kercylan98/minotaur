@@ -2,6 +2,7 @@ package log
 
 import (
 	"go.uber.org/zap"
+	"time"
 )
 
 type Field = zap.Field
@@ -142,10 +143,15 @@ var (
 	StackSkip = zap.StackSkip
 
 	// Duration 使用给定的键和值构造一个字段。编码器控制持续时间的序列化方式
-	Duration = zap.Duration
+	Duration = func(key string, val time.Duration) Field {
+		return String(key, val.String())
+	}
 
 	// DurationP 构造一个带有 time.Duration 的字段。返回的 Field 将在适当的时候安全且显式地表示“nil”
-	DurationP = zap.Durationp
+	DurationP = func(key string, val *time.Duration) Field {
+		var s = (*val).String()
+		return StringP(key, &s)
+	}
 
 	// Object 使用给定的键和 ObjectMarshaler 构造一个字段。它提供了一种灵活但仍然类型安全且高效的方法来将类似映射或结构的用户定义类型添加到日志记录上下文。该结构的 MarshalLogObject 方法被延迟调用
 	Object = zap.Object
