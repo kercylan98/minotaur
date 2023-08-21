@@ -545,7 +545,7 @@ func (slf *Server) pushMessage(message *Message) {
 	if slf.isShutdown.Load() {
 		return
 	}
-	if slf.shuntChannels != nil && (message.t == MessageTypePacket) {
+	if slf.shuntChannels != nil && message.t == MessageTypePacket {
 		conn := message.attrs[0].(*Conn)
 		channelGuid, allowToCreate := slf.shuntMatcher(conn)
 		channel, exist := slf.shuntChannels.GetExist(channelGuid)
@@ -681,15 +681,22 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			}()
 			err := handle()
 			if cb && callback != nil {
-				PushSystemMessage(slf, func() {
-					callback(err)
-				}, "AsyncCallback")
+				acm := slf.messagePool.Get()
+				acm.t = MessageTypeAsyncCallback
+				if len(attrs) > 2 {
+					acm.attrs = append([]any{func() { callback(err) }}, attrs[2:]...)
+				} else {
+					acm.attrs = []any{func() { callback(err) }}
+				}
+				slf.pushMessage(acm)
 			} else if err != nil {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
 			panic(err)
 		}
+	case MessageTypeAsyncCallback:
+		attrs[0].(func())()
 	case MessageTypeSystem:
 		attrs[0].(func())()
 	default:
