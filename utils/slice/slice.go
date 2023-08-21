@@ -5,6 +5,21 @@ import (
 	"reflect"
 )
 
+// GetValue 获取特定索引的元素，如果索引超出范围则返回零值
+func GetValue[V any](slice []V, i int) (v V) {
+	if i >= 0 && i < len(slice) {
+		return slice[i]
+	}
+	return
+}
+
+// GetValueHandle 获取特定索引的元素，并通过 handle 进入传入，如果索引超出范围则不会进入 handle
+func GetValueHandle[V any](slice []V, i int, handle func(v V)) {
+	if i >= 0 && i < len(slice) {
+		handle(slice[i])
+	}
+}
+
 // Del 删除特定索引的元素
 func Del[V any](slice *[]V, index int) {
 	s := *slice
