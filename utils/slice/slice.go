@@ -333,3 +333,15 @@ func SubWithCheck[T any](a, b []T, checkHandle func(a, b T) bool) []T {
 	}
 	return result
 }
+
+// Filter 过滤切片中的元素
+//   - filterHandle 返回 true 表示需要保留
+func Filter[T any](a []T, filterHandle func(a T) bool) []T {
+	var result []T
+	for _, a := range a {
+		if filterHandle(a) {
+			result = append(result, a)
+		}
+	}
+	return result
+}
