@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.0.31](https://github.com/kercylan98/minotaur/compare/v0.0.30...v0.0.31) (2023-08-22)
+
+
+### Other | 其他更改
+
+* server 异步消息回调将不再使用 MessageTypeSystem，更改为 MessageTypeAsyncCallback ([811e1bd](https://github.com/kercylan98/minotaur/commit/811e1bd29ec4c4859a439c7bdc9655cd8abea635))
+* 调整 log.Duration 和 log.DurationP 函数为 String 调用 ([a1c15a2](https://github.com/kercylan98/minotaur/commit/a1c15a2c26d22babe27d9b64fae7bf52bfdddbd9))
+
+
+### Reverts | 回退
+
+* 设计原因移除 report 包，采用 utils/counter ([7cbe5c4](https://github.com/kercylan98/minotaur/commit/7cbe5c4805585ab9d06ad0e6ae3d553e57b77f06))
+
+
+### Features | 新特性
+
+* concurrent.Pool 新增 EAC 函数，用于动态调整缓冲区大小。优化超出缓冲区大小警告日志，增加堆栈信息，用于定位高频点 ([64ecd45](https://github.com/kercylan98/minotaur/commit/64ecd459a1b29a4dceadf9b09fad265e1043b5cf))
+* hash 包增加 Clear 函数，用于清空 map ([7f316d4](https://github.com/kercylan98/minotaur/commit/7f316d4a7a918d7fdf6bcb28e9a3fec2e3772efe))
+* server/client 新增 Unix Domain Socket 客户端 ([3de1f6b](https://github.com/kercylan98/minotaur/commit/3de1f6b9d3ece2bc33c162886da1ec562f8f5512))
+* slice 包新增 Filter 函数用于过滤切片 ([ab19bd6](https://github.com/kercylan98/minotaur/commit/ab19bd6f6ac95c9ee0ee1ea656cba50c8b56a830))
+* super 包新增 StringToFloat64 函数 ([89c32b4](https://github.com/kercylan98/minotaur/commit/89c32b4ce3f187c78e5673a4bdca885e0ca3563d))
+* super 包新增大量 string 和 number 基本类型转换的辅助函数 ([d37fbb7](https://github.com/kercylan98/minotaur/commit/d37fbb7aa2dfd3839b3909c9be5ea3bb76e7da65))
+
+
+### Bug Fixes | 修复
+
+* counter 包修复 mark key 无法被清理、重置的问题 ([a31369a](https://github.com/kercylan98/minotaur/commit/a31369abbe4f47f7630e2f11071edba9ec9e6376))
+* 优化 go1.21 以下项目的兼容性 ([ab90fa8](https://github.com/kercylan98/minotaur/commit/ab90fa8928151554324f07f27126ddb104682bb2))
+* 优化 uds 客户端无法正常接收数据包的问题 ([6792e22](https://github.com/kercylan98/minotaur/commit/6792e227c010a2e543e6dd402da2e733a3ab7ffe))
+* 修复非 gateway 数据包导致数组越界的问题 ([5096e6f](https://github.com/kercylan98/minotaur/commit/5096e6f88458b108887815e05693d3ff6292d305))
+
+
+### Code Refactoring | 重构
+
+* 调整事件函数名称 ([dc76196](https://github.com/kercylan98/minotaur/commit/dc761964b9923a10b519b1fb04cc2330689629ed))
+
 ## [0.0.30](https://github.com/kercylan98/minotaur/compare/v0.0.29...v0.0.30) (2023-08-21)
 
 
