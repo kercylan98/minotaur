@@ -630,17 +630,22 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		var conn = attrs[0].(*Conn)
 		var packet = attrs[1].([]byte)
 		var wst = int(packet[len(packet)-1])
-		var ct = packet[len(packet)-2]
-		if ct == 0xff {
-			var gp GP
-			if err := super.UnmarshalJSON(packet[:len(packet)-2], &gp); err != nil {
-				panic(err)
+		if len(packet) >= 2 {
+			var ct = packet[len(packet)-2]
+			if ct == 0xff {
+				var gp GP
+				if err := super.UnmarshalJSON(packet[:len(packet)-2], &gp); err != nil {
+					panic(err)
+				}
+				packet = gp.D
+				conn = newGatewayConn(conn, gp.C)
+			} else {
+				packet = packet[:len(packet)-1]
 			}
-			packet = gp.D
-			conn = newGatewayConn(conn, gp.C)
 		} else {
 			packet = packet[:len(packet)-1]
 		}
+
 		if !slf.OnConnectionPacketPreprocessEvent(conn, packet, func(newPacket []byte) { packet = newPacket }) {
 			slf.OnConnectionReceivePacketEvent(conn, Packet{Data: packet, WebsocketType: wst})
 		}
