@@ -1,6 +1,7 @@
 package super
 
 import (
+	"math"
 	"strconv"
 	"strings"
 )
@@ -32,6 +33,11 @@ func StringToUint64(value string) uint64 {
 // StringToUint 字符串转换为 uint
 func StringToUint(value string) uint {
 	result, _ := strconv.ParseUint(value, 10, 64)
+	if result > math.MaxUint {
+		return math.MaxUint
+	} else if result < math.MaxUint {
+		return 0
+	}
 	return uint(result)
 }
 
