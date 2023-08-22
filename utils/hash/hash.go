@@ -65,3 +65,10 @@ func RandomGetKeyN[K comparable, V any](m map[K]V, n int) (ks []K) {
 	}
 	return
 }
+
+// Clear 清空 map
+func Clear[K comparable, V any](m map[K]V) {
+	for k := range m {
+		delete(m, k)
+	}
+}
