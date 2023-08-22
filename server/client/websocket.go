@@ -26,8 +26,8 @@ type Websocket struct {
 	data map[string]any
 
 	mutex      sync.Mutex
-	packetPool *concurrent.Pool[*websocketPacket]
-	packets    []*websocketPacket
+	packetPool *concurrent.Pool[*Packet]
+	packets    []*Packet
 
 	accumulate []server.Packet
 }
@@ -47,16 +47,16 @@ func (slf *Websocket) Run() error {
 		defer func() {
 			if err := recover(); err != nil {
 				slf.Close()
-				slf.OnConnectionClosedEvent(slf, err)
+				slf.OnWebsocketConnectionClosedEvent(slf, err)
 			}
 		}()
-		slf.OnConnectionOpenedEvent(slf)
+		slf.OnWebsocketConnectionOpenedEvent(slf)
 		for slf.packetPool != nil {
 			messageType, packet, readErr := ws.ReadMessage()
 			if readErr != nil {
 				panic(readErr)
 			}
-			slf.OnConnectionReceivePacketEvent(slf, server.NewWSPacket(messageType, packet))
+			slf.OnWebsocketConnectionReceivePacketEvent(slf, server.NewWSPacket(messageType, packet))
 		}
 	}()
 	return nil
@@ -103,10 +103,10 @@ func (slf *Websocket) Write(packet server.Packet) {
 
 // writeLoop 写循环
 func (slf *Websocket) writeLoop(wait *sync.WaitGroup) {
-	slf.packetPool = concurrent.NewPool[*websocketPacket](10*1024,
-		func() *websocketPacket {
-			return &websocketPacket{}
-		}, func(data *websocketPacket) {
+	slf.packetPool = concurrent.NewPool[*Packet](10*1024,
+		func() *Packet {
+			return &Packet{}
+		}, func(data *Packet) {
 			data.packet = nil
 			data.websocketMessageType = 0
 			data.callback = nil

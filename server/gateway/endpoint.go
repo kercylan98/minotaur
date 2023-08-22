@@ -22,8 +22,8 @@ func NewEndpoint(name, address string, options ...EndpointOption) *Endpoint {
 			return 1 / (1 + 1.5*time.Duration(costUnixNano).Seconds())
 		}
 	}
-	endpoint.client.RegConnectionClosedEvent(endpoint.onConnectionClosed)
-	endpoint.client.RegConnectionReceivePacketEvent(endpoint.onConnectionReceivePacket)
+	endpoint.client.RegWebsocketConnectionClosedEvent(endpoint.onConnectionClosed)
+	endpoint.client.RegWebsocketConnectionReceivePacketEvent(endpoint.onConnectionReceivePacket)
 	return endpoint
 }
 
