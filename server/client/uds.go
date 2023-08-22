@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bufio"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"net"
@@ -51,13 +50,13 @@ func (slf *UnixDomainSocket) Run() error {
 			}
 		}()
 		slf.OnUDSConnectionOpenedEvent(slf)
+		packet := make([]byte, 1024)
 		for slf.packetPool != nil {
-			reader := bufio.NewReader(slf.conn)
-			packet, readErr := reader.ReadBytes('\n')
+			n, readErr := slf.conn.Read(packet)
 			if readErr != nil {
 				panic(readErr)
 			}
-			slf.OnUDSConnectionReceivePacketEvent(slf, server.NewPacket(packet))
+			slf.OnUDSConnectionReceivePacketEvent(slf, server.NewPacket(packet[:n]))
 		}
 	}()
 	return nil
