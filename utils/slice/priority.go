@@ -36,7 +36,7 @@ func (slf *Priority[V]) Cap() int {
 
 // Clear 清空切片
 func (slf *Priority[V]) Clear() {
-	clear(slf.items)
+	slf.items = slf.items[:0]
 }
 
 // Append 添加元素

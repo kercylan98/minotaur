@@ -1,5 +1,7 @@
 package sole
 
+import "github.com/kercylan98/minotaur/utils/hash"
+
 // NewOnce 创建一个用于数据取值去重的结构实例
 func NewOnce[V any]() *Once[V] {
 	once := &Once[V]{
@@ -31,5 +33,5 @@ func (slf *Once[V]) Reset(key ...any) {
 		}
 		return
 	}
-	clear(slf.r)
+	hash.Clear(slf.r)
 }

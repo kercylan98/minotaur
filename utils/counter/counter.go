@@ -3,6 +3,7 @@ package counter
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"sync"
 	"time"
 )
@@ -151,9 +152,9 @@ func (slf *Counter[K, V]) ResetExpiredMark(mark, key K) {
 // ResetAll 重置所有计数
 func (slf *Counter[K, V]) ResetAll() {
 	slf.lock.Lock()
-	clear(slf.c)
-	clear(slf.dr)
-	clear(slf.drm)
+	hash.Clear(slf.c)
+	hash.Clear(slf.dr)
+	hash.Clear(slf.drm)
 	slf.lock.Unlock()
 }
 
