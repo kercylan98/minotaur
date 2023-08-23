@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.1.0](https://github.com/kercylan98/minotaur/compare/v0.0.31...v0.1.0) (2023-08-23)
+
+
+### Other | 其他更改
+
+* 版本调整至 0.1.0 ([74899af](https://github.com/kercylan98/minotaur/commit/74899af44443c90201d03400f24557314bbbf612))
+* 移除 qodana workflow ([7fa369f](https://github.com/kercylan98/minotaur/commit/7fa369fd8b3b1694167cccc4f7d810510cfa7e1c))
+
+
+### Features | 新特性
+
+* survey.R 增加更多的辅助函数 ([4785c60](https://github.com/kercylan98/minotaur/commit/4785c60c5e93804c76988fffba6f21b06414a738))
+* 新增 survey 包，包含了运营日志的基本功能实现 ([e962009](https://github.com/kercylan98/minotaur/commit/e962009efffcdbda4abb433761349704f0296d17))
+
+
+### Bug Fixes | 修复
+
+* [#40](https://github.com/kercylan98/minotaur/issues/40) uint 类型溢出问题处理 ([ed45d1a](https://github.com/kercylan98/minotaur/commit/ed45d1a643647d60c4d430a4c5710719d8f7a17b))
+
+
+### Code Refactoring | 重构
+
+* 调整 server 数据包相关处理函数的接收参数不再为 server.Packet，同时移除 server.Packet ([4850dd4](https://github.com/kercylan98/minotaur/commit/4850dd4aa3bccacb92bf4d866db236c7930635e6))
+
+
+### Performance Improvements | 性能优化
+
+* survey 包整体优化 ([50f6b1b](https://github.com/kercylan98/minotaur/commit/50f6b1b085887bfc985b33d384cd3a7c3248ef09))
+
+
+### Build System | 影响构建的修改
+
+* 更新依赖版本 ([c9ff457](https://github.com/kercylan98/minotaur/commit/c9ff4570fe786ca17c82bf32d75846d74c51911c))
+
 ## [0.0.31](https://github.com/kercylan98/minotaur/compare/v0.0.30...v0.0.31) (2023-08-22)
 
 
