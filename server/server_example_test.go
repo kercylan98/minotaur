@@ -11,7 +11,7 @@ func ExampleNew() {
 		server.WithPProf("/debug/pprof"),
 	)
 
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet server.Packet) {
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})
 

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/utils/concurrent"
-	"github.com/kercylan98/minotaur/utils/super"
+	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -15,11 +17,14 @@ import (
 // newKcpConn 创建一个处理KCP的连接
 func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	c := &Conn{
-		server:     server,
-		remoteAddr: session.RemoteAddr(),
-		ip:         session.RemoteAddr().String(),
-		kcp:        session,
-		data:       map[any]any{},
+		ctx: server.ctx,
+		connection: &connection{
+			server:     server,
+			remoteAddr: session.RemoteAddr(),
+			ip:         session.RemoteAddr().String(),
+			kcp:        session,
+			data:       map[any]any{},
+		},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
@@ -34,11 +39,14 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 // newKcpConn 创建一个处理GNet的连接
 func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	c := &Conn{
-		server:     server,
-		remoteAddr: conn.RemoteAddr(),
-		ip:         conn.RemoteAddr().String(),
-		gn:         conn,
-		data:       map[any]any{},
+		ctx: server.ctx,
+		connection: &connection{
+			server:     server,
+			remoteAddr: conn.RemoteAddr(),
+			ip:         conn.RemoteAddr().String(),
+			gn:         conn,
+			data:       map[any]any{},
+		},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
@@ -53,11 +61,14 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 // newKcpConn 创建一个处理WebSocket的连接
 func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	c := &Conn{
-		server:     server,
-		remoteAddr: ws.RemoteAddr(),
-		ip:         ip,
-		ws:         ws,
-		data:       map[any]any{},
+		ctx: server.ctx,
+		connection: &connection{
+			server:     server,
+			remoteAddr: ws.RemoteAddr(),
+			ip:         ip,
+			ws:         ws,
+			data:       map[any]any{},
+		},
 	}
 	var wait = new(sync.WaitGroup)
 	wait.Add(1)
@@ -69,18 +80,13 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 // newGatewayConn 创建一个处理网关消息的连接
 func newGatewayConn(conn *Conn, connId string) *Conn {
 	c := &Conn{
-		server: conn.server,
-		data:   map[any]any{},
+		//ctx: server.ctx,
+		connection: &connection{
+			server: conn.server,
+			data:   map[any]any{},
+		},
 	}
-	c.gw = func(packet Packet) {
-		var gp = GP{
-			C:  connId,
-			WT: packet.WebsocketType,
-			D:  packet.Data,
-			T:  time.Now().UnixNano(),
-		}
-		pd := super.MarshalJSON(&gp)
-		packet.Data = append(pd, 0xff)
+	c.gw = func(packet []byte) {
 		conn.Write(packet)
 	}
 	return c
@@ -89,10 +95,13 @@ func newGatewayConn(conn *Conn, connId string) *Conn {
 // NewEmptyConn 创建一个适用于测试的空连接
 func NewEmptyConn(server *Server) *Conn {
 	c := &Conn{
-		server:     server,
-		remoteAddr: &net.TCPAddr{},
-		ip:         "0.0.0.0:0",
-		data:       map[any]any{},
+		ctx: server.ctx,
+		connection: &connection{
+			server:     server,
+			remoteAddr: &net.TCPAddr{},
+			ip:         "0.0.0.0:0",
+			data:       map[any]any{},
+		},
 	}
 	var wait = new(sync.WaitGroup)
 	wait.Add(1)
@@ -101,15 +110,21 @@ func NewEmptyConn(server *Server) *Conn {
 	return c
 }
 
-// Conn 服务器连接
+// Conn 服务器连接单次会话的包装
 type Conn struct {
+	*connection
+	ctx context.Context
+}
+
+// connection 长久保持的连接
+type connection struct {
 	server     *Server
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
 	gn         gnet.Conn
 	kcp        *kcp.UDPSession
-	gw         func(packet Packet)
+	gw         func(packet []byte)
 	data       map[any]any
 	mutex      sync.Mutex
 	packetPool *concurrent.Pool[*connPacket]
@@ -174,7 +189,7 @@ func (slf *Conn) Close() {
 	slf.packets = nil
 }
 
-// SetData 设置连接数据
+// SetData 设置连接数据，该数据将在连接关闭前始终存在
 func (slf *Conn) SetData(key, value any) *Conn {
 	slf.data[key] = value
 	return slf
@@ -183,6 +198,17 @@ func (slf *Conn) SetData(key, value any) *Conn {
 // GetData 获取连接数据
 func (slf *Conn) GetData(key any) any {
 	return slf.data[key]
+}
+
+// SetMessageData 设置消息数据，该数据将在消息处理完成后释放
+func (slf *Conn) SetMessageData(key, value any) *Conn {
+	slf.ctx = context.WithValue(slf.ctx, key, value)
+	return slf
+}
+
+// GetMessageData 获取消息数据
+func (slf *Conn) GetMessageData(key any) any {
+	return slf.ctx.Value(key)
 }
 
 // ReleaseData 释放数据
@@ -198,28 +224,21 @@ func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
 }
 
-// Write 向连接中写入数据
-//   - messageType: websocket模式中指定消息类型
-func (slf *Conn) Write(packet Packet) {
-	if slf.gw != nil {
-		slf.gw(packet)
-		return
-	}
-	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
-	if slf.packetPool == nil {
-		return
-	}
-	cp := slf.packetPool.Get()
-	cp.websocketMessageType = packet.WebsocketType
-	cp.packet = packet.Data
-	slf.mutex.Lock()
-	slf.packets = append(slf.packets, cp)
-	slf.mutex.Unlock()
+// GetWST 获取websocket消息类型
+func (slf *Conn) GetWST() int {
+	wst, _ := slf.ctx.Value(contextKeyWST).(int)
+	return wst
 }
 
-// WriteWithCallback 与 Write 相同，但是会在写入完成后调用 callback
-//   - 当 callback 为 nil 时，与 Write 相同
-func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error)) {
+// SetWST 设置websocket消息类型
+func (slf *Conn) SetWST(wst int) *Conn {
+	slf.ctx = context.WithValue(slf.ctx, contextKeyWST, wst)
+	return slf
+}
+
+// Write 向连接中写入数据
+//   - messageType: websocket模式中指定消息类型
+func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 	if slf.gw != nil {
 		slf.gw(packet)
 		return
@@ -229,9 +248,11 @@ func (slf *Conn) WriteWithCallback(packet Packet, callback func(err error)) {
 		return
 	}
 	cp := slf.packetPool.Get()
-	cp.websocketMessageType = packet.WebsocketType
-	cp.packet = packet.Data
-	cp.callback = callback
+	cp.wst = slf.GetWST()
+	cp.packet = packet
+	if len(callback) > 0 {
+		cp.callback = callback[0]
+	}
 	slf.mutex.Lock()
 	slf.packets = append(slf.packets, cp)
 	slf.mutex.Unlock()
@@ -243,14 +264,16 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {
+			data.wst = 0
 			data.packet = nil
-			data.websocketMessageType = 0
 			data.callback = nil
 		},
 	)
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close()
+			log.Error("WriteLoop", log.Any("Error", err))
+			debug.PrintStack()
 		}
 	}()
 	wait.Done()
@@ -271,7 +294,7 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 			data := packets[i]
 			var err error
 			if slf.IsWebsocket() {
-				err = slf.ws.WriteMessage(data.websocketMessageType, data.packet)
+				err = slf.ws.WriteMessage(data.wst, data.packet)
 			} else {
 				if slf.gn != nil {
 					switch slf.server.network {

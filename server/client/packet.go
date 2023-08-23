@@ -1,7 +1,7 @@
 package client
 
 type Packet struct {
-	websocketMessageType int             // websocket 消息类型
-	packet               []byte          // 数据包
-	callback             func(err error) // 回调函数
+	wst      int             // websocket 的数据类型
+	data     []byte          // 数据包
+	callback func(err error) // 回调函数
 }

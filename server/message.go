@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -104,10 +105,10 @@ func (slf MessageType) String() string {
 }
 
 // PushPacketMessage 向特定服务器中推送 MessageTypePacket 消息
-func PushPacketMessage(srv *Server, conn *Conn, packet []byte, mark ...any) {
+func PushPacketMessage(srv *Server, conn *Conn, wst int, packet []byte, mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypePacket
-	msg.attrs = append([]any{conn, packet}, mark...)
+	msg.attrs = append([]any{&Conn{ctx: context.WithValue(conn.ctx, contextKeyWST, wst), connection: conn.connection}, packet}, mark...)
 	srv.pushMessage(msg)
 }
 

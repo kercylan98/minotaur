@@ -26,3 +26,7 @@ const (
 	DefaultAsyncPoolSize         = 256
 	DefaultWebsocketReadDeadline = 30 * time.Second
 )
+
+const (
+	contextKeyWST = "_wst" // WebSocket 消息类型
+)

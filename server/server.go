@@ -36,6 +36,7 @@ func New(network Network, options ...Option) *Server {
 		online:       concurrent.NewBalanceMap[string, *Conn](),
 		closeChannel: make(chan struct{}, 1),
 		systemSignal: make(chan os.Signal, 1),
+		ctx:          context.Background(),
 	}
 	server.event = newEvent(server)
 
@@ -96,6 +97,7 @@ type Server struct {
 	channelGenerator         func(guid int64) chan *Message                    // 消息管道生成器
 	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool) // 分流管道匹配器
 	messageCounter           atomic.Int64                                      // 消息计数器
+	ctx                      context.Context                                   // 上下文
 }
 
 // Run 使用特定地址运行服务器
@@ -212,7 +214,7 @@ func (slf *Server) Run(addr string) error {
 						if err != nil {
 							panic(err)
 						}
-						PushPacketMessage(slf, conn, buf[:n])
+						PushPacketMessage(slf, conn, 0, buf[:n])
 					}
 				}(conn)
 			}
@@ -303,7 +305,7 @@ func (slf *Server) Run(addr string) error {
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
 					}
-					PushPacketMessage(slf, conn, append(packet, byte(messageType)))
+					PushPacketMessage(slf, conn, messageType, packet)
 				}
 			})
 			go func() {
@@ -629,25 +631,8 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	case MessageTypePacket:
 		var conn = attrs[0].(*Conn)
 		var packet = attrs[1].([]byte)
-		var wst = int(packet[len(packet)-1])
-		if len(packet) >= 2 {
-			var ct = packet[len(packet)-2]
-			if ct == 0xff {
-				var gp GP
-				if err := super.UnmarshalJSON(packet[:len(packet)-2], &gp); err != nil {
-					panic(err)
-				}
-				packet = gp.D
-				conn = newGatewayConn(conn, gp.C)
-			} else {
-				packet = packet[:len(packet)-1]
-			}
-		} else {
-			packet = packet[:len(packet)-1]
-		}
-
 		if !slf.OnConnectionPacketPreprocessEvent(conn, packet, func(newPacket []byte) { packet = newPacket }) {
-			slf.OnConnectionReceivePacketEvent(conn, Packet{Data: packet, WebsocketType: wst})
+			slf.OnConnectionReceivePacketEvent(conn, packet)
 		}
 	case MessageTypeError:
 		err, action := attrs[0].(error), attrs[1].(MessageErrorAction)

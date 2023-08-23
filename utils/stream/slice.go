@@ -51,7 +51,7 @@ func (slf Slice[V]) RandomKeep(n int) Slice[V] {
 	if n >= length {
 		return slf
 	}
-	var hit = make([]int, length, length)
+	var hit = make([]int, length)
 	for i := 0; i < n; i++ {
 		hit[i] = 1
 	}
@@ -71,7 +71,7 @@ func (slf Slice[V]) RandomDelete(n int) Slice[V] {
 	if n >= length {
 		return slf[:0]
 	}
-	var hit = make([]int, length, length)
+	var hit = make([]int, length)
 	for i := 0; i < n; i++ {
 		hit[i] = 1
 	}

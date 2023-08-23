@@ -2,8 +2,6 @@ package lockstep
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/component"
-	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
@@ -18,13 +16,13 @@ func NewLockstep[ClientID comparable, Command any](options ...Option[ClientID, C
 		frames:    concurrent.NewBalanceMap[int, []Command](),
 		ticker:    timer.GetTicker(10),
 		frameRate: 15,
-		serialization: func(frame int, commands []Command) server.Packet {
+		serialization: func(frame int, commands []Command) []byte {
 			frameStruct := struct {
 				Frame    int       `json:"frame"`
 				Commands []Command `json:"commands"`
 			}{frame, commands}
 			data, _ := json.Marshal(frameStruct)
-			return server.NewPacket(data)
+			return data
 		},
 		clientCurrentFrame: concurrent.NewBalanceMap[ClientID, int](),
 	}
@@ -49,11 +47,11 @@ type Lockstep[ClientID comparable, Command any] struct {
 	clientCurrentFrame *concurrent.BalanceMap[ClientID, int]              // 客户端当前帧数
 	running            atomic.Bool
 
-	frameRate     int                                               // 帧率（每秒N帧）
-	frameLimit    int                                               // 帧上限
-	serialization func(frame int, commands []Command) server.Packet // 序列化函数
+	frameRate     int                                        // 帧率（每秒N帧）
+	frameLimit    int                                        // 帧上限
+	serialization func(frame int, commands []Command) []byte // 序列化函数
 
-	lockstepStoppedEventHandles []component.LockstepStoppedEventHandle[ClientID, Command]
+	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
 
 // JoinClient 加入客户端到广播队列中
@@ -156,7 +154,7 @@ func (slf *Lockstep[ClientID, Command]) GetFrames() [][]Command {
 }
 
 // RegLockstepStoppedEvent 当广播停止时将触发被注册的事件处理函数
-func (slf *Lockstep[ClientID, Command]) RegLockstepStoppedEvent(handle component.LockstepStoppedEventHandle[ClientID, Command]) {
+func (slf *Lockstep[ClientID, Command]) RegLockstepStoppedEvent(handle StoppedEventHandle[ClientID, Command]) {
 	slf.lockstepStoppedEventHandles = append(slf.lockstepStoppedEventHandles, handle)
 }
 

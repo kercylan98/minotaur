@@ -20,7 +20,7 @@ type StackGo struct {
 // Wait 等待收集消息堆栈
 //   - 在调用 Wait 函数后，当前协程将会被挂起，直到调用 Stack 或 GiveUp 函数
 func (slf *StackGo) Wait() {
-	slf.stack = make(chan *struct{}, 0)
+	slf.stack = make(chan *struct{})
 	if s := <-slf.stack; s != nil {
 		slf.collect <- debug.Stack()
 	}

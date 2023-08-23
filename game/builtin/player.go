@@ -34,7 +34,7 @@ func (slf *Player[ID]) UseConn(conn *server.Conn) {
 }
 
 // Send 向该玩家发送数据
-func (slf *Player[ID]) Send(packet server.Packet) {
+func (slf *Player[ID]) Send(packet []byte) {
 	slf.conn.Write(packet)
 }
 

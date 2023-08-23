@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"github.com/kercylan98/minotaur/server"
+	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/random"
 )
@@ -10,7 +10,7 @@ import (
 func NewEndpointManager() *EndpointManager {
 	em := &EndpointManager{
 		endpoints: concurrent.NewBalanceMap[string, []*Endpoint](),
-		memory:    concurrent.NewBalanceMap[string, *Endpoint](),
+		memory:    haxmap.New[string, *Endpoint](),
 		selector: func(endpoints []*Endpoint) *Endpoint {
 			return endpoints[random.Int(0, len(endpoints)-1)]
 		},
@@ -21,13 +21,15 @@ func NewEndpointManager() *EndpointManager {
 // EndpointManager 网关端点管理器
 type EndpointManager struct {
 	endpoints *concurrent.BalanceMap[string, []*Endpoint]
-	memory    *concurrent.BalanceMap[string, *Endpoint]
+	memory    *haxmap.Map[string, *Endpoint]
 	selector  func([]*Endpoint) *Endpoint
 }
 
 // GetEndpoint 获取端点
-func (slf *EndpointManager) GetEndpoint(name string, conn *server.Conn) (*Endpoint, error) {
-	endpoint, exist := slf.memory.GetExist(conn.GetID())
+//   - name: 端点名称
+//   - id: 使用端点的连接标识
+func (slf *EndpointManager) GetEndpoint(name, id string) (*Endpoint, error) {
+	endpoint, exist := slf.memory.Get(id)
 	if exist {
 		return endpoint, nil
 	}
@@ -53,7 +55,7 @@ func (slf *EndpointManager) GetEndpoint(name string, conn *server.Conn) (*Endpoi
 	if endpoint == nil {
 		return nil, ErrEndpointNotExists
 	}
-	slf.memory.Set(conn.GetID(), endpoint)
+	slf.memory.Set(id, endpoint)
 	return endpoint, nil
 }
 

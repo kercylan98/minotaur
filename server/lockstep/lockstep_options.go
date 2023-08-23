@@ -1,7 +1,5 @@
 package lockstep
 
-import "github.com/kercylan98/minotaur/server"
-
 type Option[ClientID comparable, Command any] func(lockstep *Lockstep[ClientID, Command])
 
 // WithFrameLimit 通过特定逻辑帧上限创建锁步（帧）同步组件
@@ -31,7 +29,7 @@ func WithFrameRate[ClientID comparable, Command any](frameRate int) Option[Clien
 //     Frame int `json:"frame"`
 //     Commands []Command `json:"commands"`
 //     }
-func WithSerialization[ClientID comparable, Command any](handle func(frame int, commands []Command) server.Packet) Option[ClientID, Command] {
+func WithSerialization[ClientID comparable, Command any](handle func(frame int, commands []Command) []byte) Option[ClientID, Command] {
 	return func(lockstep *Lockstep[ClientID, Command]) {
 		lockstep.serialization = handle
 	}

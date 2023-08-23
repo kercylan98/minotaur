@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"github.com/kercylan98/minotaur/server"
-	"github.com/kercylan98/minotaur/utils/super"
 	"math"
 )
 
@@ -36,28 +35,30 @@ func (slf *Gateway) Shutdown() {
 	slf.srv.Shutdown()
 }
 
-// onConnectionOpened 连接打开事件
 func (slf *Gateway) onConnectionOpened(srv *server.Server, conn *server.Conn) {
-	endpoint, err := slf.GetEndpoint("test", conn)
+	endpoint, err := slf.GetEndpoint("test", conn.GetID())
 	if err != nil {
 		conn.Close()
 		return
 	}
-	endpoint.client.SetData(conn.GetID(), conn)
-	conn.SetData("endpoint", endpoint)
+	endpoint.Link(conn)
 }
 
 // onConnectionReceivePacket 连接接收数据包事件
-func (slf *Gateway) onConnectionReceivePacket(srv *server.Server, conn *server.Conn, packet server.Packet) {
-	var gp = server.GP{
-		C:  conn.GetID(),
-		WT: packet.WebsocketType,
-		D:  packet.Data,
+func (slf *Gateway) onConnectionReceivePacket(srv *server.Server, conn *server.Conn, packet []byte) {
+	endpoint, err := slf.GetEndpoint("test", conn.GetID())
+	if err != nil {
+		conn.Close()
+		return
 	}
-	pd := super.MarshalJSON(&gp)
-	packet.Data = append(pd, 0xff)
-	var endpoint, exist = conn.GetData("endpoint").(*Endpoint)
-	if exist {
+	packet, err = MarshalGatewayOutPacket(conn.GetID(), packet)
+	if err != nil {
+		conn.Close()
+		return
+	}
+	if conn.IsWebsocket() {
+		endpoint.WriteWS(conn.GetWST(), packet)
+	} else {
 		endpoint.Write(packet)
 	}
 }

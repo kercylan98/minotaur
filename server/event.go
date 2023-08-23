@@ -14,7 +14,7 @@ import (
 type StartBeforeEventHandle func(srv *Server)
 type StartFinishEventHandle func(srv *Server)
 type StopEventHandle func(srv *Server)
-type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet Packet)
+type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
 type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
@@ -22,7 +22,7 @@ type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 type ConsoleCommandEventHandle func(srv *Server)
 type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
-type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet Packet) Packet
+type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet []byte) []byte
 type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
 type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
 type ConnectionPacketPreprocessEventHandle func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
@@ -201,7 +201,7 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet Packet) {
+func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 	slf.connectionReceivePacketEventHandles.RangeValue(func(index int, value ConnectionReceivePacketEventHandle) bool {
 		value(slf.Server, conn, packet)
 		return true
@@ -278,7 +278,7 @@ func (slf *event) RegConnectionWritePacketBeforeEvent(handle ConnectionWritePack
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet Packet) (newPacket Packet) {
+func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet []byte) (newPacket []byte) {
 	if slf.connectionWritePacketBeforeHandles.Len() == 0 {
 		return packet
 	}

@@ -8,21 +8,21 @@ import (
 )
 
 func TestUnixDomainSocket_Write(t *testing.T) {
-	var close = make(chan struct{})
+	var closed = make(chan struct{})
 	srv := server.New(server.NetworkUnix)
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet server.Packet) {
-		t.Log(packet)
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		t.Log(string(packet))
 		conn.Write(packet)
 	})
 	srv.RegStartFinishEvent(func(srv *server.Server) {
 		time.Sleep(time.Second)
 		cli := client.NewUnixDomainSocket("./test.sock")
-		cli.RegUDSConnectionOpenedEvent(func(conn *client.UnixDomainSocket) {
-			conn.Write(server.NewPacketString("Hello~"))
+		cli.RegConnectionOpenedEvent(func(conn *client.Client) {
+			conn.Write([]byte("Hello~"))
 		})
-		cli.RegUDSConnectionReceivePacketEvent(func(conn *client.UnixDomainSocket, packet server.Packet) {
+		cli.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
 			t.Log(packet)
-			close <- struct{}{}
+			closed <- struct{}{}
 		})
 		if err := cli.Run(); err != nil {
 			panic(err)
@@ -34,6 +34,6 @@ func TestUnixDomainSocket_Write(t *testing.T) {
 		}
 	}()
 
-	<-close
+	<-closed
 	srv.Shutdown()
 }
