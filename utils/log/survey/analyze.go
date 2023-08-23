@@ -16,6 +16,36 @@ func (slf R) Get(key string) Result {
 	return gjson.Get(string(slf), key)
 }
 
+// Exist 判断指定 key 是否存在
+func (slf R) Exist(key string) bool {
+	return slf.Get(key).Exists()
+}
+
+// GetString 该函数为 Get(key).String() 的简写
+func (slf R) GetString(key string) string {
+	return slf.Get(key).String()
+}
+
+// GetInt64 该函数为 Get(key).Int() 的简写
+func (slf R) GetInt64(key string) int64 {
+	return slf.Get(key).Int()
+}
+
+// GetInt 该函数为 Get(key).Int() 的简写，但是返回值为 int 类型
+func (slf R) GetInt(key string) int {
+	return int(slf.Get(key).Int())
+}
+
+// GetFloat64 该函数为 Get(key).Float() 的简写
+func (slf R) GetFloat64(key string) float64 {
+	return slf.Get(key).Float()
+}
+
+// GetBool 该函数为 Get(key).Bool() 的简写
+func (slf R) GetBool(key string) bool {
+	return slf.Get(key).Bool()
+}
+
 func (slf R) String() string {
 	return string(slf)
 }
