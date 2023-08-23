@@ -10,13 +10,6 @@ import (
 	"time"
 )
 
-const (
-	DATETIME_FORMAT = "2006-01-02 15:04:05"
-	DATE_FORMAT     = "2006-01-02"
-	dateLen         = len(DATE_FORMAT)
-	datetimeLen     = len(DATETIME_FORMAT)
-)
-
 // logger 用于埋点数据的运营日志记录器
 type logger struct {
 	bl            sync.Mutex // writer lock

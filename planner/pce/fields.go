@@ -49,7 +49,7 @@ func (slf Int) TypeName() string {
 }
 
 func (slf Int) Zero() any {
-	return int(0)
+	return 0
 }
 
 func (slf Int) Parse(value string) any {

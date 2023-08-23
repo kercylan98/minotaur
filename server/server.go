@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -239,7 +240,7 @@ func (slf *Server) Run(addr string) error {
 					PushErrorMessage(slf, err, MessageErrorActionShutdown)
 				}
 			} else {
-				if err := slf.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				if err := slf.httpServer.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 					slf.isRunning = false
 					PushErrorMessage(slf, err, MessageErrorActionShutdown)
 				}
