@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 const (
@@ -28,6 +29,7 @@ type logger struct {
 	layoutLen     int
 	dataLayout    string
 	dataLayoutLen int
+	interval      time.Duration
 }
 
 // flush 将记录器缓冲区的数据写入到文件

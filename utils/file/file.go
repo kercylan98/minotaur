@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // PathExist 路径是否存在
@@ -81,6 +82,27 @@ func ReadBlockHook(filePath string, bufferSize int, hook func(data []byte)) erro
 	}
 }
 
+// ReadLine 分行读取文件
+//   - 将filePath路径对应的文件数据并将读到的每一行传入hook函数中，当过程中如果产生错误则会返回error。
+func ReadLine(filePath string, hook func(line string)) error {
+	f, err := os.Open(filePath)
+	if err != nil {
+		panic(err)
+	}
+	reader := bufio.NewReader(f)
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		hook(string(line))
+	}
+	return nil
+}
+
 // LineCount 统计文件行数
 func LineCount(filePath string) int {
 	file, err := os.Open(filePath)
@@ -125,4 +147,94 @@ func Paths(dir string) []string {
 		paths = append(paths, fileAbs)
 	}
 	return paths
+}
+
+// ReadLineWithParallel 并行的分行读取文件并行处理，处理过程中会将每一行的内容传入 handlerFunc 中进行处理，当过程中如果产生错误则会发生 panic，过程前发生错误将会返回 error
+//   - 由于是并行处理，所以处理过程中的顺序是不确定的。
+func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(string)) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	chunks := FindLineChunks(file, chunkSize)
+	var wg sync.WaitGroup
+	for _, chunk := range chunks {
+		wg.Add(1)
+		go func(chunk [2]int64) {
+			defer wg.Done()
+
+			r := io.NewSectionReader(file, chunk[0], chunk[1]-chunk[0])
+
+			scanner := bufio.NewScanner(r)
+			for scanner.Scan() {
+				handlerFunc(scanner.Text())
+			}
+
+			if err := scanner.Err(); err != nil {
+				panic(err)
+			}
+		}(chunk)
+	}
+	wg.Wait()
+	return nil
+}
+
+// FindLineChunks 查找文件按照每行划分的分块，每个分块的大小将在 chunkSize 和分割后的分块距离行首及行尾的距离中范围内
+//   - 使用该函数得到的分块是完整的行，不会出现行被分割的情况
+//   - 当过程中发生错误将会发生 panic
+//   - 返回值的成员是一个长度为 2 的数组，第一个元素是分块的起始位置，第二个元素是分块的结束位置
+func FindLineChunks(file *os.File, chunkSize int64) [][2]int64 {
+	var chunks [][2]int64
+
+	fileSize, err := file.Seek(0, io.SeekEnd)
+	if err != nil {
+		panic(err)
+	}
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		panic(err)
+	}
+
+	currentPos := int64(0)
+	for currentPos < fileSize {
+		start := currentPos
+		if start != 0 { // 不是文件的开头
+			for {
+				b := make([]byte, 1)
+				if _, err = file.ReadAt(b, start); err != nil {
+					panic(err)
+				}
+				if b[0] == '\n' {
+					start++ // 移动到下一行的开始
+					break
+				}
+				start--
+			}
+		}
+
+		end := start + chunkSize
+		if end < fileSize { // 不是文件的末尾
+			for {
+				b := make([]byte, 1)
+				if _, err = file.ReadAt(b, end); err != nil {
+					panic(err)
+				}
+				if b[0] == '\n' {
+					break
+				}
+				end++
+			}
+		} else {
+			end = fileSize
+		}
+
+		chunks = append(chunks, [2]int64{start, end})
+		currentPos = end + 1
+	}
+
+	return chunks
 }

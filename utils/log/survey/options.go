@@ -1,5 +1,7 @@
 package survey
 
+import "time"
+
 // Option 选项
 type Option func(logger *logger)
 
@@ -9,5 +11,13 @@ func WithLayout(layout string) Option {
 	return func(logger *logger) {
 		logger.layout = layout
 		logger.layoutLen = len(layout)
+	}
+}
+
+// WithFlushInterval 设置日志文件刷新间隔
+//   - 默认为 3s
+func WithFlushInterval(interval time.Duration) Option {
+	return func(logger *logger) {
+		logger.interval = interval
 	}
 }

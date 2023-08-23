@@ -1,68 +1,21 @@
 package survey
 
-import (
-	"bufio"
-	"github.com/kercylan98/minotaur/utils/super"
-	"io"
-	"os"
-	"time"
+import "github.com/tidwall/gjson"
+
+type (
+	Result = gjson.Result
 )
 
-// All 处理特定记录器特定日期的所有记录，当 handle 返回 false 时停止处理
-func All(name string, t time.Time, handle func(record map[string]any) bool) {
-	logger := survey[name]
-	if logger == nil {
-		return
-	}
-	fp := logger.filePath(t.Format(logger.layout))
-	logger.wl.Lock()
-	defer logger.wl.Unlock()
+// R 记录器所记录的一条数据
+type R string
 
-	f, err := os.Open(fp)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	reader := bufio.NewReader(f)
-	var m = make(map[string]any)
-	for {
-		line, _, err := reader.ReadLine()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			panic(err)
-		}
-		if err = super.UnmarshalJSON(line[logger.dataLayoutLen:], &m); err != nil {
-			panic(err)
-		}
-		if !handle(m) {
-			break
-		}
-	}
+// Get 获取指定 key 的值
+//   - 当 key 为嵌套 key 时，使用 . 进行分割，例如：a.b.c
+//   - 更多用法参考：https://github.com/tidwall/gjson
+func (slf R) Get(key string) Result {
+	return gjson.Get(string(slf), key)
 }
 
-// Sum 处理特定记录器特定日期的所有记录，根据指定的字段进行汇总
-func Sum(name string, t time.Time, field string) float64 {
-	var res float64
-	All(name, t, func(record map[string]any) bool {
-		v, exist := record[field]
-		if !exist {
-			return true
-		}
-		switch value := v.(type) {
-		case float64:
-			res += value
-		case int:
-			res += float64(value)
-		case int64:
-			res += float64(value)
-		case string:
-			res += super.StringToFloat64(value)
-		}
-		return true
-	})
-	return res
+func (slf R) String() string {
+	return string(slf)
 }
