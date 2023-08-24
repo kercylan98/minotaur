@@ -16,7 +16,7 @@ func NewWebsocket(addr string) *Client {
 type Websocket struct {
 	addr   string
 	conn   *websocket.Conn
-	clsoed bool
+	closed bool
 }
 
 func (slf *Websocket) Run(runState chan<- error, receive func(wst int, packet []byte)) {
@@ -26,9 +26,9 @@ func (slf *Websocket) Run(runState chan<- error, receive func(wst int, packet []
 		return
 	}
 	slf.conn = ws
-	slf.clsoed = false
+	slf.closed = false
 	runState <- nil
-	for !slf.clsoed {
+	for !slf.closed {
 		messageType, packet, readErr := ws.ReadMessage()
 		if readErr != nil {
 			panic(readErr)
@@ -45,7 +45,7 @@ func (slf *Websocket) Write(packet *Packet) error {
 }
 
 func (slf *Websocket) Close() {
-	slf.clsoed = true
+	slf.closed = true
 }
 
 func (slf *Websocket) GetServerAddr() string {
