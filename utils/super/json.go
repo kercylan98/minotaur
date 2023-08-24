@@ -22,6 +22,12 @@ func MarshalJSON(v interface{}) []byte {
 	return b
 }
 
+// MarshalJSONE 将对象转换为 json
+//   - 当转换失败时，将返回错误信息
+func MarshalJSONE(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
 // UnmarshalJSON 将 json 转换为对象
 func UnmarshalJSON(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
