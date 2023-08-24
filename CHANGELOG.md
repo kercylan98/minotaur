@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.1.1](https://github.com/kercylan98/minotaur/compare/v0.1.0...v0.1.1) (2023-08-24)
+
+
+### Other | 其他更改
+
+* 关闭 release-as ([75a8608](https://github.com/kercylan98/minotaur/commit/75a8608bf4143183a2525be6d76e0fde0ccdc4c7))
+
+
+### Features | 新特性
+
+* client 包增加 tcp 客户端 ([a3bb100](https://github.com/kercylan98/minotaur/commit/a3bb10012ed266b2fd1800154da4dcb960dd558e))
+* gateway.Endpoint 支持设置重连间隔 ([cdfecb4](https://github.com/kercylan98/minotaur/commit/cdfecb41e84632f7d0ca429e39f45e49355f8368))
+* survey.Reg 支持每次写入就持久化的策略 ([3fc282a](https://github.com/kercylan98/minotaur/commit/3fc282afabcff881df5e98ed4883fbf438e46156))
+
+
+### Bug Fixes | 修复
+
+* client 包内存溢出、死循环等问题处理 ([08559d8](https://github.com/kercylan98/minotaur/commit/08559d822506bc5695fafae531260ee69447d9bf))
+* 修复 tcp、udp、uds 等类型服务器数据包会额外增加一个长度的问题 ([124635c](https://github.com/kercylan98/minotaur/commit/124635c72c64a870be0b05dd672f76a7343ff361))
+
+
+### Styling | 可读性优化
+
+* 错误的命名更正 ([1558b28](https://github.com/kercylan98/minotaur/commit/1558b2868d0b1d5d475987442268bac21b57f3e0))
+
+
+### Code Refactoring | 重构
+
+* gateway 整体优化重构 ([30e7894](https://github.com/kercylan98/minotaur/commit/30e7894a376ff66ca33faa74bcbdfb77576715b8))
+* storage 包重构，优化整体设计 ([0ad8a5c](https://github.com/kercylan98/minotaur/commit/0ad8a5c7d54513af612b4056c316277fe1cf6bd0))
+
 ## [0.1.0](https://github.com/kercylan98/minotaur/compare/v0.0.31...v0.1.0) (2023-08-23)
 
 
