@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var DefaultEndpointReconnectInterval = time.Second
+
 // NewEndpoint 创建网关端点
 func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *Endpoint {
 	endpoint := &Endpoint{
@@ -15,6 +17,7 @@ func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *En
 		name:        name,
 		address:     cli.GetServerAddr(),
 		connections: haxmap.New[string, *server.Conn](),
+		rci:         DefaultEndpointReconnectInterval,
 	}
 	for _, option := range options {
 		option(endpoint)
@@ -36,6 +39,7 @@ type Endpoint struct {
 	state       float64                            // 端点健康值（0为不可用，越高越优）
 	evaluator   func(costUnixNano float64) float64 // 端点健康值评估函数
 	connections *haxmap.Map[string, *server.Conn]  // 被该端点转发的连接列表
+	rci         time.Duration                      // 端点重连间隔
 }
 
 // connect 连接端点
@@ -52,7 +56,12 @@ func (slf *Endpoint) connect(gateway *Gateway) {
 				slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
 				break
 			}
-			time.Sleep(1000 * time.Millisecond)
+			if slf.rci > 0 {
+				time.Sleep(slf.rci)
+			} else {
+				slf.state = 0
+				break
+			}
 		}
 	})
 	slf.client.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
@@ -76,7 +85,12 @@ func (slf *Endpoint) connect(gateway *Gateway) {
 			slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
 			break
 		}
-		time.Sleep(1000 * time.Millisecond)
+		if slf.rci > 0 {
+			time.Sleep(slf.rci)
+		} else {
+			slf.state = 0
+			break
+		}
 	}
 }
 
