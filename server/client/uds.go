@@ -17,21 +17,11 @@ type UnixDomainSocket struct {
 }
 
 func (slf *UnixDomainSocket) Run(runState chan<- error, receive func(wst int, packet []byte)) {
-	c, err := net.Dial("unix", slf.addr)
-	if err != nil {
-		runState <- err
-		return
-	}
-	slf.conn = c
-	runState <- nil
-	packet := make([]byte, 1024)
-	for !slf.closed {
-		n, readErr := slf.conn.Read(packet)
-		if readErr != nil {
-			panic(readErr)
-		}
-		receive(0, packet[:n])
-	}
+	dial("unix", slf.addr, runState, receive, func(conn net.Conn) {
+		slf.conn = conn
+	}, func() bool {
+		return slf.closed
+	})
 }
 
 func (slf *UnixDomainSocket) Write(packet *Packet) error {
