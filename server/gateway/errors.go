@@ -3,10 +3,12 @@ package gateway
 import "errors"
 
 var (
-	// ErrEndpointAlreadyExists 网关端点已存在
-	ErrEndpointAlreadyExists = errors.New("gateway: endpoint already exists")
-	// ErrCannotAddRunningEndpoint 无法添加一个正在运行的网关端点
-	ErrCannotAddRunningEndpoint = errors.New("gateway: cannot add a running endpoint")
 	// ErrEndpointNotExists 该名称下不存在任何端点
 	ErrEndpointNotExists = errors.New("gateway: endpoint not exists")
+	// ErrGatewayClosed 网关已关闭
+	ErrGatewayClosed = errors.New("gateway: gateway closed")
+	// ErrGatewayRunning 网关正在运行
+	ErrGatewayRunning = errors.New("gateway: gateway running")
+	// ErrConnectionNotFount 该端点下不存在该连接
+	ErrConnectionNotFount = errors.New("gateway: connection not found")
 )

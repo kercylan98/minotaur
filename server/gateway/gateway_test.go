@@ -8,6 +8,19 @@ import (
 	"time"
 )
 
+type Scanner struct {
+}
+
+func (slf *Scanner) GetEndpoints() ([]*gateway.Endpoint, error) {
+	return []*gateway.Endpoint{
+		gateway.NewEndpoint("test", client.NewWebsocket("ws://127.0.0.1:8889")),
+	}, nil
+}
+
+func (slf *Scanner) GetInterval() time.Duration {
+	return time.Second
+}
+
 func TestGateway_RunEndpointServer(t *testing.T) {
 	srv := server.New(server.NetworkWebsocket, server.WithDeadlockDetect(time.Second*3))
 	srv.RegConnectionPacketPreprocessEvent(func(srv *server.Server, conn *server.Conn, packet []byte, abort func(), usePacket func(newPacket []byte)) {
@@ -39,12 +52,15 @@ func TestGateway_RunEndpointServer(t *testing.T) {
 }
 
 func TestGateway_Run(t *testing.T) {
-	srv := server.New(server.NetworkWebsocket, server.WithDeadlockDetect(time.Second*3))
-	gw := gateway.NewGateway(srv)
-	srv.RegStartFinishEvent(func(srv *server.Server) {
-		if err := gw.AddEndpoint(gateway.NewEndpoint(gw, "test", client.NewWebsocket("ws://127.0.0.1:8889"))); err != nil {
-			panic(err)
+	gw := gateway.NewGateway(server.New(server.NetworkWebsocket, server.WithDeadlockDetect(time.Second*3)), new(Scanner))
+	gw.RegConnectionReceivePacketEventHandle(func(gateway *gateway.Gateway, conn *server.Conn, packet []byte) {
+		endpoint, err := gateway.GetEndpoint("test")
+		if err == nil {
+			endpoint.Forward(conn, packet)
 		}
+	})
+	gw.RegEndpointConnectReceivePacketEventHandle(func(gateway *gateway.Gateway, endpoint *gateway.Endpoint, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
 	})
 	if err := gw.Run(":8888"); err != nil {
 		panic(err)
