@@ -73,6 +73,9 @@ func (slf *logger) writer(d string) {
 	slf.bl.Lock()
 	slf.bs = append(slf.bs, d)
 	slf.bl.Unlock()
+	if slf.interval <= 0 {
+		slf.flush()
+	}
 }
 
 // filePath 获取文件路径

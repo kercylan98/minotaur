@@ -46,26 +46,28 @@ func Reg(name, filePath string, options ...Option) {
 		option(logger)
 	}
 
-	_, exist = timers[logger.interval]
-	if !exist {
-		t := time.NewTimer(logger.interval)
-		timers[logger.interval] = t
-		timerSurvey[logger.interval] = make(map[string]struct{})
-		go func(interval time.Duration) {
-			for {
-				<-t.C
-				timerSurveyLock.Lock()
-				for n := range timerSurvey[interval] {
-					survey[n].flush()
+	if logger.interval > 0 {
+		_, exist = timers[logger.interval]
+		if !exist {
+			t := time.NewTimer(logger.interval)
+			timers[logger.interval] = t
+			timerSurvey[logger.interval] = make(map[string]struct{})
+			go func(interval time.Duration) {
+				for {
+					<-t.C
+					timerSurveyLock.Lock()
+					for n := range timerSurvey[interval] {
+						survey[n].flush()
+					}
+					timerSurveyLock.Unlock()
+					if !t.Reset(interval) {
+						break
+					}
 				}
-				timerSurveyLock.Unlock()
-				if !t.Reset(interval) {
-					break
-				}
-			}
-		}(logger.interval)
+			}(logger.interval)
+		}
+		timerSurvey[logger.interval][name] = struct{}{}
 	}
-	timerSurvey[logger.interval][name] = struct{}{}
 
 	survey[name] = logger
 	log.Info("Survey", log.String("Action", "Reg"), log.String("Name", name), log.String("FilePath", dir+"/"+fn+".${DATE}"+ext))
