@@ -27,10 +27,6 @@ type Client struct {
 }
 
 func (slf *Client) Run() error {
-	var wait = new(sync.WaitGroup)
-	wait.Add(1)
-	go slf.writeLoop(wait)
-	wait.Wait()
 	var runState = make(chan error)
 	go func() {
 		defer func() {
@@ -42,9 +38,20 @@ func (slf *Client) Run() error {
 	}()
 	err := <-runState
 	if err != nil {
-		slf.Close()
+		slf.mutex.Lock()
+		if slf.packetPool != nil {
+			slf.packetPool.Close()
+			slf.packetPool = nil
+		}
+		slf.accumulate = append(slf.accumulate, slf.packets...)
+		slf.packets = nil
+		slf.mutex.Unlock()
 		return err
 	}
+	var wait = new(sync.WaitGroup)
+	wait.Add(1)
+	go slf.writeLoop(wait)
+	wait.Wait()
 	slf.OnConnectionOpenedEvent(slf)
 	return nil
 }
@@ -83,15 +90,22 @@ func (slf *Client) Write(packet []byte, callback ...func(err error)) {
 // write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
+	if slf.packetPool == nil {
+		var p = &Packet{
+			wst:  wst,
+			data: packet,
+		}
+		if len(callback) > 0 {
+			p.callback = callback[0]
+		}
+		slf.accumulate = append(slf.accumulate, p)
+		return
+	}
 	cp := slf.packetPool.Get()
 	cp.wst = wst
 	cp.data = packet
 	if len(callback) > 0 {
 		cp.callback = callback[0]
-	}
-	if slf.packetPool == nil {
-		slf.accumulate = append(slf.accumulate, cp)
-		return
 	}
 	slf.mutex.Lock()
 	slf.packets = append(slf.packets, cp)

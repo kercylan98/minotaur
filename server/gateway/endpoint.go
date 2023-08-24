@@ -70,7 +70,7 @@ func (slf *Endpoint) Connect() {
 			slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 
@@ -98,5 +98,9 @@ func (slf *Endpoint) onConnectionReceivePacket(conn *client.Client, wst int, pac
 		panic(err)
 	}
 	slf.state = slf.evaluator(float64(time.Now().UnixNano() - sendTime))
-	slf.GetLink(addr).SetWST(wst).Write(packet)
+	cli := slf.GetLink(addr)
+	if cli == nil {
+		return
+	}
+	cli.SetWST(wst).Write(packet)
 }

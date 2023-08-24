@@ -26,6 +26,7 @@ func (slf *Websocket) Run(runState chan<- error, receive func(wst int, packet []
 		return
 	}
 	slf.conn = ws
+	slf.clsoed = false
 	runState <- nil
 	for !slf.clsoed {
 		messageType, packet, readErr := ws.ReadMessage()

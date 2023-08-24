@@ -1,7 +1,6 @@
 package gateway_test
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/client"
 	"github.com/kercylan98/minotaur/server/gateway"
@@ -11,9 +10,6 @@ import (
 
 func TestGateway_RunEndpointServer(t *testing.T) {
 	srv := server.New(server.NetworkWebsocket, server.WithDeadlockDetect(time.Second*3))
-	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
-		fmt.Println(err)
-	})
 	srv.RegConnectionPacketPreprocessEvent(func(srv *server.Server, conn *server.Conn, packet []byte, abort func(), usePacket func(newPacket []byte)) {
 		addr, packet, err := gateway.UnmarshalGatewayOutPacket(packet)
 		if err != nil {
@@ -35,7 +31,6 @@ func TestGateway_RunEndpointServer(t *testing.T) {
 		return packet
 	})
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
-		fmt.Println("endpoint receive packet", string(packet))
 		conn.Write(packet)
 	})
 	if err := srv.Run(":8889"); err != nil {
