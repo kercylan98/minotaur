@@ -60,9 +60,7 @@ func Reg(name, filePath string, options ...Option) {
 						survey[n].flush()
 					}
 					timerSurveyLock.Unlock()
-					if !t.Reset(interval) {
-						break
-					}
+					t.Reset(interval)
 				}
 			}(logger.interval)
 		}
@@ -129,7 +127,7 @@ func Close(names ...string) {
 
 // All 处理特定记录器特定日期的所有记录，当发生错误时，会发生 panic
 //   - handle 为并行执行的，需要自行处理并发安全
-func All(name string, t time.Time, handle func(record R) bool) {
+func All(name string, t time.Time, handle func(record R)) {
 	timerSurveyLock.Lock()
 	logger := survey[name]
 	timerSurveyLock.Unlock()
@@ -150,7 +148,7 @@ func All(name string, t time.Time, handle func(record R) bool) {
 // AllWithPath 处理特定记录器特定日期的所有记录，当发生错误时，会发生 panic
 //   - handle 为并行执行的，需要自行处理并发安全
 //   - 适用于外部进程对于日志文件的读取，但是需要注意的是，此时日志文件可能正在被写入，所以可能会读取到错误的数据
-func AllWithPath(filePath string, handle func(record R) bool) {
+func AllWithPath(filePath string, handle func(record R)) {
 	err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
 		handle(R(s))
 	})
