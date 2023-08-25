@@ -5,8 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/file"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
-	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -19,10 +17,7 @@ var (
 )
 
 // Reg 注册一个运营日志记录器
-func Reg(name, filePath string, options ...Option) {
-	fn := filepath.Base(filePath)
-	ext := filepath.Ext(fn)
-	fn = strings.TrimSuffix(fn, ext)
+func Reg(name string, flusher Flusher, options ...Option) {
 
 	timerSurveyLock.Lock()
 	defer timerSurveyLock.Unlock()
@@ -31,16 +26,9 @@ func Reg(name, filePath string, options ...Option) {
 	if exist {
 		panic(fmt.Errorf("survey %s already exist", name))
 	}
-	dir := filepath.Dir(filePath)
 	logger := &logger{
-		dir:           dir,
-		fn:            fn,
-		fe:            ext,
-		layout:        time.DateOnly,
-		layoutLen:     len(time.DateOnly),
-		dataLayout:    time.DateTime,
-		dataLayoutLen: len(time.DateTime) + 3,
-		interval:      time.Second * 3,
+		flusher:  flusher,
+		interval: time.Second * 3,
 	}
 	for _, option := range options {
 		option(logger)
@@ -68,7 +56,7 @@ func Reg(name, filePath string, options ...Option) {
 	}
 
 	survey[name] = logger
-	log.Info("Survey", log.String("Action", "Reg"), log.String("Name", name), log.String("FilePath", dir+"/"+fn+".${DATE}"+ext))
+	log.Info("Survey", log.String("Action", "Reg"), log.String("Name", name), log.String("Info", logger.flusher.Info()))
 }
 
 // Record 记录一条运营日志
@@ -122,26 +110,6 @@ func Close(names ...string) {
 			}
 			l.flush()
 		}
-	}
-}
-
-// All 处理特定记录器特定日期的所有记录，当发生错误时，会发生 panic
-//   - handle 为并行执行的，需要自行处理并发安全
-func All(name string, t time.Time, handle func(record R)) {
-	timerSurveyLock.Lock()
-	logger := survey[name]
-	timerSurveyLock.Unlock()
-	if logger == nil {
-		return
-	}
-	fp := logger.filePath(t.Format(logger.layout))
-	logger.wl.Lock()
-	defer logger.wl.Unlock()
-	err := file.ReadLineWithParallel(fp, 1*1024*1024*1024, func(s string) {
-		handle(R(s))
-	})
-	if err != nil {
-		panic(err)
 	}
 }
 

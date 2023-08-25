@@ -1,28 +1,17 @@
 package survey
 
 import (
-	"bufio"
-	"fmt"
-	"github.com/kercylan98/minotaur/utils/log"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
 
 // logger 用于埋点数据的运营日志记录器
 type logger struct {
-	bl            sync.Mutex // writer lock
-	wl            sync.Mutex // flush lock
-	dir           string
-	fn            string
-	fe            string
-	bs            []string
-	layout        string
-	layoutLen     int
-	dataLayout    string
-	dataLayoutLen int
-	interval      time.Duration
+	bl       sync.Mutex // writer lock
+	wl       sync.Mutex // flush lock
+	bs       []string
+	interval time.Duration
+	flusher  Flusher
 }
 
 // flush 将记录器缓冲区的数据写入到文件
@@ -39,33 +28,7 @@ func (slf *logger) flush() {
 
 	slf.wl.Lock()
 	defer slf.wl.Unlock()
-
-	var (
-		file   *os.File
-		writer *bufio.Writer
-		err    error
-		last   string
-	)
-	for _, data := range ds {
-		tick := data[0:slf.layoutLen]
-		if tick != last {
-			if file != nil {
-				_ = writer.Flush()
-				_ = file.Close()
-			}
-			fp := slf.filePath(tick)
-			file, err = os.OpenFile(fp, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-			if err != nil {
-				log.Fatal("Survey", log.String("Action", "DateSwitch"), log.String("FilePath", fp), log.Err(err))
-				return
-			}
-			writer = bufio.NewWriterSize(file, 1024*10240)
-			last = tick
-		}
-		_, _ = writer.WriteString(data)
-	}
-	_ = writer.Flush()
-	_ = file.Close()
+	slf.flusher.Flush(ds)
 }
 
 // writer 写入数据到记录器缓冲区
@@ -76,9 +39,4 @@ func (slf *logger) writer(d string) {
 	if slf.interval <= 0 {
 		slf.flush()
 	}
-}
-
-// filePath 获取文件路径
-func (slf *logger) filePath(t string) string {
-	return filepath.Join(slf.dir, fmt.Sprintf("%s.%s%s", slf.fn, t, slf.fe))
 }
