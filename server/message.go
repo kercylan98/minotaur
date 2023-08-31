@@ -106,9 +106,6 @@ func (slf MessageType) String() string {
 
 // PushPacketMessage 向特定服务器中推送 MessageTypePacket 消息
 func PushPacketMessage(srv *Server, conn *Conn, wst int, packet []byte, mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypePacket
 	msg.attrs = append([]any{&Conn{ctx: context.WithValue(conn.ctx, contextKeyWST, wst), connection: conn.connection}, packet}, mark...)
@@ -117,9 +114,6 @@ func PushPacketMessage(srv *Server, conn *Conn, wst int, packet []byte, mark ...
 
 // PushErrorMessage 向特定服务器中推送 MessageTypeError 消息
 func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeError
 	msg.attrs = append([]any{err, action}, mark...)
@@ -128,9 +122,6 @@ func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ..
 
 // PushCrossMessage 向特定服务器中推送 MessageTypeCross 消息
 func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte, mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	if serverId == srv.id {
 		msg := srv.messagePool.Get()
 		msg.t = MessageTypeCross
@@ -150,9 +141,6 @@ func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []by
 
 // PushTickerMessage 向特定服务器中推送 MessageTypeTicker 消息
 func PushTickerMessage(srv *Server, caller func(), mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeTicker
 	msg.attrs = append([]any{caller}, mark...)
@@ -166,9 +154,6 @@ func PushTickerMessage(srv *Server, caller func(), mark ...any) {
 //
 // 在通过 WithShunt 使用分流服务器时，异步消息不会转换到分流通道中进行处理。依旧需要注意上方第三条
 func PushAsyncMessage(srv *Server, caller func() error, callback func(err error), mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeAsync
 	msg.attrs = append([]any{caller, callback}, mark...)
@@ -177,9 +162,6 @@ func PushAsyncMessage(srv *Server, caller func() error, callback func(err error)
 
 // PushSystemMessage 向特定服务器中推送 MessageTypeSystem 消息
 func PushSystemMessage(srv *Server, handle func(), mark ...any) {
-	if srv.messagePool == nil {
-		return
-	}
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeSystem
 	msg.attrs = append([]any{handle}, mark...)
