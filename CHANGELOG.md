@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.2](https://github.com/kercylan98/minotaur/compare/v0.1.1...v0.1.2) (2023-09-01)
+
+
+### Features | 新特性
+
+* counter 包增加简单去重计数器 ([0d76507](https://github.com/kercylan98/minotaur/commit/0d765075e07b414a3940d643db273332ae79b404))
+* gateway 支持连接与某一端点保持持久通讯，支持将端点的所有连接切换到另一端点 ([6d5aa59](https://github.com/kercylan98/minotaur/commit/6d5aa599d76ac3e297077781401e039df6562ec7))
+* gateway 新增 WithEndpointConnectionPoolSize 支持配置与端点建立连接的数量 ([3ca6ed0](https://github.com/kercylan98/minotaur/commit/3ca6ed00ec91c34a4a61a61dcfd5731da8faba66))
+* super 包新增函数 IsNumber，用于判断一个值是否为数字类型 ([518d47a](https://github.com/kercylan98/minotaur/commit/518d47ae6a13eda45cd7d650d5e07477869c2eff))
+
+
+### Bug Fixes | 修复
+
+* server 包中 RegConsoleCommandEvent 函数空指针问题处理 ([2ed52fc](https://github.com/kercylan98/minotaur/commit/2ed52fc814130a57b3c356214052069c094d7bed))
+* server 包修复服务器关闭后发送消息引起的空指针问题 ([3062428](https://github.com/kercylan98/minotaur/commit/3062428051b075ccb53f1758d5f905b047401af1))
+* survey 包修复 All 函数无用的返回参 ([c6f8c19](https://github.com/kercylan98/minotaur/commit/c6f8c190862e9af516dda9338225de2c960c3b2f))
+* 修复 server 中 HTTP 服务器关闭时会引发空指针的问题 ([8cd9979](https://github.com/kercylan98/minotaur/commit/8cd9979e2be17e6043959f7206bf254071397b72))
+
+
+### Code Refactoring | 重构
+
+* 优化 survey，移除 All 函数，新增 Flusher 接口，可自行实现其他持久化方式 ([d9ba1bc](https://github.com/kercylan98/minotaur/commit/d9ba1bc85caa0c3a7453515b2e5452cbfb31c640))
+
+
+### Performance Improvements | 性能优化
+
+* 提高消息吞吐量，降低消息延迟 ([1cbe8ec](https://github.com/kercylan98/minotaur/commit/1cbe8ecf56430318ca1f5a190e311cbb1bcbb2a4))
+
 ## [0.1.1](https://github.com/kercylan98/minotaur/compare/v0.1.0...v0.1.1) (2023-08-24)
 
 
