@@ -24,6 +24,7 @@ func NewGateway(srv *server.Server, scanner Scanner, options ...Option) *Gateway
 		ess: func(endpoints []*Endpoint) *Endpoint {
 			return endpoints[random.Int(0, len(endpoints)-1)]
 		},
+		cce: make(map[string]*Endpoint),
 	}
 	for _, option := range options {
 		option(gateway)
@@ -36,11 +37,13 @@ type Gateway struct {
 	*events
 	srv     *server.Server                  // 网关服务器核心
 	scanner Scanner                         // 端点扫描器
-	es      map[string]map[string]*Endpoint // 端点列表
+	es      map[string]map[string]*Endpoint // 端点列表 [name][address]
 	esm     sync.Mutex                      // 端点列表锁
 	ess     EndpointSelector                // 端点选择器
 	closed  bool                            // 网关是否已关闭
 	running bool                            // 网关是否正在运行
+	cce     map[string]*Endpoint            // 连接当前连接的端点 [conn.ID]
+	cceLock sync.RWMutex                    // 连接当前连接的端点锁
 }
 
 // Run 运行网关
@@ -138,4 +141,31 @@ func (slf *Gateway) GetEndpoint(name string) (*Endpoint, error) {
 		return nil, ErrEndpointNotExists
 	}
 	return endpoint, nil
+}
+
+// GetConnEndpoint 获取一个可用的端点，如果客户端已经连接到了某个端点，将优先返回该端点
+//   - 当连接到的端点不可用或没有连接记录时，效果同 GetEndpoint 相同
+//   - 当连接行为为有状态时，推荐使用该方法
+func (slf *Gateway) GetConnEndpoint(name string, conn *server.Conn) (*Endpoint, error) {
+	slf.cceLock.RLock()
+	endpoint, exist := slf.cce[conn.GetID()]
+	slf.cceLock.RUnlock()
+	if exist && endpoint.state > 0 {
+		return endpoint, nil
+	}
+	return slf.GetEndpoint(name)
+}
+
+// SwitchEndpoint 将端点端点的所有连接切换到另一个端点
+func (slf *Gateway) SwitchEndpoint(source, dest *Endpoint) {
+	if source.name == dest.name && source.address == dest.address || source.state <= 0 || dest.state <= 0 {
+		return
+	}
+	slf.cceLock.Lock()
+	for id, endpoint := range slf.cce {
+		if endpoint == source {
+			slf.cce[id] = dest
+		}
+	}
+	slf.cceLock.Unlock()
 }

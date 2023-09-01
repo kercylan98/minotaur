@@ -126,17 +126,6 @@ func (slf *Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func(
 		return
 	}
 
-	cb := func(err error) {
-		if len(callback) > 0 {
-			callback[0](err)
-		}
-		if err != nil {
-			slf.connections.Del(conn.GetID())
-		} else {
-			slf.connections.Set(conn.GetID(), conn)
-		}
-	}
-
 	var superior *client.Client
 	var superiorCount = -1
 	for _, cli := range slf.client {
@@ -144,6 +133,20 @@ func (slf *Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func(
 		if superiorCount < 0 || superiorCount > count {
 			superior = cli
 			superiorCount = count
+		}
+	}
+
+	var cb = func(err error) {
+		if len(callback) > 0 {
+			callback[0](err)
+		}
+		if err != nil {
+			slf.connections.Del(conn.GetID())
+		} else {
+			slf.connections.Set(conn.GetID(), conn)
+			slf.gateway.cceLock.Lock()
+			slf.gateway.cce[conn.GetID()] = slf
+			slf.gateway.cceLock.Unlock()
 		}
 	}
 
