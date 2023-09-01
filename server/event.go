@@ -95,7 +95,12 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 			}
 		}()
 	})
-	slf.consoleCommandEventHandles[command].Append(handle, slice.GetValue(priority, 0))
+	list, exist := slf.consoleCommandEventHandles[command]
+	if !exist {
+		list = slice.NewPriority[ConsoleCommandEventHandle]()
+		slf.consoleCommandEventHandles[command] = list
+	}
+	list.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
