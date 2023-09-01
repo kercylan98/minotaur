@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/client"
 	"github.com/kercylan98/minotaur/server/gateway"
+	"github.com/kercylan98/minotaur/utils/log"
 	"testing"
 	"time"
 )
@@ -13,7 +14,7 @@ type Scanner struct {
 
 func (slf *Scanner) GetEndpoints() ([]*gateway.Endpoint, error) {
 	return []*gateway.Endpoint{
-		gateway.NewEndpoint("test", client.NewWebsocket("ws://127.0.0.1:8889")),
+		gateway.NewEndpoint("test", client.NewWebsocket("ws://127.0.0.1:8889"), gateway.WithEndpointConnectionPoolSize(10)),
 	}, nil
 }
 
@@ -45,6 +46,9 @@ func TestGateway_RunEndpointServer(t *testing.T) {
 	})
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
+	})
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		log.Info("connection opened", log.String("conn", conn.GetID()))
 	})
 	if err := srv.Run(":8889"); err != nil {
 		panic(err)

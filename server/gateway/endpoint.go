@@ -5,22 +5,24 @@ import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/client"
 	"github.com/kercylan98/minotaur/utils/log"
+	"sync"
 	"time"
 )
-
-var DefaultEndpointReconnectInterval = time.Second
 
 // NewEndpoint 创建网关端点
 func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *Endpoint {
 	endpoint := &Endpoint{
-		client:      cli,
 		name:        name,
 		address:     cli.GetServerAddr(),
 		connections: haxmap.New[string, *server.Conn](),
 		rci:         DefaultEndpointReconnectInterval,
+		cps:         DefaultEndpointConnectionPoolSize,
 	}
 	for _, option := range options {
 		option(endpoint)
+	}
+	for i := 0; i < endpoint.cps; i++ {
+		endpoint.client = append(endpoint.client, client.CloneClient(cli))
 	}
 	if endpoint.evaluator == nil {
 		endpoint.evaluator = func(costUnixNano float64) float64 {
@@ -33,55 +35,21 @@ func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *En
 // Endpoint 网关端点
 type Endpoint struct {
 	gateway     *Gateway
-	client      *client.Client                     // 端点客户端
+	client      []*client.Client                   // 端点客户端
 	name        string                             // 端点名称
 	address     string                             // 端点地址
 	state       float64                            // 端点健康值（0为不可用，越高越优）
 	evaluator   func(costUnixNano float64) float64 // 端点健康值评估函数
 	connections *haxmap.Map[string, *server.Conn]  // 被该端点转发的连接列表
 	rci         time.Duration                      // 端点重连间隔
+	cps         int                                // 端点连接池大小
 }
 
-// connect 连接端点
-func (slf *Endpoint) connect(gateway *Gateway) {
-	slf.gateway = gateway
-	slf.client.RegConnectionOpenedEvent(func(conn *client.Client) {
-		slf.gateway.OnEndpointConnectOpenedEvent(slf.gateway, slf)
-	})
-	slf.client.RegConnectionClosedEvent(func(conn *client.Client, err any) {
-		slf.gateway.OnEndpointConnectClosedEvent(slf.gateway, slf)
-		for {
-			cur := time.Now().UnixNano()
-			if err := slf.client.Run(); err == nil {
-				slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
-				break
-			}
-			if slf.rci > 0 {
-				time.Sleep(slf.rci)
-			} else {
-				slf.state = 0
-				break
-			}
-		}
-	})
-	slf.client.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
-		addr, sendTime, packet, err := UnmarshalGatewayInPacket(packet)
-		if err != nil {
-			log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.Err(err))
-			return
-		}
-		slf.state = slf.evaluator(float64(time.Now().UnixNano() - sendTime))
-		c, ok := slf.connections.Get(addr)
-		if !ok {
-			log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.String("ConnAddr", addr), log.Err(ErrConnectionNotFount))
-			return
-		}
-		c.SetWST(wst)
-		slf.gateway.OnEndpointConnectReceivePacketEvent(slf.gateway, slf, c, packet)
-	})
+// start 开始与端点建立连接
+func (slf *Endpoint) start(gateway *Gateway, cli *client.Client) {
 	for {
 		cur := time.Now().UnixNano()
-		if err := slf.client.Run(); err == nil {
+		if err := cli.Run(); err == nil {
 			slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
 			break
 		}
@@ -92,6 +60,43 @@ func (slf *Endpoint) connect(gateway *Gateway) {
 			break
 		}
 	}
+}
+
+// connect 连接端点
+func (slf *Endpoint) connect(gateway *Gateway) {
+	slf.gateway = gateway
+	var least sync.WaitGroup
+	var leastOnce sync.Once
+	least.Add(1)
+	for _, cli := range slf.client {
+		go func(cli *client.Client) {
+			cli.RegConnectionOpenedEvent(func(conn *client.Client) {
+				slf.gateway.OnEndpointConnectOpenedEvent(slf.gateway, slf)
+			})
+			cli.RegConnectionClosedEvent(func(conn *client.Client, err any) {
+				slf.gateway.OnEndpointConnectClosedEvent(slf.gateway, slf)
+				slf.start(gateway, cli)
+			})
+			cli.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
+				addr, sendTime, packet, err := UnmarshalGatewayInPacket(packet)
+				if err != nil {
+					log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.Err(err))
+					return
+				}
+				slf.state = slf.evaluator(float64(time.Now().UnixNano() - sendTime))
+				c, ok := slf.connections.Get(addr)
+				if !ok {
+					log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.String("ConnAddr", addr), log.Err(ErrConnectionNotFount))
+					return
+				}
+				c.SetWST(wst)
+				slf.gateway.OnEndpointConnectReceivePacketEvent(slf.gateway, slf, c, packet)
+			})
+			slf.start(gateway, cli)
+			leastOnce.Do(least.Done)
+		}(cli)
+	}
+	least.Wait()
 }
 
 // GetName 获取端点名称
@@ -131,9 +136,20 @@ func (slf *Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func(
 			slf.connections.Set(conn.GetID(), conn)
 		}
 	}
+
+	var superior *client.Client
+	var superiorCount = -1
+	for _, cli := range slf.client {
+		count := cli.GetMessageAccumulationTotal()
+		if superiorCount < 0 || superiorCount > count {
+			superior = cli
+			superiorCount = count
+		}
+	}
+
 	if conn.IsWebsocket() {
-		slf.client.WriteWS(conn.GetWST(), packet, cb)
+		superior.WriteWS(conn.GetWST(), packet, cb)
 	} else {
-		slf.client.Write(packet, cb)
+		superior.Write(packet, cb)
 	}
 }
