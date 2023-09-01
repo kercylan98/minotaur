@@ -11,7 +11,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
-	"time"
 )
 
 // newKcpConn 创建一个处理KCP的连接
@@ -19,6 +18,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
+			cond:       sync.NewCond(&sync.Mutex{}),
 			server:     server,
 			remoteAddr: session.RemoteAddr(),
 			ip:         session.RemoteAddr().String(),
@@ -41,6 +41,7 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
+			cond:       sync.NewCond(&sync.Mutex{}),
 			server:     server,
 			remoteAddr: conn.RemoteAddr(),
 			ip:         conn.RemoteAddr().String(),
@@ -63,6 +64,7 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
+			cond:       sync.NewCond(&sync.Mutex{}),
 			server:     server,
 			remoteAddr: ws.RemoteAddr(),
 			ip:         ip,
@@ -82,6 +84,7 @@ func newGatewayConn(conn *Conn, connId string) *Conn {
 	c := &Conn{
 		//ctx: server.ctx,
 		connection: &connection{
+			cond:   sync.NewCond(&sync.Mutex{}),
 			server: conn.server,
 			data:   map[any]any{},
 		},
@@ -97,6 +100,7 @@ func NewEmptyConn(server *Server) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
+			cond:       sync.NewCond(&sync.Mutex{}),
 			server:     server,
 			remoteAddr: &net.TCPAddr{},
 			ip:         "0.0.0.0:0",
@@ -126,7 +130,7 @@ type connection struct {
 	kcp        *kcp.UDPSession
 	gw         func(packet []byte)
 	data       map[any]any
-	mutex      sync.Mutex
+	cond       *sync.Cond
 	packetPool *concurrent.Pool[*connPacket]
 	packets    []*connPacket
 }
@@ -140,11 +144,11 @@ func (slf *Conn) IsEmpty() bool {
 //   - 重用连接时，会将当前连接的数据复制到新连接中
 //   - 通常在于连接断开后，重新连接时使用
 func (slf *Conn) Reuse(conn *Conn) {
-	slf.mutex.Lock()
-	conn.mutex.Lock()
+	slf.cond.L.Lock()
+	conn.cond.L.Lock()
 	defer func() {
-		slf.mutex.Unlock()
-		conn.mutex.Unlock()
+		slf.cond.L.Unlock()
+		conn.cond.L.Unlock()
 	}()
 	slf.Close()
 	slf.remoteAddr = conn.remoteAddr
@@ -253,9 +257,10 @@ func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 	if len(callback) > 0 {
 		cp.callback = callback[0]
 	}
-	slf.mutex.Lock()
+	slf.cond.L.Lock()
 	slf.packets = append(slf.packets, cp)
-	slf.mutex.Unlock()
+	slf.cond.Signal()
+	slf.cond.L.Unlock()
 }
 
 // writeLoop 写循环
@@ -278,18 +283,17 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 	}()
 	wait.Done()
 	for {
-		slf.mutex.Lock()
+		slf.cond.L.Lock()
 		if slf.packetPool == nil {
+			slf.cond.L.Unlock()
 			return
 		}
 		if len(slf.packets) == 0 {
-			slf.mutex.Unlock()
-			time.Sleep(50 * time.Millisecond)
-			continue
+			slf.cond.Wait()
 		}
 		packets := slf.packets[0:]
 		slf.packets = slf.packets[0:0]
-		slf.mutex.Unlock()
+		slf.cond.L.Unlock()
 		for i := 0; i < len(packets); i++ {
 			data := packets[i]
 			var err error

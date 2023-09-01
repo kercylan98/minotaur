@@ -51,3 +51,9 @@ func (slf *Websocket) Close() {
 func (slf *Websocket) GetServerAddr() string {
 	return slf.addr
 }
+
+func (slf *Websocket) Clone() Core {
+	return &Websocket{
+		addr: slf.addr,
+	}
+}

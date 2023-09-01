@@ -14,4 +14,7 @@ type Core interface {
 
 	// GetServerAddr 获取服务器地址
 	GetServerAddr() string
+
+	// Clone 克隆客户端
+	Clone() Core
 }

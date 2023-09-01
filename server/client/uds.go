@@ -36,3 +36,9 @@ func (slf *UnixDomainSocket) Close() {
 func (slf *UnixDomainSocket) GetServerAddr() string {
 	return slf.addr
 }
+
+func (slf *UnixDomainSocket) Clone() Core {
+	return &UnixDomainSocket{
+		addr: slf.addr,
+	}
+}

@@ -34,3 +34,9 @@ func (slf *TCP) Close() {
 func (slf *TCP) GetServerAddr() string {
 	return slf.addr
 }
+
+func (slf *TCP) Clone() Core {
+	return &TCP{
+		addr: slf.addr,
+	}
+}

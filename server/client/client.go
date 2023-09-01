@@ -3,27 +3,33 @@ package client
 import (
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"sync"
-	"time"
 )
 
 // NewClient 创建客户端
 func NewClient(core Core) *Client {
 	client := &Client{
+		cond:   sync.NewCond(&sync.Mutex{}),
 		events: new(events),
 		core:   core,
 	}
 	return client
 }
 
+// CloneClient 克隆客户端
+func CloneClient(client *Client) *Client {
+	return NewClient(client.core.Clone())
+}
+
 // Client 客户端
 type Client struct {
 	*events
 	core       Core
-	mutex      sync.Mutex
+	cond       *sync.Cond
 	packetPool *concurrent.Pool[*Packet]
 	packets    []*Packet
 
-	accumulate []*Packet
+	accumulate   []*Packet
+	accumulation int // 积压消息数
 }
 
 func (slf *Client) Run() error {
@@ -38,14 +44,14 @@ func (slf *Client) Run() error {
 	}()
 	err := <-runState
 	if err != nil {
-		slf.mutex.Lock()
+		slf.cond.L.Lock()
 		if slf.packetPool != nil {
 			slf.packetPool.Close()
 			slf.packetPool = nil
 		}
 		slf.accumulate = append(slf.accumulate, slf.packets...)
 		slf.packets = nil
-		slf.mutex.Unlock()
+		slf.cond.L.Unlock()
 		return err
 	}
 	var wait = new(sync.WaitGroup)
@@ -98,7 +104,10 @@ func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
 		if len(callback) > 0 {
 			p.callback = callback[0]
 		}
+		slf.cond.L.Lock()
 		slf.accumulate = append(slf.accumulate, p)
+		slf.accumulation = len(slf.accumulate) + len(slf.packets)
+		slf.cond.L.Unlock()
 		return
 	}
 	cp := slf.packetPool.Get()
@@ -107,9 +116,11 @@ func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
 	if len(callback) > 0 {
 		cp.callback = callback[0]
 	}
-	slf.mutex.Lock()
+	slf.cond.L.Lock()
 	slf.packets = append(slf.packets, cp)
-	slf.mutex.Unlock()
+	slf.accumulation = len(slf.accumulate) + len(slf.packets)
+	slf.cond.Signal()
+	slf.cond.L.Unlock()
 }
 
 // writeLoop 写循环
@@ -123,30 +134,29 @@ func (slf *Client) writeLoop(wait *sync.WaitGroup) {
 			data.callback = nil
 		},
 	)
-	slf.mutex.Lock()
+	slf.cond.L.Lock()
 	slf.packets = append(slf.packets, slf.accumulate...)
 	slf.accumulate = nil
-	slf.mutex.Unlock()
+	slf.cond.L.Unlock()
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close(err.(error))
 		}
 	}()
 	wait.Done()
+
 	for {
-		slf.mutex.Lock()
+		slf.cond.L.Lock()
 		if slf.packetPool == nil {
-			slf.mutex.Unlock()
+			slf.cond.L.Unlock()
 			return
 		}
 		if len(slf.packets) == 0 {
-			slf.mutex.Unlock()
-			time.Sleep(50 * time.Millisecond)
-			continue
+			slf.cond.Wait()
 		}
 		packets := slf.packets[0:]
 		slf.packets = slf.packets[0:0]
-		slf.mutex.Unlock()
+		slf.cond.L.Unlock()
 		for i := 0; i < len(packets); i++ {
 			data := packets[i]
 			var err = slf.core.Write(data)
@@ -169,4 +179,9 @@ func (slf *Client) onReceive(wst int, packet []byte) {
 // GetServerAddr 获取服务器地址
 func (slf *Client) GetServerAddr() string {
 	return slf.core.GetServerAddr()
+}
+
+// GetMessageAccumulationTotal 获取消息积压总数
+func (slf *Client) GetMessageAccumulationTotal() int {
+	return slf.accumulation
 }
