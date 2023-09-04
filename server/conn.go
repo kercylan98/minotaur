@@ -18,7 +18,8 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			cond:       sync.NewCond(&sync.Mutex{}),
+			packets:    make(chan *connPacket, 1024*10),
+			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: session.RemoteAddr(),
 			ip:         session.RemoteAddr().String(),
@@ -41,7 +42,8 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			cond:       sync.NewCond(&sync.Mutex{}),
+			packets:    make(chan *connPacket, 1024*10),
+			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: conn.RemoteAddr(),
 			ip:         conn.RemoteAddr().String(),
@@ -64,7 +66,8 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			cond:       sync.NewCond(&sync.Mutex{}),
+			packets:    make(chan *connPacket, 1024*10),
+			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: ws.RemoteAddr(),
 			ip:         ip,
@@ -84,9 +87,10 @@ func newGatewayConn(conn *Conn, connId string) *Conn {
 	c := &Conn{
 		//ctx: server.ctx,
 		connection: &connection{
-			cond:   sync.NewCond(&sync.Mutex{}),
-			server: conn.server,
-			data:   map[any]any{},
+			packets: make(chan *connPacket, 1024*10),
+			mutex:   new(sync.Mutex),
+			server:  conn.server,
+			data:    map[any]any{},
 		},
 	}
 	c.gw = func(packet []byte) {
@@ -100,7 +104,8 @@ func NewEmptyConn(server *Server) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			cond:       sync.NewCond(&sync.Mutex{}),
+			packets:    make(chan *connPacket, 1024*10),
+			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: &net.TCPAddr{},
 			ip:         "0.0.0.0:0",
@@ -123,6 +128,7 @@ type Conn struct {
 // connection 长久保持的连接
 type connection struct {
 	server     *Server
+	mutex      *sync.Mutex
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
@@ -130,9 +136,8 @@ type connection struct {
 	kcp        *kcp.UDPSession
 	gw         func(packet []byte)
 	data       map[any]any
-	cond       *sync.Cond
 	packetPool *concurrent.Pool[*connPacket]
-	packets    []*connPacket
+	packets    chan *connPacket
 }
 
 // IsEmpty 是否是空连接
@@ -144,12 +149,6 @@ func (slf *Conn) IsEmpty() bool {
 //   - 重用连接时，会将当前连接的数据复制到新连接中
 //   - 通常在于连接断开后，重新连接时使用
 func (slf *Conn) Reuse(conn *Conn) {
-	slf.cond.L.Lock()
-	conn.cond.L.Lock()
-	defer func() {
-		slf.cond.L.Unlock()
-		conn.cond.L.Unlock()
-	}()
 	slf.Close()
 	slf.remoteAddr = conn.remoteAddr
 	slf.ip = conn.ip
@@ -190,7 +189,10 @@ func (slf *Conn) Close() {
 		slf.packetPool.Close()
 	}
 	slf.packetPool = nil
-	slf.packets = nil
+	if slf.packets != nil {
+		close(slf.packets)
+		slf.packets = nil
+	}
 }
 
 // SetData 设置连接数据，该数据将在连接关闭前始终存在
@@ -243,12 +245,14 @@ func (slf *Conn) SetWST(wst int) *Conn {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
+	slf.mutex.Lock()
+	defer slf.mutex.Unlock()
 	if slf.gw != nil {
 		slf.gw(packet)
 		return
 	}
 	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
-	if slf.packetPool == nil {
+	if slf.packetPool == nil || slf.packets == nil {
 		return
 	}
 	cp := slf.packetPool.Get()
@@ -257,10 +261,7 @@ func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 	if len(callback) > 0 {
 		cp.callback = callback[0]
 	}
-	slf.cond.L.Lock()
-	slf.packets = append(slf.packets, cp)
-	slf.cond.Signal()
-	slf.cond.L.Unlock()
+	slf.packets <- cp
 }
 
 // writeLoop 写循环
@@ -282,44 +283,32 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 		}
 	}()
 	wait.Done()
-	for {
-		slf.cond.L.Lock()
-		if slf.packetPool == nil {
-			slf.cond.L.Unlock()
-			return
-		}
-		if len(slf.packets) == 0 {
-			slf.cond.Wait()
-		}
-		packets := slf.packets[0:]
-		slf.packets = slf.packets[0:0]
-		slf.cond.L.Unlock()
-		for i := 0; i < len(packets); i++ {
-			data := packets[i]
-			var err error
-			if slf.IsWebsocket() {
-				err = slf.ws.WriteMessage(data.wst, data.packet)
-			} else {
-				if slf.gn != nil {
-					switch slf.server.network {
-					case NetworkUdp, NetworkUdp4, NetworkUdp6:
-						err = slf.gn.SendTo(data.packet)
-					default:
-						err = slf.gn.AsyncWrite(data.packet)
-					}
+	for packet := range slf.packets {
 
-				} else if slf.kcp != nil {
-					_, err = slf.kcp.Write(data.packet)
+		data := packet
+		var err error
+		if slf.IsWebsocket() {
+			err = slf.ws.WriteMessage(data.wst, data.packet)
+		} else {
+			if slf.gn != nil {
+				switch slf.server.network {
+				case NetworkUdp, NetworkUdp4, NetworkUdp6:
+					err = slf.gn.SendTo(data.packet)
+				default:
+					err = slf.gn.AsyncWrite(data.packet)
 				}
+			} else if slf.kcp != nil {
+				_, err = slf.kcp.Write(data.packet)
 			}
-			callback := data.callback
-			slf.packetPool.Release(data)
-			if callback != nil {
-				callback(err)
-			}
-			if err != nil {
-				panic(err)
-			}
+		}
+		callback := data.callback
+		slf.packetPool.Release(data)
+
+		if callback != nil {
+			callback(err)
+		}
+		if err != nil {
+			panic(err)
 		}
 	}
 }

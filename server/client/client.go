@@ -8,7 +8,6 @@ import (
 // NewClient 创建客户端
 func NewClient(core Core) *Client {
 	client := &Client{
-		cond:   sync.NewCond(&sync.Mutex{}),
 		events: new(events),
 		core:   core,
 	}
@@ -24,11 +23,11 @@ func CloneClient(client *Client) *Client {
 type Client struct {
 	*events
 	core       Core
-	cond       *sync.Cond
+	mutex      sync.Mutex
 	packetPool *concurrent.Pool[*Packet]
-	packets    []*Packet
+	packets    chan *Packet
 
-	accumulate   []*Packet
+	accumulate   chan *Packet
 	accumulation int // 积压消息数
 }
 
@@ -44,14 +43,12 @@ func (slf *Client) Run() error {
 	}()
 	err := <-runState
 	if err != nil {
-		slf.cond.L.Lock()
+		slf.mutex.Lock()
 		if slf.packetPool != nil {
 			slf.packetPool.Close()
 			slf.packetPool = nil
 		}
-		slf.accumulate = append(slf.accumulate, slf.packets...)
-		slf.packets = nil
-		slf.cond.L.Unlock()
+		slf.mutex.Unlock()
 		return err
 	}
 	var wait = new(sync.WaitGroup)
@@ -69,12 +66,29 @@ func (slf *Client) IsConnected() bool {
 
 // Close 关闭
 func (slf *Client) Close(err ...error) {
+	slf.mutex.Lock()
+	var unlock bool
+	defer func() {
+		if !unlock {
+			slf.mutex.Unlock()
+		}
+	}()
 	slf.core.Close()
 	if slf.packetPool != nil {
 		slf.packetPool.Close()
 		slf.packetPool = nil
 	}
+	if slf.packets != nil {
+		close(slf.packets)
+		slf.packets = nil
+	}
+	if slf.accumulate != nil {
+		close(slf.accumulate)
+		slf.accumulate = nil
+	}
 	slf.packets = nil
+	unlock = true
+	slf.mutex.Unlock()
 	if len(err) > 0 {
 		slf.OnConnectionClosedEvent(slf, err[0])
 	} else {
@@ -96,7 +110,8 @@ func (slf *Client) Write(packet []byte, callback ...func(err error)) {
 // write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
-	if slf.packetPool == nil {
+	slf.mutex.Lock()
+	if slf.packetPool == nil || slf.packets == nil {
 		var p = &Packet{
 			wst:  wst,
 			data: packet,
@@ -104,27 +119,26 @@ func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
 		if len(callback) > 0 {
 			p.callback = callback[0]
 		}
-		slf.cond.L.Lock()
-		slf.accumulate = append(slf.accumulate, p)
+		if slf.accumulate == nil {
+			slf.accumulate = make(chan *Packet, 1024*10)
+		}
+		slf.accumulate <- p
+	} else {
+		cp := slf.packetPool.Get()
+		cp.wst = wst
+		cp.data = packet
+		if len(callback) > 0 {
+			cp.callback = callback[0]
+		}
+		slf.packets <- cp
 		slf.accumulation = len(slf.accumulate) + len(slf.packets)
-		slf.cond.L.Unlock()
-		return
 	}
-	cp := slf.packetPool.Get()
-	cp.wst = wst
-	cp.data = packet
-	if len(callback) > 0 {
-		cp.callback = callback[0]
-	}
-	slf.cond.L.Lock()
-	slf.packets = append(slf.packets, cp)
-	slf.accumulation = len(slf.accumulate) + len(slf.packets)
-	slf.cond.Signal()
-	slf.cond.L.Unlock()
+	slf.mutex.Unlock()
 }
 
 // writeLoop 写循环
 func (slf *Client) writeLoop(wait *sync.WaitGroup) {
+	slf.packets = make(chan *Packet, 1024*10)
 	slf.packetPool = concurrent.NewPool[*Packet](10*1024,
 		func() *Packet {
 			return &Packet{}
@@ -134,10 +148,11 @@ func (slf *Client) writeLoop(wait *sync.WaitGroup) {
 			data.callback = nil
 		},
 	)
-	slf.cond.L.Lock()
-	slf.packets = append(slf.packets, slf.accumulate...)
-	slf.accumulate = nil
-	slf.cond.L.Unlock()
+	go func() {
+		for packet := range slf.accumulate {
+			slf.packets <- packet
+		}
+	}()
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close(err.(error))
@@ -145,31 +160,19 @@ func (slf *Client) writeLoop(wait *sync.WaitGroup) {
 	}()
 	wait.Done()
 
-	for {
-		slf.cond.L.Lock()
-		if slf.packetPool == nil {
-			slf.cond.L.Unlock()
-			return
+	for packet := range slf.packets {
+		data := packet
+		var err = slf.core.Write(data)
+		callback := data.callback
+		slf.packetPool.Release(data)
+		if callback != nil {
+			callback(err)
 		}
-		if len(slf.packets) == 0 {
-			slf.cond.Wait()
-		}
-		packets := slf.packets[0:]
-		slf.packets = slf.packets[0:0]
-		slf.cond.L.Unlock()
-		for i := 0; i < len(packets); i++ {
-			data := packets[i]
-			var err = slf.core.Write(data)
-			callback := data.callback
-			slf.packetPool.Release(data)
-			if callback != nil {
-				callback(err)
-			}
-			if err != nil {
-				panic(err)
-			}
+		if err != nil {
+			panic(err)
 		}
 	}
+
 }
 
 func (slf *Client) onReceive(wst int, packet []byte) {

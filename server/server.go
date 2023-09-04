@@ -142,12 +142,13 @@ func (slf *Server) Run(addr string) error {
 		if callback != nil {
 			go callback()
 		}
-		go func() {
+		go func(messageChannel <-chan *Message) {
 			messageInitFinish <- struct{}{}
-			for message := range slf.messageChannel {
-				slf.dispatchMessage(message)
+			for message := range messageChannel {
+				msg := message
+				slf.dispatchMessage(msg)
 			}
-		}()
+		}(slf.messageChannel)
 	}
 
 	switch slf.network {
@@ -568,6 +569,7 @@ func (slf *Server) pushMessage(message *Message) {
 		}
 	}
 	slf.messageChannel <- message
+
 }
 
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
@@ -593,18 +595,18 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	)
 	if slf.deadlockDetect > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), slf.deadlockDetect)
-		go func() {
+		go func(ctx context.Context, msg *Message) {
 			select {
 			case <-ctx.Done():
 				if err := ctx.Err(); err == context.DeadlineExceeded {
 					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.Any("SuspectedDeadlock", msg.attrs))
 				}
 			}
-		}()
+		}(ctx, msg)
 	}
 
 	present := time.Now()
-	defer func() {
+	defer func(msg *Message) {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
 			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.attrs), log.Any("error", err), log.String("stack", stack))
@@ -626,7 +628,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			slf.messagePool.Release(msg)
 		}
 
-	}()
+	}(msg)
 	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:

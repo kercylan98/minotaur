@@ -86,7 +86,9 @@ func (slf *Message) String() string {
 	var s string
 	switch slf.t {
 	case MessageTypePacket:
-		s = messagePacketVisualization(attrs[1].([]byte))
+		if len(attrs) > 1 {
+			s = messagePacketVisualization(attrs[1].([]byte))
+		}
 	default:
 		if len(slf.attrs) == 0 {
 			s = "NoneAttr"
