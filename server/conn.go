@@ -4,11 +4,9 @@ import (
 	"context"
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/utils/concurrent"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
-	"runtime/debug"
 	"strings"
 	"sync"
 )
@@ -278,8 +276,9 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close()
-			log.Error("WriteLoop", log.Any("Error", err))
-			debug.PrintStack()
+			// TODO: 以下代码是否需要？
+			// log.Error("WriteLoop", log.Any("Error", err))
+			// debug.PrintStack()
 		}
 	}()
 	wait.Done()

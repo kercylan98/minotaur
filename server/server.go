@@ -551,11 +551,8 @@ func (slf *Server) ShuntChannelFreed(channelGuid int64) {
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) pushMessage(message *Message) {
-	if slf.messagePool.IsClose() {
+	if slf.messagePool.IsClose() || slf.isShutdown.Load() || !slf.OnMessageExecBeforeEvent(message) {
 		slf.messagePool.Release(message)
-		return
-	}
-	if slf.isShutdown.Load() || !slf.OnMessageExecBeforeEvent(message) {
 		return
 	}
 	if slf.shuntChannels != nil && message.t == MessageTypePacket {
