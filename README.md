@@ -21,6 +21,7 @@ mindmap
       /cross 内置跨服功能实现
       /router 内置路由器功能实现
     /utils 工具结构函数目录
+    /examples 示例代码目录
 ```
 
 ## Server 架构预览
@@ -65,8 +66,8 @@ chmod 777 ./local-doc.sh
 - **[http://localhost:9998/pkg/github.com/kercylan98/minotaur/](http://localhost:9998/pkg/github.com/kercylan98/minotaur/)**
 - **[https://pkg.go.dev/github.com/kercylan98/minotaur](https://pkg.go.dev/github.com/kercylan98/minotaur)**
 
-### 简单示例
-创建一个基于Websocket的回响服务器。
+### 简单回响服务器
+创建一个基于`Websocket`创建的单线程回响服务器。
 ```go
 package main
 
@@ -86,6 +87,94 @@ func main() {
 ```
 访问 **[WebSocket 在线测试](http://www.websocket-test.com/)** 进行验证。
 > Websocket地址: ws://127.0.0.1:9999
+
+### 分流服务器
+分流服务器可以将客户端分流到不同的分组上，每个分组中为串行处理，不同分组之间并行处理。
+```go
+package main
+
+import "github.com/kercylan98/minotaur/server"
+
+func main() {
+	srv := server.New(server.NetworkWebsocket,
+		server.WithShunt(func(guid int64) chan *server.Message {
+			return make(chan *server.Message, 1024*100)
+		}, func(conn *server.Conn) (guid int64, allowToCreate bool) {
+			guid, allowToCreate = conn.GetData("roomId").(int64)
+			return
+		}),
+	)
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+```
+> 该示例中假设各房间互不干涉，故通过`server.WithShunt`将连接通过`roomId`进行分组，提高并发处理能力。
+
+### 服务器死锁检测
+`Minotaur`内置了服务器消息死锁检测功能，可通过`server.WithDeadlockDetect`进行开启。
+```go
+package main
+
+import (
+	"github.com/kercylan98/minotaur/server"
+	"time"
+)
+
+func main() {
+	srv := server.New(server.NetworkWebsocket,
+		server.WithDeadlockDetect(time.Second*5),
+	)
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		time.Sleep(10 * time.Second)
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+```
+> 在开启死锁检测的时候需要设置一个合理的死锁怀疑时间，该时间内消息没有处理完毕则会触发死锁检测，并打印`WARN`级别的日志输出。
+
+### 计时器
+在默认的`server.Server`不会包含计时器功能，可通过`server.WithTicker`进行开启，例如：
+```go
+package main
+
+import "github.com/kercylan98/minotaur/server"
+
+func main() {
+	srv := server.New(server.NetworkWebsocket, server.WithTicker(50, false))
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+```
+也可以通过`timer.GetTicker`获取计时器进行使用，例如：
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/timer"
+	"github.com/kercylan98/minotaur/utils/times"
+	"sync"
+)
+
+func main() {
+	var ticker = timer.GetTicker(10)
+	var wait sync.WaitGroup
+	wait.Add(3)
+	ticker.Loop("LOOP", timer.Instantly, times.Second, timer.Forever, func() {
+		fmt.Println("LOOP")
+		wait.Done()
+	})
+	wait.Wait()
+}
+```
 
 ### 持续更新的示例项目
 - **[Minotaur-Example](https://github.com/kercylan98/minotaur-example)**
