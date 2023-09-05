@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.3](https://github.com/kercylan98/minotaur/compare/v0.1.2...v0.1.3) (2023-09-05)
+
+
+### Features | 新特性
+
+* server 包新增 Server.RegMessageExecBeforeEvent 函数，支持在消息执行前进行处理，适用于限流等场景 ([0297c44](https://github.com/kercylan98/minotaur/commit/0297c4444aba9f13c7b60276c3b54f83d3ab8174))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 包 RegMessageExecBeforeEvent 函数导致内存泄露的问题 ([15a4918](https://github.com/kercylan98/minotaur/commit/15a491816a26afdcda9f241de20740ccc8e27d83))
+* 修复宕机问题 ([add1e4b](https://github.com/kercylan98/minotaur/commit/add1e4bc8c07f934a419da16c5f9edbf4bf88535))
+
 ## [0.1.2](https://github.com/kercylan98/minotaur/compare/v0.1.1...v0.1.2) (2023-09-01)
 
 
