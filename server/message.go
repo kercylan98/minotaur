@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"reflect"
 )
 
@@ -64,6 +65,11 @@ type (
 	MessageErrorAction byte
 )
 
+// HasMessageType 检查是否存在指定的消息类型
+func HasMessageType(mt MessageType) bool {
+	return hash.Exist(messageNames, mt)
+}
+
 func (slf MessageErrorAction) String() string {
 	return messageErrorActionNames[slf]
 }
@@ -72,6 +78,11 @@ func (slf MessageErrorAction) String() string {
 type Message struct {
 	t     MessageType // 消息类型
 	attrs []any       // 消息属性
+}
+
+// MessageType 返回消息类型
+func (slf *Message) MessageType() MessageType {
+	return slf.t
 }
 
 // String 返回消息的字符串表示
@@ -86,7 +97,9 @@ func (slf *Message) String() string {
 	var s string
 	switch slf.t {
 	case MessageTypePacket:
-		s = messagePacketVisualization(attrs[1].([]byte))
+		if len(attrs) > 1 {
+			s = messagePacketVisualization(attrs[1].([]byte))
+		}
 	default:
 		if len(slf.attrs) == 0 {
 			s = "NoneAttr"
@@ -104,6 +117,13 @@ func (slf MessageType) String() string {
 	return messageNames[slf]
 }
 
+// GetPacketMessageAttrs 获取消息中的数据包属性
+func (slf *Message) GetPacketMessageAttrs() (conn *Conn, packet []byte) {
+	conn = slf.attrs[0].(*Conn)
+	packet = slf.attrs[1].([]byte)
+	return
+}
+
 // PushPacketMessage 向特定服务器中推送 MessageTypePacket 消息
 func PushPacketMessage(srv *Server, conn *Conn, wst int, packet []byte, mark ...any) {
 	msg := srv.messagePool.Get()
@@ -112,12 +132,26 @@ func PushPacketMessage(srv *Server, conn *Conn, wst int, packet []byte, mark ...
 	srv.pushMessage(msg)
 }
 
+// GetErrorMessageAttrs 获取消息中的错误属性
+func (slf *Message) GetErrorMessageAttrs() (err error, action MessageErrorAction) {
+	err = slf.attrs[0].(error)
+	action = slf.attrs[1].(MessageErrorAction)
+	return
+}
+
 // PushErrorMessage 向特定服务器中推送 MessageTypeError 消息
 func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeError
 	msg.attrs = append([]any{err, action}, mark...)
 	srv.pushMessage(msg)
+}
+
+// GetCrossMessageAttrs 获取消息中的跨服属性
+func (slf *Message) GetCrossMessageAttrs() (serverId int64, packet []byte) {
+	serverId = slf.attrs[0].(int64)
+	packet = slf.attrs[1].([]byte)
+	return
 }
 
 // PushCrossMessage 向特定服务器中推送 MessageTypeCross 消息
@@ -139,12 +173,25 @@ func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []by
 	}
 }
 
+// GetTickerMessageAttrs 获取消息中的定时器属性
+func (slf *Message) GetTickerMessageAttrs() (caller func()) {
+	caller = slf.attrs[0].(func())
+	return
+}
+
 // PushTickerMessage 向特定服务器中推送 MessageTypeTicker 消息
 func PushTickerMessage(srv *Server, caller func(), mark ...any) {
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeTicker
 	msg.attrs = append([]any{caller}, mark...)
 	srv.pushMessage(msg)
+}
+
+// GetAsyncMessageAttrs 获取消息中的异步消息属性
+func (slf *Message) GetAsyncMessageAttrs() (caller func() error, callback func(err error), hasCallback bool) {
+	caller = slf.attrs[0].(func() error)
+	callback, hasCallback = slf.attrs[1].(func(err error))
+	return
 }
 
 // PushAsyncMessage 向特定服务器中推送 MessageTypeAsync 消息
@@ -158,6 +205,12 @@ func PushAsyncMessage(srv *Server, caller func() error, callback func(err error)
 	msg.t = MessageTypeAsync
 	msg.attrs = append([]any{caller, callback}, mark...)
 	srv.pushMessage(msg)
+}
+
+// GetSystemMessageAttrs 获取消息中的系统消息属性
+func (slf *Message) GetSystemMessageAttrs() (handle func()) {
+	handle = slf.attrs[0].(func())
+	return
 }
 
 // PushSystemMessage 向特定服务器中推送 MessageTypeSystem 消息
