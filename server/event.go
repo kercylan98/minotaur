@@ -26,6 +26,7 @@ type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet
 type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
 type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
 type ConnectionPacketPreprocessEventHandle func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
+type MessageExecBeforeEventHandle func(srv *Server, message *Message) bool
 
 func newEvent(srv *Server) *event {
 	return &event{
@@ -44,6 +45,7 @@ func newEvent(srv *Server) *event {
 		shuntChannelCreatedEventHandles:        slice.NewPriority[ShuntChannelCreatedEventHandle](),
 		shuntChannelClosedEventHandles:         slice.NewPriority[ShuntChannelClosedEventHandle](),
 		connectionPacketPreprocessEventHandles: slice.NewPriority[ConnectionPacketPreprocessEventHandle](),
+		messageExecBeforeEventHandles:          slice.NewPriority[MessageExecBeforeEventHandle](),
 	}
 }
 
@@ -63,6 +65,7 @@ type event struct {
 	shuntChannelCreatedEventHandles        *slice.Priority[ShuntChannelCreatedEventHandle]
 	shuntChannelClosedEventHandles         *slice.Priority[ShuntChannelClosedEventHandle]
 	connectionPacketPreprocessEventHandles *slice.Priority[ConnectionPacketPreprocessEventHandle]
+	messageExecBeforeEventHandles          *slice.Priority[MessageExecBeforeEventHandle]
 
 	consoleCommandEventHandles        map[string]*slice.Priority[ConsoleCommandEventHandle]
 	consoleCommandEventHandleInitOnce sync.Once
@@ -351,6 +354,34 @@ func (slf *event) OnConnectionPacketPreprocessEvent(conn *Conn, packet []byte, u
 		return true
 	})
 	return abort
+}
+
+// RegMessageExecBeforeEvent 在处理消息前将立刻执行被注册的事件处理函数
+//   - 当返回 true 时，将继续执行后续的消息处理函数，否则将不会执行后续的消息处理函数，并且该消息将被丢弃
+//
+// 适用于限流等场景
+func (slf *event) RegMessageExecBeforeEvent(handle MessageExecBeforeEventHandle, priority ...int) {
+	slf.messageExecBeforeEventHandles.Append(handle, slice.GetValue(priority, 0))
+	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
+}
+
+// OnMessageExecBeforeEvent 执行消息处理前的事件处理函数
+func (slf *event) OnMessageExecBeforeEvent(message *Message) bool {
+	if slf.messageExecBeforeEventHandles.Len() == 0 {
+		return true
+	}
+	var result = true
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error("Server", log.String("OnMessageExecBeforeEvent", fmt.Sprintf("%v", err)))
+			debug.PrintStack()
+		}
+	}()
+	slf.messageExecBeforeEventHandles.RangeValue(func(index int, value MessageExecBeforeEventHandle) bool {
+		result = value(slf.Server, message)
+		return result
+	})
+	return result
 }
 
 func (slf *event) check() {

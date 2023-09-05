@@ -21,6 +21,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.3
 	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.25.0
+	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.57.0
 )
 
@@ -50,9 +51,7 @@ require (
 	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
-	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/templexxx/cpu v0.1.0 // indirect
 	github.com/templexxx/xorsimd v0.4.2 // indirect

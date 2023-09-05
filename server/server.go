@@ -102,18 +102,17 @@ type Server struct {
 }
 
 // Run 使用特定地址运行服务器
-//
-//		server.NetworkTcp (addr:":8888")
-//		server.NetworkTcp4 (addr:":8888")
-//		server.NetworkTcp6 (addr:":8888")
-//		server.NetworkUdp (addr:":8888")
-//		server.NetworkUdp4 (addr:":8888")
-//		server.NetworkUdp6 (addr:":8888")
-//		server.NetworkUnix (addr:"socketPath")
-//		server.NetworkHttp (addr:":8888")
-//		server.NetworkWebsocket (addr:":8888/ws")
-//		server.NetworkKcp (addr:":8888")
-//	 server.NetworkNone (addr:"")
+//   - server.NetworkTcp (addr:":8888")
+//   - server.NetworkTcp4 (addr:":8888")
+//   - server.NetworkTcp6 (addr:":8888")
+//   - server.NetworkUdp (addr:":8888")
+//   - server.NetworkUdp4 (addr:":8888")
+//   - server.NetworkUdp6 (addr:":8888")
+//   - server.NetworkUnix (addr:"socketPath")
+//   - server.NetworkHttp (addr:":8888")
+//   - server.NetworkWebsocket (addr:":8888/ws")
+//   - server.NetworkKcp (addr:":8888")
+//   - server.NetworkNone (addr:"")
 func (slf *Server) Run(addr string) error {
 	if slf.network == NetworkNone {
 		addr = "-"
@@ -365,6 +364,16 @@ func (slf *Server) RunNone() error {
 	return slf.Run(str.None)
 }
 
+// Context 获取服务器上下文
+func (slf *Server) Context() context.Context {
+	return slf.ctx
+}
+
+// TimeoutContext 获取服务器超时上下文，context.WithTimeout 的简写
+func (slf *Server) TimeoutContext(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(slf.ctx, timeout)
+}
+
 // GetOnlineCount 获取在线人数
 func (slf *Server) GetOnlineCount() int {
 	return slf.online.Size()
@@ -546,7 +555,7 @@ func (slf *Server) pushMessage(message *Message) {
 		slf.messagePool.Release(message)
 		return
 	}
-	if slf.isShutdown.Load() {
+	if slf.isShutdown.Load() || !slf.OnMessageExecBeforeEvent(message) {
 		return
 	}
 	if slf.shuntChannels != nil && message.t == MessageTypePacket {
@@ -632,13 +641,12 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:
-		var conn = attrs[0].(*Conn)
-		var packet = attrs[1].([]byte)
+		var conn, packet = msg.GetPacketMessageAttrs()
 		if !slf.OnConnectionPacketPreprocessEvent(conn, packet, func(newPacket []byte) { packet = newPacket }) {
 			slf.OnConnectionReceivePacketEvent(conn, packet)
 		}
 	case MessageTypeError:
-		err, action := attrs[0].(error), attrs[1].(MessageErrorAction)
+		var err, action = msg.GetErrorMessageAttrs()
 		switch action {
 		case MessageErrorActionNone:
 			log.Panic("Server", log.Err(err))
@@ -648,12 +656,11 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			log.Warn("Server", log.String("not support message error action", action.String()))
 		}
 	case MessageTypeCross:
-		slf.OnReceiveCrossPacketEvent(attrs[0].(int64), attrs[1].([]byte))
+		slf.OnReceiveCrossPacketEvent(msg.GetCrossMessageAttrs())
 	case MessageTypeTicker:
-		attrs[0].(func())()
+		msg.GetTickerMessageAttrs()()
 	case MessageTypeAsync:
-		handle := attrs[0].(func() error)
-		callback, cb := attrs[1].(func(err error))
+		handle, callback, cb := msg.GetAsyncMessageAttrs()
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
@@ -688,10 +695,10 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		}); err != nil {
 			panic(err)
 		}
-	case MessageTypeAsyncCallback:
+	case MessageTypeAsyncCallback: // 特殊类型
 		attrs[0].(func())()
 	case MessageTypeSystem:
-		attrs[0].(func())()
+		msg.GetSystemMessageAttrs()()
 	default:
 		log.Warn("Server", log.String("not support message type", msg.t.String()))
 	}
