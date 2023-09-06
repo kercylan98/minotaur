@@ -5,6 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"github.com/kercylan98/minotaur/utils/slice"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -27,6 +29,7 @@ type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
 type ShuntChannelClosedEventHandle func(srv *Server, guid int64)
 type ConnectionPacketPreprocessEventHandle func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
 type MessageExecBeforeEventHandle func(srv *Server, message *Message) bool
+type MessageReadyEventHandle func(srv *Server)
 
 func newEvent(srv *Server) *event {
 	return &event{
@@ -46,6 +49,7 @@ func newEvent(srv *Server) *event {
 		shuntChannelClosedEventHandles:         slice.NewPriority[ShuntChannelClosedEventHandle](),
 		connectionPacketPreprocessEventHandles: slice.NewPriority[ConnectionPacketPreprocessEventHandle](),
 		messageExecBeforeEventHandles:          slice.NewPriority[MessageExecBeforeEventHandle](),
+		messageReadyEventHandles:               slice.NewPriority[MessageReadyEventHandle](),
 	}
 }
 
@@ -66,6 +70,7 @@ type event struct {
 	shuntChannelClosedEventHandles         *slice.Priority[ShuntChannelClosedEventHandle]
 	connectionPacketPreprocessEventHandles *slice.Priority[ConnectionPacketPreprocessEventHandle]
 	messageExecBeforeEventHandles          *slice.Priority[MessageExecBeforeEventHandle]
+	messageReadyEventHandles               *slice.Priority[MessageReadyEventHandle]
 
 	consoleCommandEventHandles        map[string]*slice.Priority[ConsoleCommandEventHandle]
 	consoleCommandEventHandleInitOnce sync.Once
@@ -88,6 +93,12 @@ func (slf *event) OnStopEvent() {
 //   - 默认将注册 "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN" 指令作为关闭服务器的指令
 //   - 可通过注册默认指令进行默认行为的覆盖
 func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle, priority ...int) {
+	fd := int(os.Stdin.Fd())
+	if !terminal.IsTerminal(fd) {
+		log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("ignore", "system not terminal"))
+		return
+	}
+
 	slf.consoleCommandEventHandleInitOnce.Do(func() {
 		slf.consoleCommandEventHandles = map[string]*slice.Priority[ConsoleCommandEventHandle]{}
 		go func() {
@@ -147,6 +158,7 @@ func (slf *event) OnStartBeforeEvent() {
 }
 
 // RegStartFinishEvent 在服务器启动完成时将立刻执行被注册的事件处理函数
+//   - 需要注意该时刻服务器已经启动完成，但是还有可能未开始处理消息，客户端有可能无法连接，如果需要在消息处理器准备就绪后执行，请使用 RegMessageReadyEvent 函数
 func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle, priority ...int) {
 	slf.startFinishEventHandles.Append(handle, slice.GetValue(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
@@ -365,7 +377,6 @@ func (slf *event) RegMessageExecBeforeEvent(handle MessageExecBeforeEventHandle,
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
-// OnMessageExecBeforeEvent 执行消息处理前的事件处理函数
 func (slf *event) OnMessageExecBeforeEvent(message *Message) bool {
 	if slf.messageExecBeforeEventHandles.Len() == 0 {
 		return true
@@ -382,6 +393,27 @@ func (slf *event) OnMessageExecBeforeEvent(message *Message) bool {
 		return result
 	})
 	return result
+}
+
+// RegMessageReadyEvent 在服务器消息处理器准备就绪时立即执行被注册的事件处理函数
+func (slf *event) RegMessageReadyEvent(handle MessageReadyEventHandle, priority ...int) {
+	slf.messageReadyEventHandles.Append(handle, slice.GetValue(priority, 0))
+}
+
+func (slf *event) OnMessageReadyEvent() {
+	if slf.messageReadyEventHandles.Len() == 0 {
+		return
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error("Server", log.String("OnMessageReadyEvent", fmt.Sprintf("%v", err)))
+			debug.PrintStack()
+		}
+	}()
+	slf.messageReadyEventHandles.RangeValue(func(index int, value MessageReadyEventHandle) bool {
+		value(slf.Server)
+		return true
+	})
 }
 
 func (slf *event) check() {

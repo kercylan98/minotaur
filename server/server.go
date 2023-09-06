@@ -341,6 +341,10 @@ func (slf *Server) Run(addr string) error {
 		)
 		log.Info("Server", log.String(serverMark, "===================================================================="))
 		slf.OnStartFinishEvent()
+		time.Sleep(time.Second)
+		if !slf.isShutdown.Load() {
+			slf.OnMessageReadyEvent()
+		}
 
 		signal.Notify(slf.systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 		select {
@@ -354,6 +358,10 @@ func (slf *Server) Run(addr string) error {
 		}
 	} else {
 		slf.OnStartFinishEvent()
+		time.Sleep(time.Second)
+		if !slf.isShutdown.Load() {
+			slf.OnMessageReadyEvent()
+		}
 	}
 
 	return nil

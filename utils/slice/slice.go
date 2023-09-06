@@ -345,3 +345,13 @@ func Filter[T any](a []T, filterHandle func(a T) bool) []T {
 	}
 	return result
 }
+
+// Mapping 将切片中的元素进行转换
+//   - mappingHandle 返回转换后的元素
+func Mapping[T any, R any](a []T, mappingHandle func(a T) R) []R {
+	var result []R
+	for _, a := range a {
+		result = append(result, mappingHandle(a))
+	}
+	return result
+}

@@ -113,14 +113,17 @@ func Close(names ...string) {
 	}
 }
 
-// AllWithPath 处理特定记录器特定日期的所有记录，当发生错误时，会发生 panic
+// Analyze 分析特定文件的记录，当发生错误时，会发生 panic
 //   - handle 为并行执行的，需要自行处理并发安全
 //   - 适用于外部进程对于日志文件的读取，但是需要注意的是，此时日志文件可能正在被写入，所以可能会读取到错误的数据
-func AllWithPath(filePath string, handle func(record R)) {
+func Analyze(filePath string, handle func(analyzer *Analyzer, record R)) *Report {
+	analyzer := new(Analyzer)
 	err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
-		handle(R(s))
+		handle(analyzer, R(s))
 	})
 	if err != nil {
 		panic(err)
 	}
+
+	return newReport(analyzer)
 }

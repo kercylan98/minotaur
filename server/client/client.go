@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"sync"
 )
@@ -155,7 +156,11 @@ func (slf *Client) writeLoop(wait *sync.WaitGroup) {
 	}()
 	defer func() {
 		if err := recover(); err != nil {
-			slf.Close(err.(error))
+			err, isErr := err.(error)
+			if !isErr {
+				err = fmt.Errorf("%v", err)
+			}
+			slf.Close(err)
 		}
 	}()
 	wait.Done()

@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
 func NewPool[T any](bufferSize int, generator func() T, releaser func(data T)) *Pool[T] {
@@ -52,12 +53,13 @@ func (slf *Pool[T]) Get() T {
 		slf.mutex.Unlock()
 		return data
 	}
-	slf.warn++
-	slf.mutex.Unlock()
-	if slf.warn >= 256 {
+	now := time.Now().Unix()
+	if now-slf.warn >= 1 {
 		log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), zap.Stack("stack"))
-		slf.warn = 0
+		slf.warn = now
 	}
+	slf.mutex.Unlock()
+
 	return slf.generator()
 }
 
