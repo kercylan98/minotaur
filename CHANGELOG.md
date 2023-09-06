@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.1.4](https://github.com/kercylan98/minotaur/compare/v0.1.3...v0.1.4) (2023-09-06)
+
+
+### Features | 新特性
+
+* server 包 Server 新增 RegMessageReadyEvent 函数 ([04c40bf](https://github.com/kercylan98/minotaur/commit/04c40bf87379f3216c1eb6dcb36b44f4b1fd0ee0))
+* slice 包新增 Mapping 函数，支持将切片中的元素进行转换 ([da68945](https://github.com/kercylan98/minotaur/commit/da68945f7eea9806bf1e3c3fe3c015b997f11596))
+
+
+### Bug Fixes | 修复
+
+* client 包错误类型转换错误问题处理 ([034ca17](https://github.com/kercylan98/minotaur/commit/034ca174b6461e15f078420d5dcc7172113ee477))
+* 修复 server 包 Server.RegConsoleCommandEvent 函数在无终端环境下导致 CPU 飙升的问题 ([3e35e73](https://github.com/kercylan98/minotaur/commit/3e35e73c9094fba66c61853a8c41cfa36bba10cf))
+
+
+### Docs | 文档优化
+
+* README.md 增加部分示例 ([e5bf7f3](https://github.com/kercylan98/minotaur/commit/e5bf7f31207831153ba2f36d743ca18ca1331fc4))
+
+
+### Code Refactoring | 重构
+
+* survey 包 AllWithPath 函数更改为 Analyze，新增分析报告，及分析器，提供方便的统计功能 ([ac11e9e](https://github.com/kercylan98/minotaur/commit/ac11e9e9727990a831296f20ffc306a2408cbef1))
+
+
+### Performance Improvements | 性能优化
+
+* 优化 concurrent.Pool 池对象不够用的日志打印为 1 秒一次，而不是频繁打印 ([989b9da](https://github.com/kercylan98/minotaur/commit/989b9da33d282369b5771621b0eb7d6fe03dd6c0))
+
+
+### Tests | 新增或优化测试用例
+
+* 优化 server 服务器并发测试用例 ([4214ea4](https://github.com/kercylan98/minotaur/commit/4214ea4c2b57858cffb2da6fd10190140f1fd0d3))
+
 ## [0.1.3](https://github.com/kercylan98/minotaur/compare/v0.1.2...v0.1.3) (2023-09-05)
 
 
