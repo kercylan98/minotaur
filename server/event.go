@@ -5,6 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"github.com/kercylan98/minotaur/utils/slice"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -91,6 +93,12 @@ func (slf *event) OnStopEvent() {
 //   - 默认将注册 "exit", "quit", "close", "shutdown", "EXIT", "QUIT", "CLOSE", "SHUTDOWN" 指令作为关闭服务器的指令
 //   - 可通过注册默认指令进行默认行为的覆盖
 func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEventHandle, priority ...int) {
+	fd := int(os.Stdin.Fd())
+	if !terminal.IsTerminal(fd) {
+		log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("ignore", "system not terminal"))
+		return
+	}
+
 	slf.consoleCommandEventHandleInitOnce.Do(func() {
 		slf.consoleCommandEventHandles = map[string]*slice.Priority[ConsoleCommandEventHandle]{}
 		go func() {
