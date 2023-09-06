@@ -42,8 +42,8 @@ var messageNames = map[MessageType]string{
 }
 
 const (
-	MessageErrorActionNone     MessageErrorAction = iota // 错误消息类型操作：将不会被进行任何特殊处理，仅进行日志输出
-	MessageErrorActionShutdown                           // 错误消息类型操作：当接收到该类型的操作时，服务器将执行 Server.shutdown 函数
+	MessageErrorActionNone     MessageErrorAction = iota + 1 // 错误消息类型操作：将不会被进行任何特殊处理，仅进行日志输出
+	MessageErrorActionShutdown                               // 错误消息类型操作：当接收到该类型的操作时，服务器将执行 Server.shutdown 函数
 )
 
 var messageErrorActionNames = map[MessageErrorAction]string{
