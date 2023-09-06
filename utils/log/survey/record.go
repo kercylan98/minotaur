@@ -18,7 +18,8 @@ func (slf R) Get(key string) Result {
 
 // Exist 判断指定 key 是否存在
 func (slf R) Exist(key string) bool {
-	return slf.Get(key).Exists()
+	v := slf.Get(key)
+	return v.Exists() && len(v.String()) > 0
 }
 
 // GetString 该函数为 Get(key).String() 的简写
