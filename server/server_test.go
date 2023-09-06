@@ -6,7 +6,6 @@ import (
 	"github.com/kercylan98/minotaur/server/client"
 	"github.com/kercylan98/minotaur/utils/times"
 	"golang.org/x/time/rate"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -31,17 +30,21 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewClient(t *testing.T) {
-	var total atomic.Int64
 	for i := 0; i < 1000; i++ {
+		id := i
+		fmt.Println("启动", i+1)
 		cli := client.NewWebsocket("ws://127.0.0.1:9999")
 		cli.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
-			fmt.Println(string(packet))
+			fmt.Println("收到", id+1, string(packet))
 		})
 		cli.RegConnectionOpenedEvent(func(conn *client.Client) {
 			go func() {
+				for i < 1000 {
+					time.Sleep(time.Second)
+				}
 				for {
+					time.Sleep(time.Millisecond * 100)
 					cli.WriteWS(2, []byte("hello"))
-					total.Add(1)
 				}
 			}()
 		})
