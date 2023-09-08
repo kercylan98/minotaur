@@ -205,14 +205,21 @@ func (slf *Server) Run(addr string) error {
 				go func(conn *Conn) {
 					defer func() {
 						if err := recover(); err != nil {
-							slf.OnConnectionClosedEvent(conn, err)
+							e, ok := err.(error)
+							if !ok {
+								e = fmt.Errorf("%v", err)
+							}
+							conn.Close(e)
 						}
 					}()
 
 					buf := make([]byte, 4096)
-					for {
+					for !conn.IsClosed() {
 						n, err := conn.kcp.Read(buf)
 						if err != nil {
+							if conn.IsClosed() {
+								break
+							}
 							panic(err)
 						}
 						PushPacketMessage(slf, conn, 0, buf[:n])
@@ -292,15 +299,22 @@ func (slf *Server) Run(addr string) error {
 
 				defer func() {
 					if err := recover(); err != nil {
-						slf.OnConnectionClosedEvent(conn, err)
+						e, ok := err.(error)
+						if !ok {
+							e = fmt.Errorf("%v", err)
+						}
+						conn.Close(e)
 					}
 				}()
-				for {
+				for !conn.IsClosed() {
 					if err := ws.SetReadDeadline(super.If(slf.websocketReadDeadline <= 0, times.Zero, time.Now().Add(slf.websocketReadDeadline))); err != nil {
 						panic(err)
 					}
 					messageType, packet, readErr := ws.ReadMessage()
 					if readErr != nil {
+						if conn.IsClosed() {
+							break
+						}
 						panic(readErr)
 					}
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
@@ -559,7 +573,7 @@ func (slf *Server) ShuntChannelFreed(channelGuid int64) {
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) pushMessage(message *Message) {
-	if slf.messagePool.IsClose() || slf.isShutdown.Load() || !slf.OnMessageExecBeforeEvent(message) {
+	if slf.messagePool.IsClose() || !slf.OnMessageExecBeforeEvent(message) {
 		slf.messagePool.Release(message)
 		return
 	}
@@ -578,12 +592,13 @@ func (slf *Server) pushMessage(message *Message) {
 			defer slf.OnShuntChannelCreatedEvent(channelGuid)
 		}
 		if channel != nil {
+			slf.messageCounter.Add(1)
 			channel <- message
 			return
 		}
 	}
+	slf.messageCounter.Add(1)
 	slf.messageChannel <- message
-
 }
 
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
@@ -602,7 +617,6 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *Message) {
-	slf.messageCounter.Add(1)
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -623,7 +637,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	defer func(msg *Message) {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
-			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.attrs), log.Any("error", err), log.String("stack", stack))
+			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.AttrsString()), log.Any("error", err), log.String("stack", stack))
 			fmt.Println(stack)
 			if e, ok := err.(error); ok {
 				slf.OnMessageErrorEvent(msg, e)

@@ -1,9 +1,11 @@
 package slice
 
 import (
-	"math/rand"
 	"reflect"
 )
+
+// Slice 切片类型
+type Slice[V any] []V
 
 // GetValue 获取特定索引的元素，如果索引超出范围则返回零值
 func GetValue[V any](slice []V, i int) (v V) {
@@ -105,14 +107,6 @@ func PrevLoop[V any](slice []V, i int) (prev int, value V) {
 func Reverse[V any](slice []V) {
 	for i := 0; i < len(slice)/2; i++ {
 		slice[i], slice[len(slice)-1-i] = slice[len(slice)-1-i], slice[i]
-	}
-}
-
-// Shuffle 随机打乱数组
-func Shuffle[V any](slice []V) {
-	for i := 0; i < len(slice); i++ {
-		j := rand.Intn(len(slice))
-		slice[i], slice[j] = slice[j], slice[i]
 	}
 }
 
@@ -330,28 +324,6 @@ func SubWithCheck[T any](a, b []T, checkHandle func(a, b T) bool) []T {
 		if !flag {
 			result = append(result, a)
 		}
-	}
-	return result
-}
-
-// Filter 过滤切片中的元素
-//   - filterHandle 返回 true 表示需要保留
-func Filter[T any](a []T, filterHandle func(a T) bool) []T {
-	var result []T
-	for _, a := range a {
-		if filterHandle(a) {
-			result = append(result, a)
-		}
-	}
-	return result
-}
-
-// Mapping 将切片中的元素进行转换
-//   - mappingHandle 返回转换后的元素
-func Mapping[T any, R any](a []T, mappingHandle func(a T) R) []R {
-	var result []R
-	for _, a := range a {
-		result = append(result, mappingHandle(a))
 	}
 	return result
 }

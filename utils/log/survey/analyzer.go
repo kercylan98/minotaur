@@ -70,11 +70,12 @@ func (slf *Analyzer) IncreaseNonRepeat(key string, record R, recordKey string, d
 	for _, v := range dimension {
 		dvs = append(dvs, record.GetString(v))
 	}
-	dk := strings.Join(dvs, "_")
+	dk := strings.Join(append([]string{key}, dvs...), "_")
 	if _, e := slf.repeat[dk]; e {
 		slf.m.Unlock()
 		return
 	}
+	slf.repeat[dk] = struct{}{}
 	slf.m.Unlock()
 	slf.Increase(key, record, recordKey)
 }
@@ -89,11 +90,12 @@ func (slf *Analyzer) IncreaseValueNonRepeat(key string, record R, value float64,
 	for _, v := range dimension {
 		dvs = append(dvs, record.GetString(v))
 	}
-	dk := strings.Join(dvs, "_")
+	dk := strings.Join(append([]string{key}, dvs...), "_")
 	if _, e := slf.repeat[dk]; e {
 		slf.m.Unlock()
 		return
 	}
+	slf.repeat[dk] = struct{}{}
 	slf.m.Unlock()
 	slf.IncreaseValue(key, value)
 }

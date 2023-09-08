@@ -21,6 +21,15 @@ func TestNew(t *testing.T) {
 		}
 		return true
 	})
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
+		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
+	})
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		if srv.GetOnlineCount() > 1 {
+			conn.Close()
+		}
+	})
+
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})

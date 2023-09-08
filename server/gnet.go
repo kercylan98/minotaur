@@ -26,7 +26,8 @@ func (slf *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
 }
 
 func (slf *gNet) OnClosed(c gnet.Conn, err error) (action gnet.Action) {
-	slf.OnConnectionClosedEvent(c.Context().(*Conn), err)
+	conn := c.Context().(*Conn)
+	conn.Close(err)
 	return
 }
 

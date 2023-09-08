@@ -127,6 +127,8 @@ type Conn struct {
 type connection struct {
 	server     *Server
 	mutex      *sync.Mutex
+	close      sync.Once
+	closed     bool
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
@@ -141,21 +143,6 @@ type connection struct {
 // IsEmpty 是否是空连接
 func (slf *Conn) IsEmpty() bool {
 	return slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
-}
-
-// Reuse 重用连接
-//   - 重用连接时，会将当前连接的数据复制到新连接中
-//   - 通常在于连接断开后，重新连接时使用
-func (slf *Conn) Reuse(conn *Conn) {
-	slf.Close()
-	slf.remoteAddr = conn.remoteAddr
-	slf.ip = conn.ip
-	slf.ws = conn.ws
-	slf.gn = conn.gn
-	slf.kcp = conn.kcp
-	slf.data = conn.data
-	slf.packetPool = conn.packetPool
-	slf.packets = conn.packets
 }
 
 // RemoteAddr 获取远程地址
@@ -174,23 +161,36 @@ func (slf *Conn) GetIP() string {
 	return slf.ip
 }
 
+// IsClosed 是否已经关闭
+func (slf *Conn) IsClosed() bool {
+	return slf.closed
+}
+
 // Close 关闭连接
-func (slf *Conn) Close() {
-	if slf.ws != nil {
-		_ = slf.ws.Close()
-	} else if slf.gn != nil {
-		_ = slf.gn.Close()
-	} else if slf.kcp != nil {
-		_ = slf.kcp.Close()
-	}
-	if slf.packetPool != nil {
-		slf.packetPool.Close()
-	}
-	slf.packetPool = nil
-	if slf.packets != nil {
-		close(slf.packets)
-		slf.packets = nil
-	}
+func (slf *Conn) Close(err ...error) {
+	slf.close.Do(func() {
+		slf.closed = true
+		if slf.ws != nil {
+			_ = slf.ws.Close()
+		} else if slf.gn != nil {
+			_ = slf.gn.Close()
+		} else if slf.kcp != nil {
+			_ = slf.kcp.Close()
+		}
+		if slf.packetPool != nil {
+			slf.packetPool.Close()
+		}
+		slf.packetPool = nil
+		if slf.packets != nil {
+			close(slf.packets)
+			slf.packets = nil
+		}
+		if len(err) > 0 {
+			slf.server.OnConnectionClosedEvent(slf, err[0])
+			return
+		}
+		slf.server.OnConnectionClosedEvent(slf, nil)
+	})
 }
 
 // SetData 设置连接数据，该数据将在连接关闭前始终存在
@@ -276,9 +276,6 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close()
-			// TODO: 以下代码是否需要？
-			// log.Error("WriteLoop", log.Any("Error", err))
-			// debug.PrintStack()
 		}
 	}()
 	wait.Done()
