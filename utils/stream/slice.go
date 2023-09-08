@@ -9,7 +9,17 @@ func (slf Slice[V]) Slice() []V {
 	return slf
 }
 
-// Chunk 的快捷方式
+// Copy 复制一份切片
+func (slf Slice[V]) Copy() Slice[V] {
+	return slice.Copy(slf)
+}
+
+// Zoom 是 slice.Zoom 的快捷方式
+func (slf Slice[V]) Zoom(newSize int) Slice[V] {
+	return slice.Zoom(newSize, slf)
+}
+
+// Chunk 是 slice.Chunk 的快捷方式
 func (slf Slice[V]) Chunk(size int) Slices[V] {
 	chunks := slice.Chunk(slf, size)
 	result := make(Slices[V], len(chunks))
