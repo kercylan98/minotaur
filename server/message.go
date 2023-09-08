@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/super"
 	"reflect"
 )
 
@@ -85,6 +85,22 @@ func (slf *Message) MessageType() MessageType {
 	return slf.t
 }
 
+// AttrsString 返回消息属性的字符串表示
+func (slf *Message) AttrsString() string {
+	var attrs = make([]any, 0, len(slf.attrs))
+	for _, attr := range slf.attrs {
+		if tof := reflect.TypeOf(attr); tof.Kind() == reflect.Func {
+			attrs = append(attrs, tof.String())
+			continue
+		}
+		attrs = append(attrs, attr)
+	}
+	if len(attrs) == 0 {
+		return "NoneAttr"
+	}
+	return string(super.MarshalJSON(attrs))
+}
+
 // String 返回消息的字符串表示
 func (slf *Message) String() string {
 	var attrs = make([]any, 0, len(slf.attrs))
@@ -94,22 +110,8 @@ func (slf *Message) String() string {
 		}
 		attrs = append(attrs, attr)
 	}
-	var s string
-	switch slf.t {
-	case MessageTypePacket:
-		if len(attrs) > 1 {
-			s = messagePacketVisualization(attrs[1].([]byte))
-		}
-	default:
-		if len(slf.attrs) == 0 {
-			s = "NoneAttr"
-		} else {
-			raw, _ := json.Marshal(attrs)
-			s = string(raw)
-		}
-	}
 
-	return fmt.Sprintf("[%s] %s", slf.t, s)
+	return fmt.Sprintf("[%s] %s", slf.t, slf.AttrsString())
 }
 
 // String 返回消息类型的字符串表示

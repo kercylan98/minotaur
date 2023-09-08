@@ -21,6 +21,14 @@ func TestNew(t *testing.T) {
 		}
 		return true
 	})
+	var current *server.Conn
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		if current != nil {
+			current.Reuse(conn)
+		} else {
+			current = conn
+		}
+	})
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})

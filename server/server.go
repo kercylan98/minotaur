@@ -623,7 +623,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	defer func(msg *Message) {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
-			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.attrs), log.Any("error", err), log.String("stack", stack))
+			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.AttrsString()), log.Any("error", err), log.String("stack", stack))
 			fmt.Println(stack)
 			if e, ok := err.(error); ok {
 				slf.OnMessageErrorEvent(msg, e)

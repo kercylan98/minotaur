@@ -143,21 +143,6 @@ func (slf *Conn) IsEmpty() bool {
 	return slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
 }
 
-// Reuse 重用连接
-//   - 重用连接时，会将当前连接的数据复制到新连接中
-//   - 通常在于连接断开后，重新连接时使用
-func (slf *Conn) Reuse(conn *Conn) {
-	slf.Close()
-	slf.remoteAddr = conn.remoteAddr
-	slf.ip = conn.ip
-	slf.ws = conn.ws
-	slf.gn = conn.gn
-	slf.kcp = conn.kcp
-	slf.data = conn.data
-	slf.packetPool = conn.packetPool
-	slf.packets = conn.packets
-}
-
 // RemoteAddr 获取远程地址
 func (slf *Conn) RemoteAddr() net.Addr {
 	return slf.remoteAddr
