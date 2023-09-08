@@ -592,12 +592,13 @@ func (slf *Server) pushMessage(message *Message) {
 			defer slf.OnShuntChannelCreatedEvent(channelGuid)
 		}
 		if channel != nil {
+			slf.messageCounter.Add(1)
 			channel <- message
 			return
 		}
 	}
+	slf.messageCounter.Add(1)
 	slf.messageChannel <- message
-
 }
 
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
@@ -616,7 +617,6 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 
 // dispatchMessage 消息分发
 func (slf *Server) dispatchMessage(msg *Message) {
-	slf.messageCounter.Add(1)
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
