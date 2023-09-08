@@ -1,152 +1,151 @@
 package stream
 
-import (
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/slice"
-	"reflect"
-)
+import "github.com/kercylan98/minotaur/utils/slice"
 
-// WithSlice 创建一个 Slice
-//   - 该函数不会影响到传入的 slice
-func WithSlice[V any](values []V) Slice[V] {
-	return slice.Copy(values)
-}
-
-// Slice 提供了 slice 的链式操作
 type Slice[V any] []V
 
-// Filter 过滤 handle 返回 false 的元素
-func (slf Slice[V]) Filter(handle func(index int, value V) bool) Slice[V] {
-	var ns = make([]V, 0, len(slf))
-	for i, v := range slf {
-		if handle(i, v) {
-			ns = append(ns, v)
-		}
-	}
-	return ns
+// Slice 返回切片
+func (slf Slice[V]) Slice() []V {
+	return slf
 }
 
-// FilterValue 过滤特定的 value
-func (slf Slice[V]) FilterValue(values ...V) Slice[V] {
-	return slf.Filter(func(index int, value V) bool {
-		for _, v := range values {
-			if reflect.DeepEqual(v, value) {
-				return false
-			}
-		}
-		return true
-	})
+// Chunk 的快捷方式
+func (slf Slice[V]) Chunk(size int) Slices[V] {
+	chunks := slice.Chunk(slf, size)
+	result := make(Slices[V], len(chunks))
+	for i, chunk := range chunks {
+		result[i] = chunk
+	}
+	return result
 }
 
-// FilterIndex 过滤特定的 index
-func (slf Slice[V]) FilterIndex(indexes ...int) Slice[V] {
-	return slf.Filter(func(index int, value V) bool {
-		return !slice.Contains(indexes, index)
-	})
+// Drop 是 slice.Drop 的快捷方式
+func (slf Slice[V]) Drop(start, n int) Slice[V] {
+	return slice.Drop(start, n, slf)
 }
 
-// RandomKeep 随机保留 n 个元素
-func (slf Slice[V]) RandomKeep(n int) Slice[V] {
-	length := len(slf)
-	if n >= length {
-		return slf
-	}
-	var hit = make([]int, length)
-	for i := 0; i < n; i++ {
-		hit[i] = 1
-	}
-	slice.Shuffle(hit)
-	var ns = make([]V, 0, n)
-	for i, v := range slf {
-		if hit[i] == 1 {
-			ns = append(ns, v)
-		}
-	}
-	return ns
+// DropBy 是 slice.DropBy 的快捷方式
+func (slf Slice[V]) DropBy(fn func(index int, value V) bool) Slice[V] {
+	return slice.DropBy(slf, fn)
 }
 
-// RandomDelete 随机删除 n 个元素
-func (slf Slice[V]) RandomDelete(n int) Slice[V] {
-	length := len(slf)
-	if n >= length {
-		return slf[:0]
-	}
-	var hit = make([]int, length)
-	for i := 0; i < n; i++ {
-		hit[i] = 1
-	}
-	slice.Shuffle(hit)
-	var ns = make([]V, 0, n)
-	for i, v := range slf {
-		if hit[i] == 0 {
-			ns = append(ns, v)
-		}
-	}
-	return ns
+// Each 是 slice.Each 的快捷方式
+func (slf Slice[V]) Each(abort bool, iterator func(index int, item V) bool) Slice[V] {
+	slice.Each(abort, slf, iterator)
+	return slf
 }
 
-// Shuffle 随机打乱
+// EachT 是 slice.EachT 的快捷方式
+func (slf Slice[V]) EachT(iterator func(index int, item V) bool) Slice[V] {
+	slice.EachT(slf, iterator)
+	return slf
+}
+
+// EachF 是 slice.EachF 的快捷方式
+func (slf Slice[V]) EachF(iterator func(index int, item V) bool) Slice[V] {
+	slice.EachF(slf, iterator)
+	return slf
+}
+
+// EachReverse 是 slice.EachReverse 的快捷方式
+func (slf Slice[V]) EachReverse(abort bool, iterator func(index int, item V) bool) Slice[V] {
+	slice.EachReverse(abort, slf, iterator)
+	return slf
+}
+
+// EachReverseT 是 slice.EachReverseT 的快捷方式
+func (slf Slice[V]) EachReverseT(iterator func(index int, item V) bool) Slice[V] {
+	slice.EachReverseT(slf, iterator)
+	return slf
+}
+
+// EachReverseF 是 slice.EachReverseF 的快捷方式
+func (slf Slice[V]) EachReverseF(iterator func(index int, item V) bool) Slice[V] {
+	slice.EachReverseF(slf, iterator)
+	return slf
+}
+
+// FillBy 是 slice.FillBy 的快捷方式
+func (slf Slice[V]) FillBy(fn func(index int, value V) V) Slice[V] {
+	return slice.FillBy(slf, fn)
+}
+
+// FillByCopy 是 slice.FillByCopy 的快捷方式
+func (slf Slice[V]) FillByCopy(fn func(index int, value V) V) Slice[V] {
+	return slice.FillByCopy(slf, fn)
+}
+
+// FillUntil 是 slice.FillUntil 的快捷方式
+func (slf Slice[V]) FillUntil(abort bool, fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntil(abort, slf, fn)
+}
+
+// FillUntilCopy 是 slice.FillUntilCopy 的快捷方式
+func (slf Slice[V]) FillUntilCopy(abort bool, fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntilCopy(abort, slf, fn)
+}
+
+// FillUntilT 是 slice.FillUntilT 的快捷方式
+func (slf Slice[V]) FillUntilT(fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntilT(slf, fn)
+}
+
+// FillUntilF 是 slice.FillUntilF 的快捷方式
+func (slf Slice[V]) FillUntilF(fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntilF(slf, fn)
+}
+
+// FillUntilTCopy 是 slice.FillUntilTCopy 的快捷方式
+func (slf Slice[V]) FillUntilTCopy(fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntilTCopy(slf, fn)
+}
+
+// FillUntilFCopy 是 slice.FillUntilFCopy 的快捷方式
+func (slf Slice[V]) FillUntilFCopy(fn func(index int, value V) (V, bool)) Slice[V] {
+	return slice.FillUntilFCopy(slf, fn)
+}
+
+// Filter 是 slice.Filter 的快捷方式
+func (slf Slice[V]) Filter(reserve bool, expression func(index int, item V) bool) Slice[V] {
+	return slice.Filter(reserve, slf, expression)
+}
+
+// FilterT 是 slice.FilterT 的快捷方式
+func (slf Slice[V]) FilterT(expression func(index int, item V) bool) Slice[V] {
+	return slice.FilterT(slf, expression)
+}
+
+// FilterF 是 slice.FilterF 的快捷方式
+func (slf Slice[V]) FilterF(expression func(index int, item V) bool) Slice[V] {
+	return slice.FilterF(slf, expression)
+}
+
+// FilterCopy 是 slice.FilterCopy 的快捷方式
+func (slf Slice[V]) FilterCopy(reserve bool, expression func(index int, item V) bool) Slice[V] {
+	return slice.FilterCopy(reserve, slf, expression)
+}
+
+// FilterTCopy 是 slice.FilterTCopy 的快捷方式
+func (slf Slice[V]) FilterTCopy(expression func(index int, item V) bool) Slice[V] {
+	return slice.FilterTCopy(slf, expression)
+}
+
+// FilterFCopy 是 slice.FilterFCopy 的快捷方式
+func (slf Slice[V]) FilterFCopy(expression func(index int, item V) bool) Slice[V] {
+	return slice.FilterFCopy(slf, expression)
+}
+
+// Shuffle 是 slice.Shuffle 的快捷方式
 func (slf Slice[V]) Shuffle() Slice[V] {
-	slice.Shuffle(slf)
-	return slf
+	return slice.Shuffle(slf)
 }
 
-// Reverse 反转
-func (slf Slice[V]) Reverse() Slice[V] {
-	slice.Reverse(slf)
-	return slf
+// ShuffleCopy 是 slice.ShuffleCopy 的快捷方式
+func (slf Slice[V]) ShuffleCopy() Slice[V] {
+	return slice.ShuffleCopy(slf)
 }
 
-// Clear 清空
-func (slf Slice[V]) Clear() Slice[V] {
-	return slf[:0]
-}
-
-// Distinct 去重，如果 handle 返回 true 则认为是重复元素
-func (slf Slice[V]) Distinct() Slice[V] {
-	return slice.Distinct(slf)
-}
-
-// Merge 合并
-func (slf Slice[V]) Merge(values ...V) Slice[V] {
-	return append(slf, values...)
-}
-
-// GetStartPart 获取前 n 个元素
-func (slf Slice[V]) GetStartPart(n int) Slice[V] {
-	return slf[:n]
-}
-
-// GetEndPart 获取后 n 个元素
-func (slf Slice[V]) GetEndPart(n int) Slice[V] {
-	return slice.GetEndPart(slf, n)
-}
-
-// GetPart 获取指定区间的元素
-func (slf Slice[V]) GetPart(start, end int) Slice[V] {
-	return slice.GetPart(slf, start, end)
-}
-
-// ContainsHandle 如果包含指定的元素则执行 handle
-func (slf Slice[V]) ContainsHandle(value V, handle func(slice Slice[V]) Slice[V]) Slice[V] {
-	if slice.ContainsAny(slf, value) {
-		return handle(slf)
-	}
-	return slf
-}
-
-// Set 设置指定位置的元素
-func (slf Slice[V]) Set(index int, value V) Slice[V] {
-	slf[index] = value
-	return slf
-}
-
-// Delete 删除指定位置的元素
-func (slf Slice[V]) Delete(index int) Slice[V] {
-	return append(slf, slf[index+1:]...)
-}
-
-// ToMapStream 将当前的 Slice stream 转换为 Map stream
-func (slf Slice[V]) ToMapStream() Map[int, V] {
-	return hash.ToMap(slf)
+// UniqueBy 是 slice.UniqueBy 的快捷方式
+func (slf Slice[V]) UniqueBy(fn func(V) any) Slice[V] {
+	return slice.UniqueBy(slf, fn)
 }
