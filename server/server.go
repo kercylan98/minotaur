@@ -205,14 +205,21 @@ func (slf *Server) Run(addr string) error {
 				go func(conn *Conn) {
 					defer func() {
 						if err := recover(); err != nil {
-							slf.OnConnectionClosedEvent(conn, err)
+							e, ok := err.(error)
+							if !ok {
+								e = fmt.Errorf("%v", err)
+							}
+							conn.Close(e)
 						}
 					}()
 
 					buf := make([]byte, 4096)
-					for {
+					for !conn.IsClosed() {
 						n, err := conn.kcp.Read(buf)
 						if err != nil {
+							if conn.IsClosed() {
+								break
+							}
 							panic(err)
 						}
 						PushPacketMessage(slf, conn, 0, buf[:n])
@@ -292,15 +299,22 @@ func (slf *Server) Run(addr string) error {
 
 				defer func() {
 					if err := recover(); err != nil {
-						slf.OnConnectionClosedEvent(conn, err)
+						e, ok := err.(error)
+						if !ok {
+							e = fmt.Errorf("%v", err)
+						}
+						conn.Close(e)
 					}
 				}()
-				for {
+				for !conn.IsClosed() {
 					if err := ws.SetReadDeadline(super.If(slf.websocketReadDeadline <= 0, times.Zero, time.Now().Add(slf.websocketReadDeadline))); err != nil {
 						panic(err)
 					}
 					messageType, packet, readErr := ws.ReadMessage()
 					if readErr != nil {
+						if conn.IsClosed() {
+							break
+						}
 						panic(readErr)
 					}
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
