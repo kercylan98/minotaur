@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.1.5](https://github.com/kercylan98/minotaur/compare/v0.1.4...v0.1.5) (2023-09-08)
+
+
+### Features | 新特性
+
+* slice 包新增 Zoom 函数， stream 包支持 Zoom 函数 ([62ef35a](https://github.com/kercylan98/minotaur/commit/62ef35a518c259142679d171f53060d0cef79d13))
+* stream.Slice 新增 Indexes 和 Map 函数 ([5024022](https://github.com/kercylan98/minotaur/commit/5024022366aaa52cfdd36afc5440266baa633021))
+* survey 分析记录支持通过 GetTime 函数获取记录时间 ([3c3dc83](https://github.com/kercylan98/minotaur/commit/3c3dc83830e7843ba09fdc3ed2a9ad9d7e099d95))
+* 优化 slice 包 Filter 和 Map 函数，新增 Reduce 函数 ([5ab9902](https://github.com/kercylan98/minotaur/commit/5ab990246ddb7059bc83ec65f485cb7bbb1ded22))
+* 新增大量 slice 包和 hash 包的辅助函数 ([d772409](https://github.com/kercylan98/minotaur/commit/d7724094d19943303b9bbe2b61fa8cb3e595c7c8))
+
+
+### Bug Fixes | 修复
+
+* server 修复消息计数始终为1的问题 ([6c882ed](https://github.com/kercylan98/minotaur/commit/6c882edb09dcd3d7979da42d951eddb63bc6f240))
+* 修复 server 关闭服务器后，如果等待消息结束过程中，新消息将阻塞的问题 ([19df61b](https://github.com/kercylan98/minotaur/commit/19df61b97fc17f5dc7fdcf04d6d23cb72aaa1500))
+* 修复 survey.Analyzer 去重 BUG ([a4ba3f1](https://github.com/kercylan98/minotaur/commit/a4ba3f1fa86ab2ad682c28f6e3ab0258099b4ac6))
+
+
+### Styling | 可读性优化
+
+* 常量调整为从 1 开始 ([5fb1dcb](https://github.com/kercylan98/minotaur/commit/5fb1dcbcea0c56aeafd271e3d7ff3c8cd1eece9b))
+
+
+### Code Refactoring | 重构
+
+* 优化 server 包消息日志，移除 server.Conn.Reuse 函数（不合理） ([376ff77](https://github.com/kercylan98/minotaur/commit/376ff779e129f2ced628f48e4cffdad507def19d))
+* 重构 stream 包，提供更便捷的使用方式 ([d72f185](https://github.com/kercylan98/minotaur/commit/d72f18590bec72f6321fb990f1428a12c30c00e6))
+
+
+### Performance Improvements | 性能优化
+
+* server 包连接关闭逻辑优化 ([483ace2](https://github.com/kercylan98/minotaur/commit/483ace2fa9e1d60069fb6dff234505efd0fc4cd6))
+
+
+### Tests | 新增或优化测试用例
+
+* 新增 stream.Slice 测试用例 ([d9b68fc](https://github.com/kercylan98/minotaur/commit/d9b68fc037a5fdf068c9d3f3d42785ccf12a8928))
+
 ## [0.1.4](https://github.com/kercylan98/minotaur/compare/v0.1.3...v0.1.4) (2023-09-06)
 
 
