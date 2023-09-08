@@ -127,3 +127,18 @@ func Analyze(filePath string, handle func(analyzer *Analyzer, record R)) *Report
 
 	return newReport(analyzer)
 }
+
+// AnalyzeMulti 与 Analyze 类似，但是可以分析多个文件
+func AnalyzeMulti(filePaths []string, handle func(analyzer *Analyzer, record R)) *Report {
+	analyzer := new(Analyzer)
+	for _, filePath := range filePaths {
+		err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
+			handle(analyzer, R(s))
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return newReport(analyzer)
+}

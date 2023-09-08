@@ -1,6 +1,10 @@
 package survey
 
-import "github.com/tidwall/gjson"
+import (
+	"github.com/kercylan98/minotaur/utils/times"
+	"github.com/tidwall/gjson"
+	"time"
+)
 
 type (
 	Result = gjson.Result
@@ -8,6 +12,11 @@ type (
 
 // R 记录器所记录的一条数据
 type R string
+
+// GetTime 获取该记录的时间
+func (slf R) GetTime(layout string) time.Time {
+	return times.GetTimeFromString(string(slf)[:len(layout)], layout)
+}
 
 // Get 获取指定 key 的值
 //   - 当 key 为嵌套 key 时，使用 . 进行分割，例如：a.b.c
