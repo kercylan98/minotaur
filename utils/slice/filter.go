@@ -53,12 +53,12 @@ func FilterCopy[V any](reserve bool, slice []V, expression func(index int, item 
 	return Filter(reserve, s, expression)
 }
 
-// FilterCopyT 与 FilterCopy 的功能相同，但是 reserve 被默认为 true
-func FilterCopyT[V any](slice []V, expression func(index int, item V) bool) []V {
+// FilterTCopy 与 FilterCopy 的功能相同，但是 reserve 被默认为 true
+func FilterTCopy[V any](slice []V, expression func(index int, item V) bool) []V {
 	return FilterCopy(true, slice, expression)
 }
 
-// FilterCopyF 与 FilterCopy 的功能相同，但是 reserve 被默认为 false
-func FilterCopyF[V any](slice []V, expression func(index int, item V) bool) []V {
+// FilterFCopy 与 FilterCopy 的功能相同，但是 reserve 被默认为 false
+func FilterFCopy[V any](slice []V, expression func(index int, item V) bool) []V {
 	return FilterCopy(false, slice, expression)
 }

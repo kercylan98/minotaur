@@ -1,7 +1,6 @@
 package slice
 
 import (
-	"math/rand"
 	"reflect"
 )
 
@@ -108,14 +107,6 @@ func PrevLoop[V any](slice []V, i int) (prev int, value V) {
 func Reverse[V any](slice []V) {
 	for i := 0; i < len(slice)/2; i++ {
 		slice[i], slice[len(slice)-1-i] = slice[len(slice)-1-i], slice[i]
-	}
-}
-
-// Shuffle 随机打乱数组
-func Shuffle[V any](slice []V) {
-	for i := 0; i < len(slice); i++ {
-		j := rand.Intn(len(slice))
-		slice[i], slice[j] = slice[j], slice[i]
 	}
 }
 
