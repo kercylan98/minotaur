@@ -19,6 +19,24 @@ func (slf Slice[V]) Zoom(newSize int) Slice[V] {
 	return slice.Zoom(newSize, slf)
 }
 
+// Indexes 将切片转换为索引切片
+func (slf Slice[V]) Indexes() Slice[int] {
+	var s = make([]int, len(slf))
+	for i := 0; i < len(s); i++ {
+		s[i] = i
+	}
+	return s
+}
+
+// Map 将切片转为 map
+func (slf Slice[V]) Map() Map[int, V] {
+	var m = make(map[int]V, len(slf))
+	for k, v := range slf {
+		m[k] = v
+	}
+	return m
+}
+
 // Chunk 是 slice.Chunk 的快捷方式
 func (slf Slice[V]) Chunk(size int) Slices[V] {
 	chunks := slice.Chunk(slf, size)
