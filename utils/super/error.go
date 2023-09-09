@@ -5,19 +5,20 @@ import (
 	"sync"
 )
 
-var errorMapper = make(map[error]int)
-var errorMapperRef = make(map[error]error)
-var mutex sync.Mutex
+var errorManagerInstance *errorManager
 
 // RegError 通过错误码注册错误，返回错误的引用
 func RegError(code int, message string) error {
 	if code == 0 {
 		return errors.New("error code can not be 0")
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
+	errorManagerInstance.mutex.Lock()
+	defer errorManagerInstance.mutex.Unlock()
+	if errorManagerInstance == nil {
+		errorManagerInstance = new(errorManager).init()
+	}
 	err := &ser{code: code, message: message}
-	errorMapper[err] = code
+	errorManagerInstance.errorMapper[err] = code
 	return err
 }
 
@@ -27,11 +28,14 @@ func RegErrorRef(code int, message string, ref error) error {
 	if code == 0 {
 		return errors.New("error code can not be 0")
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
+	errorManagerInstance.mutex.Lock()
+	defer errorManagerInstance.mutex.Unlock()
+	if errorManagerInstance == nil {
+		errorManagerInstance = new(errorManager).init()
+	}
 	err := &ser{code: code, message: message}
-	errorMapper[err] = code
-	errorMapperRef[ref] = err
+	errorManagerInstance.errorMapper[err] = code
+	errorManagerInstance.errorMapperRef[ref] = err
 	return ref
 }
 
@@ -41,9 +45,9 @@ func GetError(err error) (int, error) {
 	if unw == nil {
 		unw = err
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
-	if ref, exist := errorMapperRef[unw]; exist {
+	errorManagerInstance.mutex.Lock()
+	defer errorManagerInstance.mutex.Unlock()
+	if ref, exist := errorManagerInstance.errorMapperRef[unw]; exist {
 		//err = fmt.Errorf("%w : %s", ref, err.Error())
 		err = ref
 	}
@@ -51,7 +55,7 @@ func GetError(err error) (int, error) {
 	if unw == nil {
 		unw = err
 	}
-	code, exist := errorMapper[unw]
+	code, exist := errorManagerInstance.errorMapper[unw]
 	if !exist {
 		return 0, errors.New("error not found")
 	}
@@ -65,4 +69,16 @@ type ser struct {
 
 func (slf *ser) Error() string {
 	return slf.message
+}
+
+type errorManager struct {
+	errorMapper    map[error]int
+	errorMapperRef map[error]error
+	mutex          sync.Mutex
+}
+
+func (slf *errorManager) init() *errorManager {
+	slf.errorMapper = make(map[error]int)
+	slf.errorMapperRef = make(map[error]error)
+	return slf
 }
