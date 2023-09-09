@@ -171,6 +171,12 @@ func (slf *event) OnStartFinishEvent() {
 			return true
 		})
 	}, "StartFinishEvent")
+	if slf.Server.limitLife > 0 {
+		go func() {
+			time.Sleep(slf.Server.limitLife)
+			slf.Shutdown()
+		}()
+	}
 }
 
 // RegConnectionClosedEvent 在连接关闭后将立刻执行被注册的事件处理函数

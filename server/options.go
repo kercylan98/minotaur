@@ -41,6 +41,28 @@ type runtime struct {
 	websocketReadDeadline     time.Duration    // websocket连接超时时间
 	websocketCompression      int              // websocket压缩等级
 	websocketWriteCompression bool             // websocket写入压缩
+	limitLife                 time.Duration    // 限制最大生命周期
+	connMessageChannelSize    int              // 连接消息通道大小
+}
+
+// WithConnMessageChannelSize 通过指定连接消息通道大小的方式创建服务器
+//   - 足够大的消息通道可以确保连接在写入消息时不至于阻塞
+//   - 默认值为 DefaultConnectionChannelSize
+func WithConnMessageChannelSize(size int) Option {
+	return func(srv *Server) {
+		if size <= 0 {
+			size = DefaultConnectionChannelSize
+		}
+		srv.connMessageChannelSize = size
+	}
+}
+
+// WithLimitLife 通过限制最大生命周期的方式创建服务器
+//   - 通常用于测试服务器，服务器将在到达最大生命周期时自动关闭
+func WithLimitLife(t time.Duration) Option {
+	return func(srv *Server) {
+		srv.limitLife = t
+	}
 }
 
 // WithWebsocketWriteCompression 通过数据写入压缩的方式创建Websocket服务器

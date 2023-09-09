@@ -31,7 +31,11 @@ import (
 // New 根据特定网络类型创建一个服务器
 func New(network Network, options ...Option) *Server {
 	server := &Server{
-		runtime:      &runtime{messagePoolSize: DefaultMessageBufferSize, messageChannelSize: DefaultMessageChannelSize},
+		runtime: &runtime{
+			messagePoolSize:        DefaultMessageBufferSize,
+			messageChannelSize:     DefaultMessageChannelSize,
+			connMessageChannelSize: DefaultConnectionChannelSize,
+		},
 		option:       &option{},
 		network:      network,
 		online:       concurrent.NewBalanceMap[string, *Conn](),

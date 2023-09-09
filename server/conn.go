@@ -16,7 +16,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			packets:    make(chan *connPacket, 1024*10),
+			packets:    make(chan *connPacket, DefaultConnectionChannelSize),
 			server:     server,
 			remoteAddr: session.RemoteAddr(),
 			ip:         session.RemoteAddr().String(),
@@ -39,7 +39,7 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			packets:    make(chan *connPacket, 1024*10),
+			packets:    make(chan *connPacket, DefaultConnectionChannelSize),
 			server:     server,
 			remoteAddr: conn.RemoteAddr(),
 			ip:         conn.RemoteAddr().String(),
@@ -62,7 +62,7 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			packets:    make(chan *connPacket, 1024*10),
+			packets:    make(chan *connPacket, DefaultConnectionChannelSize),
 			server:     server,
 			remoteAddr: ws.RemoteAddr(),
 			ip:         ip,
@@ -82,7 +82,7 @@ func newGatewayConn(conn *Conn, connId string) *Conn {
 	c := &Conn{
 		//ctx: server.ctx,
 		connection: &connection{
-			packets: make(chan *connPacket, 1024*10),
+			packets: make(chan *connPacket, DefaultConnectionChannelSize),
 			server:  conn.server,
 			data:    map[any]any{},
 		},
@@ -98,7 +98,7 @@ func NewEmptyConn(server *Server) *Conn {
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			packets:    make(chan *connPacket, 1024*10),
+			packets:    make(chan *connPacket, DefaultConnectionChannelSize),
 			server:     server,
 			remoteAddr: &net.TCPAddr{},
 			ip:         "0.0.0.0:0",

@@ -42,7 +42,7 @@ func TestNewClient(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		id := i
 		fmt.Println("启动", i+1)
-		cli := client.NewWebsocket("ws://127.0.0.1:9999")
+		cli := client.NewWebsocket("ws://127.0.0.1:8888")
 		cli.RegConnectionReceivePacketEvent(func(conn *client.Client, wst int, packet []byte) {
 			fmt.Println("收到", id+1, string(packet))
 		})

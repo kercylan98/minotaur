@@ -6,16 +6,22 @@ import (
 )
 
 func ExampleNew() {
-	srv := server.New(server.NetworkWebsocket,
-		server.WithDeadlockDetect(time.Second*5),
-		server.WithPProf("/debug/pprof"),
-	)
-
+	srv := server.New(server.NetworkWebsocket, server.WithLimitLife(time.Millisecond))
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
 
-	go func() { time.Sleep(1 * time.Second); srv.Shutdown() }()
+	// Output:
+}
+
+func ExampleServer_Run() {
+	srv := server.New(server.NetworkWebsocket, server.WithLimitLife(time.Millisecond))
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
 	if err := srv.Run(":9999"); err != nil {
 		panic(err)
 	}
