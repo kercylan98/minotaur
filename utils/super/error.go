@@ -6,14 +6,15 @@ import (
 )
 
 var errorManagerInstance *errorManager
+var errorManagerMutex sync.Mutex
 
 // RegError 通过错误码注册错误，返回错误的引用
 func RegError(code int, message string) error {
 	if code == 0 {
 		return errors.New("error code can not be 0")
 	}
-	errorManagerInstance.mutex.Lock()
-	defer errorManagerInstance.mutex.Unlock()
+	errorManagerMutex.Lock()
+	defer errorManagerMutex.Unlock()
 	if errorManagerInstance == nil {
 		errorManagerInstance = new(errorManager).init()
 	}
@@ -28,8 +29,8 @@ func RegErrorRef(code int, message string, ref error) error {
 	if code == 0 {
 		return errors.New("error code can not be 0")
 	}
-	errorManagerInstance.mutex.Lock()
-	defer errorManagerInstance.mutex.Unlock()
+	errorManagerMutex.Lock()
+	defer errorManagerMutex.Unlock()
 	if errorManagerInstance == nil {
 		errorManagerInstance = new(errorManager).init()
 	}
@@ -45,8 +46,8 @@ func GetError(err error) (int, error) {
 	if unw == nil {
 		unw = err
 	}
-	errorManagerInstance.mutex.Lock()
-	defer errorManagerInstance.mutex.Unlock()
+	errorManagerMutex.Lock()
+	defer errorManagerMutex.Unlock()
 	if ref, exist := errorManagerInstance.errorMapperRef[unw]; exist {
 		//err = fmt.Errorf("%w : %s", ref, err.Error())
 		err = ref
