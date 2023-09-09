@@ -169,6 +169,8 @@ func (slf *Conn) IsClosed() bool {
 // Close 关闭连接
 func (slf *Conn) Close(err ...error) {
 	slf.close.Do(func() {
+		slf.mutex.Lock()
+		defer slf.mutex.Unlock()
 		slf.closed = true
 		if slf.ws != nil {
 			_ = slf.ws.Close()
