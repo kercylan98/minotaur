@@ -13,8 +13,7 @@ type (
 	EndpointSelector func(endpoints []*Endpoint) *Endpoint
 )
 
-// NewGateway 基于 server.Server 创建网关服务器
-//   - behaviorController 行为控制函数决定了客户端与网关服务器建立连接及接收数据包后的行为
+// NewGateway 基于 server.Server 创建 Gateway 网关服务器
 func NewGateway(srv *server.Server, scanner Scanner, options ...Option) *Gateway {
 	gateway := &Gateway{
 		events:  newEvents(),
@@ -32,7 +31,16 @@ func NewGateway(srv *server.Server, scanner Scanner, options ...Option) *Gateway
 	return gateway
 }
 
-// Gateway 网关
+// Gateway 基于 server.Server 实现的网关服务器
+//   - 网关服务器是一个特殊的服务器，它会通过扫描器扫描端点列表，然后连接到端点列表中的所有端点，当端点连接成功后，网关服务器会将客户端的连接数据转发到端点服务器
+//   - 由于该网关为多个客户端共享一个端点的连接，所以不会受限于单机 65535 个端口的限制
+//   - 需要注意的是，网关可以通过扫描器得到每个端点需要建立多少个连接，该连接总数将受限与 65535 个端口的限制
+//
+// 一些特性：
+//   - 支持 server.Server 所支持的所有 Socket 网络类型
+//   - 支持将客户端网络类型进行不同的转换，例如：客户端使用 Websocket 连接，但是网关服务器可以将其转换为 TCP 端点的连接
+//   - 支持客户端消息绑定，在客户端未断开连接的情况下，可以将客户端的连接绑定到某个端点，这样该客户端的所有消息都会转发到该端点
+//   - 根据端点延迟实时调整端点状态评分，根据评分选择最优的端点，默认评分算法为：1 / (1 + 1.5 * ${DelaySeconds})
 type Gateway struct {
 	*events
 	srv     *server.Server                  // 网关服务器核心
