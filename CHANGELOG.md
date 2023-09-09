@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.6](https://github.com/kercylan98/minotaur/compare/v0.1.5...v0.1.6) (2023-09-09)
+
+
+### Features | 新特性
+
+* survey 包 Report 新增 Avg、Count、Sum 等辅助计算函数 ([8fd4e8f](https://github.com/kercylan98/minotaur/commit/8fd4e8f722dc7b6813912d9852428971ee4ddfe8))
+
+
+### Bug Fixes | 修复
+
+* 修复 server.Conn 和 client.Client 连接关闭时发生的竞态问题 ([0215c54](https://github.com/kercylan98/minotaur/commit/0215c5449ae5c46890fca362279f94debb72aa29))
+* 修复 server.Conn 连接关闭时发生的竞态问题 ([674c38a](https://github.com/kercylan98/minotaur/commit/674c38a066ac17719019a70c02a6de11a3847208))
+
+
+### Code Refactoring | 重构
+
+* 重构 super 包中的 error 部分，优化设计不合理的地方，支持动态注册错误码，支持并发读写 ([de7b085](https://github.com/kercylan98/minotaur/commit/de7b085cf7bed61637a55a4d4f7010de581ee244))
+
+
+### Performance Improvements | 性能优化
+
+* 调整 super 包 error 部分为使用后再申请内存 ([83b2800](https://github.com/kercylan98/minotaur/commit/83b28003c85f0caa87f5d48697bef7f3072ee58a))
+
 ## [0.1.5](https://github.com/kercylan98/minotaur/compare/v0.1.4...v0.1.5) (2023-09-08)
 
 
