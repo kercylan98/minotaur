@@ -9,6 +9,7 @@ func newReport(analyzer *Analyzer) *Report {
 		analyzer: analyzer,
 		Name:     "ROOT",
 		Values:   analyzer.v,
+		Counter:  analyzer.vc,
 		Subs:     make([]*Report, 0, len(analyzer.subs)),
 	}
 	for k, v := range analyzer.subs {
@@ -24,7 +25,37 @@ type Report struct {
 	analyzer *Analyzer
 	Name     string             // 报告名称（默认为 ROOT）
 	Values   map[string]float64 `json:"Values,omitempty"`
+	Counter  map[string]int64   `json:"Count,omitempty"`
 	Subs     []*Report          `json:"Reports,omitempty"`
+}
+
+// Avg 计算平均值
+func (slf *Report) Avg(key string) float64 {
+	return slf.Values[key] / float64(slf.Counter[key])
+}
+
+// Count 获取特定 key 的计数次数
+func (slf *Report) Count(key string) int64 {
+	return slf.Counter[key]
+}
+
+// Sum 获取特定 key 的总和
+func (slf *Report) Sum(keys ...string) float64 {
+	var sum float64
+	for _, key := range keys {
+		sum += slf.Values[key]
+	}
+	return sum
+}
+
+// Sub 获取特定名称的子报告
+func (slf *Report) Sub(name string) *Report {
+	for _, sub := range slf.Subs {
+		if sub.Name == name {
+			return sub
+		}
+	}
+	return nil
 }
 
 // ReserveSub 仅保留特定名称子报告

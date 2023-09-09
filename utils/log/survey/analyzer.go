@@ -7,8 +7,9 @@ import (
 
 // Analyzer 分析器
 type Analyzer struct {
-	v      map[string]float64
-	repeat map[string]struct{}
+	v      map[string]float64  // 记录了每个 key 的当前值
+	vc     map[string]int64    // 记录了每个 key 生效的计数数量
+	repeat map[string]struct{} // 去重信息
 	subs   map[string]*Analyzer
 	m      sync.Mutex
 }
@@ -37,13 +38,10 @@ func (slf *Analyzer) Increase(key string, record R, recordKey string) {
 	}
 	if slf.v == nil {
 		slf.v = make(map[string]float64)
+		slf.vc = make(map[string]int64)
 	}
-	v, e := slf.v[key]
-	if !e {
-		slf.v[key] = record.GetFloat64(recordKey)
-		return
-	}
-	slf.v[key] = v + record.GetFloat64(recordKey)
+	slf.v[key] += record.GetFloat64(recordKey)
+	slf.vc[key]++
 }
 
 // IncreaseValue 在指定 key 现有值的基础上增加 value
@@ -52,8 +50,10 @@ func (slf *Analyzer) IncreaseValue(key string, value float64) {
 	defer slf.m.Unlock()
 	if slf.v == nil {
 		slf.v = make(map[string]float64)
+		slf.vc = make(map[string]int64)
 	}
 	slf.v[key] += value
+	slf.vc[key]++
 }
 
 // IncreaseNonRepeat 在指定 key 现有值的基础上增加 recordKey 的值，但是当去重维度 dimension 相同时，不会增加
