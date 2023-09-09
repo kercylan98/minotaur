@@ -1,5 +1,119 @@
 # Changelog
 
+## [0.1.5](https://github.com/kercylan98/minotaur/compare/v0.1.4...v0.1.5) (2023-09-08)
+
+
+### Features | 新特性
+
+* slice 包新增 Zoom 函数， stream 包支持 Zoom 函数 ([62ef35a](https://github.com/kercylan98/minotaur/commit/62ef35a518c259142679d171f53060d0cef79d13))
+* stream.Slice 新增 Indexes 和 Map 函数 ([5024022](https://github.com/kercylan98/minotaur/commit/5024022366aaa52cfdd36afc5440266baa633021))
+* survey 分析记录支持通过 GetTime 函数获取记录时间 ([3c3dc83](https://github.com/kercylan98/minotaur/commit/3c3dc83830e7843ba09fdc3ed2a9ad9d7e099d95))
+* 优化 slice 包 Filter 和 Map 函数，新增 Reduce 函数 ([5ab9902](https://github.com/kercylan98/minotaur/commit/5ab990246ddb7059bc83ec65f485cb7bbb1ded22))
+* 新增大量 slice 包和 hash 包的辅助函数 ([d772409](https://github.com/kercylan98/minotaur/commit/d7724094d19943303b9bbe2b61fa8cb3e595c7c8))
+
+
+### Bug Fixes | 修复
+
+* server 修复消息计数始终为1的问题 ([6c882ed](https://github.com/kercylan98/minotaur/commit/6c882edb09dcd3d7979da42d951eddb63bc6f240))
+* 修复 server 关闭服务器后，如果等待消息结束过程中，新消息将阻塞的问题 ([19df61b](https://github.com/kercylan98/minotaur/commit/19df61b97fc17f5dc7fdcf04d6d23cb72aaa1500))
+* 修复 survey.Analyzer 去重 BUG ([a4ba3f1](https://github.com/kercylan98/minotaur/commit/a4ba3f1fa86ab2ad682c28f6e3ab0258099b4ac6))
+
+
+### Styling | 可读性优化
+
+* 常量调整为从 1 开始 ([5fb1dcb](https://github.com/kercylan98/minotaur/commit/5fb1dcbcea0c56aeafd271e3d7ff3c8cd1eece9b))
+
+
+### Code Refactoring | 重构
+
+* 优化 server 包消息日志，移除 server.Conn.Reuse 函数（不合理） ([376ff77](https://github.com/kercylan98/minotaur/commit/376ff779e129f2ced628f48e4cffdad507def19d))
+* 重构 stream 包，提供更便捷的使用方式 ([d72f185](https://github.com/kercylan98/minotaur/commit/d72f18590bec72f6321fb990f1428a12c30c00e6))
+
+
+### Performance Improvements | 性能优化
+
+* server 包连接关闭逻辑优化 ([483ace2](https://github.com/kercylan98/minotaur/commit/483ace2fa9e1d60069fb6dff234505efd0fc4cd6))
+
+
+### Tests | 新增或优化测试用例
+
+* 新增 stream.Slice 测试用例 ([d9b68fc](https://github.com/kercylan98/minotaur/commit/d9b68fc037a5fdf068c9d3f3d42785ccf12a8928))
+
+## [0.1.4](https://github.com/kercylan98/minotaur/compare/v0.1.3...v0.1.4) (2023-09-06)
+
+
+### Features | 新特性
+
+* server 包 Server 新增 RegMessageReadyEvent 函数 ([04c40bf](https://github.com/kercylan98/minotaur/commit/04c40bf87379f3216c1eb6dcb36b44f4b1fd0ee0))
+* slice 包新增 Mapping 函数，支持将切片中的元素进行转换 ([da68945](https://github.com/kercylan98/minotaur/commit/da68945f7eea9806bf1e3c3fe3c015b997f11596))
+
+
+### Bug Fixes | 修复
+
+* client 包错误类型转换错误问题处理 ([034ca17](https://github.com/kercylan98/minotaur/commit/034ca174b6461e15f078420d5dcc7172113ee477))
+* 修复 server 包 Server.RegConsoleCommandEvent 函数在无终端环境下导致 CPU 飙升的问题 ([3e35e73](https://github.com/kercylan98/minotaur/commit/3e35e73c9094fba66c61853a8c41cfa36bba10cf))
+
+
+### Docs | 文档优化
+
+* README.md 增加部分示例 ([e5bf7f3](https://github.com/kercylan98/minotaur/commit/e5bf7f31207831153ba2f36d743ca18ca1331fc4))
+
+
+### Code Refactoring | 重构
+
+* survey 包 AllWithPath 函数更改为 Analyze，新增分析报告，及分析器，提供方便的统计功能 ([ac11e9e](https://github.com/kercylan98/minotaur/commit/ac11e9e9727990a831296f20ffc306a2408cbef1))
+
+
+### Performance Improvements | 性能优化
+
+* 优化 concurrent.Pool 池对象不够用的日志打印为 1 秒一次，而不是频繁打印 ([989b9da](https://github.com/kercylan98/minotaur/commit/989b9da33d282369b5771621b0eb7d6fe03dd6c0))
+
+
+### Tests | 新增或优化测试用例
+
+* 优化 server 服务器并发测试用例 ([4214ea4](https://github.com/kercylan98/minotaur/commit/4214ea4c2b57858cffb2da6fd10190140f1fd0d3))
+
+## [0.1.3](https://github.com/kercylan98/minotaur/compare/v0.1.2...v0.1.3) (2023-09-05)
+
+
+### Features | 新特性
+
+* server 包新增 Server.RegMessageExecBeforeEvent 函数，支持在消息执行前进行处理，适用于限流等场景 ([0297c44](https://github.com/kercylan98/minotaur/commit/0297c4444aba9f13c7b60276c3b54f83d3ab8174))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 包 RegMessageExecBeforeEvent 函数导致内存泄露的问题 ([15a4918](https://github.com/kercylan98/minotaur/commit/15a491816a26afdcda9f241de20740ccc8e27d83))
+* 修复宕机问题 ([add1e4b](https://github.com/kercylan98/minotaur/commit/add1e4bc8c07f934a419da16c5f9edbf4bf88535))
+
+## [0.1.2](https://github.com/kercylan98/minotaur/compare/v0.1.1...v0.1.2) (2023-09-01)
+
+
+### Features | 新特性
+
+* counter 包增加简单去重计数器 ([0d76507](https://github.com/kercylan98/minotaur/commit/0d765075e07b414a3940d643db273332ae79b404))
+* gateway 支持连接与某一端点保持持久通讯，支持将端点的所有连接切换到另一端点 ([6d5aa59](https://github.com/kercylan98/minotaur/commit/6d5aa599d76ac3e297077781401e039df6562ec7))
+* gateway 新增 WithEndpointConnectionPoolSize 支持配置与端点建立连接的数量 ([3ca6ed0](https://github.com/kercylan98/minotaur/commit/3ca6ed00ec91c34a4a61a61dcfd5731da8faba66))
+* super 包新增函数 IsNumber，用于判断一个值是否为数字类型 ([518d47a](https://github.com/kercylan98/minotaur/commit/518d47ae6a13eda45cd7d650d5e07477869c2eff))
+
+
+### Bug Fixes | 修复
+
+* server 包中 RegConsoleCommandEvent 函数空指针问题处理 ([2ed52fc](https://github.com/kercylan98/minotaur/commit/2ed52fc814130a57b3c356214052069c094d7bed))
+* server 包修复服务器关闭后发送消息引起的空指针问题 ([3062428](https://github.com/kercylan98/minotaur/commit/3062428051b075ccb53f1758d5f905b047401af1))
+* survey 包修复 All 函数无用的返回参 ([c6f8c19](https://github.com/kercylan98/minotaur/commit/c6f8c190862e9af516dda9338225de2c960c3b2f))
+* 修复 server 中 HTTP 服务器关闭时会引发空指针的问题 ([8cd9979](https://github.com/kercylan98/minotaur/commit/8cd9979e2be17e6043959f7206bf254071397b72))
+
+
+### Code Refactoring | 重构
+
+* 优化 survey，移除 All 函数，新增 Flusher 接口，可自行实现其他持久化方式 ([d9ba1bc](https://github.com/kercylan98/minotaur/commit/d9ba1bc85caa0c3a7453515b2e5452cbfb31c640))
+
+
+### Performance Improvements | 性能优化
+
+* 提高消息吞吐量，降低消息延迟 ([1cbe8ec](https://github.com/kercylan98/minotaur/commit/1cbe8ecf56430318ca1f5a190e311cbb1bcbb2a4))
+
 ## [0.1.1](https://github.com/kercylan98/minotaur/compare/v0.1.0...v0.1.1) (2023-08-24)
 
 
