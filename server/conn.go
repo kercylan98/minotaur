@@ -17,7 +17,6 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 		ctx: server.ctx,
 		connection: &connection{
 			packets:    make(chan *connPacket, 1024*10),
-			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: session.RemoteAddr(),
 			ip:         session.RemoteAddr().String(),
@@ -41,7 +40,6 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 		ctx: server.ctx,
 		connection: &connection{
 			packets:    make(chan *connPacket, 1024*10),
-			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: conn.RemoteAddr(),
 			ip:         conn.RemoteAddr().String(),
@@ -65,7 +63,6 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 		ctx: server.ctx,
 		connection: &connection{
 			packets:    make(chan *connPacket, 1024*10),
-			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: ws.RemoteAddr(),
 			ip:         ip,
@@ -86,7 +83,6 @@ func newGatewayConn(conn *Conn, connId string) *Conn {
 		//ctx: server.ctx,
 		connection: &connection{
 			packets: make(chan *connPacket, 1024*10),
-			mutex:   new(sync.Mutex),
 			server:  conn.server,
 			data:    map[any]any{},
 		},
@@ -103,7 +99,6 @@ func NewEmptyConn(server *Server) *Conn {
 		ctx: server.ctx,
 		connection: &connection{
 			packets:    make(chan *connPacket, 1024*10),
-			mutex:      new(sync.Mutex),
 			server:     server,
 			remoteAddr: &net.TCPAddr{},
 			ip:         "0.0.0.0:0",
@@ -126,9 +121,9 @@ type Conn struct {
 // connection 长久保持的连接
 type connection struct {
 	server     *Server
-	mutex      *sync.Mutex
 	close      sync.Once
 	closed     bool
+	closeL     sync.Mutex
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
@@ -164,33 +159,6 @@ func (slf *Conn) GetIP() string {
 // IsClosed 是否已经关闭
 func (slf *Conn) IsClosed() bool {
 	return slf.closed
-}
-
-// Close 关闭连接
-func (slf *Conn) Close(err ...error) {
-	slf.close.Do(func() {
-		slf.closed = true
-		if slf.ws != nil {
-			_ = slf.ws.Close()
-		} else if slf.gn != nil {
-			_ = slf.gn.Close()
-		} else if slf.kcp != nil {
-			_ = slf.kcp.Close()
-		}
-		if slf.packetPool != nil {
-			slf.packetPool.Close()
-		}
-		slf.packetPool = nil
-		if slf.packets != nil {
-			close(slf.packets)
-			slf.packets = nil
-		}
-		if len(err) > 0 {
-			slf.server.OnConnectionClosedEvent(slf, err[0])
-			return
-		}
-		slf.server.OnConnectionClosedEvent(slf, nil)
-	})
 }
 
 // SetData 设置连接数据，该数据将在连接关闭前始终存在
@@ -243,13 +211,13 @@ func (slf *Conn) SetWST(wst int) *Conn {
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
-	slf.mutex.Lock()
-	defer slf.mutex.Unlock()
 	if slf.gw != nil {
 		slf.gw(packet)
 		return
 	}
 	packet = slf.server.OnConnectionWritePacketBeforeEvent(slf, packet)
+	slf.closeL.Lock()
+	defer slf.closeL.Unlock()
 	if slf.packetPool == nil || slf.packets == nil {
 		return
 	}
@@ -276,10 +244,16 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
 			slf.Close()
+			slf.packets = nil
 		}
 	}()
 	wait.Done()
-	for packet := range slf.packets {
+	for {
+		packet, ok := <-slf.packets
+		if !ok {
+			slf.packets = nil
+			break
+		}
 
 		data := packet
 		var err error
@@ -298,8 +272,9 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 			}
 		}
 		callback := data.callback
+		slf.closeL.Lock()
 		slf.packetPool.Release(data)
-
+		slf.closeL.Unlock()
 		if callback != nil {
 			callback(err)
 		}
@@ -307,4 +282,32 @@ func (slf *Conn) writeLoop(wait *sync.WaitGroup) {
 			panic(err)
 		}
 	}
+}
+
+// Close 关闭连接
+func (slf *Conn) Close(err ...error) {
+	slf.close.Do(func() {
+		slf.closeL.Lock()
+		defer slf.closeL.Unlock()
+		slf.closed = true
+		if slf.ws != nil {
+			_ = slf.ws.Close()
+		} else if slf.gn != nil {
+			_ = slf.gn.Close()
+		} else if slf.kcp != nil {
+			_ = slf.kcp.Close()
+		}
+		if slf.packetPool != nil {
+			slf.packetPool.Close()
+		}
+		slf.packetPool = nil
+		if slf.packets != nil {
+			close(slf.packets)
+		}
+		if len(err) > 0 {
+			slf.server.OnConnectionClosedEvent(slf, err[0])
+			return
+		}
+		slf.server.OnConnectionClosedEvent(slf, nil)
+	})
 }

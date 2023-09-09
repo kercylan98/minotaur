@@ -127,7 +127,7 @@ func (slf *Gateway) GetEndpoint(name string) (*Endpoint, error) {
 
 	var available = make([]*Endpoint, 0, len(endpoints))
 	for _, e := range endpoints {
-		if e.state > 0 {
+		if e.GetState() > 0 {
 			available = append(available, e)
 		}
 	}
@@ -150,7 +150,7 @@ func (slf *Gateway) GetConnEndpoint(name string, conn *server.Conn) (*Endpoint, 
 	slf.cceLock.RLock()
 	endpoint, exist := slf.cce[conn.GetID()]
 	slf.cceLock.RUnlock()
-	if exist && endpoint.state > 0 {
+	if exist && endpoint.GetState() > 0 {
 		return endpoint, nil
 	}
 	return slf.GetEndpoint(name)
@@ -158,7 +158,7 @@ func (slf *Gateway) GetConnEndpoint(name string, conn *server.Conn) (*Endpoint, 
 
 // SwitchEndpoint 将端点端点的所有连接切换到另一个端点
 func (slf *Gateway) SwitchEndpoint(source, dest *Endpoint) {
-	if source.name == dest.name && source.address == dest.address || source.state <= 0 || dest.state <= 0 {
+	if source.name == dest.name && source.address == dest.address || source.GetState() <= 0 || dest.GetState() <= 0 {
 		return
 	}
 	slf.cceLock.Lock()

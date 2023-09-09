@@ -34,14 +34,14 @@ type Client struct {
 
 func (slf *Client) Run() error {
 	var runState = make(chan error)
-	go func() {
+	go func(runState chan<- error) {
 		defer func() {
 			if err := recover(); err != nil {
 				slf.Close(err.(error))
 			}
 		}()
 		slf.core.Run(runState, slf.onReceive)
-	}()
+	}(runState)
 	err := <-runState
 	if err != nil {
 		slf.mutex.Lock()
@@ -81,13 +81,11 @@ func (slf *Client) Close(err ...error) {
 	}
 	if slf.packets != nil {
 		close(slf.packets)
-		slf.packets = nil
 	}
 	if slf.accumulate != nil {
 		close(slf.accumulate)
 		slf.accumulate = nil
 	}
-	slf.packets = nil
 	unlock = true
 	slf.mutex.Unlock()
 	if len(err) > 0 {
@@ -139,6 +137,7 @@ func (slf *Client) write(wst int, packet []byte, callback ...func(err error)) {
 
 // writeLoop 写循环
 func (slf *Client) writeLoop(wait *sync.WaitGroup) {
+	slf.mutex.Lock()
 	slf.packets = make(chan *Packet, 1024*10)
 	slf.packetPool = concurrent.NewPool[*Packet](10*1024,
 		func() *Packet {
@@ -161,11 +160,21 @@ func (slf *Client) writeLoop(wait *sync.WaitGroup) {
 				err = fmt.Errorf("%v", err)
 			}
 			slf.Close(err)
+			slf.packets = nil
 		}
 	}()
 	wait.Done()
+	slf.mutex.Unlock()
 
-	for packet := range slf.packets {
+	for {
+		packet, ok := <-slf.packets
+		if !ok {
+			slf.mutex.Lock()
+			slf.packets = nil
+			slf.mutex.Unlock()
+			break
+		}
+
 		data := packet
 		var err = slf.core.Write(data)
 		callback := data.callback

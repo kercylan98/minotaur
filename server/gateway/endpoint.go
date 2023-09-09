@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/client"
 	"github.com/kercylan98/minotaur/utils/log"
+	"go.uber.org/atomic"
 	"sync"
 	"time"
 )
@@ -38,7 +39,7 @@ type Endpoint struct {
 	client      []*client.Client                   // 端点客户端
 	name        string                             // 端点名称
 	address     string                             // 端点地址
-	state       float64                            // 端点健康值（0为不可用，越高越优）
+	state       atomic.Float64                     // 端点健康值（0为不可用，越高越优）
 	evaluator   func(costUnixNano float64) float64 // 端点健康值评估函数
 	connections *haxmap.Map[string, *server.Conn]  // 被该端点转发的连接列表
 	rci         time.Duration                      // 端点重连间隔
@@ -50,13 +51,13 @@ func (slf *Endpoint) start(gateway *Gateway, cli *client.Client) {
 	for {
 		cur := time.Now().UnixNano()
 		if err := cli.Run(); err == nil {
-			slf.state = slf.evaluator(float64(time.Now().UnixNano() - cur))
+			slf.state.Swap(slf.evaluator(float64(time.Now().UnixNano() - cur)))
 			break
 		}
 		if slf.rci > 0 {
 			time.Sleep(slf.rci)
 		} else {
-			slf.state = 0
+			slf.state.Swap(0)
 			break
 		}
 	}
@@ -83,7 +84,7 @@ func (slf *Endpoint) connect(gateway *Gateway) {
 					log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.Err(err))
 					return
 				}
-				slf.state = slf.evaluator(float64(time.Now().UnixNano() - sendTime))
+				slf.state.Swap(slf.evaluator(float64(time.Now().UnixNano() - sendTime)))
 				c, ok := slf.connections.Get(addr)
 				if !ok {
 					log.Error("Endpoint", log.String("Action", "ReceivePacket"), log.String("Name", slf.name), log.String("Addr", slf.address), log.String("ConnAddr", addr), log.Err(ErrConnectionNotFount))
@@ -111,7 +112,7 @@ func (slf *Endpoint) GetAddress() string {
 
 // GetState 获取端点健康值
 func (slf *Endpoint) GetState() float64 {
-	return slf.state
+	return slf.state.Load()
 }
 
 // Forward 转发数据包到该端点
