@@ -122,6 +122,15 @@ func (slf *Priority[V]) RangePriority(action func(index int, priority int) bool)
 	})
 }
 
+// Slice 返回切片
+func (slf *Priority[V]) Slice() []V {
+	var vs []V
+	for _, item := range slf.items {
+		vs = append(vs, item.Value())
+	}
+	return vs
+}
+
 // String 返回切片字符串
 func (slf *Priority[V]) String() string {
 	var vs []V
