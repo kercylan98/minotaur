@@ -310,9 +310,15 @@ func (slf *Server) Run(addr string) error {
 						conn.Close(e)
 					}
 				}()
+				var deadline = times.Zero
+				if slf.websocketReadDeadline > 0 {
+					deadline = time.Now().Add(slf.websocketReadDeadline)
+				}
 				for !conn.IsClosed() {
-					if err := ws.SetReadDeadline(super.If(slf.websocketReadDeadline <= 0, times.Zero, time.Now().Add(slf.websocketReadDeadline))); err != nil {
-						panic(err)
+					if slf.websocketReadDeadline > 0 {
+						if err := ws.SetReadDeadline(deadline); err != nil {
+							panic(err)
+						}
 					}
 					messageType, packet, readErr := ws.ReadMessage()
 					if readErr != nil {
