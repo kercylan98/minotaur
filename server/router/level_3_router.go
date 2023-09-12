@@ -6,7 +6,8 @@ import (
 )
 
 // NewLevel3Router 创建支持三级分类的路由器
-//   - Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
+//
+// Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
 func NewLevel3Router[Route comparable, Handle any]() *Level3Router[Route, Handle] {
 	return &Level3Router[Route, Handle]{
 		routes: map[Route]map[Route]map[Route]Handle{},
@@ -14,13 +15,15 @@ func NewLevel3Router[Route comparable, Handle any]() *Level3Router[Route, Handle
 }
 
 // Level3Router 支持三级分类的路由器
-//   - Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
+//
+// Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
 type Level3Router[Route comparable, Handle any] struct {
 	routes map[Route]map[Route]map[Route]Handle
 }
 
 // Route 创建路由
-//   - Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
+//
+// Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
 func (slf *Level3Router[Route, Handle]) Route(topRoute Route, level2Route Route, route Route, handleFunc Handle) {
 	if reflect.TypeOf(handleFunc).Kind() != reflect.Func {
 		panic(fmt.Errorf("route[%v] registration failed, handle must be a function type", route))
@@ -43,7 +46,8 @@ func (slf *Level3Router[Route, Handle]) Route(topRoute Route, level2Route Route,
 }
 
 // Match 匹配路由
-//   - Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
+//
+// Deprecated: 从 Minotaur 0.1.7 开始，由于该路由器设计不合理，局限性大，已弃用。建议使用 Multistage 进行代替。
 func (slf *Level3Router[Route, Handle]) Match(topRoute Route, level2Route Route, route Route) Handle {
 	return slf.routes[topRoute][level2Route][route]
 }
