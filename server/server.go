@@ -470,6 +470,11 @@ func (slf *Server) shutdown(err error) {
 			slf.multipleRuntimeErrorChan <- err
 		}
 	}()
+	if slf.gServer != nil && slf.isRunning {
+		if shutdownErr := gnet.Stop(context.Background(), fmt.Sprintf("%s://%s", slf.network, slf.addr)); err != nil {
+			log.Error("Server", log.Err(shutdownErr))
+		}
+	}
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
@@ -500,11 +505,6 @@ func (slf *Server) shutdown(err error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if shutdownErr := slf.httpServer.Shutdown(ctx); shutdownErr != nil {
-			log.Error("Server", log.Err(shutdownErr))
-		}
-	}
-	if slf.gServer != nil && slf.isRunning {
-		if shutdownErr := gnet.Stop(context.Background(), fmt.Sprintf("%s://%s", slf.network, slf.addr)); err != nil {
 			log.Error("Server", log.Err(shutdownErr))
 		}
 	}
