@@ -89,6 +89,10 @@ func (slf *Message) MessageType() MessageType {
 func (slf *Message) AttrsString() string {
 	var attrs = make([]any, 0, len(slf.attrs))
 	for _, attr := range slf.attrs {
+		if conn, hit := attr.(*Conn); hit {
+			attrs = append(attrs, conn.GetID())
+			continue
+		}
 		if tof := reflect.TypeOf(attr); tof.Kind() == reflect.Func {
 			attrs = append(attrs, tof.String())
 			continue
