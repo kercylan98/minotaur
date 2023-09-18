@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.0](https://github.com/kercylan98/minotaur/compare/v0.1.7...v0.2.0) (2023-09-18)
+
+
+### Features | 新特性
+
+* buffer 包新增 Unbounded 实现 ([d56c1df](https://github.com/kercylan98/minotaur/commit/d56c1df6e1d9f6f1f2f01d8f461858ec9c9139c2))
+* random 包新增 ProbabilitySlice 函数，用于基于概率产生一个结果，当概率总和小于 1 会发生未命中的情况，概率总和大于 1 将等比缩放至 1 ([7c9bc46](https://github.com/kercylan98/minotaur/commit/7c9bc46a3506d5722da7b0062b9b493f709fbb97))
+* 新增 buffer 包，内置了一个环形缓冲区的实现 ([12d1aba](https://github.com/kercylan98/minotaur/commit/12d1abab9aa4f09bf9c0f7b5628c50155f2aaf4e))
+
+
+### Bug Fixes | 修复
+
+* server 修复慢消息导致堆栈溢出的问题 ([e95e1ba](https://github.com/kercylan98/minotaur/commit/e95e1ba3997d57dc5eb7f8bd99e1d6adb7da19c2))
+* 修复 gnet 作为服务器核心关闭时导致的空指针问题 ([2712f3b](https://github.com/kercylan98/minotaur/commit/2712f3b98e2d871e5bf2101e338c50b343fe05e0))
+
+
+### Docs | 文档优化
+
+* 优化文档内容兼容 WithShunt ([00eaa36](https://github.com/kercylan98/minotaur/commit/00eaa362262f158fd71bc72c8c0522a5b6bb0d0e))
+
+
+### Code Refactoring | 重构
+
+* server 包重构消息通道，采用无界缓冲区替代原本的 chan，解决消息通道的缓冲区达到上限时造成永久阻塞的问题，移除 WithMessageChannelSize 可选项，修改 WithShunt 可选项不再需要 channelGenerator 参数 ([810a9fd](https://github.com/kercylan98/minotaur/commit/810a9fdb73f4460f181ff7a60937615a6c926db8))
+
 ## [0.1.7](https://github.com/kercylan98/minotaur/compare/v0.1.6...v0.1.7) (2023-09-12)
 
 
