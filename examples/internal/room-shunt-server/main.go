@@ -4,9 +4,7 @@ import "github.com/kercylan98/minotaur/server"
 
 func main() {
 	srv := server.New(server.NetworkWebsocket,
-		server.WithShunt(func(guid int64) chan *server.Message {
-			return make(chan *server.Message, 1024*100)
-		}, func(conn *server.Conn) (guid int64, allowToCreate bool) {
+		server.WithShunt(func(conn *server.Conn) (guid int64, allowToCreate bool) {
 			guid, allowToCreate = conn.GetData("roomId").(int64)
 			return
 		}),
