@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kercylan98/minotaur/utils/buffer"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/str"
@@ -33,7 +34,6 @@ func New(network Network, options ...Option) *Server {
 	server := &Server{
 		runtime: &runtime{
 			messagePoolSize:        DefaultMessageBufferSize,
-			messageChannelSize:     DefaultMessageChannelSize,
 			connMessageChannelSize: DefaultConnectionChannelSize,
 		},
 		option:       &option{},
@@ -78,31 +78,31 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                                     // 事件
-	*runtime                                                                   // 运行时
-	*option                                                                    // 可选项
-	network                  Network                                           // 网络类型
-	addr                     string                                            // 侦听地址
-	systemSignal             chan os.Signal                                    // 系统信号
-	online                   *concurrent.BalanceMap[string, *Conn]             // 在线连接
-	ginServer                *gin.Engine                                       // HTTP模式下的路由器
-	httpServer               *http.Server                                      // HTTP模式下的服务器
-	grpcServer               *grpc.Server                                      // GRPC模式下的服务器
-	gServer                  *gNet                                             // TCP或UDP模式下的服务器
-	isRunning                bool                                              // 是否正在运行
-	isShutdown               atomic.Bool                                       // 是否已关闭
-	closeChannel             chan struct{}                                     // 关闭信号
-	ants                     *ants.Pool                                        // 协程池
-	messagePool              *concurrent.Pool[*Message]                        // 消息池
-	messageChannel           chan *Message                                     // 消息管道
-	multiple                 *MultipleServer                                   // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                                        // 多服务器模式下的运行时错误
-	runMode                  RunMode                                           // 运行模式
-	shuntChannels            *concurrent.BalanceMap[int64, chan *Message]      // 分流管道
-	channelGenerator         func(guid int64) chan *Message                    // 消息管道生成器
-	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool) // 分流管道匹配器
-	messageCounter           atomic.Int64                                      // 消息计数器
-	ctx                      context.Context                                   // 上下文
+	*event                                             // 事件
+	*runtime                                           // 运行时
+	*option                                            // 可选项
+	network      Network                               // 网络类型
+	addr         string                                // 侦听地址
+	systemSignal chan os.Signal                        // 系统信号
+	online       *concurrent.BalanceMap[string, *Conn] // 在线连接
+	ginServer    *gin.Engine                           // HTTP模式下的路由器
+	httpServer   *http.Server                          // HTTP模式下的服务器
+	grpcServer   *grpc.Server                          // GRPC模式下的服务器
+	gServer      *gNet                                 // TCP或UDP模式下的服务器
+	isRunning    bool                                  // 是否正在运行
+	isShutdown   atomic.Bool                           // 是否已关闭
+	closeChannel chan struct{}                         // 关闭信号
+	ants         *ants.Pool                            // 协程池
+	messagePool  *concurrent.Pool[*Message]            // 消息池
+	//messageChannel           chan *Message                                     // 消息管道
+	messageChannel           *buffer.Unbounded[*Message]                                // 消息无界缓冲区
+	multiple                 *MultipleServer                                            // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                                                 // 多服务器模式下的运行时错误
+	runMode                  RunMode                                                    // 运行模式
+	shuntChannels            *concurrent.BalanceMap[int64, *buffer.Unbounded[*Message]] // 分流管道
+	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool)          // 分流管道匹配器
+	messageCounter           atomic.Int64                                               // 消息计数器
+	ctx                      context.Context                                            // 上下文
 }
 
 // Run 使用特定地址运行服务器
@@ -138,20 +138,28 @@ func (slf *Server) Run(addr string) error {
 				data.attrs = nil
 			},
 		)
-		slf.messageChannel = make(chan *Message, slf.messageChannelSize)
+		slf.messageChannel = buffer.NewUnbounded[*Message](func() *Message {
+			return nil
+		})
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
 			slf.gServer = &gNet{Server: slf}
 		}
 		if callback != nil {
 			go callback()
 		}
-		go func(messageChannel <-chan *Message) {
+		go func() {
 			messageInitFinish <- struct{}{}
-			for message := range messageChannel {
-				msg := message
-				slf.dispatchMessage(msg)
+			for {
+				select {
+				case msg, ok := <-slf.messageChannel.Get():
+					if !ok {
+						return
+					}
+					slf.messageChannel.Load()
+					slf.dispatchMessage(msg)
+				}
 			}
-		}(slf.messageChannel)
+		}()
 	}
 
 	switch slf.network {
@@ -486,13 +494,12 @@ func (slf *Server) shutdown(err error) {
 		cross.Release()
 	}
 	if slf.messageChannel != nil {
-		close(slf.messageChannel)
+		slf.messageChannel.Close()
 		slf.messagePool.Close()
-		slf.messageChannel = nil
 	}
 	if slf.shuntChannels != nil {
-		slf.shuntChannels.Range(func(key int64, c chan *Message) bool {
-			close(c)
+		slf.shuntChannels.Range(func(key int64, c *buffer.Unbounded[*Message]) bool {
+			c.Close()
 			return false
 		})
 		slf.shuntChannels.Clear()
@@ -575,7 +582,7 @@ func (slf *Server) ShuntChannelFreed(channelGuid int64) {
 	}
 	channel, exist := slf.shuntChannels.GetExist(channelGuid)
 	if exist {
-		close(channel)
+		channel.Close()
 		slf.shuntChannels.Delete(channelGuid)
 		slf.OnShuntChannelClosedEvent(channelGuid)
 	}
@@ -592,23 +599,32 @@ func (slf *Server) pushMessage(message *Message) {
 		channelGuid, allowToCreate := slf.shuntMatcher(conn)
 		channel, exist := slf.shuntChannels.GetExist(channelGuid)
 		if !exist && allowToCreate {
-			channel = slf.channelGenerator(channelGuid)
+			channel = buffer.NewUnbounded[*Message](func() *Message {
+				return nil
+			})
 			slf.shuntChannels.Set(channelGuid, channel)
-			go func(channel chan *Message) {
-				for message := range channel {
-					slf.dispatchMessage(message)
+			go func(channel *buffer.Unbounded[*Message]) {
+				for {
+					select {
+					case msg, ok := <-channel.Get():
+						if !ok {
+							return
+						}
+						channel.Load()
+						slf.dispatchMessage(msg)
+					}
 				}
 			}(channel)
 			defer slf.OnShuntChannelCreatedEvent(channelGuid)
 		}
 		if channel != nil {
 			slf.messageCounter.Add(1)
-			channel <- message
+			channel.Put(message)
 			return
 		}
 	}
 	slf.messageCounter.Add(1)
-	slf.messageChannel <- message
+	slf.messageChannel.Put(message)
 }
 
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gin-contrib/pprof"
+	"github.com/kercylan98/minotaur/utils/buffer"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -36,7 +37,6 @@ type runtime struct {
 	supportMessageTypes       map[int]bool     // websocket模式下支持的消息类型
 	certFile, keyFile         string           // TLS文件
 	messagePoolSize           int              // 消息池大小
-	messageChannelSize        int              // 消息通道大小
 	ticker                    *timer.Ticker    // 定时器
 	websocketReadDeadline     time.Duration    // websocket连接超时时间
 	websocketCompression      int              // websocket压缩等级
@@ -87,18 +87,6 @@ func WithWebsocketCompression(level int) Option {
 			panic("websocket: invalid compression level")
 		}
 		srv.websocketCompression = level
-	}
-}
-
-// WithMessageChannelSize 通过指定消息通道大小的方式创建服务器
-//   - 足够大的消息通道可以确保服务器在短时间内接收到大量的消息而不至于阻塞
-//   - 默认值为 DefaultMessageChannelSize
-func WithMessageChannelSize(size int) Option {
-	return func(srv *Server) {
-		if size <= 0 {
-			size = DefaultMessageChannelSize
-		}
-		srv.messageChannelSize = size
 	}
 }
 
@@ -255,7 +243,6 @@ func WithPProf(pattern ...string) Option {
 
 // WithShunt 通过连接数据包分流的方式创建服务器
 //   - 在分流的情况下，将会使用分流通道处理数据包，而不是使用系统通道，消息的执行将转移到对应的分流通道内进行串行处理，默认情况下所有消息都是串行处理的，适用于例如不同游戏房间并行处理，游戏房间内部消息串行处理的情况
-//   - channelGenerator：用于生成分流通道的函数
 //   - shuntMatcher：用于匹配连接的函数，返回值为分流通道的 GUID 和是否允许创建新的分流通道，当返回不允许创建新的分流通道时，将会使用使用默认的系统通道
 //
 // 将被分流的消息类型（更多类型有待斟酌）：
@@ -263,14 +250,13 @@ func WithPProf(pattern ...string) Option {
 //
 // 注意事项：
 //   - 需要在分流通道使用完成后主动调用 Server.ShuntChannelFreed 函数释放分流通道，避免内存泄漏
-func WithShunt(channelGenerator func(guid int64) chan *Message, shuntMatcher func(conn *Conn) (guid int64, allowToCreate bool)) Option {
+func WithShunt(shuntMatcher func(conn *Conn) (guid int64, allowToCreate bool)) Option {
 	return func(srv *Server) {
-		if channelGenerator == nil || shuntMatcher == nil {
-			log.Warn("WithShunt", log.String("State", "Ignore"), log.String("Reason", "channelGenerator or shuntMatcher is nil"))
+		if shuntMatcher == nil {
+			log.Warn("WithShunt", log.String("State", "Ignore"), log.String("Reason", "shuntMatcher is nil"))
 			return
 		}
-		srv.shuntChannels = concurrent.NewBalanceMap[int64, chan *Message]()
-		srv.channelGenerator = channelGenerator
+		srv.shuntChannels = concurrent.NewBalanceMap[int64, *buffer.Unbounded[*Message]]()
 		srv.shuntMatcher = shuntMatcher
 	}
 }

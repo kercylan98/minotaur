@@ -40,6 +40,7 @@ func (slf *Unbounded[V]) Put(t V) {
 }
 
 // Load 将缓冲区中的数据发送到读取通道中，如果缓冲区中没有数据，则不会发送
+//   - 在每次 Get 后都应该执行该函数
 func (slf *Unbounded[V]) Load() {
 	slf.mu.Lock()
 	defer slf.mu.Unlock()
@@ -56,19 +57,12 @@ func (slf *Unbounded[V]) Load() {
 	}
 }
 
-// Get returns a read channel on which values added to the buffer, via Put(),
-// are sent on.
-//
-// Upon reading a value from this channel, users are expected to call Load() to
-// send the next buffered value onto the channel if there is any.
-//
-// If the unbounded buffer is closed, the read channel returned by this method
-// is closed.
+// Get 获取读取通道
 func (slf *Unbounded[V]) Get() <-chan V {
 	return slf.c
 }
 
-// Close closes the unbounded buffer.
+// Close 关闭
 func (slf *Unbounded[V]) Close() {
 	slf.mu.Lock()
 	defer slf.mu.Unlock()

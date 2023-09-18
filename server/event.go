@@ -253,11 +253,21 @@ func (slf *event) RegMessageErrorEvent(handle MessageErrorEventHandle, priority 
 }
 
 func (slf *event) OnMessageErrorEvent(message *Message, err error) {
+	if slf.messageErrorEventHandles.Len() == 0 {
+		return
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error("Server", log.String("OnMessageErrorEvent", messageNames[message.t]), log.Any("Error", err))
+			debug.PrintStack()
+		}
+	}()
+	slf.messageErrorEventHandles.RangeValue(func(index int, value MessageErrorEventHandle) bool {
+		value(slf.Server, message, err)
+		return true
+	})
 	PushSystemMessage(slf.Server, func() {
-		slf.messageErrorEventHandles.RangeValue(func(index int, value MessageErrorEventHandle) bool {
-			value(slf.Server, message, err)
-			return true
-		})
+
 	}, "MessageErrorEvent")
 }
 
@@ -268,12 +278,14 @@ func (slf *event) RegMessageLowExecEvent(handle MessageLowExecEventHandle, prior
 }
 
 func (slf *event) OnMessageLowExecEvent(message *Message, cost time.Duration) {
-	PushSystemMessage(slf.Server, func() {
-		slf.messageLowExecEventHandles.RangeValue(func(index int, value MessageLowExecEventHandle) bool {
-			value(slf.Server, message, cost)
-			return true
-		})
-	}, "MessageLowExecEvent")
+	if slf.messageLowExecEventHandles.Len() == 0 {
+		return
+	}
+	// 慢消息不再占用消息通道
+	slf.messageLowExecEventHandles.RangeValue(func(index int, value MessageLowExecEventHandle) bool {
+		value(slf.Server, message, cost)
+		return true
+	})
 }
 
 // RegConnectionOpenedAfterEvent 在连接打开事件处理完成后将立刻执行被注册的事件处理函数
