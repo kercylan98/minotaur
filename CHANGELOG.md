@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.1.7](https://github.com/kercylan98/minotaur/compare/v0.1.6...v0.1.7) (2023-09-12)
+
+
+### Features | 新特性
+
+* router 包新增 Multistage 多级分类路由器，用于替代原有的 1~3 级路由器 ([10cc443](https://github.com/kercylan98/minotaur/commit/10cc443b3af307111af92ec850d8a3f1f277355c))
+* router.Multistage 支持通过可选项创建 ([637ae27](https://github.com/kercylan98/minotaur/commit/637ae2788219d9cb23698953b8ca6967f59087ad))
+* server 包新增 WithLimitLift 和 WithConnectionMessageChannelSize 函数，用于限制服务器最大生命周期及连接的消息写入通道大小 ([064d434](https://github.com/kercylan98/minotaur/commit/064d434a0cb777665248b825662db32f58a339a9))
+* slice.Priority 优先级队列新增 Slice 函数，获取队列成员为切片类型 ([30dbb14](https://github.com/kercylan98/minotaur/commit/30dbb14addd714081b9a2e98880d96d7b9bf4229))
+* utils 下新增 sorts.Topological 拓扑排序函数 ([7a5e2c1](https://github.com/kercylan98/minotaur/commit/7a5e2c1e7e5e14c7820871adba269985d01bd129))
+
+
+### Bug Fixes | 修复
+
+* 修复 super.RegError 和 RegErrorRef 空指针问题 ([82973dd](https://github.com/kercylan98/minotaur/commit/82973dd11adc4648d30bbe36b8f272fe77a6031f))
+
+
+### Docs | 文档优化
+
+* gateway 包注释优化 ([5103103](https://github.com/kercylan98/minotaur/commit/5103103fb5f1e480c1b0204d5dc98e149c7c36c7))
+* 弃用文档优化 ([a0d5fc8](https://github.com/kercylan98/minotaur/commit/a0d5fc860ae402c5504994c9d78110782dd2c2c0))
+
+
+### Performance Improvements | 性能优化
+
+* server 包 websocket SetReadDeadline 优化 ([dc3c7d2](https://github.com/kercylan98/minotaur/commit/dc3c7d2eeaa9743400d156758d69f2bab87858a8))
+
+
+### Tests | 新增或优化测试用例
+
+* slice 包新增部分单元测试 ([4982e6d](https://github.com/kercylan98/minotaur/commit/4982e6d7b691c16b634d6d79c1cf5119eaf89524))
+
 ## [0.1.6](https://github.com/kercylan98/minotaur/compare/v0.1.5...v0.1.6) (2023-09-09)
 
 
