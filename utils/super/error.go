@@ -42,6 +42,9 @@ func RegErrorRef(code int, message string, ref error) error {
 
 // GetError 通过错误引用获取错误码和真实错误信息，如果错误不存在则返回 0，如果错误引用不存在则返回原本的错误
 func GetError(err error) (int, error) {
+	if errorManagerInstance == nil {
+		return 0, err
+	}
 	unw := errors.Unwrap(err)
 	if unw == nil {
 		unw = err
