@@ -8,6 +8,13 @@ import (
 // ProbabilitySlice 按概率随机从切片中产生一个数据并返回命中的对象及是否未命中
 //   - 当总概率小于 1 将会发生未命中的情况
 func ProbabilitySlice[T any](getProbabilityHandle func(data T) float64, data ...T) (hit T, miss bool) {
+	hit, _, miss = ProbabilitySliceIndex(getProbabilityHandle, data...)
+	return hit, miss
+}
+
+// ProbabilitySliceIndex 按概率随机从切片中产生一个数据并返回命中的对象及对象索引以及是否未命中
+//   - 当总概率小于 1 将会发生未命中的情况
+func ProbabilitySliceIndex[T any](getProbabilityHandle func(data T) float64, data ...T) (hit T, index int, miss bool) {
 	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	var total float64
@@ -53,10 +60,10 @@ func ProbabilitySlice[T any](getProbabilityHandle func(data T) float64, data ...
 		}
 	}
 	if i >= len(data) {
-		return hit, true
+		return hit, -1, true
 	}
 	hit = data[i]
-	return hit, false
+	return hit, i, false
 }
 
 // Probability 输入一个概率，返回是否命中
