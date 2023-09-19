@@ -13,6 +13,13 @@ func NewUnbounded[V any](generateNil func() V) *Unbounded[V] {
 	return &Unbounded[V]{c: make(chan V, 1), nil: generateNil()}
 }
 
+// NewUnboundedN 与 NewUnbounded 相同，只是省略了 generateNil 参数
+func NewUnboundedN[V any]() *Unbounded[V] {
+	return NewUnbounded[V](func() (v V) {
+		return v
+	})
+}
+
 // Unbounded 是无界缓冲区的实现
 type Unbounded[V any] struct {
 	c       chan V
@@ -71,4 +78,11 @@ func (slf *Unbounded[V]) Close() {
 	}
 	slf.closed = true
 	close(slf.c)
+}
+
+// IsClosed 是否已关闭
+func (slf *Unbounded[V]) IsClosed() bool {
+	slf.mu.Lock()
+	defer slf.mu.Unlock()
+	return slf.closed
 }
