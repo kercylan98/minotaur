@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.2.1](https://github.com/kercylan98/minotaur/compare/v0.2.0...v0.2.1) (2023-09-19)
+
+
+### Other | 其他更改
+
+* gateway 优化代码逻辑，适配 client.Client 变更 ([0cc8fd8](https://github.com/kercylan98/minotaur/commit/0cc8fd818614a8836f35255c185975872bce797f))
+
+
+### Features | 新特性
+
+* buffer.Unbounded 增加新的构造函数，支持省略 generateNil 函数，新增 IsClosed 函数检查无界缓冲区是否已经关闭 ([e9bc9fb](https://github.com/kercylan98/minotaur/commit/e9bc9fb48175dc6544a570fd82d71af66ca8f801))
+* concurrent.Pool 新增静默模式可选项 WithPoolSilent，在该模式下当缓冲区大小不足时，将不再输出警告日志 ([3ad1330](https://github.com/kercylan98/minotaur/commit/3ad1330cd937635ce56f1ca70365836f19c97fc8))
+* random 包通过权重和概率随机产生一个成员支持返回产生成员的索引或 Key ([782a1ad](https://github.com/kercylan98/minotaur/commit/782a1adb37da396028987c3ff35917c0ddf8b4e2))
+* 新增 writeloop 包，内置了一个写循环的实现 ([dd1acfd](https://github.com/kercylan98/minotaur/commit/dd1acfd017e9f0eccbc23663fa7f871a6b2b7de4))
+
+
+### Bug Fixes | 修复
+
+* super 包优化 GetError 函数的空指针问题 ([ab3926e](https://github.com/kercylan98/minotaur/commit/ab3926e307bed9d665010f6613409ed093e256fe))
+
+
+### Docs | 文档优化
+
+* 修复 server 在 WebSocket 模式下超时时间无效的问题 ([1bc32e2](https://github.com/kercylan98/minotaur/commit/1bc32e2026da59283b9302ec753699919a994cce))
+
+
+### Styling | 可读性优化
+
+* server 包为服务器启动添加 IP 信息，死锁检测的日志内容优化 ([42465a8](https://github.com/kercylan98/minotaur/commit/42465a8f42cb3a3515263318ac41403473476cb4))
+
+
+### Code Refactoring | 重构
+
+* client 包采用无界缓冲区替代通过 chan 实现的写通道，移除消息堆积功能，优化代码逻辑 ([2d9ffad](https://github.com/kercylan98/minotaur/commit/2d9ffad2ab0277c0a83842c3d27ca31b820a51de))
+* server 移除 WithConnMessageChannelSize 可选项 ([31c0e1b](https://github.com/kercylan98/minotaur/commit/31c0e1b7356e062ee741cd4aeacca8f96b62953d))
+
+
+### Performance Improvements | 性能优化
+
+* server.Conn 写循环更改为采用无界缓冲区的写入，优化整体逻辑 ([551a3e5](https://github.com/kercylan98/minotaur/commit/551a3e5c51c048eac13bf31c0fc1665d2b7b8431))
+
 ## [0.2.0](https://github.com/kercylan98/minotaur/compare/v0.1.7...v0.2.0) (2023-09-18)
 
 
