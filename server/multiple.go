@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/network"
 	"math"
 	"os"
 	"os/signal"
@@ -61,9 +62,11 @@ func (slf *MultipleServer) Run() {
 	wait.Wait()
 
 	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
+	ip, _ := network.IP()
 	for _, server := range slf.servers {
 		log.Info("Server", log.String(serverMultipleMark, "RunningInfo"),
 			log.Any("network", server.network),
+			log.String("ip", ip.String()),
 			log.String("listen", server.addr),
 		)
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/buffer"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/network"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -366,9 +367,11 @@ func (slf *Server) Run(addr string) error {
 	close(messageInitFinish)
 	messageInitFinish = nil
 	if slf.multiple == nil {
+		ip, _ := network.IP()
 		log.Info("Server", log.String(serverMark, "===================================================================="))
 		log.Info("Server", log.String(serverMark, "RunningInfo"),
 			log.Any("network", slf.network),
+			log.String("ip", ip.String()),
 			log.String("listen", slf.addr),
 		)
 		log.Info("Server", log.String(serverMark, "===================================================================="))
@@ -653,7 +656,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			select {
 			case <-ctx.Done():
 				if err := ctx.Err(); err == context.DeadlineExceeded {
-					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.Any("SuspectedDeadlock", msg.attrs))
+					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.Any("SuspectedDeadlock", msg))
 				}
 			}
 		}(ctx, msg)
