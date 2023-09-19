@@ -128,12 +128,10 @@ func (slf *Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func(
 	}
 
 	var superior *client.Client
-	var superiorCount = -1
 	for _, cli := range slf.client {
-		count := cli.GetMessageAccumulationTotal()
-		if superiorCount < 0 || superiorCount > count {
+		if cli.IsConnected() {
 			superior = cli
-			superiorCount = count
+			break
 		}
 	}
 
