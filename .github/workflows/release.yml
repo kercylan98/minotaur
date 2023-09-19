@@ -18,4 +18,4 @@ jobs:
           bump-minor-pre-major: true
           bump-patch-for-minor-pre-major: true
           changelog-types: '[{"type":"other","section":"Other | 其他更改","hidden":false},{"type":"revert","section":"Reverts | 回退","hidden":false},{"type":"feat","section":"Features | 新特性","hidden":false},{"type":"fix","section":"Bug Fixes | 修复","hidden":false},{"type":"improvement","section":"Feature Improvements | 改进","hidden":false},{"type":"docs","section":"Docs | 文档优化","hidden":false},{"type":"style","section":"Styling | 可读性优化","hidden":false},{"type":"refactor","section":"Code Refactoring | 重构","hidden":false},{"type":"perf","section":"Performance Improvements | 性能优化","hidden":false},{"type":"test","section":"Tests | 新增或优化测试用例","hidden":false},{"type":"build","section":"Build System | 影响构建的修改","hidden":false},{"type":"ci","section":"CI | 更改我们的 CI 配置文件和脚本","hidden":false}]'
-          release-as: 0.2.0
+#          release-as: 0.2.0
