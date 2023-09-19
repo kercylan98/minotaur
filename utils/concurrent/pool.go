@@ -71,7 +71,13 @@ func (slf *Pool[T]) IsClose() bool {
 }
 
 func (slf *Pool[T]) Release(data T) {
+	slf.mutex.Lock()
+	if slf.releaser == nil {
+		slf.mutex.Unlock()
+		return
+	}
 	slf.releaser(data)
+	slf.mutex.Unlock()
 	slf.put(data)
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/timer"
-	"github.com/kercylan98/minotaur/utils/times"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"github.com/panjf2000/gnet/pkg/logging"
@@ -319,13 +318,9 @@ func (slf *Server) Run(addr string) error {
 						conn.Close(e)
 					}
 				}()
-				var deadline = times.Zero
-				if slf.websocketReadDeadline > 0 {
-					deadline = time.Now().Add(slf.websocketReadDeadline)
-				}
 				for !conn.IsClosed() {
 					if slf.websocketReadDeadline > 0 {
-						if err := ws.SetReadDeadline(deadline); err != nil {
+						if err := ws.SetReadDeadline(time.Now().Add(slf.websocketReadDeadline)); err != nil {
 							panic(err)
 						}
 					}
