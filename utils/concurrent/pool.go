@@ -30,6 +30,7 @@ type Pool[T any] struct {
 	generator  func() T
 	releaser   func(data T)
 	warn       int64
+	silent     bool
 }
 
 // EAC 动态调整缓冲区大小，适用于突发场景使用
@@ -53,10 +54,12 @@ func (slf *Pool[T]) Get() T {
 		slf.mutex.Unlock()
 		return data
 	}
-	now := time.Now().Unix()
-	if now-slf.warn >= 1 {
-		log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), zap.Stack("stack"))
-		slf.warn = now
+	if !slf.silent {
+		now := time.Now().Unix()
+		if now-slf.warn >= 1 {
+			log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), zap.Stack("stack"))
+			slf.warn = now
+		}
 	}
 	slf.mutex.Unlock()
 
