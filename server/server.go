@@ -33,8 +33,7 @@ import (
 func New(network Network, options ...Option) *Server {
 	server := &Server{
 		runtime: &runtime{
-			messagePoolSize:        DefaultMessageBufferSize,
-			connMessageChannelSize: DefaultConnectionChannelSize,
+			messagePoolSize: DefaultMessageBufferSize,
 		},
 		option:       &option{},
 		network:      network,
