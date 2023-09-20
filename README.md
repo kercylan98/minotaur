@@ -177,8 +177,16 @@ func main() {
 ### 持续更新的示例项目
 - **[Minotaur-Example](https://github.com/kercylan98/minotaur-example)**
 
-### 参与贡献
-请参考 **[CONTRIBUTING.md](CONTRIBUTING.md)** 贡献指南。
+### 贡献者列表
+<a href="https://github.com/kercylan98/minotaur/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=kercylan98/minotaur" />
+</a>
+
+#### 参与贡献请参考 **[CONTRIBUTING.md](CONTRIBUTING.md)** 贡献指南。
+
+### 联系方式
+- **[Email: kercylan@gmail.com](mailto:kercylan@gmail.com)**
+- **[Telegram: ziv_siren](https://telegram.me/ziv_siren)**
 
 # JetBrains OS licenses
 
