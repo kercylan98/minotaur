@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.2](https://github.com/kercylan98/minotaur/compare/v0.2.1...v0.2.2) (2023-09-21)
+
+
+### Reverts | 回退
+
+* 设计不合理原因移除 storage 包 ([d9b9392](https://github.com/kercylan98/minotaur/commit/d9b939295c19fa1910437940a500128a1460b3a1))
+
+
+### Features | 新特性
+
+* client.Run 支持传入 block 参数指定客户端以阻塞的模式运行 ([534a7e9](https://github.com/kercylan98/minotaur/commit/534a7e962ad6258df277f1f8214f9124975ebcae))
+* super 包增加 RetryForever 函数，支持永久重试直到成功 ([13c5483](https://github.com/kercylan98/minotaur/commit/13c5483617223ca6876e31a24deccae6a2d60383))
+* 新增 memory 包，适用于游戏数据加载到内存中并周期性持久化 ([ed008cf](https://github.com/kercylan98/minotaur/commit/ed008cf280727f8c40053d6e9b968f66a7ae851a))
+
+
+### Tests | 新增或优化测试用例
+
+* 新增 times.CalcNextSecWithTime 示例代码 ([149e6a2](https://github.com/kercylan98/minotaur/commit/149e6a2149aedc3b27f049d5940d2727f01a8395))
+
 ## [0.2.1](https://github.com/kercylan98/minotaur/compare/v0.2.0...v0.2.1) (2023-09-19)
 
 
