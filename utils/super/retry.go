@@ -30,3 +30,14 @@ func RetryAsync(count int, interval time.Duration, f func() error, callback func
 		HandleV(err, callback)
 	}()
 }
+
+// RetryForever 根据提供的 interval 时间间隔尝试执行 f 函数，如果 f 函数返回错误，则在 interval 后重试，直到成功
+func RetryForever(interval time.Duration, f func() error) {
+	var err error
+	for {
+		if err = f(); err == nil {
+			return
+		}
+		time.Sleep(interval)
+	}
+}
