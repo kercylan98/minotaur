@@ -32,16 +32,20 @@ type Client struct {
 	closed bool                          // 是否已关闭
 	pool   *concurrent.Pool[*Packet]     // 数据包缓冲池
 	loop   *writeloop.WriteLoop[*Packet] // 写入循环
+	block  chan struct{}                 // 以阻塞方式运行
 }
 
-// Run 运行客户端
-//   - 当客户端已运行时，会先关闭客户端再重新运行
-func (slf *Client) Run() error {
+// Run 运行客户端，当客户端已运行时，会先关闭客户端再重新运行
+//   - block 以阻塞方式运行
+func (slf *Client) Run(block ...bool) error {
 	slf.mutex.Lock()
 	if !slf.closed {
 		slf.mutex.Unlock()
 		slf.Close()
 		slf.mutex.Lock()
+	}
+	if len(block) > 0 && block[0] {
+		slf.block = make(chan struct{})
 	}
 	var runState = make(chan error)
 	go func(runState chan<- error) {
@@ -77,6 +81,9 @@ func (slf *Client) Run() error {
 	slf.mutex.Unlock()
 
 	slf.OnConnectionOpenedEvent(slf)
+	if slf.block != nil {
+		<-slf.block
+	}
 	return nil
 }
 
@@ -99,6 +106,9 @@ func (slf *Client) Close(err ...error) {
 		slf.OnConnectionClosedEvent(slf, err[0])
 	} else {
 		slf.OnConnectionClosedEvent(slf, nil)
+	}
+	if slf.block != nil {
+		slf.block <- struct{}{}
 	}
 }
 
