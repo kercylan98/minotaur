@@ -4,6 +4,11 @@ import (
 	"github.com/kercylan98/minotaur/utils/hash"
 )
 
+// WithMap 将映射转换为流
+func WithMap[K comparable, V any](m map[K]V) Map[K, V] {
+	return m
+}
+
 type Map[K comparable, V any] map[K]V
 
 // Map 返回映射
@@ -60,7 +65,7 @@ func (slf Map[K, V]) FilterFCopy(expression func(key K, value V) bool) Map[K, V]
 }
 
 // Chunk 是 hash.Chunk 的快捷方式
-func (slf Map[K, V]) Chunk(size int) Slice[Map[K, V]] {
+func (slf Map[K, V]) Chunk(size int) Maps[K, V] {
 	chunks := hash.Chunk(slf, size)
 	var res = make([]Map[K, V], 0, len(chunks))
 	for i := range chunks {

@@ -2,6 +2,11 @@ package stream
 
 import "github.com/kercylan98/minotaur/utils/slice"
 
+// WithSlice 将切片转换为流
+func WithSlice[V any](slice []V) Slice[V] {
+	return slice
+}
+
 type Slice[V any] []V
 
 // Slice 返回切片
