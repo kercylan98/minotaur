@@ -174,6 +174,46 @@ func main() {
 }
 ```
 
+### 流操作
+可以通过 `stream` 包快速开启对`切片`和`map`的流式操作，例如：
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/stream"
+	"github.com/kercylan98/minotaur/utils/streams"
+)
+
+func main() {
+	s := stream.WithSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).
+		Copy().
+		Shuffle().
+		Filter(true, func(index int, item int) bool {
+			return item%2 == 0
+		}).
+		Zoom(20).
+		Each(true, func(index int, item int) bool {
+			t.Log(index, item)
+			return false
+		}).
+		Chunk(3).
+		EachT(func(index int, item stream.Slice[int]) bool {
+			t.Log(item)
+			return false
+		}).
+		Merge().
+		FillBy(func(index int, value int) int {
+			if value == 0 {
+				return 999
+			}
+			return value
+		})
+	
+	fmt.Println(s)
+}
+```
+
 ### 持续更新的示例项目
 - **[Minotaur-Example](https://github.com/kercylan98/minotaur-example)**
 
