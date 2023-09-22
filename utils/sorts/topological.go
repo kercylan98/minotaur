@@ -14,7 +14,6 @@ type topologicalNode[V any] struct {
 // 该函数在存在循环依赖的情况下将会返回 ErrCircularDependencyDetected 错误
 func Topological[Index comparable, V any](slice []V, queryIndexHandler func(item V) Index, queryDependsHandler func(item V) []Index) ([]V, error) {
 
-	// 1. 创建一个依赖关系图
 	var nodes = make(map[Index]*topologicalNode[V])
 
 	for _, item := range slice {
