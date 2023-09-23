@@ -131,3 +131,43 @@ func GetDayLast(t time.Time) time.Time {
 func GetYesterdayLast(t time.Time) time.Time {
 	return GetDayLast(GetYesterday(t))
 }
+
+// GetMinuteStart 获取一个时间的 0 秒
+func GetMinuteStart(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, time.Local)
+}
+
+// GetMinuteEnd 获取一个时间的 59 秒
+func GetMinuteEnd(t time.Time) time.Time {
+	return GetMinuteStart(t).Add(time.Minute - time.Nanosecond)
+}
+
+// GetHourStart 获取一个时间的 0 分 0 秒
+func GetHourStart(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
+}
+
+// GetHourEnd 获取一个时间的 59 分 59 秒
+func GetHourEnd(t time.Time) time.Time {
+	return GetHourStart(t).Add(time.Hour - time.Nanosecond)
+}
+
+// GetMonthStart 获取一个时间的月初
+func GetMonthStart(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.Local)
+}
+
+// GetMonthEnd 获取一个时间的月末
+func GetMonthEnd(t time.Time) time.Time {
+	return GetMonthStart(t).AddDate(0, 1, -1)
+}
+
+// GetYearStart 获取一个时间的年初
+func GetYearStart(t time.Time) time.Time {
+	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, time.Local)
+}
+
+// GetYearEnd 获取一个时间的年末
+func GetYearEnd(t time.Time) time.Time {
+	return GetYearStart(t).AddDate(1, 0, -1)
+}

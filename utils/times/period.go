@@ -11,6 +11,25 @@ func NewPeriod(start, end time.Time) Period {
 	return Period{start, end}
 }
 
+// NewPeriodWindow 创建一个特定长度的时间窗口
+func NewPeriodWindow(t time.Time, size time.Duration) Period {
+	var start time.Time
+	if size < time.Minute {
+		start = t
+	} else {
+		start = t.Truncate(time.Minute)
+	}
+	end := start.Add(size)
+	return Period{start, end}
+}
+
+// NewPeriodWindowWeek 创建一周长度的时间窗口，从周一零点开始至周日 23:59:59 结束
+func NewPeriodWindowWeek(t time.Time) Period {
+	var start = GetMondayZero(t)
+	end := start.Add(Week)
+	return Period{start, end}
+}
+
 // NewPeriodWithTimeArray 创建一个时间段
 func NewPeriodWithTimeArray(times [2]time.Time) Period {
 	return NewPeriod(times[0], times[1])
