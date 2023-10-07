@@ -46,3 +46,8 @@ func MarshalIndentJSON(v interface{}, prefix, indent string) []byte {
 	}
 	return b
 }
+
+// MarshalToTargetWithJSON 将对象转换为目标对象
+func MarshalToTargetWithJSON(src, dest interface{}) error {
+	return json.Unmarshal(MarshalJSON(src), dest)
+}

@@ -13,12 +13,7 @@ func NewPeriod(start, end time.Time) Period {
 
 // NewPeriodWindow 创建一个特定长度的时间窗口
 func NewPeriodWindow(t time.Time, size time.Duration) Period {
-	var start time.Time
-	if size < time.Minute {
-		start = t
-	} else {
-		start = t.Truncate(time.Minute)
-	}
+	start := t.Truncate(size)
 	end := start.Add(size)
 	return Period{start, end}
 }
