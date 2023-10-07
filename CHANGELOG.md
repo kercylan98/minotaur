@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.3](https://github.com/kercylan98/minotaur/compare/v0.2.2...v0.2.3) (2023-10-07)
+
+
+### Features | 新特性
+
+* stream 新增 Maps，以及快捷开启流操作的函数 With... ([cb3bd11](https://github.com/kercylan98/minotaur/commit/cb3bd11248b658294fd76fe40ac8b4fc48a7a524))
+* super 包支持通过 MarshalToTargetWithJSON 将对象通过 JSON 序列化为目标对象 ([2e4ab44](https://github.com/kercylan98/minotaur/commit/2e4ab441228d4c9e8940dd2162c0a674f3dc69f3))
+* timer 包新增部分获取 分、日、月、年 开始结束时间函数，以及快捷创建时间窗口时间段的函数 ([05f0016](https://github.com/kercylan98/minotaur/commit/05f0016b7ed453f451155b596c32603d6b648313))
+
+
+### Docs | 文档优化
+
+* README 增加流操作文档 ([ba02fd4](https://github.com/kercylan98/minotaur/commit/ba02fd4accd47dd12ce6319ebbd0ae10e6409adb))
+
 ## [0.2.2](https://github.com/kercylan98/minotaur/compare/v0.2.1...v0.2.2) (2023-09-21)
 
 
