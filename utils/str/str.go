@@ -1,5 +1,7 @@
 package str
 
+import "strings"
+
 const (
 	None      = ""  // 空字符串
 	Dunno     = "?" // 未知
@@ -15,6 +17,16 @@ var (
 	DotBytes       = []byte(".") // 点
 	SlashBytes     = []byte("/") // 斜杠
 )
+
+// SplitTrimSpace 按照空格分割字符串并去除空格
+func SplitTrimSpace(str, sep string) []string {
+	var strList = strings.Split(str, sep)
+	var result = make([]string, 0, len(strList))
+	for _, s := range strList {
+		result = append(result, strings.TrimSpace(s))
+	}
+	return result
+}
 
 // FirstUpper 首字母大写
 func FirstUpper(str string) string {
