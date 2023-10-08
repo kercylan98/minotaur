@@ -14,6 +14,7 @@ const (
 	nasMark = "Cross.Nats"
 )
 
+// NewNats 创建一个基于 Nats 实现的跨服消息功能组件
 func NewNats(url string, options ...NatsOption) *Nats {
 	n := &Nats{
 		url:     url,
@@ -31,6 +32,7 @@ func NewNats(url string, options ...NatsOption) *Nats {
 	return n
 }
 
+// Nats 基于 Nats 实现的跨服消息功能组件
 type Nats struct {
 	conn        *nats.Conn
 	url         string
