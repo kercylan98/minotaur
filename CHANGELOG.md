@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.4](https://github.com/kercylan98/minotaur/compare/v0.2.3...v0.2.4) (2023-10-08)
+
+
+### Features | 新特性
+
+* 新增 xlsx 配置导出工具及模板，可手动编译后使用 ([b622175](https://github.com/kercylan98/minotaur/commit/b6221752cacf71aebfe44a389ad31345a1c69274))
+
+
+### Docs | 文档优化
+
+* README.md 增加配置道具工具相关说明 ([9435ba5](https://github.com/kercylan98/minotaur/commit/9435ba5ecb1330625e0eb331ab5a37ca4648ca52))
+* 部分注释优化 ([83ab553](https://github.com/kercylan98/minotaur/commit/83ab55373417b4e4c1940fa7e24c3fbb279e3cb3))
+
 ## [0.2.3](https://github.com/kercylan98/minotaur/compare/v0.2.2...v0.2.3) (2023-10-07)
 
 
