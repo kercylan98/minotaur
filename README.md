@@ -214,6 +214,13 @@ func main() {
 }
 ```
 
+### 基于`xlsx`文件的配置导出工具
+该导出器的`xlsx`文件配置使用`JSON`语法进行复杂类型配置，具体可参考图例
+- **[`planner/pce/exporter`](planner/pce/exporter)** 是实现了基于`xlsx`文件的配置导出工具，可直接编译成可执行文件使用；
+- **[`planner/pce/exporter/xlsx_template.xlsx`](planner/pce/exporter/xlsx_template.xlsx)** 是导出工具的模板文件，其中包含了具体的规则说明。
+- 模板文件图例：
+![exporter-xlsx-template.png](.github/images/exporter-xlsx-template.png)
+
 ### 持续更新的示例项目
 - **[Minotaur-Example](https://github.com/kercylan98/minotaur-example)**
 
