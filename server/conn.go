@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/server/writeloop"
 	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
@@ -159,6 +160,11 @@ func (slf *Conn) SetData(key, value any) *Conn {
 // GetData 获取连接数据
 func (slf *Conn) GetData(key any) any {
 	return slf.data[key]
+}
+
+// ViewData 查看只读的连接数据
+func (slf *Conn) ViewData() map[any]any {
+	return hash.Copy(slf.data)
 }
 
 // SetMessageData 设置消息数据，该数据将在消息处理完成后释放
