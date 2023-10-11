@@ -208,8 +208,11 @@ func (slf *Manager[PID, P, R]) SetOwner(roomId int64, owner PID) {
 }
 
 // GetRoom 获取房间
-func (slf *Manager[PID, P, R]) GetRoom(guid int64) R {
-	return slf.rooms.Get(guid).room
+func (slf *Manager[PID, P, R]) GetRoom(guid int64) (r R) {
+	if room := slf.rooms.Get(guid); room != nil {
+		r = room.room
+	}
+	return r
 }
 
 // Exist 检查房间是否存在
