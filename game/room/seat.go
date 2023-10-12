@@ -73,6 +73,7 @@ func (slf *Seat[PlayerID, P, R]) RemoveSeat(id PlayerID) {
 	slf.mutex.Lock()
 	defer slf.mutex.Unlock()
 	seat := slf.seatPS.DeleteGet(id)
+	slf.vacancy = append(slf.vacancy, seat)
 	slf.seatSP[seat] = nil
 }
 
@@ -116,6 +117,7 @@ func (slf *Seat[PlayerID, P, R]) SetSeat(id PlayerID, seat int) int {
 		}
 		slf.seatSP[seat] = slf.seatSP[oldSeat]
 		slf.seatSP[oldSeat] = nil
+		slf.vacancy = append(slf.vacancy, oldSeat)
 		slf.seatPS.Set(id, seat)
 	}
 	slf.event.OnPlayerSeatChangeEvent(slf.room, slf.manager.GetPlayer(id), oldSeat, seat)
