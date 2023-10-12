@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.5](https://github.com/kercylan98/minotaur/compare/v0.2.4...v0.2.5) (2023-10-12)
+
+
+### Features | 新特性
+
+* server.Conn 支持通过 ViewData 函数查看只读的连接数据 ([e60e0a7](https://github.com/kercylan98/minotaur/commit/e60e0a754a4cef3416e8699d40bf95e470b32692))
+* 优化 game.Player 的 Send 和 Close 函数与 server.Conn 同步 ([f65a155](https://github.com/kercylan98/minotaur/commit/f65a1555f64f55650b1aac52e00d3f1759c5b97b))
+
+
+### Bug Fixes | 修复
+
+* HTTP/2 rapid reset can cause excessive work in net/http ([14f542e](https://github.com/kercylan98/minotaur/commit/14f542e5130c9a70da667b4a9f6bb31fa3278fb1))
+* random 包按权重产生结果更改为 int64 ([433ba08](https://github.com/kercylan98/minotaur/commit/433ba08c754dcca3d5b4e69e757b8de411207284))
+* 修复 poker.CardPile.Reset 函数导致牌组只有大小王的问题 ([fb60065](https://github.com/kercylan98/minotaur/commit/fb60065ec1d1cc0d0890c6c1767dd82b2c28517e))
+* 修复 room 包在使用 AddSeat 函数时无法加入空缺位置的问题 ([295aaeb](https://github.com/kercylan98/minotaur/commit/295aaeb4c04d4be3ac6503453265cc136f8a6c3c))
+* 修复 room.Manager.GetRoom 函数的空指针问题 ([039500b](https://github.com/kercylan98/minotaur/commit/039500ba87c6706ad84841b00bb7d5d8004f89e7))
+
 ## [0.2.4](https://github.com/kercylan98/minotaur/compare/v0.2.3...v0.2.4) (2023-10-08)
 
 
