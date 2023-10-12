@@ -34,11 +34,11 @@ func (slf *Player[ID]) UseConn(conn *server.Conn) {
 }
 
 // Send 向该玩家发送数据
-func (slf *Player[ID]) Send(packet []byte) {
-	slf.conn.Write(packet)
+func (slf *Player[ID]) Send(packet []byte, callback ...func(err error)) {
+	slf.conn.Write(packet, callback...)
 }
 
 // Close 关闭玩家
-func (slf *Player[ID]) Close() {
-	slf.conn.Close()
+func (slf *Player[ID]) Close(err ...error) {
+	slf.conn.Close(err...)
 }

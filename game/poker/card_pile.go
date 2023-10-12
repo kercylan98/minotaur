@@ -78,14 +78,12 @@ func (slf *CardPile[P, C, T]) Reset() {
 					slf.guid++
 					card := slf.generateCard(slf.guid, point, color)
 					slf.cards[slf.guid] = card
+					cards = append(cards, card)
 				}
 			}
 		}
 	}
-	slf.pile = slf.pile[0:0]
-	for i := 0; i < slf.size; i++ {
-		slf.pile = append(slf.pile, cards...)
-	}
+	slf.pile = cards
 }
 
 // IsExclude 检查特定点数和花色是否被排除在外
