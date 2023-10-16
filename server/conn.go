@@ -9,13 +9,17 @@ import (
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
+	"net/http"
 	"runtime/debug"
 	"strings"
 	"sync"
 )
+
+var wsRequestKey = fmt.Sprintf("WS:REQ:%s", strings.ToUpper(random.HostName()))
 
 // newKcpConn 创建一个处理KCP的连接
 func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
@@ -121,6 +125,11 @@ type connection struct {
 	pool       *concurrent.Pool[*connPacket]
 	loop       *writeloop.WriteLoop[*connPacket]
 	mu         sync.Mutex
+}
+
+// GetWebsocketRequest 获取websocket请求
+func (slf *Conn) GetWebsocketRequest() *http.Request {
+	return slf.GetData(wsRequestKey).(*http.Request)
 }
 
 // IsEmpty 是否是空连接

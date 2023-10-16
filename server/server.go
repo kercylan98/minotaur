@@ -299,6 +299,7 @@ func (slf *Server) Run(addr string) error {
 				}
 				ws.EnableWriteCompression(slf.websocketWriteCompression)
 				conn := newWebsocketConn(slf, ws, ip)
+				conn.SetData(wsRequestKey, request)
 				for k, v := range request.URL.Query() {
 					if len(v) == 1 {
 						conn.SetData(k, v[0])
