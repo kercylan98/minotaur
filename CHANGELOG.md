@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.6](https://github.com/kercylan98/minotaur/compare/v0.2.5...v0.2.6) (2023-10-16)
+
+
+### Features | 新特性
+
+* super 包新增简单的权限控制器，可通过 super.NewPermission 函数进行创建 ([9e00684](https://github.com/kercylan98/minotaur/commit/9e0068490268aa9ede61832657e3f243b89d24b7))
+* 新增 space 包及 space.RoomMananger 结构体，提供了更便于使用的房间结构，用于取代 room 包 ([c3538ab](https://github.com/kercylan98/minotaur/commit/c3538ab530dc70875f91663905bfb6c3d1f32514))
+
+
+### Bug Fixes | 修复
+
+* 修复 fight.Round 在回合内执行 ActionRefresh 等操作的并发问题 ([2d1e8f1](https://github.com/kercylan98/minotaur/commit/2d1e8f14952171c3aa12cb9ceca7a60b0150f573))
+
 ## [0.2.5](https://github.com/kercylan98/minotaur/compare/v0.2.4...v0.2.5) (2023-10-12)
 
 
