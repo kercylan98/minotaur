@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/slice"
 	"github.com/kercylan98/minotaur/utils/timer"
+	"sync"
 	"time"
 )
 
@@ -65,6 +66,8 @@ type Round[Data RoundData] struct {
 	changeEventHandles        []RoundChangeEvent[Data]        // 游戏回合变更事件
 	actionTimeoutEventHandles []RoundActionTimeoutEvent[Data] // 行动超时事件
 	actionRefreshEventHandles []RoundActionRefreshEvent[Data] // 行动刷新事件
+
+	actionMutex sync.Mutex
 }
 
 // GetData 获取游戏数据
@@ -77,6 +80,8 @@ func (slf *Round[Data]) GetData() Data {
 func (slf *Round[Data]) Start() {
 	slf.currentEntity = -1
 	slf.round = 1
+	slf.actionMutex.Lock()
+	defer slf.actionMutex.Unlock()
 	slf.loop(false)
 }
 
@@ -157,7 +162,11 @@ func (slf *Round[Data]) SkipCamp() {
 // ActionRefresh 刷新行动超时时间
 func (slf *Round[Data]) ActionRefresh() {
 	slf.actionTimeoutTime = time.Now().Add(slf.actionTimeout).Unix()
-	slf.ticker.After(slf.actionTimeoutTickerName, slf.actionTimeout, slf.loop, true)
+	slf.ticker.After(slf.actionTimeoutTickerName, slf.actionTimeout, func(timeout bool) {
+		slf.actionMutex.Lock()
+		defer slf.actionMutex.Unlock()
+		slf.loop(timeout)
+	}, true)
 }
 
 // ActionFinish 结束行动
@@ -166,6 +175,8 @@ func (slf *Round[Data]) ActionFinish() {
 	if slf.shareAction {
 		slf.currentEntity = -1
 	}
+	slf.actionMutex.Lock()
+	defer slf.actionMutex.Unlock()
 	slf.loop(false)
 }
 

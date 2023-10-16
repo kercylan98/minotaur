@@ -67,6 +67,9 @@ func (slf *Manager[PID, P, R]) ReleaseRoom(guid int64) {
 		slf.pr.Atom(func(m map[PID]map[int64]struct{}) {
 			for playerId := range players {
 				delete(m[playerId], guid)
+				if len(m[playerId]) == 0 {
+					slf.players.Delete(playerId)
+				}
 			}
 		})
 	})
@@ -364,6 +367,9 @@ func (slf *Manager[PID, P, R]) Leave(roomId int64, player P) {
 			return
 		}
 		delete(rooms, roomId)
+		if len(rooms) == 0 {
+			slf.players.Delete(player.GetID())
+		}
 	})
 	slf.rp.Atom(func(m map[int64]map[PID]struct{}) {
 		players, exist := m[roomId]
