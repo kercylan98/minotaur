@@ -8,10 +8,11 @@ import (
 )
 
 type Player struct {
+	ID string
 }
 
 func (slf *Player) GetID() string {
-	return ""
+	return slf.ID
 }
 
 func (slf *Player) GetConn() *server.Conn {
