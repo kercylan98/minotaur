@@ -7,9 +7,14 @@ import (
 )
 
 const (
-	signalFinish = 1 + iota // 操作结束信号
-	signalStop              // 停止回合制信号
+	signalFinish  = 1 + iota // 操作结束信号
+	signalRefresh            // 刷新操作超时时间信号
 )
+
+type signal struct {
+	sign byte
+	data any
+}
 
 // NewTurnBased 创建一个新的回合制
 //   - calcNextTurnDuration 将返回下一次行动时间间隔，适用于按照速度计算下一次行动时间间隔的情况。当返回 0 时，将使用默认的行动超时时间
@@ -39,7 +44,7 @@ type TurnBased[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity gen
 	calcNextTurnDuration func(Camp, Entity) time.Duration                     // 下一次行动时间间隔
 	actionTimeoutHandler func(Camp, Entity) time.Duration                     // 行动超时时间
 
-	signal            chan byte     // 信号
+	signal            chan signal   // 信号
 	round             int           // 当前回合数
 	currCamp          Camp          // 当前操作阵营
 	currEntity        Entity        // 当前操作实体
@@ -77,7 +82,7 @@ func (slf *TurnBased[CampID, EntityID, Camp, Entity]) SetActionTimeout(actionTim
 // Run 运行
 func (slf *TurnBased[CampID, EntityID, Camp, Entity]) Run() {
 	slf.round = 1
-	slf.signal = make(chan byte, 1)
+	slf.signal = make(chan signal, 1)
 	var actionDuration = make(map[EntityID]time.Duration)
 	var actionSubmit = func() {
 		slf.actionMutex.Lock()
@@ -141,24 +146,34 @@ func (slf *TurnBased[CampID, EntityID, Camp, Entity]) Run() {
 		}
 	breakListen:
 		for {
+		wait:
 			select {
 			case <-slf.actionWaitTicker.C:
 				actionSubmit()
 				slf.OnTurnBasedEntityActionTimeoutEvent(slf.controller)
 				break breakListen
 			case sign := <-slf.signal:
-				switch sign {
+				switch sign.sign {
 				case signalFinish:
 					actionSubmit()
 					slf.OnTurnBasedEntityActionFinishEvent(slf.controller)
 					break breakListen
+				case signalRefresh:
+					slf.actionWaitTicker.Reset(sign.data.(time.Duration))
+					goto wait
 				}
 			}
 		}
 		slf.OnTurnBasedEntityActionSubmitEvent(slf.controller)
+		if len(actionDuration) == 0 {
+			slf.round++
+		}
 
 		slf.closeMutex.Lock()
 		if slf.closed {
+			if len(actionDuration) == 0 {
+				slf.round--
+			}
 			if slf.ticker != nil {
 				slf.ticker.Stop()
 				slf.ticker = nil
@@ -173,12 +188,10 @@ func (slf *TurnBased[CampID, EntityID, Camp, Entity]) Run() {
 			}
 			slf.closeMutex.Unlock()
 			break
+		} else if len(actionDuration) == 0 {
+			slf.OnTurnBasedRoundChangeEvent(slf.controller)
 		}
 		slf.closeMutex.Unlock()
-
-		if len(actionDuration) == 0 {
-			slf.round++
-		}
 
 	}
 }

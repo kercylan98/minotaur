@@ -26,6 +26,8 @@ type TurnBasedControllerAction[CampID, EntityID comparable, Camp generic.IdR[Cam
 	TurnBasedControllerInfo[CampID, EntityID, Camp, Entity]
 	// Finish 结束当前操作，将立即切换到下一个操作实体
 	Finish()
+	// Refresh 刷新当前操作实体的行动超时时间并返回新的行动超时时间
+	Refresh(duration time.Duration) time.Time
 }
 
 // TurnBasedController 回合制控制器
@@ -69,11 +71,24 @@ func (slf *TurnBasedController[CampID, EntityID, Camp, Entity]) Finish() {
 	defer slf.tb.actionMutex.Unlock()
 	if slf.tb.actioning {
 		slf.tb.actioning = false
-		slf.tb.signal <- signalFinish
+		slf.tb.signal <- signal{sign: signalFinish}
 	}
 }
 
 // Stop 在当前回合执行完毕后停止回合进程
 func (slf *TurnBasedController[CampID, EntityID, Camp, Entity]) Stop() {
 	slf.tb.Close()
+}
+
+// Refresh 刷新当前操作实体的行动超时时间
+//   - 当不在行动阶段时，将返回 time.Time 零值
+func (slf *TurnBasedController[CampID, EntityID, Camp, Entity]) Refresh(duration time.Duration) time.Time {
+	slf.tb.actionMutex.Lock()
+	defer slf.tb.actionMutex.Unlock()
+	if slf.tb.actioning {
+		slf.tb.actioning = false
+		slf.tb.signal <- signal{sign: signalRefresh, data: duration}
+		return time.Now().Add(duration)
+	}
+	return time.Time{}
 }

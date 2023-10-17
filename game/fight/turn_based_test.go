@@ -36,6 +36,10 @@ func TestTurnBased_Run(t *testing.T) {
 		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "阵营", controller.GetCamp().GetId(), "实体", controller.GetEntity().GetId(), "超时")
 	})
 
+	tbi.RegTurnBasedRoundChangeEvent(func(controller fight.TurnBasedControllerInfo[string, string, *Camp, *Entity]) {
+		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "回合切换")
+	})
+
 	tbi.RegTurnBasedEntitySwitchEvent(func(controller fight.TurnBasedControllerAction[string, string, *Camp, *Entity]) {
 		switch controller.GetEntity().GetId() {
 		case "1":
@@ -44,6 +48,8 @@ func TestTurnBased_Run(t *testing.T) {
 				controller.Finish()
 			}()
 		case "2":
+			controller.Refresh(time.Second)
+		case "4":
 			controller.Stop()
 		}
 		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "阵营", controller.GetCamp().GetId(), "实体", controller.GetEntity().GetId(), "开始行动")

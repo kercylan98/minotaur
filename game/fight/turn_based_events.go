@@ -7,6 +7,7 @@ type (
 	TurnBasedEntityActionTimeoutEventHandler[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] func(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity])
 	TurnBasedEntityActionFinishEventHandler[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]]  func(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity])
 	TurnBasedEntityActionSubmitEventHandler[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]]  func(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity])
+	TurnBasedRoundChangeEventHandler[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]]         func(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity])
 )
 
 type turnBasedEvents[CampID, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct {
@@ -14,6 +15,7 @@ type turnBasedEvents[CampID, EntityID comparable, Camp generic.IdR[CampID], Enti
 	actionTimeoutEventHandlers []TurnBasedEntityActionTimeoutEventHandler[CampID, EntityID, Camp, Entity]
 	actionFinishEventHandlers  []TurnBasedEntityActionFinishEventHandler[CampID, EntityID, Camp, Entity]
 	actionSubmitEventHandlers  []TurnBasedEntityActionSubmitEventHandler[CampID, EntityID, Camp, Entity]
+	roundChangeEventHandlers   []TurnBasedRoundChangeEventHandler[CampID, EntityID, Camp, Entity]
 }
 
 // RegTurnBasedEntitySwitchEvent 注册回合制实体切换事件处理函数，该处理函数将在切换到实体切换为操作时机时触发
@@ -67,6 +69,18 @@ func (slf *turnBasedEvents[CampID, EntityID, Camp, Entity]) RegTurnBasedEntityAc
 // OnTurnBasedEntityActionSubmitEvent 触发回合制实体行动提交事件
 func (slf *turnBasedEvents[CampID, EntityID, Camp, Entity]) OnTurnBasedEntityActionSubmitEvent(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity]) {
 	for _, handler := range slf.actionSubmitEventHandlers {
+		handler(controller)
+	}
+}
+
+// RegTurnBasedRoundChangeEvent 注册回合制回合变更事件处理函数，该处理函数将在回合变更时触发
+func (slf *turnBasedEvents[CampID, EntityID, Camp, Entity]) RegTurnBasedRoundChangeEvent(handler TurnBasedRoundChangeEventHandler[CampID, EntityID, Camp, Entity]) {
+	slf.roundChangeEventHandlers = append(slf.roundChangeEventHandlers, handler)
+}
+
+// OnTurnBasedRoundChangeEvent 触发回合制回合变更事件
+func (slf *turnBasedEvents[CampID, EntityID, Camp, Entity]) OnTurnBasedRoundChangeEvent(controller TurnBasedControllerInfo[CampID, EntityID, Camp, Entity]) {
+	for _, handler := range slf.roundChangeEventHandlers {
 		handler(controller)
 	}
 }
