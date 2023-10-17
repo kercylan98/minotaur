@@ -16,6 +16,8 @@ type RoundGameOverVerifyHandle[Data RoundData] func(round *Round[Data]) bool
 //   - camps 阵营
 //   - roundGameOverVerifyHandle 游戏结束验证函数
 //   - options 选项
+//
+// Deprecated: 从 Minotaur 0.2.7 开始，由于设计原因已弃用，请尝试考虑使用 fight.TurnBased 进行代替
 func NewRound[Data RoundData](data Data, camps []*RoundCamp, roundGameOverVerifyHandle RoundGameOverVerifyHandle[Data], options ...RoundOption[Data]) *Round[Data] {
 	mark := random.HostName()
 	round := &Round[Data]{
