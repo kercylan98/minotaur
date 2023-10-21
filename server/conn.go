@@ -127,6 +127,11 @@ type connection struct {
 	mu         sync.Mutex
 }
 
+// GetServer 获取服务器
+func (slf *Conn) GetServer() *Server {
+	return slf.server
+}
+
 // GetWebsocketRequest 获取websocket请求
 func (slf *Conn) GetWebsocketRequest() *http.Request {
 	return slf.GetData(wsRequestKey).(*http.Request)
