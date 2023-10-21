@@ -88,6 +88,17 @@ func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client Client[Client
 
 }
 
+// DropCache 丢弃特定帧的缓存，当 handler 返回 true 时将丢弃缓存
+func (slf *Lockstep[ClientID, Command]) DropCache(handler func(frame int64) bool) {
+	slf.frameCacheLock.Lock()
+	defer slf.frameCacheLock.Unlock()
+	for frame, _ := range slf.frameCache {
+		if handler(frame) {
+			delete(slf.frameCache, frame)
+		}
+	}
+}
+
 // LeaveClient 将客户端从广播队列中移除
 func (slf *Lockstep[ClientID, Command]) LeaveClient(clientId ClientID) {
 	slf.clientLock.Lock()
