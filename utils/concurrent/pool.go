@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// NewPool 创建一个线程安全的对象缓冲池
+//   - 通过 Get 获取一个对象，如果缓冲区内存在可用对象则直接返回，否则新建一个进行返回
+//   - 通过 Release 将使用完成的对象放回缓冲区，超出缓冲区大小的对象将被放弃
 func NewPool[T any](bufferSize int, generator func() T, releaser func(data T)) *Pool[T] {
 	pool := &Pool[T]{
 		bufferSize: bufferSize,
@@ -17,6 +20,19 @@ func NewPool[T any](bufferSize int, generator func() T, releaser func(data T)) *
 		pool.put(generator())
 	}
 	return pool
+}
+
+// NewMapPool 创建一个线程安全的 map 缓冲池
+//   - 通过 Get 获取一个 map，如果缓冲区内存在可用 map 则直接返回，否则新建一个进行返回
+//   - 通过 Release 将使用完成的 map 放回缓冲区，超出缓冲区大小的 map 将被放弃
+func NewMapPool[K comparable, V any](bufferSize int) *Pool[map[K]V] {
+	return NewPool[map[K]V](bufferSize, func() map[K]V {
+		return make(map[K]V)
+	}, func(data map[K]V) {
+		for k := range data {
+			delete(data, k)
+		}
+	})
 }
 
 // Pool 线程安全的对象缓冲池
