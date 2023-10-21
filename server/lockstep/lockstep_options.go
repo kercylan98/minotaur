@@ -4,7 +4,7 @@ type Option[ClientID comparable, Command any] func(lockstep *Lockstep[ClientID, 
 
 // WithFrameLimit 通过特定逻辑帧上限创建锁步（帧）同步组件
 //   - 当达到上限时将停止广播
-func WithFrameLimit[ClientID comparable, Command any](frameLimit int) Option[ClientID, Command] {
+func WithFrameLimit[ClientID comparable, Command any](frameLimit int64) Option[ClientID, Command] {
 	return func(lockstep *Lockstep[ClientID, Command]) {
 		if frameLimit > 0 {
 			frameLimit = 0
@@ -15,7 +15,7 @@ func WithFrameLimit[ClientID comparable, Command any](frameLimit int) Option[Cli
 
 // WithFrameRate 通过特定逻辑帧率创建锁步（帧）同步组件
 //   - 默认情况下为 15/s
-func WithFrameRate[ClientID comparable, Command any](frameRate int) Option[ClientID, Command] {
+func WithFrameRate[ClientID comparable, Command any](frameRate int64) Option[ClientID, Command] {
 	return func(lockstep *Lockstep[ClientID, Command]) {
 		lockstep.frameRate = frameRate
 	}
@@ -29,8 +29,16 @@ func WithFrameRate[ClientID comparable, Command any](frameRate int) Option[Clien
 //     Frame int `json:"frame"`
 //     Commands []Command `json:"commands"`
 //     }
-func WithSerialization[ClientID comparable, Command any](handle func(frame int, commands []Command) []byte) Option[ClientID, Command] {
+func WithSerialization[ClientID comparable, Command any](handle func(frame int64, commands []Command) []byte) Option[ClientID, Command] {
 	return func(lockstep *Lockstep[ClientID, Command]) {
 		lockstep.serialization = handle
+	}
+}
+
+// WithInitFrame 通过特定的初始帧创建锁步（帧）同步组件
+//   - 默认情况下为 0，即第一帧索引为 0
+func WithInitFrame[ClientID comparable, Command any](initFrame int64) Option[ClientID, Command] {
+	return func(lockstep *Lockstep[ClientID, Command]) {
+		lockstep.initFrame = initFrame
 	}
 }
