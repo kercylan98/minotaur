@@ -187,6 +187,12 @@ func (slf *Message) GetTickerMessageAttrs() (caller func()) {
 
 // PushTickerMessage 向特定服务器中推送 MessageTypeTicker 消息
 func PushTickerMessage(srv *Server, caller func(), mark ...any) {
+	srv.messageLock.RLock()
+	if srv.messagePool == nil {
+		srv.messageLock.RUnlock()
+		return
+	}
+	srv.messageLock.RUnlock()
 	msg := srv.messagePool.Get()
 	msg.t = MessageTypeTicker
 	msg.attrs = append([]any{caller}, mark...)

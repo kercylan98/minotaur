@@ -34,13 +34,15 @@ func (slf *MultipleServer) Run() {
 		close(exceptionChannel)
 		close(runtimeExceptionChannel)
 	}()
-	var running = make([]*Server, 0, len(slf.servers))
 	var wait sync.WaitGroup
 	for i := 0; i < len(slf.servers); i++ {
 		wait.Add(1)
 		go func(address string, server *Server) {
+			var lock sync.Mutex
 			var startFinish bool
 			server.startFinishEventHandles.Append(func(srv *Server) {
+				lock.Lock()
+				defer lock.Unlock()
 				if !startFinish {
 					startFinish = true
 					wait.Done()
@@ -50,9 +52,9 @@ func (slf *MultipleServer) Run() {
 			server.multipleRuntimeErrorChan = runtimeExceptionChannel
 			if err := server.Run(address); err != nil {
 				exceptionChannel <- err
-			} else {
-				running = append(running, server)
 			}
+			lock.Lock()
+			defer lock.Unlock()
 			if !startFinish {
 				startFinish = true
 				wait.Done()
