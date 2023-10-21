@@ -440,7 +440,7 @@ func (slf *Server) CloseConn(id string) {
 }
 
 // GetID 获取服务器id
-func (slf *Server) GetID() int64 {
+func (slf *Server) GetID() string {
 	if slf.cross == nil {
 		panic(ErrNoSupportCross)
 	}

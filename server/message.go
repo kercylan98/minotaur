@@ -154,14 +154,14 @@ func PushErrorMessage(srv *Server, err error, action MessageErrorAction, mark ..
 }
 
 // GetCrossMessageAttrs 获取消息中的跨服属性
-func (slf *Message) GetCrossMessageAttrs() (serverId int64, packet []byte) {
-	serverId = slf.attrs[0].(int64)
+func (slf *Message) GetCrossMessageAttrs() (serverId string, packet []byte) {
+	serverId = slf.attrs[0].(string)
 	packet = slf.attrs[1].([]byte)
 	return
 }
 
 // PushCrossMessage 向特定服务器中推送 MessageTypeCross 消息
-func PushCrossMessage(srv *Server, crossName string, serverId int64, packet []byte, mark ...any) {
+func PushCrossMessage(srv *Server, crossName string, serverId string, packet []byte, mark ...any) {
 	if serverId == srv.id {
 		msg := srv.messagePool.Get()
 		msg.t = MessageTypeCross

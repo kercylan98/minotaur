@@ -19,7 +19,7 @@ type StopEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
-type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId int64, packet []byte)
+type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId string, packet []byte)
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 type ConsoleCommandEventHandle func(srv *Server)
@@ -239,7 +239,7 @@ func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandl
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnReceiveCrossPacketEvent(serverId int64, packet []byte) {
+func (slf *event) OnReceiveCrossPacketEvent(serverId string, packet []byte) {
 	slf.receiveCrossPacketEventHandles.RangeValue(func(index int, value ReceiveCrossPacketEventHandle) bool {
 		value(slf.Server, serverId, packet)
 		return true

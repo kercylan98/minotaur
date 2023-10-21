@@ -31,7 +31,7 @@ type option struct {
 }
 
 type runtime struct {
-	id                        int64            // 服务器id
+	id                        string           // 服务器id
 	cross                     map[string]Cross // 跨服
 	deadlockDetect            time.Duration    // 是否开启死锁检测
 	supportMessageTypes       map[int]bool     // websocket模式下支持的消息类型
@@ -134,7 +134,7 @@ func WithTicker(size int, autonomy bool) Option {
 // WithCross 通过跨服的方式创建服务器
 //   - 推送跨服消息时，将推送到对应 crossName 的跨服中间件中，crossName 可以满足不同功能采用不同的跨服/消息中间件
 //   - 通常情况下 crossName 仅需一个即可
-func WithCross(crossName string, serverId int64, cross Cross) Option {
+func WithCross(crossName string, serverId string, cross Cross) Option {
 	return func(srv *Server) {
 	start:
 		{
@@ -143,18 +143,18 @@ func WithCross(crossName string, serverId int64, cross Cross) Option {
 				srv.cross = map[string]Cross{}
 			}
 			srv.cross[crossName] = cross
-			err := cross.Init(srv, func(serverId int64, packet []byte) {
+			err := cross.Init(srv, func(serverId string, packet []byte) {
 				msg := srv.messagePool.Get()
 				msg.t = MessageTypeCross
 				msg.attrs = []any{serverId, packet}
 				srv.pushMessage(msg)
 			})
 			if err != nil {
-				log.Info("Cross", log.Int64("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()), log.String("State", "WaitNatsRun"))
+				log.Info("Cross", log.String("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()), log.String("State", "WaitNatsRun"))
 				time.Sleep(1 * time.Second)
 				goto start
 			}
-			log.Info("Cross", log.Int64("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()))
+			log.Info("Cross", log.String("ServerID", serverId), log.String("Cross", reflect.TypeOf(cross).String()))
 		}
 	}
 }

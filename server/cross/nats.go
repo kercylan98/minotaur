@@ -22,7 +22,7 @@ func NewNats(url string, options ...NatsOption) *Nats {
 		messagePool: concurrent.NewPool[*Message](1024*100, func() *Message {
 			return new(Message)
 		}, func(data *Message) {
-			data.ServerId = 0
+			data.ServerId = ""
 			data.Packet = nil
 		}),
 	}
@@ -41,7 +41,7 @@ type Nats struct {
 	messagePool *concurrent.Pool[*Message]
 }
 
-func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, packet []byte)) (err error) {
+func (slf *Nats) Init(server *server.Server, packetHandle func(serverId string, packet []byte)) (err error) {
 	if slf.conn == nil {
 		if len(slf.options) == 0 {
 			slf.options = append(slf.options,
@@ -72,7 +72,7 @@ func (slf *Nats) Init(server *server.Server, packetHandle func(serverId int64, p
 	return err
 }
 
-func (slf *Nats) PushMessage(serverId int64, packet []byte) error {
+func (slf *Nats) PushMessage(serverId string, packet []byte) error {
 	message := slf.messagePool.Get()
 	defer slf.messagePool.Release(message)
 	message.ServerId = serverId
