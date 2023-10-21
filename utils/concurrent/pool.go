@@ -10,11 +10,14 @@ import (
 // NewPool 创建一个线程安全的对象缓冲池
 //   - 通过 Get 获取一个对象，如果缓冲区内存在可用对象则直接返回，否则新建一个进行返回
 //   - 通过 Release 将使用完成的对象放回缓冲区，超出缓冲区大小的对象将被放弃
-func NewPool[T any](bufferSize int, generator func() T, releaser func(data T)) *Pool[T] {
+func NewPool[T any](bufferSize int, generator func() T, releaser func(data T), options ...PoolOption[T]) *Pool[T] {
 	pool := &Pool[T]{
 		bufferSize: bufferSize,
 		generator:  generator,
 		releaser:   releaser,
+	}
+	for _, option := range options {
+		option(pool)
 	}
 	for i := 0; i < bufferSize; i++ {
 		pool.put(generator())
