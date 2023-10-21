@@ -661,29 +661,28 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	}
 
 	present := time.Now()
-	defer func(msg *Message) {
-		if err := recover(); err != nil {
-			stack := string(debug.Stack())
-			log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.AttrsString()), log.Any("error", err), log.String("stack", stack))
-			fmt.Println(stack)
-			if e, ok := err.(error); ok {
-				slf.OnMessageErrorEvent(msg, e)
+	if msg.t != MessageTypeAsync {
+		defer func(msg *Message) {
+			if err := recover(); err != nil {
+				stack := string(debug.Stack())
+				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.AttrsString()), log.Any("error", err), log.String("stack", stack))
+				fmt.Println(stack)
+				if e, ok := err.(error); ok {
+					slf.OnMessageErrorEvent(msg, e)
+				}
 			}
-		}
 
-		if msg.t == MessageTypeAsync {
-			return
-		}
+			super.Handle(cancel)
+			slf.low(msg, present, time.Millisecond*100)
+			slf.messageCounter.Add(-1)
 
-		super.Handle(cancel)
-		slf.low(msg, present, time.Millisecond*100)
-		slf.messageCounter.Add(-1)
+			if !slf.isShutdown.Load() {
+				slf.messagePool.Release(msg)
+			}
 
-		if !slf.isShutdown.Load() {
-			slf.messagePool.Release(msg)
-		}
+		}(msg)
+	}
 
-	}(msg)
 	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:
