@@ -22,7 +22,9 @@ func (slf *Cli) Write(packet []byte, callback ...func(err error)) {
 }
 
 func TestNewLockstep(t *testing.T) {
-	ls := lockstep.NewLockstep[string, int]()
+	ls := lockstep.NewLockstep[string, int](
+		lockstep.WithInitFrame[string, int](1),
+	)
 	ls.JoinClient(&Cli{id: "player_1"})
 	ls.JoinClient(&Cli{id: "player_2"})
 	count := 0

@@ -107,6 +107,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 	}
 	slf.running = true
 	slf.runningLock.RUnlock()
+	slf.currentFrame = slf.initFrame
 
 	slf.ticker.Loop("lockstep", timer.Instantly, time.Second/time.Duration(slf.frameRate), timer.Forever, func() {
 
@@ -132,6 +133,9 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 
 		for clientId, client := range slf.clients {
 			var i = slf.clientFrame[clientId]
+			if i < slf.initFrame {
+				i = slf.initFrame
+			}
 			for ; i < currentFrame; i++ {
 				cache, exist := slf.frameCache[i]
 				if !exist {
