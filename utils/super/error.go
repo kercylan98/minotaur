@@ -18,7 +18,7 @@ func RegError(code int, message string) error {
 	if errorManagerInstance == nil {
 		errorManagerInstance = new(errorManager).init()
 	}
-	err := &ser{code: code, message: message}
+	err := errors.New(message)
 	errorManagerInstance.errorMapper[err] = code
 	return err
 }
@@ -34,7 +34,7 @@ func RegErrorRef(code int, message string, ref error) error {
 	if errorManagerInstance == nil {
 		errorManagerInstance = new(errorManager).init()
 	}
-	err := &ser{code: code, message: message}
+	err := errors.New(message)
 	errorManagerInstance.errorMapper[err] = code
 	errorManagerInstance.errorMapperRef[ref] = err
 	return ref
@@ -64,15 +64,6 @@ func GetError(err error) (int, error) {
 		return 0, errors.New("error not found")
 	}
 	return code, err
-}
-
-type ser struct {
-	code    int
-	message string
-}
-
-func (slf *ser) Error() string {
-	return slf.message
 }
 
 type errorManager struct {
