@@ -2,7 +2,6 @@ package lockstep
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
 	"time"
@@ -12,7 +11,6 @@ import (
 func NewLockstep[ClientID comparable, Command any](options ...Option[ClientID, Command]) *Lockstep[ClientID, Command] {
 	lockstep := &Lockstep[ClientID, Command]{
 		currentFrame: -1,
-		frames:       make(map[int64][]Command),
 		ticker:       timer.GetTicker(10),
 		frameRate:    15,
 		serialization: func(frame int64, commands []Command) []byte {
@@ -55,11 +53,11 @@ type Lockstep[ClientID comparable, Command any] struct {
 	currentCommands  []Command    // 当前帧指令
 	currentFrameLock sync.RWMutex // 当前主要帧锁
 
-	frames         map[int64][]Command // 所有已经落帧完成的指令
-	frameLock      sync.RWMutex        // 帧锁
-	frameCache     map[int64][]byte    // 帧序列化缓存
-	frameCacheLock sync.RWMutex        // 帧序列化缓存锁
-	ticker         *timer.Ticker       // 定时器
+	//frames         map[int64][]Command // 所有已经落帧完成的指令
+	//frameLock      sync.RWMutex        // 帧锁
+	frameCache     map[int64][]byte // 帧序列化缓存
+	frameCacheLock sync.RWMutex     // 帧序列化缓存锁
+	ticker         *timer.Ticker    // 定时器
 
 	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
@@ -136,11 +134,10 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		slf.currentCommands = make([]Command, 0, len(currentCommands))
 		slf.currentFrameLock.Unlock()
 
-		slf.frameLock.Lock()
 		slf.clientLock.RLock()
-		defer slf.frameLock.Unlock()
 		defer slf.clientLock.RUnlock()
-		slf.frames[currentFrame] = currentCommands
+		slf.frameCacheLock.Lock()
+		defer slf.frameCacheLock.Unlock()
 
 		for clientId, client := range slf.clients {
 			var i = slf.clientFrame[clientId]
@@ -150,7 +147,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 			for ; i < currentFrame; i++ {
 				cache, exist := slf.frameCache[i]
 				if !exist {
-					cache = slf.serialization(i, slf.frames[i])
+					cache = slf.serialization(i, currentCommands)
 					slf.frameCache[i] = cache
 				}
 				client.Write(cache)
@@ -178,13 +175,13 @@ func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 	defer slf.currentFrameLock.Unlock()
 	slf.frameCacheLock.Lock()
 	defer slf.frameCacheLock.Unlock()
-	slf.frameLock.Lock()
-	defer slf.frameLock.Unlock()
+	slf.clientLock.Lock()
+	defer slf.clientLock.Unlock()
+
 	slf.frameCache = make(map[int64][]byte)
 	slf.currentCommands = make([]Command, 0)
 	slf.currentFrame = -1
 	slf.clientFrame = make(map[ClientID]int64)
-	slf.frames = make(map[int64][]Command)
 }
 
 // IsRunning 是否正在广播
@@ -196,9 +193,16 @@ func (slf *Lockstep[ClientID, Command]) IsRunning() bool {
 
 // AddCommand 添加命令到当前帧
 func (slf *Lockstep[ClientID, Command]) AddCommand(command Command) {
-	slf.currentFrameLock.RLock()
-	defer slf.currentFrameLock.RUnlock()
+	slf.currentFrameLock.Lock()
+	defer slf.currentFrameLock.Unlock()
 	slf.currentCommands = append(slf.currentCommands, command)
+}
+
+// AddCommands 添加命令到当前帧
+func (slf *Lockstep[ClientID, Command]) AddCommands(commands []Command) {
+	slf.currentFrameLock.Lock()
+	defer slf.currentFrameLock.Unlock()
+	slf.currentCommands = append(slf.currentCommands, commands...)
 }
 
 // GetCurrentFrame 获取当前帧
@@ -219,13 +223,6 @@ func (slf *Lockstep[ClientID, Command]) GetClientCurrentFrame(clientId ClientID)
 //   - 未设置时将返回0
 func (slf *Lockstep[ClientID, Command]) GetFrameLimit() int64 {
 	return slf.frameLimit
-}
-
-// GetFrames 获取所有落帧完成的数据
-func (slf *Lockstep[ClientID, Command]) GetFrames() map[int64][]Command {
-	slf.frameLock.RLock()
-	defer slf.frameLock.RUnlock()
-	return hash.Copy(slf.frames)
 }
 
 // GetCurrentCommands 获取当前帧还未结束时的所有指令
