@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.2.7](https://github.com/kercylan98/minotaur/compare/v0.2.6...v0.2.7) (2023-10-23)
+
+
+### Reverts | 回退
+
+* round 并发安全问题回撤（死锁问题） ([6e11c5e](https://github.com/kercylan98/minotaur/commit/6e11c5edec0ebcec8dd4826da195f8db6adf754c))
+
+
+### Features | 新特性
+
+* concurrent 包 新增 NewMapPool 函数，支持创建 map 对象池 ([74a6b54](https://github.com/kercylan98/minotaur/commit/74a6b545c23034c96d87785d5f209d3569ce29ae))
+* fight 包新增 TurnBased 回合制数据结构，用于替代 fight.Round。解决并发安全问题，并且支持按照速度进行回合切换 ([378f855](https://github.com/kercylan98/minotaur/commit/378f855992f9a03eba4853b056f5a0327c669085))
+* fight.TurnBased 支持监听回合变更以及刷新当前操作回合超时时间 ([ba2f3af](https://github.com/kercylan98/minotaur/commit/ba2f3af39855b5d860e6483f0281e430742f591b))
+* generic 包新增 IDR、IDW、IDRW 的泛型通用接口 ([5259e07](https://github.com/kercylan98/minotaur/commit/5259e07a320c055d15410c96ab35b094d569d19c))
+* lockstep 支持丢弃帧缓存 ([803dd4f](https://github.com/kercylan98/minotaur/commit/803dd4f2eb192e268a0fa486f1b83ed269c7e86a))
+* server.Conn 支持在 WebSocket 模式下通过 GetWebsocketRequest 函数获取到请求 ([42ab52b](https://github.com/kercylan98/minotaur/commit/42ab52bc668d28194a56f2c9de09833381b36d8f))
+* server.Conn 支持通过 GetServer 获取到服务器实例 ([89e9c51](https://github.com/kercylan98/minotaur/commit/89e9c517afb68c405b25c37eead8aafbbd6fbe82))
+* super 包新增 LaunchTime 函数，支持获取程序启动时间 ([20f62fe](https://github.com/kercylan98/minotaur/commit/20f62fee87b34b27e31c90ee3f373b795e2fefb1))
+* super 包新增 LossCounter，适用于统计代码段时间损耗，可通过 super.StartLossCounter 函数进行使用 ([2b49a36](https://github.com/kercylan98/minotaur/commit/2b49a36e8ef1679d595193a8cd9b4ae7c4164be5))
+
+
+### Bug Fixes | 修复
+
+* server 包数据竞态问题优化 ([cdbf388](https://github.com/kercylan98/minotaur/commit/cdbf38849824000e224f284dcfe56bae8f986090))
+* 修复 concurrent.Pool 可选项无法使用的问题 ([64544e0](https://github.com/kercylan98/minotaur/commit/64544e069d5e91d8da5bbc475fffe18c7fdb7a7a))
+* 修复 lockstep.WithInitFrame 不生效的问题 ([859e0a1](https://github.com/kercylan98/minotaur/commit/859e0a1ac14cf7763aa1630814eddf127c1bf266))
+
+
+### Code Refactoring | 重构
+
+* cross 包服务器 id 更改为 string 类型 ([9e33906](https://github.com/kercylan98/minotaur/commit/9e339065d453635dbc03d088a02634b829e104c6))
+
+
+### Performance Improvements | 性能优化
+
+* lockstep 包优化同步逻辑，帧 id 由 int 更改为 int64 类型，优化数据竞态问题 ([d3e5632](https://github.com/kercylan98/minotaur/commit/d3e563257f8e72569f76132002c8ea73e5fe39b0))
+* lockstep 包优化帧命令逻辑，去除多余字段 ([139fe42](https://github.com/kercylan98/minotaur/commit/139fe4291a229e944f97d1aec3dec001c1612c8f))
+* server 包异步消息不再执行额外 defer ([b5b126e](https://github.com/kercylan98/minotaur/commit/b5b126ef073dff627ce533a3bb0ca7f1c0f8c0da))
+
 ## [0.2.6](https://github.com/kercylan98/minotaur/compare/v0.2.5...v0.2.6) (2023-10-16)
 
 
