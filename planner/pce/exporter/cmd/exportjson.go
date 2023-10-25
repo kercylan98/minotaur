@@ -83,7 +83,12 @@ func init() {
 					if raw, err := exporter.ExportData(tmpls.NewJSON(), loader.LoadData(cx)); err != nil {
 						return err
 					} else {
-						jsonPath := filepath.Join(outPath, fmt.Sprintf("%s.%s.json", prefix, cx.GetConfigName()))
+						var jsonPath string
+						if len(prefix) == 0 {
+							jsonPath = filepath.Join(outPath, fmt.Sprintf("%s.json", cx.GetConfigName()))
+						} else {
+							jsonPath = filepath.Join(outPath, fmt.Sprintf("%s.%s.json", prefix, cx.GetConfigName()))
+						}
 						if err := file.WriterFile(jsonPath, raw); err != nil {
 							return err
 						}
