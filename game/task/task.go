@@ -10,6 +10,7 @@ import (
 func NewTask(id int64, taskType int, condition int64, options ...Option) *Task {
 	task := &Task{
 		id:        id,
+		taskType:  taskType,
 		condition: condition,
 		state:     StateAccept,
 	}
@@ -181,11 +182,13 @@ func (slf *Task) SetChildCount(key any, count int64) {
 	}
 	slf.childCount[key] = count
 	slf.refreshState()
+	OnRefreshTaskCount(slf.taskType, count)
 }
 
 // AddChildCount 增加子计数
 func (slf *Task) AddChildCount(key any, count int64) {
 	slf.SetChildCount(key, slf.childCount[key]+count)
+	OnRefreshTaskChildCount(slf.taskType, key, count)
 }
 
 // refreshState 刷新任务状态
