@@ -53,8 +53,6 @@ type Lockstep[ClientID comparable, Command any] struct {
 	currentCommands  []Command    // 当前帧指令
 	currentFrameLock sync.RWMutex // 当前主要帧锁
 
-	//frames         map[int64][]Command // 所有已经落帧完成的指令
-	//frameLock      sync.RWMutex        // 帧锁
 	frameCache     map[int64][]byte // 帧序列化缓存
 	frameCacheLock sync.RWMutex     // 帧序列化缓存锁
 	ticker         *timer.Ticker    // 定时器
@@ -79,6 +77,9 @@ func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client Client[Client
 		frameIndex = slf.currentFrame
 	}
 	slf.currentFrameLock.RUnlock()
+	if frameIndex < slf.initFrame {
+		frameIndex = slf.initFrame
+	}
 	slf.clientLock.Lock()
 	slf.clients[client.GetID()] = client
 	slf.clientFrame[client.GetID()] = frameIndex
@@ -109,13 +110,13 @@ func (slf *Lockstep[ClientID, Command]) LeaveClient(clientId ClientID) {
 //   - 在开始广播后将持续按照设定的帧率进行帧数推进，并在每一帧推进时向客户端进行同步，需提前将客户端加入广播队列 JoinClient
 //   - 广播过程中使用 AddCommand 将该帧数据追加到当前帧中
 func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
-	slf.runningLock.RLock()
+	slf.runningLock.Lock()
 	if slf.running {
-		slf.runningLock.RUnlock()
+		slf.runningLock.Unlock()
 		return
 	}
 	slf.running = true
-	slf.runningLock.RUnlock()
+	slf.runningLock.Unlock()
 	slf.currentFrame = slf.initFrame
 
 	slf.ticker.Loop("lockstep", timer.Instantly, time.Second/time.Duration(slf.frameRate), timer.Forever, func() {
