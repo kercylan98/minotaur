@@ -68,6 +68,15 @@ func Record(name string, data map[string]any) {
 	logger.writer(fmt.Sprintf("%s - %s\n", time.Now().Format(time.DateTime), super.MarshalJSON(data)))
 }
 
+// RecordBytes 记录一条运营日志
+func RecordBytes(name string, data []byte) {
+	logger, exist := survey[name]
+	if !exist {
+		panic(fmt.Errorf("survey %s not exist", name))
+	}
+	logger.writer(string(data))
+}
+
 // Flush 将运营日志记录器的缓冲区数据写入到文件
 //   - name 为空时，将所有记录器的缓冲区数据写入到文件
 func Flush(names ...string) {
