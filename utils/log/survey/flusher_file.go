@@ -17,6 +17,7 @@ func NewFileFlusher(filePath string, layout ...string) *FileFlusher {
 	ext := filepath.Ext(fn)
 	fn = strings.TrimSuffix(fn, ext)
 	dir := filepath.Dir(filePath)
+	_ = os.MkdirAll(dir, 0666)
 	fl := &FileFlusher{
 		dir:       dir,
 		fn:        fn,
