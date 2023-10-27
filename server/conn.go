@@ -17,6 +17,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 )
 
 var wsRequestKey = fmt.Sprintf("WS:REQ:%s", strings.ToUpper(random.HostName()))
@@ -31,6 +32,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 			ip:         session.RemoteAddr().String(),
 			kcp:        session,
 			data:       map[any]any{},
+			openTime:   time.Now(),
 		},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
@@ -50,6 +52,7 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 			ip:         conn.RemoteAddr().String(),
 			gn:         conn,
 			data:       map[any]any{},
+			openTime:   time.Now(),
 		},
 	}
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
@@ -69,24 +72,10 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 			ip:         ip,
 			ws:         ws,
 			data:       map[any]any{},
+			openTime:   time.Now(),
 		},
 	}
 	c.writeLoop()
-	return c
-}
-
-// newGatewayConn 创建一个处理网关消息的连接
-func newGatewayConn(conn *Conn, connId string) *Conn {
-	c := &Conn{
-		//ctx: server.ctx,
-		connection: &connection{
-			server: conn.server,
-			data:   map[any]any{},
-		},
-	}
-	c.gw = func(packet []byte) {
-		conn.Write(packet)
-	}
 	return c
 }
 
@@ -99,6 +88,7 @@ func NewEmptyConn(server *Server) *Conn {
 			remoteAddr: &net.TCPAddr{},
 			ip:         "0.0.0.0:0",
 			data:       map[any]any{},
+			openTime:   time.Now(),
 		},
 	}
 	c.writeLoop()
@@ -125,11 +115,22 @@ type connection struct {
 	pool       *concurrent.Pool[*connPacket]
 	loop       *writeloop.WriteLoop[*connPacket]
 	mu         sync.Mutex
+	openTime   time.Time
 }
 
 // GetServer 获取服务器
 func (slf *Conn) GetServer() *Server {
 	return slf.server
+}
+
+// GetOpenTime 获取连接打开时间
+func (slf *Conn) GetOpenTime() time.Time {
+	return slf.openTime
+}
+
+// GetOnlineTime 获取连接在线时长
+func (slf *Conn) GetOnlineTime() time.Duration {
+	return time.Now().Sub(slf.openTime)
 }
 
 // GetWebsocketRequest 获取websocket请求
