@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.8](https://github.com/kercylan98/minotaur/compare/v0.2.7...v0.2.8) (2023-10-31)
+
+
+### Other | 其他更改
+
+* gRPC-Go HTTP/2 Rapid Reset vulnerability、NATS.io: Adding accounts for just the system account adds auth bypass ([e4d60d7](https://github.com/kercylan98/minotaur/commit/e4d60d7146fcef13c5a729e85faa18eea5debecf))
+
+
+### Features | 新特性
+
+* server.Conn 支持获取连接打开时间及在线时长 ([18a0b06](https://github.com/kercylan98/minotaur/commit/18a0b06e0ebf8ac0ae5feb841bacfaf2bef9fa66))
+* survey 包新增 RecordBytes 函数，支持跳过格式化将数据直接写入，适用于转发至消息队列等场景 ([f475aac](https://github.com/kercylan98/minotaur/commit/f475aac387883ce86d82f00e63bd51cc4bfcdcf8))
+* survey.FileFlusher 将会在目录不存在时自行创建 ([d2f982b](https://github.com/kercylan98/minotaur/commit/d2f982bf42aa8c8e026240418ad01ec9cf7ccb5d))
+
+
+### Bug Fixes | 修复
+
+* lockstep.Lockstep 移除不必要的内容，修复 StartBroadcast 函数锁使用不正确的问题 ([61d41e5](https://github.com/kercylan98/minotaur/commit/61d41e51b5fe49a0ebc787666c1a5f010c573a53))
+* 优化 exporter 配置导出器在没有前缀时会默认增加一个 "." 的问题 ([fb5dacb](https://github.com/kercylan98/minotaur/commit/fb5dacb4b4e3bbc871b684b892596f916bac6789))
+* 修复 [#58](https://github.com/kercylan98/minotaur/issues/58) taskType 及事件被遗漏的问题 ([9f88265](https://github.com/kercylan98/minotaur/commit/9f882651eb385d6cb328ee857a00980c8076f23e))
+* 修复 timer.GetTicker 在获取到定时器后立刻使用造成的竞态问题 ([a4bc828](https://github.com/kercylan98/minotaur/commit/a4bc8280a46a371e59ca656058b7dcb15d545b21))
+
 ## [0.2.7](https://github.com/kercylan98/minotaur/compare/v0.2.6...v0.2.7) (2023-10-23)
 
 
