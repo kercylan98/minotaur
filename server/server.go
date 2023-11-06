@@ -748,3 +748,8 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		log.Warn("Server", log.String("not support message type", msg.t.String()))
 	}
 }
+
+// PushAsyncMessage 是 PushAsyncMessage 的快捷方式
+func (slf *Server) PushAsyncMessage(caller func() error, callback func(err error), mark ...any) {
+	PushAsyncMessage(slf, caller, callback, mark...)
+}
