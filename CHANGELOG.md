@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.9](https://github.com/kercylan98/minotaur/compare/v0.2.8...v0.2.9) (2023-11-09)
+
+
+### Other | 其他更改
+
+* xkeys seal encryption used fixed key for all encryption [#6](https://github.com/kercylan98/minotaur/issues/6) ([2079e95](https://github.com/kercylan98/minotaur/commit/2079e9595e1782b28415b36e92c6be7d3dfa1f1c))
+
+
+### Features | 新特性
+
+* generic 包新增 Basic 类型 ([d405cae](https://github.com/kercylan98/minotaur/commit/d405cae73f527e636f544fffb6e8f9b16965d2ce))
+* lockstep 支持获取帧同步客户端数量 ([589a424](https://github.com/kercylan98/minotaur/commit/589a424491dc5b150bed49bc33d1849030dec373))
+* server 包支持获取到 HTTP 服务器的 Gin 示例 ([6b2a753](https://github.com/kercylan98/minotaur/commit/6b2a753e67f3605db2cdeb0760fbf30db937037b))
+* server.Server 支持使用 PushAsyncMessage 快捷发布异步消息 ([0b77cc9](https://github.com/kercylan98/minotaur/commit/0b77cc9907210ff527d570527071e57cc1804d3c))
+* super 包新增规则重试及退避指数重试 ([d191dab](https://github.com/kercylan98/minotaur/commit/d191dabfd3b23c5da171d24d49b69ee646123cf0))
+* survey 包的 Analyzer 分析器增加大量辅助函数 ([85176f3](https://github.com/kercylan98/minotaur/commit/85176f32f918b3ad02ace7fa6217b55b6d457d0e))
+
+
+### Code Refactoring | 重构
+
+* [#60](https://github.com/kercylan98/minotaur/issues/60) 重构 game/task 包，支持更灵活的任务配置方式 ([98c1f39](https://github.com/kercylan98/minotaur/commit/98c1f39ce6a40abb4097842c545216dc180342a4))
+
 ## [0.2.8](https://github.com/kercylan98/minotaur/compare/v0.2.7...v0.2.8) (2023-10-31)
 
 
