@@ -87,6 +87,13 @@ func (slf *Lockstep[ClientID, Command]) JoinClientWithFrame(client Client[Client
 
 }
 
+// GetClientCount 获取客户端数量
+func (slf *Lockstep[ClientID, Command]) GetClientCount() int {
+	slf.clientLock.RLock()
+	defer slf.clientLock.RUnlock()
+	return len(slf.clients)
+}
+
 // DropCache 丢弃特定帧的缓存，当 handler 返回 true 时将丢弃缓存
 func (slf *Lockstep[ClientID, Command]) DropCache(handler func(frame int64) bool) {
 	slf.frameCacheLock.Lock()

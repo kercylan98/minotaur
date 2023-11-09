@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/nats-io/nats.go v1.30.2
+	github.com/nats-io/nats.go v1.31.0
 	github.com/panjf2000/ants/v2 v2.8.1
 	github.com/panjf2000/gnet v1.6.7
 	github.com/smartystreets/goconvey v1.8.1
@@ -21,7 +21,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.3
 	go.uber.org/atomic v1.10.0
 	go.uber.org/zap v1.25.0
-	golang.org/x/time v0.3.0
+	golang.org/x/time v0.4.0
 	google.golang.org/grpc v1.59.0
 )
 
@@ -49,8 +49,8 @@ require (
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nats-io/jwt/v2 v2.5.2 // indirect
-	github.com/nats-io/nats-server/v2 v2.10.3 // indirect
+	github.com/nats-io/jwt/v2 v2.5.3 // indirect
+	github.com/nats-io/nats-server/v2 v2.10.4 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
@@ -72,7 +72,7 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231016165738-49dd2c1f3d0b // indirect

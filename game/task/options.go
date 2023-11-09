@@ -1,85 +1,82 @@
 package task
 
 import (
-	"github.com/kercylan98/minotaur/utils/offset"
 	"time"
 )
 
+// Option 任务选项
 type Option func(task *Task)
 
-// WithChildCount 通过初始化子计数的方式创建任务
-func WithChildCount(key any, childCount int64) Option {
+// WithType 设置任务类型
+func WithType(taskType string) Option {
 	return func(task *Task) {
-		if task.childCount == nil {
-			task.childCount = make(map[any]int64)
+		task.Type = taskType
+	}
+}
+
+// WithCondition 设置任务完成条件，当满足条件时，任务状态为完成
+//   - 任务条件值需要变更时可通过 Task.AssignConditionValueAndRefresh 方法变更
+//   - 当多次设置该选项时，后面的设置会覆盖之前的设置
+func WithCondition(condition Condition) Option {
+	return func(task *Task) {
+		if condition == nil {
+			return
 		}
-		if task.childCondition == nil {
-			task.childCondition = make(map[any]int64)
+		if task.Cond == nil {
+			task.Cond = condition
+			return
 		}
-		task.childCount[key] = childCount
-	}
-}
-
-// WithChild 通过指定子计数的方式创建任务
-//   - 只有当子计数与主计数均达到条件时，任务才会完成
-//   - 通常用于多条件的任务
-func WithChild(key any, childCondition int64) Option {
-	return func(task *Task) {
-		if task.childCount == nil {
-			task.childCount = make(map[any]int64)
+		for k, v := range condition {
+			task.Cond[k] = v
 		}
-		if task.childCondition == nil {
-			task.childCondition = make(map[any]int64)
+	}
+}
+
+// WithCounter 设置任务计数器，当计数器达到要求时，任务状态为完成
+//   - 一些场景下，任务计数器可能会溢出，此时可通过 WithOverflowCounter 设置可溢出的任务计数器
+//   - 当多次设置该选项时，后面的设置会覆盖之前的设置
+//   - 如果需要初始化计数器的值，可通过 initCount 参数设置
+func WithCounter(counter int64, initCount ...int64) Option {
+	return func(task *Task) {
+		task.Counter = counter
+		if len(initCount) > 0 {
+			task.CurrCount = initCount[0]
+			if task.CurrCount < 0 {
+				task.CurrCount = 0
+			} else if task.CurrCount > task.Counter {
+				task.CurrCount = task.Counter
+			}
 		}
-		task.childCondition[key] = childCondition
 	}
 }
 
-// WithDisableNotStartGetReward 禁止未开始的任务领取奖励
-func WithDisableNotStartGetReward() Option {
+// WithOverflowCounter 设置可溢出的任务计数器，当计数器达到要求时，任务状态为完成
+//   - 当多次设置该选项时，后面的设置会覆盖之前的设置
+//   - 如果需要初始化计数器的值，可通过 initCount 参数设置
+func WithOverflowCounter(counter int64, initCount ...int64) Option {
 	return func(task *Task) {
-		task.disableNotStartGetReward = true
-	}
-}
-
-// WithCount 通过初始化计数的方式创建任务
-func WithCount(count int64) Option {
-	return func(task *Task) {
-		task.SetCount(count)
-	}
-}
-
-// WithStartTime 通过指定开始时间的方式创建任务
-//   - 只有当时间在开始时间之后，任务才会开始计数
-func WithStartTime(startTime time.Time) Option {
-	return func(task *Task) {
-		task.start = startTime
-	}
-}
-
-// WithOffsetTime 通过指定偏移时间的方式创建任务
-func WithOffsetTime(offset *offset.Time) Option {
-	return func(task *Task) {
-		task.offset = offset
-	}
-}
-
-// WithLimitedTime 通过限时的方式创建任务
-func WithLimitedTime(limitTime time.Duration) Option {
-	return func(task *Task) {
-		task.limitTime = limitTime
-	}
-}
-
-// WithFront 通过指定任务前置任务的方式创建任务
-//   - 当前置任务未完成时，当前任务不会开始计数
-func WithFront(fronts ...*Task) Option {
-	return func(task *Task) {
-		if task.fronts == nil {
-			task.fronts = make(map[int64]*Task)
+		task.Counter = counter
+		task.CurrOverflow = true
+		if len(initCount) > 0 {
+			task.CurrCount = initCount[0]
+			if task.CurrCount < 0 {
+				task.CurrCount = 0
+			}
 		}
-		for _, front := range fronts {
-			task.fronts[front.GetID()] = front
-		}
+	}
+}
+
+// WithDeadline 设置任务截止时间，超过截至时间并且任务未完成时，任务状态为失败
+func WithDeadline(deadline time.Time) Option {
+	return func(task *Task) {
+		task.Deadline = deadline
+	}
+}
+
+// WithLimitedDuration 设置任务限时，超过限时时间并且任务未完成时，任务状态为失败
+func WithLimitedDuration(start time.Time, duration time.Duration) Option {
+	return func(task *Task) {
+		task.StartTime = start
+		task.LimitedDuration = duration
 	}
 }

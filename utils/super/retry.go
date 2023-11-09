@@ -1,6 +1,11 @@
 package super
 
-import "time"
+import (
+	"fmt"
+	"math"
+	"math/rand"
+	"time"
+)
 
 // Retry 根据提供的 count 次数尝试执行 f 函数，如果 f 函数返回错误，则在 interval 后重试，直到成功或者达到 count 次数
 func Retry(count int, interval time.Duration, f func() error) error {
@@ -12,6 +17,58 @@ func Retry(count int, interval time.Duration, f func() error) error {
 		time.Sleep(interval)
 	}
 	return err
+}
+
+// RetryByRule 根据提供的规则尝试执行 f 函数，如果 f 函数返回错误，则根据 rule 的返回值进行重试
+//   - rule 将包含一个入参，表示第几次重试，返回值表示下一次重试的时间间隔，当返回值为 0 时，表示不再重试
+//   - rule 的 count 将在 f 首次失败后变为 1，因此 rule 的入参将从 1 开始
+func RetryByRule(f func() error, rule func(count int) time.Duration) error {
+	var count int
+	var err error
+	for {
+		if err = f(); err != nil {
+			count++
+			next := rule(count)
+			if next <= 0 {
+				break
+			}
+			time.Sleep(next)
+		} else {
+			break
+		}
+	}
+	return err
+}
+
+// RetryByExponentialBackoff 根据指数退避算法尝试执行 f 函数
+//   - maxRetries：最大重试次数
+//   - baseDelay：基础延迟
+//   - maxDelay：最大延迟
+//   - multiplier：延迟时间的乘数，通常为 2
+//   - randomization：延迟时间的随机化因子，通常为 0.5
+func RetryByExponentialBackoff(f func() error, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64) error {
+	retry := 0
+	for {
+		err := f()
+		if err == nil {
+			return nil
+		}
+
+		if retry >= maxRetries {
+			return fmt.Errorf("max retries reached: %v", err)
+		}
+
+		delay := float64(baseDelay) * math.Pow(multiplier, float64(retry))
+		jitter := (rand.Float64() - 0.5) * randomization * float64(baseDelay)
+		sleepDuration := time.Duration(delay + jitter)
+
+		if sleepDuration > maxDelay {
+			sleepDuration = maxDelay
+		}
+
+		time.Sleep(sleepDuration)
+		retry++
+	}
 }
 
 // RetryAsync 与 Retry 类似，但是是异步执行

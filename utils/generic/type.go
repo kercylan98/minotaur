@@ -34,3 +34,8 @@ type Unsigned interface {
 type Float interface {
 	~float32 | ~float64
 }
+
+// Basic 基本类型
+type Basic interface {
+	Signed | Unsigned | Float | ~string | ~bool | ~byte
+}
