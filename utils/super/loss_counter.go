@@ -1,6 +1,10 @@
 package super
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // StartLossCounter 开始损耗计数
 func StartLossCounter() *LossCounter {
@@ -25,4 +29,12 @@ func (slf *LossCounter) GetLoss(handler func(step int, name string, loss time.Du
 	for i, loss := range slf.loss {
 		handler(i, slf.lossKey[i], loss)
 	}
+}
+
+func (slf *LossCounter) String() string {
+	var lines []string
+	slf.GetLoss(func(step int, name string, loss time.Duration) {
+		lines = append(lines, fmt.Sprintf("%d. %s: %s", step, name, loss.String()))
+	})
+	return strings.Join(lines, "\n")
 }
