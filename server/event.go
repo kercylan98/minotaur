@@ -19,7 +19,6 @@ type StopEventHandle func(srv *Server)
 type ConnectionReceivePacketEventHandle func(srv *Server, conn *Conn, packet []byte)
 type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
-type ReceiveCrossPacketEventHandle func(srv *Server, senderServerId string, packet []byte)
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
 type ConsoleCommandEventHandle func(srv *Server)
@@ -40,7 +39,6 @@ func newEvent(srv *Server) *event {
 		connectionReceivePacketEventHandles:    slice.NewPriority[ConnectionReceivePacketEventHandle](),
 		connectionOpenedEventHandles:           slice.NewPriority[ConnectionOpenedEventHandle](),
 		connectionClosedEventHandles:           slice.NewPriority[ConnectionClosedEventHandle](),
-		receiveCrossPacketEventHandles:         slice.NewPriority[ReceiveCrossPacketEventHandle](),
 		messageErrorEventHandles:               slice.NewPriority[MessageErrorEventHandle](),
 		messageLowExecEventHandles:             slice.NewPriority[MessageLowExecEventHandle](),
 		connectionOpenedAfterEventHandles:      slice.NewPriority[ConnectionOpenedAfterEventHandle](),
@@ -61,7 +59,6 @@ type event struct {
 	connectionReceivePacketEventHandles    *slice.Priority[ConnectionReceivePacketEventHandle]
 	connectionOpenedEventHandles           *slice.Priority[ConnectionOpenedEventHandle]
 	connectionClosedEventHandles           *slice.Priority[ConnectionClosedEventHandle]
-	receiveCrossPacketEventHandles         *slice.Priority[ReceiveCrossPacketEventHandle]
 	messageErrorEventHandles               *slice.Priority[MessageErrorEventHandle]
 	messageLowExecEventHandles             *slice.Priority[MessageLowExecEventHandle]
 	connectionOpenedAfterEventHandles      *slice.Priority[ConnectionOpenedAfterEventHandle]
@@ -119,7 +116,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 }
 
 func (slf *event) OnConsoleCommandEvent(command string) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		handles, exist := slf.consoleCommandEventHandles[command]
 		if !exist {
 			switch command {
@@ -135,7 +132,7 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 				return true
 			})
 		}
-	}, "ConsoleCommandEvent")
+	}, log.String("Event", "OnConsoleCommandEvent"))
 }
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
@@ -165,12 +162,12 @@ func (slf *event) RegStartFinishEvent(handle StartFinishEventHandle, priority ..
 }
 
 func (slf *event) OnStartFinishEvent() {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.startFinishEventHandles.RangeValue(func(index int, value StartFinishEventHandle) bool {
 			value(slf.Server)
 			return true
 		})
-	}, "StartFinishEvent")
+	}, log.String("Event", "OnStartFinishEvent"))
 	if slf.Server.limitLife > 0 {
 		go func() {
 			time.Sleep(slf.Server.limitLife)
@@ -189,13 +186,13 @@ func (slf *event) RegConnectionClosedEvent(handle ConnectionClosedEventHandle, p
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.Server.online.Delete(conn.GetID())
 		slf.connectionClosedEventHandles.RangeValue(func(index int, value ConnectionClosedEventHandle) bool {
 			value(slf.Server, conn, err)
 			return true
 		})
-	}, "ConnectionClosedEvent")
+	}, log.String("Event", "OnConnectionClosedEvent"))
 }
 
 // RegConnectionOpenedEvent 在连接打开后将立刻执行被注册的事件处理函数
@@ -208,13 +205,13 @@ func (slf *event) RegConnectionOpenedEvent(handle ConnectionOpenedEventHandle, p
 }
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.Server.online.Set(conn.GetID(), conn)
 		slf.connectionOpenedEventHandles.RangeValue(func(index int, value ConnectionOpenedEventHandle) bool {
 			value(slf.Server, conn)
 			return true
 		})
-	}, "ConnectionOpenedEvent")
+	}, log.String("Event", "OnConnectionOpenedEvent"))
 }
 
 // RegConnectionReceivePacketEvent 在接收到数据包时将立刻执行被注册的事件处理函数
@@ -229,19 +226,6 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 	slf.connectionReceivePacketEventHandles.RangeValue(func(index int, value ConnectionReceivePacketEventHandle) bool {
 		value(slf.Server, conn, packet)
-		return true
-	})
-}
-
-// RegReceiveCrossPacketEvent 在接收到跨服数据包时将立即执行被注册的事件处理函数
-func (slf *event) RegReceiveCrossPacketEvent(handle ReceiveCrossPacketEventHandle, priority ...int) {
-	slf.receiveCrossPacketEventHandles.Append(handle, slice.GetValue(priority, 0))
-	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
-}
-
-func (slf *event) OnReceiveCrossPacketEvent(serverId string, packet []byte) {
-	slf.receiveCrossPacketEventHandles.RangeValue(func(index int, value ReceiveCrossPacketEventHandle) bool {
-		value(slf.Server, serverId, packet)
 		return true
 	})
 }
@@ -266,9 +250,6 @@ func (slf *event) OnMessageErrorEvent(message *Message, err error) {
 		value(slf.Server, message, err)
 		return true
 	})
-	PushSystemMessage(slf.Server, func() {
-
-	}, "MessageErrorEvent")
 }
 
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
@@ -298,12 +279,12 @@ func (slf *event) RegConnectionOpenedAfterEvent(handle ConnectionOpenedAfterEven
 }
 
 func (slf *event) OnConnectionOpenedAfterEvent(conn *Conn) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.connectionOpenedAfterEventHandles.RangeValue(func(index int, value ConnectionOpenedAfterEventHandle) bool {
 			value(slf.Server, conn)
 			return true
 		})
-	}, "ConnectionOpenedAfterEvent")
+	}, log.String("Event", "OnConnectionOpenedAfterEvent"))
 }
 
 // RegConnectionWritePacketBeforeEvent 在发送数据包前将立刻执行被注册的事件处理函数
@@ -334,12 +315,12 @@ func (slf *event) RegShuntChannelCreatedEvent(handle ShuntChannelCreatedEventHan
 }
 
 func (slf *event) OnShuntChannelCreatedEvent(guid int64) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.shuntChannelCreatedEventHandles.RangeValue(func(index int, value ShuntChannelCreatedEventHandle) bool {
 			value(slf.Server, guid)
 			return true
 		})
-	}, "ShuntChannelCreatedEvent")
+	}, log.String("Event", "OnShuntChannelCreatedEvent"))
 }
 
 // RegShuntChannelCloseEvent 在分流通道关闭时将立刻执行被注册的事件处理函数
@@ -349,12 +330,12 @@ func (slf *event) RegShuntChannelCloseEvent(handle ShuntChannelClosedEventHandle
 }
 
 func (slf *event) OnShuntChannelClosedEvent(guid int64) {
-	PushSystemMessage(slf.Server, func() {
+	slf.PushSystemMessage(func() {
 		slf.shuntChannelClosedEventHandles.RangeValue(func(index int, value ShuntChannelClosedEventHandle) bool {
 			value(slf.Server, guid)
 			return true
 		})
-	}, "ShuntChannelCloseEvent")
+	}, log.String("Event", "OnShuntChannelClosedEvent"))
 }
 
 // RegConnectionPacketPreprocessEvent 在接收到数据包后将立刻执行被注册的事件处理函数
@@ -441,9 +422,4 @@ func (slf *event) check() {
 			log.Warn("Server", log.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
 		}
 	}
-
-	if slf.receiveCrossPacketEventHandles.Len() > 0 && slf.cross == nil {
-		log.Warn("Server", log.String("ReceiveCrossPacketEvent", "invalid server, not register cross server"))
-	}
-
 }

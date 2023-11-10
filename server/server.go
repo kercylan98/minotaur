@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/kercylan98/minotaur/utils/buffer"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
@@ -42,6 +41,7 @@ func New(network Network, options ...Option) *Server {
 		closeChannel: make(chan struct{}, 1),
 		systemSignal: make(chan os.Signal, 1),
 		ctx:          context.Background(),
+		dispatchers:  make(map[string]*dispatcher),
 	}
 	server.event = newEvent(server)
 
@@ -78,31 +78,30 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                                                              // 事件
-	*runtime                                                                            // 运行时
-	*option                                                                             // 可选项
-	network                  Network                                                    // 网络类型
-	addr                     string                                                     // 侦听地址
-	systemSignal             chan os.Signal                                             // 系统信号
-	online                   *concurrent.BalanceMap[string, *Conn]                      // 在线连接
-	ginServer                *gin.Engine                                                // HTTP模式下的路由器
-	httpServer               *http.Server                                               // HTTP模式下的服务器
-	grpcServer               *grpc.Server                                               // GRPC模式下的服务器
-	gServer                  *gNet                                                      // TCP或UDP模式下的服务器
-	isRunning                bool                                                       // 是否正在运行
-	isShutdown               atomic.Bool                                                // 是否已关闭
-	closeChannel             chan struct{}                                              // 关闭信号
-	ants                     *ants.Pool                                                 // 协程池
-	messagePool              *concurrent.Pool[*Message]                                 // 消息池
-	messageLock              sync.RWMutex                                               // 消息锁
-	messageChannel           *buffer.Unbounded[*Message]                                // 消息无界缓冲区
-	multiple                 *MultipleServer                                            // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                                                 // 多服务器模式下的运行时错误
-	runMode                  RunMode                                                    // 运行模式
-	shuntChannels            *concurrent.BalanceMap[int64, *buffer.Unbounded[*Message]] // 分流管道
-	shuntMatcher             func(conn *Conn) (guid int64, allowToCreate bool)          // 分流管道匹配器
-	messageCounter           atomic.Int64                                               // 消息计数器
-	ctx                      context.Context                                            // 上下文
+	*event                                                         // 事件
+	*runtime                                                       // 运行时
+	*option                                                        // 可选项
+	network                  Network                               // 网络类型
+	addr                     string                                // 侦听地址
+	systemSignal             chan os.Signal                        // 系统信号
+	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
+	ginServer                *gin.Engine                           // HTTP模式下的路由器
+	httpServer               *http.Server                          // HTTP模式下的服务器
+	grpcServer               *grpc.Server                          // GRPC模式下的服务器
+	gServer                  *gNet                                 // TCP或UDP模式下的服务器
+	isRunning                bool                                  // 是否正在运行
+	isShutdown               atomic.Bool                           // 是否已关闭
+	closeChannel             chan struct{}                         // 关闭信号
+	ants                     *ants.Pool                            // 协程池
+	messagePool              *concurrent.Pool[*Message]            // 消息池
+	messageLock              sync.RWMutex                          // 消息锁
+	multiple                 *MultipleServer                       // 多服务器模式下的服务器
+	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
+	runMode                  RunMode                               // 运行模式
+	messageCounter           atomic.Int64                          // 消息计数器
+	ctx                      context.Context                       // 上下文
+	dispatchers              map[string]*dispatcher                // 消息分发器
+	dispatcherLock           sync.RWMutex                          // 消息分发器锁
 }
 
 // Run 使用特定地址运行服务器
@@ -135,13 +134,9 @@ func (slf *Server) Run(addr string) error {
 				return &Message{}
 			},
 			func(data *Message) {
-				data.t = 0
-				data.attrs = nil
+				data.reset()
 			},
 		)
-		slf.messageChannel = buffer.NewUnbounded[*Message](func() *Message {
-			return nil
-		})
 		slf.messageLock.Unlock()
 		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
 			slf.gServer = &gNet{Server: slf}
@@ -151,16 +146,8 @@ func (slf *Server) Run(addr string) error {
 		}
 		go func() {
 			messageInitFinish <- struct{}{}
-			for {
-				select {
-				case msg, ok := <-slf.messageChannel.Get():
-					if !ok {
-						return
-					}
-					slf.messageChannel.Load()
-					slf.dispatchMessage(msg)
-				}
-			}
+			d, _ := slf.useDispatcher(serverSystemDispatcher)
+			d.start()
 		}()
 	}
 
@@ -181,7 +168,7 @@ func (slf *Server) Run(addr string) error {
 			slf.OnStartBeforeEvent()
 			if err := slf.grpcServer.Serve(listener); err != nil {
 				slf.isRunning = false
-				PushErrorMessage(slf, err, MessageErrorActionShutdown)
+				slf.PushErrorMessage(err, MessageErrorActionShutdown)
 			}
 		}()
 	case NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
@@ -195,7 +182,7 @@ func (slf *Server) Run(addr string) error {
 				gnet.WithMulticore(true),
 			); err != nil {
 				slf.isRunning = false
-				PushErrorMessage(slf, err, MessageErrorActionShutdown)
+				slf.PushErrorMessage(err, MessageErrorActionShutdown)
 			}
 		})
 	case NetworkKcp:
@@ -236,7 +223,7 @@ func (slf *Server) Run(addr string) error {
 							}
 							panic(err)
 						}
-						PushPacketMessage(slf, conn, 0, buf[:n])
+						slf.PushPacketMessage(conn, 0, buf[:n])
 					}
 				}(conn)
 			}
@@ -258,12 +245,12 @@ func (slf *Server) Run(addr string) error {
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
 					slf.isRunning = false
-					PushErrorMessage(slf, err, MessageErrorActionShutdown)
+					slf.PushErrorMessage(err, MessageErrorActionShutdown)
 				}
 			} else {
 				if err := slf.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 					slf.isRunning = false
-					PushErrorMessage(slf, err, MessageErrorActionShutdown)
+					slf.PushErrorMessage(err, MessageErrorActionShutdown)
 				}
 			}
 
@@ -337,7 +324,7 @@ func (slf *Server) Run(addr string) error {
 					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
 						panic(ErrWebsocketIllegalMessageType)
 					}
-					PushPacketMessage(slf, conn, messageType, packet)
+					slf.PushPacketMessage(conn, messageType, packet)
 				}
 			})
 			go func() {
@@ -346,12 +333,12 @@ func (slf *Server) Run(addr string) error {
 				if len(slf.certFile)+len(slf.keyFile) > 0 {
 					if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
 						slf.isRunning = false
-						PushErrorMessage(slf, err, MessageErrorActionShutdown)
+						slf.PushErrorMessage(err, MessageErrorActionShutdown)
 					}
 				} else {
 					if err := http.ListenAndServe(slf.addr, nil); err != nil {
 						slf.isRunning = false
-						PushErrorMessage(slf, err, MessageErrorActionShutdown)
+						slf.PushErrorMessage(err, MessageErrorActionShutdown)
 					}
 				}
 
@@ -372,7 +359,7 @@ func (slf *Server) Run(addr string) error {
 			log.String("ip", ip.String()),
 			log.String("listen", slf.addr),
 		)
-		log.Info("Server", log.String(serverMark, "===================================================================="))
+		log.Error("Server", log.String(serverMark, "===================================================================="))
 		slf.OnStartFinishEvent()
 		time.Sleep(time.Second)
 		if !slf.isShutdown.Load() {
@@ -442,14 +429,6 @@ func (slf *Server) CloseConn(id string) {
 	}
 }
 
-// GetID 获取服务器id
-func (slf *Server) GetID() string {
-	if slf.cross == nil {
-		panic(ErrNoSupportCross)
-	}
-	return slf.id
-}
-
 // Ticker 获取服务器定时器
 func (slf *Server) Ticker() *timer.Ticker {
 	if slf.ticker == nil {
@@ -491,21 +470,12 @@ func (slf *Server) shutdown(err error) {
 		slf.ants.Release()
 		slf.ants = nil
 	}
-	for _, cross := range slf.cross {
-		cross.Release()
+	slf.dispatcherLock.Lock()
+	for s, d := range slf.dispatchers {
+		d.close()
+		delete(slf.dispatchers, s)
 	}
-	if slf.messageChannel != nil {
-		slf.messageChannel.Close()
-		slf.messagePool.Close()
-	}
-	if slf.shuntChannels != nil {
-		slf.shuntChannels.Range(func(key int64, c *buffer.Unbounded[*Message]) bool {
-			c.Close()
-			return false
-		})
-		slf.shuntChannels.Clear()
-		slf.shuntChannels = nil
-	}
+	slf.dispatcherLock.Unlock()
 	if slf.grpcServer != nil && slf.isRunning {
 		slf.grpcServer.GracefulStop()
 	}
@@ -576,17 +546,30 @@ func (slf *Server) GetMessageCount() int64 {
 	return slf.messageCounter.Load()
 }
 
-// ShuntChannelFreed 释放分流通道
-func (slf *Server) ShuntChannelFreed(channelGuid int64) {
-	if slf.shuntChannels == nil {
-		return
-	}
-	channel, exist := slf.shuntChannels.GetExist(channelGuid)
+// useDispatcher 添加消息分发器
+//   - 该函数在分发器不重复的情况下将创建分发器，当分发器已存在将直接返回
+func (slf *Server) useDispatcher(name string) (*dispatcher, bool) {
+	slf.dispatcherLock.Lock()
+	d, exist := slf.dispatchers[name]
 	if exist {
-		channel.Close()
-		slf.shuntChannels.Delete(channelGuid)
-		slf.OnShuntChannelClosedEvent(channelGuid)
+		slf.dispatcherLock.Unlock()
+		return d, false
 	}
+	d = generateDispatcher(slf.dispatchMessage)
+	slf.dispatchers[name] = d
+	slf.dispatcherLock.Unlock()
+	return d, true
+}
+
+// releaseDispatcher 关闭消息分发器
+func (slf *Server) releaseDispatcher(name string) {
+	slf.dispatcherLock.Lock()
+	d, exist := slf.dispatchers[name]
+	if exist {
+		delete(slf.dispatchers, name)
+		d.close()
+	}
+	slf.dispatcherLock.Unlock()
 }
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
@@ -595,49 +578,39 @@ func (slf *Server) pushMessage(message *Message) {
 		slf.messagePool.Release(message)
 		return
 	}
-	if slf.shuntChannels != nil && message.t == MessageTypePacket {
-		conn := message.attrs[0].(*Conn)
-		channelGuid, allowToCreate := slf.shuntMatcher(conn)
-		channel, exist := slf.shuntChannels.GetExist(channelGuid)
-		if !exist && allowToCreate {
-			channel = buffer.NewUnbounded[*Message](func() *Message {
-				return nil
-			})
-			slf.shuntChannels.Set(channelGuid, channel)
-			go func(channel *buffer.Unbounded[*Message]) {
-				for {
-					select {
-					case msg, ok := <-channel.Get():
-						if !ok {
-							return
-						}
-						channel.Load()
-						slf.dispatchMessage(msg)
-					}
-				}
-			}(channel)
-			defer slf.OnShuntChannelCreatedEvent(channelGuid)
+	var dispatcher *dispatcher
+	switch message.t {
+	case MessageTypePacket:
+		if slf.shuntMatcher == nil {
+			dispatcher, _ = slf.useDispatcher(serverSystemDispatcher)
+			break
 		}
-		if channel != nil {
-			slf.messageCounter.Add(1)
-			channel.Put(message)
-			return
+		fallthrough
+	case MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback:
+		var created bool
+		dispatcher, created = slf.useDispatcher(slf.shuntMatcher(message.conn))
+		if created {
+			go dispatcher.start()
 		}
+	case MessageTypeSystem, MessageTypeAsync, MessageTypeAsyncCallback, MessageTypeError, MessageTypeTicker:
+		dispatcher, _ = slf.useDispatcher(serverSystemDispatcher)
+	}
+	if dispatcher == nil {
+		return
 	}
 	slf.messageCounter.Add(1)
-	slf.messageChannel.Put(message)
+	dispatcher.put(message)
 }
 
 func (slf *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
 	cost := time.Since(present)
 	if cost > expect {
-		var m = "unknown"
-		if message != nil {
-			m = message.String()
-		} else if len(messageReplace) > 0 {
-			m = messageReplace[0]
+		if len(messageReplace) > 0 {
+			for i, s := range messageReplace {
+				message.marks = append(message.marks, log.String(fmt.Sprintf("Other-%d", i+1), s))
+			}
 		}
-		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", m), log.Stack("stack"))
+		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", message.String()), log.Stack("stack"))
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -654,7 +627,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			select {
 			case <-ctx.Done():
 				if err := ctx.Err(); err == context.DeadlineExceeded {
-					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.Any("SuspectedDeadlock", msg))
+					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("SuspectedDeadlock", msg))
 				}
 			}
 		}(ctx, msg)
@@ -665,7 +638,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		defer func(msg *Message) {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("MessageAttrs", msg.AttrsString()), log.Any("error", err), log.String("stack", stack))
+				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
 				fmt.Println(stack)
 				if e, ok := err.(error); ok {
 					slf.OnMessageErrorEvent(msg, e)
@@ -683,29 +656,23 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		}(msg)
 	}
 
-	var attrs = msg.attrs
 	switch msg.t {
 	case MessageTypePacket:
-		var conn, packet = msg.GetPacketMessageAttrs()
-		if !slf.OnConnectionPacketPreprocessEvent(conn, packet, func(newPacket []byte) { packet = newPacket }) {
-			slf.OnConnectionReceivePacketEvent(conn, packet)
+		if !slf.OnConnectionPacketPreprocessEvent(msg.conn, msg.packet, func(newPacket []byte) { msg.packet = newPacket }) {
+			slf.OnConnectionReceivePacketEvent(msg.conn, msg.packet)
 		}
 	case MessageTypeError:
-		var err, action = msg.GetErrorMessageAttrs()
-		switch action {
+		switch msg.errAction {
 		case MessageErrorActionNone:
-			log.Panic("Server", log.Err(err))
+			log.Panic("Server", log.Err(msg.err))
 		case MessageErrorActionShutdown:
-			slf.shutdown(err)
+			slf.shutdown(msg.err)
 		default:
-			log.Warn("Server", log.String("not support message error action", action.String()))
+			log.Warn("Server", log.String("not support message error action", msg.errAction.String()))
 		}
-	case MessageTypeCross:
-		slf.OnReceiveCrossPacketEvent(msg.GetCrossMessageAttrs())
-	case MessageTypeTicker:
-		msg.GetTickerMessageAttrs()()
-	case MessageTypeAsync:
-		handle, callback, cb := msg.GetAsyncMessageAttrs()
+	case MessageTypeTicker, MessageTypeShuntTicker:
+		msg.ordinaryHandler()
+	case MessageTypeAsync, MessageTypeShuntAsync:
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
@@ -724,32 +691,113 @@ func (slf *Server) dispatchMessage(msg *Message) {
 					slf.messagePool.Release(msg)
 				}
 			}()
-			err := handle()
-			if cb && callback != nil {
-				acm := slf.messagePool.Get()
-				acm.t = MessageTypeAsyncCallback
-				if len(attrs) > 2 {
-					acm.attrs = append([]any{func() { callback(err) }}, attrs[2:]...)
-				} else {
-					acm.attrs = []any{func() { callback(err) }}
+			var err error
+			if msg.exceptionHandler != nil {
+				err = msg.exceptionHandler()
+			}
+			if msg.errHandler != nil {
+				if msg.conn == nil {
+					slf.PushAsyncCallbackMessage(err, msg.errHandler)
+					return
 				}
-				slf.pushMessage(acm)
-			} else if err != nil {
+				slf.PushShuntAsyncCallbackMessage(msg.conn, err, msg.errHandler)
+				return
+			}
+			if err != nil {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
 			panic(err)
 		}
-	case MessageTypeAsyncCallback: // 特殊类型
-		attrs[0].(func())()
+	case MessageTypeAsyncCallback, MessageTypeShuntAsyncCallback:
+		msg.errHandler(msg.err)
 	case MessageTypeSystem:
-		msg.GetSystemMessageAttrs()()
+		msg.ordinaryHandler()
 	default:
 		log.Warn("Server", log.String("not support message type", msg.t.String()))
 	}
 }
 
-// PushAsyncMessage 是 PushAsyncMessage 的快捷方式
-func (slf *Server) PushAsyncMessage(caller func() error, callback func(err error), mark ...any) {
-	PushAsyncMessage(slf, caller, callback, mark...)
+// PushSystemMessage 向服务器中推送 MessageTypeSystem 消息
+//   - 系统消息仅包含一个可执行函数，将在系统分发器中执行
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushSystemMessage(handler func(), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToSystemMessage(handler, mark...))
+}
+
+// PushAsyncMessage 向服务器中推送 MessageTypeAsync 消息
+//   - 异步消息将在服务器的异步消息队列中进行处理，处理完成 caller 的阻塞操作后，将会通过系统消息执行 callback 函数
+//   - callback 函数将在异步消息处理完成后进行调用，无论过程是否产生 err，都将被执行，允许为 nil
+//   - 需要注意的是，为了避免并发问题，caller 函数请仅处理阻塞操作，其他操作应该在 callback 函数中进行
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushAsyncMessage(caller func() error, callback func(err error), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToAsyncMessage(caller, callback, mark...))
+}
+
+// PushAsyncCallbackMessage 向服务器中推送 MessageTypeAsyncCallback 消息
+//   - 异步消息回调将会通过一个接收 error 的函数进行处理，该函数将在系统分发器中执行
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushAsyncCallbackMessage(err error, callback func(err error), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToAsyncCallbackMessage(err, callback, mark...))
+}
+
+// PushShuntAsyncMessage 向特定分发器中推送 MessageTypeAsync 消息，消息执行与 MessageTypeAsync 一致
+//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushAsyncMessage 进行转发
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushShuntAsyncMessage(conn *Conn, caller func() error, callback func(err error), mark ...log.Field) {
+	if slf.shuntMatcher == nil {
+		slf.PushAsyncMessage(caller, callback)
+		return
+	}
+	slf.pushMessage(slf.messagePool.Get().castToShuntAsyncMessage(conn, caller, callback, mark...))
+}
+
+// PushShuntAsyncCallbackMessage 向特定分发器中推送 MessageTypeAsyncCallback 消息，消息执行与 MessageTypeAsyncCallback 一致
+//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushAsyncCallbackMessage 进行转发
+func (slf *Server) PushShuntAsyncCallbackMessage(conn *Conn, err error, callback func(err error), mark ...log.Field) {
+	if slf.shuntMatcher == nil {
+		slf.PushAsyncCallbackMessage(err, callback)
+		return
+	}
+	slf.pushMessage(slf.messagePool.Get().castToShuntAsyncCallbackMessage(conn, err, callback, mark...))
+}
+
+// PushPacketMessage 向服务器中推送 MessageTypePacket 消息
+//   - 当存在 WithShunt 的选项时，将会根据选项中的 shuntMatcher 进行分发，否则将在系统分发器中处理消息
+func (slf *Server) PushPacketMessage(conn *Conn, wst int, packet []byte, mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToPacketMessage(
+		&Conn{ctx: context.WithValue(conn.ctx, contextKeyWST, wst), connection: conn.connection},
+		packet,
+	))
+}
+
+// PushTickerMessage 向服务器中推送 MessageTypeTicker 消息
+//   - 通过该函数推送定时消息，当消息触发时将在系统分发器中处理消息
+//   - 可通过 timer.Ticker 或第三方定时器将执行函数(caller)推送到该消息中进行处理，可有效的避免线程安全问题
+//   - 参数 name 仅用作标识该定时器名称
+//
+// 定时消息执行不会有特殊的处理，仅标记为定时任务，也就是允许将各类函数通过该消息发送处理，但是并不建议
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushTickerMessage(name string, caller func(), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToTickerMessage(name, caller, mark...))
+}
+
+// PushShuntTickerMessage 向特定分发器中推送 MessageTypeTicker 消息，消息执行与 MessageTypeTicker 一致
+//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushTickerMessage 进行转发
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushShuntTickerMessage(conn *Conn, name string, caller func(), mark ...log.Field) {
+	if slf.shuntMatcher == nil {
+		slf.PushTickerMessage(name, caller)
+		return
+	}
+	slf.pushMessage(slf.messagePool.Get().castToShuntTickerMessage(conn, name, caller, mark...))
+}
+
+// PushErrorMessage 向服务器中推送 MessageTypeError 消息
+//   - 通过该函数推送错误消息，当消息触发时将在系统分发器中处理消息
+//   - 参数 errAction 用于指定错误消息的处理方式，可选值为 MessageErrorActionNone 和 MessageErrorActionShutdown
+//   - 参数 errAction 为 MessageErrorActionShutdown 时，将会停止服务器的运行
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Server) PushErrorMessage(err error, errAction MessageErrorAction, mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToErrorMessage(err, errAction, mark...))
 }

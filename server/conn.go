@@ -10,6 +10,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/random"
+	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"net"
@@ -38,7 +39,7 @@ func newKcpConn(server *Server, session *kcp.UDPSession) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
-	c.writeLoop()
+	c.init()
 	return c
 }
 
@@ -58,7 +59,7 @@ func newGNetConn(server *Server, conn gnet.Conn) *Conn {
 	if index := strings.LastIndex(c.ip, ":"); index != -1 {
 		c.ip = c.ip[0:index]
 	}
-	c.writeLoop()
+	c.init()
 	return c
 }
 
@@ -75,7 +76,7 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 			openTime:   time.Now(),
 		},
 	}
-	c.writeLoop()
+	c.init()
 	return c
 }
 
@@ -91,7 +92,7 @@ func NewEmptyConn(server *Server) *Conn {
 			openTime:   time.Now(),
 		},
 	}
-	c.writeLoop()
+	c.init()
 	return c
 }
 
@@ -104,6 +105,7 @@ type Conn struct {
 // connection 长久保持的连接
 type connection struct {
 	server     *Server
+	ticker     *timer.Ticker
 	remoteAddr net.Addr
 	ip         string
 	ws         *websocket.Conn
@@ -116,6 +118,11 @@ type connection struct {
 	loop       *writeloop.WriteLoop[*connPacket]
 	mu         sync.Mutex
 	openTime   time.Time
+}
+
+// Ticker 获取定时器
+func (slf *Conn) Ticker() *timer.Ticker {
+	return slf.ticker
 }
 
 // GetServer 获取服务器
@@ -218,6 +225,12 @@ func (slf *Conn) SetWST(wst int) *Conn {
 	return slf
 }
 
+// PushAsyncMessage 推送异步消息，该消息将通过 Server.PushShuntAsyncMessage 函数推送
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+func (slf *Conn) PushAsyncMessage(caller func() error, callback func(err error), mark ...log.Field) {
+	slf.server.PushShuntAsyncMessage(slf, caller, callback, mark...)
+}
+
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
@@ -240,8 +253,16 @@ func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 	slf.loop.Put(cp)
 }
 
-// writeLoop 写循环
-func (slf *Conn) writeLoop() {
+func (slf *Conn) init() {
+	if slf.server.ticker != nil {
+		if slf.server.tickerAutonomy {
+			slf.ticker = timer.GetTicker(slf.server.connTickerSize)
+		} else {
+			slf.ticker = timer.GetTicker(slf.server.connTickerSize, timer.WithCaller(func(name string, caller func()) {
+				slf.server.PushShuntTickerMessage(slf, name, caller)
+			}))
+		}
+	}
 	slf.pool = concurrent.NewPool[*connPacket](10*1024,
 		func() *connPacket {
 			return &connPacket{}
@@ -297,6 +318,12 @@ func (slf *Conn) Close(err ...error) {
 		_ = slf.gn.Close()
 	} else if slf.kcp != nil {
 		_ = slf.kcp.Close()
+	}
+	if slf.ticker != nil {
+		slf.ticker.Release()
+	}
+	if slf.server.shuntMatcher != nil {
+		slf.server.releaseDispatcher(slf.server.shuntMatcher(slf))
 	}
 	slf.pool.Close()
 	slf.loop.Close()

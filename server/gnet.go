@@ -40,7 +40,7 @@ func (slf *gNet) AfterWrite(c gnet.Conn, b []byte) {
 }
 
 func (slf *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	PushPacketMessage(slf.Server, c.Context().(*Conn), 0, bytes.Clone(packet))
+	slf.Server.PushPacketMessage(c.Context().(*Conn), 0, bytes.Clone(packet))
 	return nil, gnet.None
 }
 

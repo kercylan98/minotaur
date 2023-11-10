@@ -18,8 +18,9 @@ mindmap
     /planner 策划相关工具目录
       /pce 配置导表功能实现
     /server 网络服务器支持
-      /cross 内置跨服功能实现
-      /router 内置路由器功能实现
+      /client 长连接客户端
+      /lockstep 帧同步组件
+      /router 消息路由器
     /utils 工具结构函数目录
     /examples 示例代码目录
 ```
@@ -97,9 +98,8 @@ import "github.com/kercylan98/minotaur/server"
 
 func main() {
 	srv := server.New(server.NetworkWebsocket,
-		server.WithShunt(func(conn *server.Conn) (guid int64, allowToCreate bool) {
-			guid, allowToCreate = conn.GetData("roomId").(int64)
-			return
+		server.WithShunt(func(conn *server.Conn) string {
+			return conn.GetData("roomId").(string)
 		}),
 	)
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
