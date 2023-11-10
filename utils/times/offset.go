@@ -7,6 +7,7 @@ import (
 
 var sourceLocation = time.Local
 var offsetLock sync.Mutex
+var currentOffsetDuration time.Duration
 
 // SetGlobalTimeOffset 设置全局时间偏移量
 func SetGlobalTimeOffset(offset time.Duration) {
@@ -17,6 +18,7 @@ func SetGlobalTimeOffset(offset time.Duration) {
 	newOffset := currentOffset + int(offset.Seconds())
 	location := time.FixedZone("OFFSET", newOffset)
 	time.Local = location
+	currentOffsetDuration = offset
 }
 
 // NowByNotOffset 获取未偏移的当前时间
@@ -28,4 +30,19 @@ func NowByNotOffset() time.Time {
 	now := time.Now()
 	time.Local = offset
 	return now
+}
+
+// GetGlobalTimeOffset 获取全局时间偏移量
+func GetGlobalTimeOffset() time.Duration {
+	offsetLock.Lock()
+	defer offsetLock.Unlock()
+	return currentOffsetDuration
+}
+
+// ResetGlobalTimeOffset 重置全局时间偏移量
+func ResetGlobalTimeOffset() {
+	offsetLock.Lock()
+	defer offsetLock.Unlock()
+	time.Local = sourceLocation
+	currentOffsetDuration = 0
 }
