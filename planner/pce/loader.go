@@ -90,14 +90,14 @@ func (slf *Loader) sliceInterpreter(fieldType, fieldValue string) any {
 		return nil
 	}
 	t := strings.TrimPrefix(fieldType, "[]")
-	var data = map[any]any{}
+	var data []any
 	gjson.ForEachLine(fieldValue, func(line gjson.Result) bool {
 		line.ForEach(func(key, value gjson.Result) bool {
 			field, exist := slf.fields[t]
 			if exist {
-				data[len(data)] = field.Parse(value.String())
+				data = append(data, field.Parse(value.String()))
 			} else {
-				data[len(data)] = slf.structInterpreter(t, value.String())
+				data = append(data, slf.structInterpreter(t, value.String()))
 			}
 			return true
 		})
