@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.0](https://github.com/kercylan98/minotaur/compare/v0.2.9...v0.3.0) (2023-11-11)
+
+
+### Features | 新特性
+
+* super 包新增 Hostname 函数获取主机名 ([9157c6a](https://github.com/kercylan98/minotaur/commit/9157c6a309d8561b9ed701bb8c1d15383f2d371a))
+* super.LossCounter 支持打印 ([01092fe](https://github.com/kercylan98/minotaur/commit/01092fe738c3040a61869693145e437de59cc0da))
+* times 包支持设置全局时间偏移 ([f03dd4a](https://github.com/kercylan98/minotaur/commit/f03dd4ac4ff12f0f05f46554ea7c9b785dc5f74f))
+* times 包支持重置全局时间偏移量和获取当前全局时间偏移量 ([707fc6c](https://github.com/kercylan98/minotaur/commit/707fc6c5de283af320c46e6d1dc978ad38d86299))
+* 修复配置导表工具数组处理异常的问题 ([0f966c0](https://github.com/kercylan98/minotaur/commit/0f966c02f7bf18db5e6b1d4bc49ba7bdecae6c55))
+* 增强 server.RegConsoleCommandEvent 函数，支持 url 格式输入命令，并将命令解析为指令和参数 ([d2654cf](https://github.com/kercylan98/minotaur/commit/d2654cfc950bf5ee90a2856dfef368d2bbbc8604))
+
+
+### Bug Fixes | 修复
+
+* 更新配置导表工具数组处理异常的问题 ([24ba13c](https://github.com/kercylan98/minotaur/commit/24ba13cab215d086b26405d34991b6c9bff2898e))
+* 示例代码适配当前版本 ([ab72920](https://github.com/kercylan98/minotaur/commit/ab72920084232fff2306391dde51d00d3f3f1e21))
+
+
+### Code Refactoring | 重构
+
+* server 包重构及性能优化 ([70f7a79](https://github.com/kercylan98/minotaur/commit/70f7a79c888fe80484b88866cf836f8f4533bb61))
+
 ## [0.2.9](https://github.com/kercylan98/minotaur/compare/v0.2.8...v0.2.9) (2023-11-09)
 
 
