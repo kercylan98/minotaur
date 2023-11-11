@@ -6,9 +6,11 @@ import (
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"github.com/kercylan98/minotaur/utils/slice"
 	"golang.org/x/crypto/ssh/terminal"
+	"net/url"
 	"os"
 	"reflect"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 )
@@ -21,7 +23,7 @@ type ConnectionOpenedEventHandle func(srv *Server, conn *Conn)
 type ConnectionClosedEventHandle func(srv *Server, conn *Conn, err any)
 type MessageErrorEventHandle func(srv *Server, message *Message, err error)
 type MessageLowExecEventHandle func(srv *Server, message *Message, cost time.Duration)
-type ConsoleCommandEventHandle func(srv *Server)
+type ConsoleCommandEventHandle func(srv *Server, command string, params ConsoleParams)
 type ConnectionOpenedAfterEventHandle func(srv *Server, conn *Conn)
 type ConnectionWritePacketBeforeEventHandle func(srv *Server, conn *Conn, packet []byte) []byte
 type ShuntChannelCreatedEventHandle func(srv *Server, guid int64)
@@ -102,7 +104,11 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 			for {
 				var input string
 				_, _ = fmt.Scanln(&input)
-				slf.OnConsoleCommandEvent(input)
+				c2p := strings.SplitN(input, "?", 2)
+				if len(c2p) == 1 {
+					c2p = append(c2p, "")
+				}
+				slf.OnConsoleCommandEvent(c2p[0], c2p[1])
 			}
 		}()
 	})
@@ -115,7 +121,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handle ConsoleCommandEv
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handle", reflect.TypeOf(handle).String()))
 }
 
-func (slf *event) OnConsoleCommandEvent(command string) {
+func (slf *event) OnConsoleCommandEvent(command string, paramsStr string) {
 	slf.PushSystemMessage(func() {
 		handles, exist := slf.consoleCommandEventHandles[command]
 		if !exist {
@@ -127,8 +133,17 @@ func (slf *event) OnConsoleCommandEvent(command string) {
 			}
 			log.Warn("Server", log.String("Command", "unregistered"))
 		} else {
+			v, err := url.ParseQuery(paramsStr)
+			if err != nil {
+				log.Error("ConsoleCommandEvent", log.String("command", command), log.String("params", paramsStr), log.Err(err))
+				return
+			}
+			var params = make(ConsoleParams)
+			for key, value := range v {
+				params[key] = value
+			}
 			handles.RangeValue(func(index int, value ConsoleCommandEventHandle) bool {
-				value(slf.Server)
+				value(slf.Server, command, params)
 				return true
 			})
 		}

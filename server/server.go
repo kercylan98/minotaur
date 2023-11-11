@@ -444,6 +444,9 @@ func (slf *Server) Shutdown() {
 
 // shutdown 停止运行服务器
 func (slf *Server) shutdown(err error) {
+	if err != nil {
+		log.Error("Server", log.String("state", "shutdown"), log.Err(err))
+	}
 	slf.isShutdown.Store(true)
 	for slf.messageCounter.Load() > 0 {
 		log.Info("Server", log.Any("network", slf.network), log.String("listen", slf.addr),
