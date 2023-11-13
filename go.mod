@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/RussellLuo/timingwheel v0.0.0-20220218152713-54845bda3108
-	github.com/alphadose/haxmap v1.2.0
+	github.com/alphadose/haxmap v1.3.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-resty/resty/v2 v2.7.0

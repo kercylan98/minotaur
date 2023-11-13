@@ -221,6 +221,80 @@ func main() {
 - 模板文件图例：
 ![exporter-xlsx-template.png](.github/images/exporter-xlsx-template.png)
 
+#### 导出 JSON 文件（可供客户端直接使用，包含索引的配置导出后为键值模式，可直接读取）
+```text
+Flags:
+  -e, --exclude string   excluded configuration names or display names (comma separated) | 排除的配置名或显示名（英文逗号分隔）
+  -h, --help             help for json
+  -o, --output string    directory path of the output json file | 输出的 json 文件所在目录路径
+  -p, --prefix string    export configuration file name prefix | 导出配置文件名前缀
+  -t, --type string      export server configuration[s] or client configuration[c] | 导出服务端配置[s]还是客户端配置[c]
+  -f, --xlsx string      xlsx file path or directory path | xlsx 文件路径或所在目录路径
+
+```
+```shell
+expoter.exe json -t s -f xlsx_template.xlsx -o ./output
+```
+导出结果示例
+```json
+{
+  "1": {
+    "b": {
+      "Id": 1,
+      "Count": "b",
+      "Info": {
+        "id": 1,
+        "name": "小明",
+        "info": {
+          "lv": 1,
+          "exp": {
+            "mux": 10,
+            "count": 100
+          }
+        }
+      },
+      "Other": [
+        {
+          "id": 1,
+          "name": "张飞"
+        },
+        {
+          "id": 2,
+          "name": "刘备"
+        }
+      ]
+    }
+  }
+}
+
+```
+
+#### 导出 Golang 文件
+```text
+Flags:
+  -e, --exclude string   excluded configuration names or display names (comma separated) | 排除的配置名或显示名（英文逗号分隔）
+  -h, --help             help for go
+  -o, --output string    output path | 输出的 go 文件路径
+  -f, --xlsx string      xlsx file path or directory path | xlsx 文件路径或所在目录路径
+```
+```shell
+expoter.exe go -f xlsx_template.xlsx -o ./output
+```
+使用示例
+
+```go
+package main
+
+import (
+	"fmt"
+	"config"
+)
+
+func main() {
+	fmt.Println(config.EasyConfig.Id)
+}
+```
+
 ### 持续更新的示例项目
 - **[Minotaur-Example](https://github.com/kercylan98/minotaur-example)**
 

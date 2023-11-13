@@ -1,19 +1,35 @@
 package server
 
-import "github.com/kercylan98/minotaur/utils/buffer"
+import (
+	"github.com/alphadose/haxmap"
+	"github.com/kercylan98/minotaur/utils/buffer"
+)
+
+var dispatcherUnique = struct{}{}
 
 // generateDispatcher 生成消息分发器
-func generateDispatcher(handler func(message *Message)) *dispatcher {
+func generateDispatcher(handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
 	return &dispatcher{
 		buffer:  buffer.NewUnboundedN[*Message](),
 		handler: handler,
+		uniques: haxmap.New[string, struct{}](),
 	}
 }
 
 // dispatcher 消息分发器
 type dispatcher struct {
 	buffer  *buffer.Unbounded[*Message]
-	handler func(message *Message)
+	uniques *haxmap.Map[string, struct{}]
+	handler func(dispatcher *dispatcher, message *Message)
+}
+
+func (slf *dispatcher) unique(name string) bool {
+	_, loaded := slf.uniques.GetOrSet(name, dispatcherUnique)
+	return loaded
+}
+
+func (slf *dispatcher) antiUnique(name string) {
+	slf.uniques.Del(name)
 }
 
 func (slf *dispatcher) start() {
@@ -24,7 +40,7 @@ func (slf *dispatcher) start() {
 				return
 			}
 			slf.buffer.Load()
-			slf.handler(message)
+			slf.handler(slf, message)
 		}
 	}
 }

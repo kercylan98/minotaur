@@ -13,11 +13,14 @@ import (
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -80,18 +83,25 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	return c
 }
 
-// NewEmptyConn 创建一个适用于测试的空连接
-func NewEmptyConn(server *Server) *Conn {
+// newBotConn 创建一个适用于测试等情况的机器人连接
+func newBotConn(server *Server) *Conn {
+	ip, port := random.NetIP(), random.Port()
+	var writer io.Writer = os.Stdout
 	c := &Conn{
 		ctx: server.ctx,
 		connection: &connection{
-			server:     server,
-			remoteAddr: &net.TCPAddr{},
-			ip:         "0.0.0.0:0",
-			data:       map[any]any{},
-			openTime:   time.Now(),
+			server: server,
+			remoteAddr: &net.TCPAddr{
+				IP:   ip,
+				Port: port,
+				Zone: "",
+			},
+			ip:       fmt.Sprintf("BOT:%s:%d", ip.String(), port),
+			data:     map[any]any{},
+			openTime: time.Now(),
 		},
 	}
+	c.botWriter.Store(&writer)
 	c.init()
 	return c
 }
@@ -104,20 +114,23 @@ type Conn struct {
 
 // connection 长久保持的连接
 type connection struct {
-	server     *Server
-	ticker     *timer.Ticker
-	remoteAddr net.Addr
-	ip         string
-	ws         *websocket.Conn
-	gn         gnet.Conn
-	kcp        *kcp.UDPSession
-	gw         func(packet []byte)
-	data       map[any]any
-	closed     bool
-	pool       *concurrent.Pool[*connPacket]
-	loop       *writeloop.WriteLoop[*connPacket]
-	mu         sync.Mutex
-	openTime   time.Time
+	server      *Server
+	ticker      *timer.Ticker
+	remoteAddr  net.Addr
+	ip          string
+	ws          *websocket.Conn
+	gn          gnet.Conn
+	kcp         *kcp.UDPSession
+	gw          func(packet []byte)
+	data        map[any]any
+	closed      bool
+	pool        *concurrent.Pool[*connPacket]
+	loop        *writeloop.WriteLoop[*connPacket]
+	mu          sync.Mutex
+	openTime    time.Time
+	delay       time.Duration
+	fluctuation time.Duration
+	botWriter   atomic.Pointer[io.Writer]
 }
 
 // Ticker 获取定时器
@@ -145,8 +158,8 @@ func (slf *Conn) GetWebsocketRequest() *http.Request {
 	return slf.GetData(wsRequestKey).(*http.Request)
 }
 
-// IsEmpty 是否是空连接
-func (slf *Conn) IsEmpty() bool {
+// IsBot 是否是机器人连接
+func (slf *Conn) IsBot() bool {
 	return slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
 }
 
@@ -158,6 +171,9 @@ func (slf *Conn) RemoteAddr() net.Addr {
 // GetID 获取连接ID
 //   - 为远程地址的字符串形式
 func (slf *Conn) GetID() string {
+	if slf.IsBot() {
+		return slf.ip
+	}
 	return slf.remoteAddr.String()
 }
 
@@ -231,6 +247,13 @@ func (slf *Conn) PushAsyncMessage(caller func() error, callback func(err error),
 	slf.server.PushShuntAsyncMessage(slf, caller, callback, mark...)
 }
 
+// PushUniqueAsyncMessage 推送唯一异步消息，该消息将通过 Server.PushUniqueShuntAsyncMessage 函数推送
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+//   - 不同的是当上一个相同的 unique 消息未执行完成时，将会忽略该消息
+func (slf *Conn) PushUniqueAsyncMessage(name string, caller func() error, callback func(err error), mark ...log.Field) {
+	slf.server.PushUniqueShuntAsyncMessage(slf, name, caller, callback, mark...)
+}
+
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
@@ -274,6 +297,14 @@ func (slf *Conn) init() {
 	)
 	slf.loop = writeloop.NewWriteLoop[*connPacket](slf.pool, func(data *connPacket) error {
 		var err error
+		if slf.delay > 0 || slf.fluctuation > 0 {
+			time.Sleep(random.Duration(int64(slf.delay-slf.fluctuation), int64(slf.delay+slf.fluctuation)))
+			_, err = (*slf.botWriter.Load()).Write(data.packet)
+			if data.callback != nil {
+				data.callback(err)
+			}
+			return err
+		}
 		if slf.IsWebsocket() {
 			err = slf.ws.WriteMessage(data.wst, data.packet)
 		} else {

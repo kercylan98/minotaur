@@ -29,6 +29,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 			"github.com/kercylan98/minotaur/utils/log"
 			"github.com/kercylan98/minotaur/utils/hash"
 			"sync"
+			"sync/atomic"
 		)
 
 		type Sign string
@@ -41,7 +42,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		
 		var (
 			json = jsonIter.ConfigCompatibleWithStandardLibrary
-			configs map[Sign]any
+			configs atomic.Pointer[map[Sign]any]
 			signs = []Sign{
 				{{- range .Templates}}	
 					{{.Name}}Sign,
@@ -188,14 +189,14 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 				cs[{{.Name}}Sign] = {{.Name}}
 			{{- end}}
 
-			configs = cs
+			configs.Store(&cs)
 		}
 
 		// GetConfigs 获取所有配置
 		func GetConfigs() map[Sign]any {
 			mutex.Lock()
 			defer mutex.Unlock()
-			return hash.Copy(configs)
+			return hash.Copy(*configs.Load())
 		}
 
 		// GetConfigSigns 获取所有配置的标识
@@ -207,7 +208,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		func Sync(handle func(configs map[Sign]any)) {
 			mutex.Lock()
 			defer mutex.Unlock()
-			handle(hash.Copy(configs))
+			handle(hash.Copy(*configs.Load()))
 		}	
 	`, slf)
 }
