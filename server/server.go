@@ -387,6 +387,13 @@ func (slf *Server) Run(addr string) error {
 	return nil
 }
 
+// IsSocket 是否是 Socket 模式
+func (slf *Server) IsSocket() bool {
+	return slf.network == NetworkTcp || slf.network == NetworkTcp4 || slf.network == NetworkTcp6 ||
+		slf.network == NetworkUdp || slf.network == NetworkUdp4 || slf.network == NetworkUdp6 ||
+		slf.network == NetworkUnix || slf.network == NetworkKcp || slf.network == NetworkWebsocket
+}
+
 // RunNone 是 Run("") 的简写，仅适用于运行 NetworkNone 服务器
 func (slf *Server) RunNone() error {
 	return slf.Run(str.None)
@@ -405,6 +412,18 @@ func (slf *Server) TimeoutContext(timeout time.Duration) (context.Context, conte
 // GetOnlineCount 获取在线人数
 func (slf *Server) GetOnlineCount() int {
 	return slf.online.Size()
+}
+
+// GetOnlineBotCount 获取在线机器人数量
+func (slf *Server) GetOnlineBotCount() int {
+	var count int
+	slf.online.Range(func(id string, conn *Conn) bool {
+		if conn.IsBot() {
+			count++
+		}
+		return true
+	})
+	return count
 }
 
 // GetOnline 获取在线连接
