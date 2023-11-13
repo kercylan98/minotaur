@@ -194,7 +194,7 @@ func (slf *Xlsx) checkFieldInvalid(field pce.DataField) bool {
 		return true
 	}
 
-	if strings.HasPrefix(field.Name, "#") || strings.HasPrefix(field.Type, "#") {
+	if strings.HasPrefix(field.Name, "#") || strings.HasPrefix(field.Type, "#") || strings.HasPrefix(field.Desc, "#") {
 		return true
 	}
 
