@@ -231,6 +231,13 @@ func (slf *Conn) PushAsyncMessage(caller func() error, callback func(err error),
 	slf.server.PushShuntAsyncMessage(slf, caller, callback, mark...)
 }
 
+// PushUniqueAsyncMessage 推送唯一异步消息，该消息将通过 Server.PushUniqueShuntAsyncMessage 函数推送
+//   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
+//   - 不同的是当上一个相同的 unique 消息未执行完成时，将会忽略该消息
+func (slf *Conn) PushUniqueAsyncMessage(name string, caller func() error, callback func(err error), mark ...log.Field) {
+	slf.server.PushUniqueShuntAsyncMessage(slf, name, caller, callback, mark...)
+}
+
 // Write 向连接中写入数据
 //   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {

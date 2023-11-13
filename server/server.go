@@ -81,27 +81,27 @@ type Server struct {
 	*event                                                         // 事件
 	*runtime                                                       // 运行时
 	*option                                                        // 可选项
-	network                  Network                               // 网络类型
-	addr                     string                                // 侦听地址
-	systemSignal             chan os.Signal                        // 系统信号
-	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
 	ginServer                *gin.Engine                           // HTTP模式下的路由器
 	httpServer               *http.Server                          // HTTP模式下的服务器
 	grpcServer               *grpc.Server                          // GRPC模式下的服务器
 	gServer                  *gNet                                 // TCP或UDP模式下的服务器
-	isRunning                bool                                  // 是否正在运行
-	isShutdown               atomic.Bool                           // 是否已关闭
-	closeChannel             chan struct{}                         // 关闭信号
+	multiple                 *MultipleServer                       // 多服务器模式下的服务器
 	ants                     *ants.Pool                            // 协程池
 	messagePool              *concurrent.Pool[*Message]            // 消息池
-	messageLock              sync.RWMutex                          // 消息锁
-	multiple                 *MultipleServer                       // 多服务器模式下的服务器
-	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
-	runMode                  RunMode                               // 运行模式
-	messageCounter           atomic.Int64                          // 消息计数器
 	ctx                      context.Context                       // 上下文
-	dispatchers              map[string]*dispatcher                // 消息分发器
+	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
+	network                  Network                               // 网络类型
+	addr                     string                                // 侦听地址
+	runMode                  RunMode                               // 运行模式
+	systemSignal             chan os.Signal                        // 系统信号
+	closeChannel             chan struct{}                         // 关闭信号
+	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
+	messageLock              sync.RWMutex                          // 消息锁
 	dispatcherLock           sync.RWMutex                          // 消息分发器锁
+	isShutdown               atomic.Bool                           // 是否已关闭
+	messageCounter           atomic.Int64                          // 消息计数器
+	isRunning                bool                                  // 是否正在运行
+	dispatchers              map[string]*dispatcher                // 消息分发器
 }
 
 // Run 使用特定地址运行服务器
@@ -589,16 +589,20 @@ func (slf *Server) pushMessage(message *Message) {
 			break
 		}
 		fallthrough
-	case MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback:
+	case MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback, MessageTypeUniqueShuntAsync, MessageTypeUniqueShuntAsyncCallback:
 		var created bool
 		dispatcher, created = slf.useDispatcher(slf.shuntMatcher(message.conn))
 		if created {
 			go dispatcher.start()
 		}
-	case MessageTypeSystem, MessageTypeAsync, MessageTypeAsyncCallback, MessageTypeError, MessageTypeTicker:
+	case MessageTypeSystem, MessageTypeAsync, MessageTypeUniqueAsync, MessageTypeAsyncCallback, MessageTypeUniqueAsyncCallback, MessageTypeError, MessageTypeTicker:
 		dispatcher, _ = slf.useDispatcher(serverSystemDispatcher)
 	}
 	if dispatcher == nil {
+		return
+	}
+	if (message.t == MessageTypeUniqueShuntAsync || message.t == MessageTypeUniqueAsync) && dispatcher.unique(message.name) {
+		slf.messagePool.Release(message)
 		return
 	}
 	slf.messageCounter.Add(1)
@@ -613,13 +617,17 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 				message.marks = append(message.marks, log.String(fmt.Sprintf("Other-%d", i+1), s))
 			}
 		}
-		log.Warn("Server", log.String("type", "low-message"), log.String("cost", cost.String()), log.String("message", message.String()), log.Stack("stack"))
+		var fields = make([]log.Field, 0, len(message.marks)+4)
+		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
+		fields = append(fields, message.marks...)
+		fields = append(fields, log.Stack("stack"))
+		log.Warn("Server", fields...)
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
 
 // dispatchMessage 消息分发
-func (slf *Server) dispatchMessage(msg *Message) {
+func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -637,7 +645,7 @@ func (slf *Server) dispatchMessage(msg *Message) {
 	}
 
 	present := time.Now()
-	if msg.t != MessageTypeAsync {
+	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
 		defer func(msg *Message) {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
@@ -646,6 +654,9 @@ func (slf *Server) dispatchMessage(msg *Message) {
 				if e, ok := err.(error); ok {
 					slf.OnMessageErrorEvent(msg, e)
 				}
+			}
+			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
+				dispatcher.antiUnique(msg.name)
 			}
 
 			super.Handle(cancel)
@@ -675,10 +686,13 @@ func (slf *Server) dispatchMessage(msg *Message) {
 		}
 	case MessageTypeTicker, MessageTypeShuntTicker:
 		msg.ordinaryHandler()
-	case MessageTypeAsync, MessageTypeShuntAsync:
+	case MessageTypeAsync, MessageTypeShuntAsync, MessageTypeUniqueAsync, MessageTypeUniqueShuntAsync:
 		if err := slf.ants.Submit(func() {
 			defer func() {
 				if err := recover(); err != nil {
+					if msg.t == MessageTypeUniqueAsync || msg.t == MessageTypeUniqueShuntAsync {
+						dispatcher.antiUnique(msg.name)
+					}
 					stack := string(debug.Stack())
 					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
 					fmt.Println(stack)
@@ -700,19 +714,28 @@ func (slf *Server) dispatchMessage(msg *Message) {
 			}
 			if msg.errHandler != nil {
 				if msg.conn == nil {
+					if msg.t == MessageTypeUniqueAsync {
+						slf.PushUniqueAsyncCallbackMessage(msg.name, err, msg.errHandler)
+						return
+					}
 					slf.PushAsyncCallbackMessage(err, msg.errHandler)
+					return
+				}
+				if msg.t == MessageTypeUniqueShuntAsync {
+					slf.PushUniqueShuntAsyncCallbackMessage(msg.conn, msg.name, err, msg.errHandler)
 					return
 				}
 				slf.PushShuntAsyncCallbackMessage(msg.conn, err, msg.errHandler)
 				return
 			}
+			dispatcher.antiUnique(msg.name)
 			if err != nil {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
 		}); err != nil {
 			panic(err)
 		}
-	case MessageTypeAsyncCallback, MessageTypeShuntAsyncCallback:
+	case MessageTypeAsyncCallback, MessageTypeShuntAsyncCallback, MessageTypeUniqueAsyncCallback, MessageTypeUniqueShuntAsyncCallback:
 		msg.errHandler(msg.err)
 	case MessageTypeSystem:
 		msg.ordinaryHandler()
@@ -794,6 +817,38 @@ func (slf *Server) PushShuntTickerMessage(conn *Conn, name string, caller func()
 		return
 	}
 	slf.pushMessage(slf.messagePool.Get().castToShuntTickerMessage(conn, name, caller, mark...))
+}
+
+// PushUniqueAsyncMessage 向服务器中推送 MessageTypeAsync 消息，消息执行与 MessageTypeAsync 一致
+//   - 不同的是当上一个相同的 unique 消息未执行完成时，将会忽略该消息
+func (slf *Server) PushUniqueAsyncMessage(unique string, caller func() error, callback func(err error), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToUniqueAsyncMessage(unique, caller, callback, mark...))
+}
+
+// PushUniqueAsyncCallbackMessage 向服务器中推送 MessageTypeAsyncCallback 消息，消息执行与 MessageTypeAsyncCallback 一致
+func (slf *Server) PushUniqueAsyncCallbackMessage(unique string, err error, callback func(err error), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToUniqueAsyncCallbackMessage(unique, err, callback, mark...))
+}
+
+// PushUniqueShuntAsyncMessage 向特定分发器中推送 MessageTypeAsync 消息，消息执行与 MessageTypeAsync 一致
+//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushUniqueAsyncMessage 进行转发
+//   - 不同的是当上一个相同的 unique 消息未执行完成时，将会忽略该消息
+func (slf *Server) PushUniqueShuntAsyncMessage(conn *Conn, unique string, caller func() error, callback func(err error), mark ...log.Field) {
+	if slf.shuntMatcher == nil {
+		slf.PushUniqueAsyncMessage(unique, caller, callback)
+		return
+	}
+	slf.pushMessage(slf.messagePool.Get().castToUniqueShuntAsyncMessage(conn, unique, caller, callback, mark...))
+}
+
+// PushUniqueShuntAsyncCallbackMessage 向特定分发器中推送 MessageTypeAsyncCallback 消息，消息执行与 MessageTypeAsyncCallback 一致
+//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushUniqueAsyncCallbackMessage 进行转发
+func (slf *Server) PushUniqueShuntAsyncCallbackMessage(conn *Conn, unique string, err error, callback func(err error), mark ...log.Field) {
+	if slf.shuntMatcher == nil {
+		slf.PushUniqueAsyncCallbackMessage(unique, err, callback)
+		return
+	}
+	slf.pushMessage(slf.messagePool.Get().castToUniqueShuntAsyncCallbackMessage(conn, unique, err, callback, mark...))
 }
 
 // PushErrorMessage 向服务器中推送 MessageTypeError 消息

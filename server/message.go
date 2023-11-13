@@ -1,10 +1,8 @@
 package server
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/super"
 )
 
 const (
@@ -32,20 +30,36 @@ const (
 	// MessageTypeShuntAsyncCallback 分流异步回调消息类型
 	MessageTypeShuntAsyncCallback
 
+	// MessageTypeUniqueAsync 唯一异步消息类型
+	MessageTypeUniqueAsync
+
+	// MessageTypeUniqueAsyncCallback 唯一异步回调消息类型
+	MessageTypeUniqueAsyncCallback
+
+	// MessageTypeUniqueShuntAsync 唯一分流异步消息类型
+	MessageTypeUniqueShuntAsync
+
+	// MessageTypeUniqueShuntAsyncCallback 唯一分流异步回调消息类型
+	MessageTypeUniqueShuntAsyncCallback
+
 	// MessageTypeSystem 系统消息类型
 	MessageTypeSystem
 )
 
 var messageNames = map[MessageType]string{
-	MessageTypePacket:             "MessageTypePacket",
-	MessageTypeError:              "MessageTypeError",
-	MessageTypeTicker:             "MessageTypeTicker",
-	MessageTypeShuntTicker:        "MessageTypeShuntTicker",
-	MessageTypeAsync:              "MessageTypeAsync",
-	MessageTypeAsyncCallback:      "MessageTypeAsyncCallback",
-	MessageTypeShuntAsync:         "MessageTypeShuntAsync",
-	MessageTypeShuntAsyncCallback: "MessageTypeShuntAsyncCallback",
-	MessageTypeSystem:             "MessageTypeSystem",
+	MessageTypePacket:                   "MessageTypePacket",
+	MessageTypeError:                    "MessageTypeError",
+	MessageTypeTicker:                   "MessageTypeTicker",
+	MessageTypeShuntTicker:              "MessageTypeShuntTicker",
+	MessageTypeAsync:                    "MessageTypeAsync",
+	MessageTypeAsyncCallback:            "MessageTypeAsyncCallback",
+	MessageTypeShuntAsync:               "MessageTypeShuntAsync",
+	MessageTypeShuntAsyncCallback:       "MessageTypeShuntAsyncCallback",
+	MessageTypeUniqueAsync:              "MessageTypeUniqueAsync",
+	MessageTypeUniqueAsyncCallback:      "MessageTypeUniqueAsyncCallback",
+	MessageTypeUniqueShuntAsync:         "MessageTypeUniqueShuntAsync",
+	MessageTypeUniqueShuntAsyncCallback: "MessageTypeUniqueShuntAsyncCallback",
+	MessageTypeSystem:                   "MessageTypeSystem",
 }
 
 const (
@@ -110,7 +124,7 @@ func (slf *Message) MessageType() MessageType {
 
 // String 返回消息的字符串表示
 func (slf *Message) String() string {
-	return fmt.Sprintf("[%s] %s", slf.t, super.MarshalJSON(slf.marks))
+	return slf.t.String()
 }
 
 // String 返回消息类型的字符串表示
@@ -157,6 +171,30 @@ func (slf *Message) castToShuntAsyncMessage(conn *Conn, caller func() error, cal
 // castToShuntAsyncCallbackMessage 将消息转换为分流异步回调消息
 func (slf *Message) castToShuntAsyncCallbackMessage(conn *Conn, err error, caller func(err error), mark ...log.Field) *Message {
 	slf.t, slf.conn, slf.err, slf.errHandler, slf.marks = MessageTypeShuntAsyncCallback, conn, err, caller, mark
+	return slf
+}
+
+// castToUniqueAsyncMessage 将消息转换为唯一异步消息
+func (slf *Message) castToUniqueAsyncMessage(unique string, caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.t, slf.name, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeUniqueAsync, unique, caller, callback, mark
+	return slf
+}
+
+// castToUniqueAsyncCallbackMessage 将消息转换为唯一异步回调消息
+func (slf *Message) castToUniqueAsyncCallbackMessage(unique string, err error, caller func(err error), mark ...log.Field) *Message {
+	slf.t, slf.name, slf.err, slf.errHandler, slf.marks = MessageTypeUniqueAsyncCallback, unique, err, caller, mark
+	return slf
+}
+
+// castToUniqueShuntAsyncMessage 将消息转换为唯一分流异步消息
+func (slf *Message) castToUniqueShuntAsyncMessage(conn *Conn, unique string, caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.t, slf.conn, slf.name, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeUniqueShuntAsync, conn, unique, caller, callback, mark
+	return slf
+}
+
+// castToUniqueShuntAsyncCallbackMessage 将消息转换为唯一分流异步回调消息
+func (slf *Message) castToUniqueShuntAsyncCallbackMessage(conn *Conn, unique string, err error, caller func(err error), mark ...log.Field) *Message {
+	slf.t, slf.conn, slf.name, slf.err, slf.errHandler, slf.marks = MessageTypeUniqueShuntAsyncCallback, conn, unique, err, caller, mark
 	return slf
 }
 
