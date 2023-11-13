@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.1](https://github.com/kercylan98/minotaur/compare/v0.3.0...v0.3.1) (2023-11-13)
+
+
+### Other | 其他更改
+
+* 日志调用修改 ([dd3f3ed](https://github.com/kercylan98/minotaur/commit/dd3f3ede078e6d67ea1b3711054196a6f15e1477))
+
+
+### Features | 新特性
+
+* server 包新增机器人，可通过 server.NewBot 函数进行创建，机器人将模拟普通连接行为，适用于测试等场景 ([4c092c0](https://github.com/kercylan98/minotaur/commit/4c092c04d2151b9764851ab9838ce06c069069f2))
+* server 新增 Unique 异步消息，可用于避免相同标识的异步消息在未执行完毕前重复执行 ([e2b7887](https://github.com/kercylan98/minotaur/commit/e2b7887b142be1217572e6f2e487554eedc5010e))
+* super 新增 ConditionalRetryByExponentialBackoff 函数，支持可中断的退避指数算法重试 ([274402e](https://github.com/kercylan98/minotaur/commit/274402e721f9b04f7a2ed64c6920f456a3b4df91))
+
+
+### Bug Fixes | 修复
+
+* 修复配置导出工具无法忽略描述前缀为 # 的字段 ([5c180de](https://github.com/kercylan98/minotaur/commit/5c180de1188692a3e493a89f551d3262ffb52f64))
+
+
+### Docs | 文档优化
+
+* 优化配置导出工具部分文档描述 ([30c0b3a](https://github.com/kercylan98/minotaur/commit/30c0b3a64bc611885dbca54f190720f51069933e))
+
 ## [0.3.0](https://github.com/kercylan98/minotaur/compare/v0.2.9...v0.3.0) (2023-11-11)
 
 
