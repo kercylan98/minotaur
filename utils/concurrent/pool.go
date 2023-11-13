@@ -2,7 +2,6 @@ package concurrent
 
 import (
 	"github.com/kercylan98/minotaur/utils/log"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -76,7 +75,7 @@ func (slf *Pool[T]) Get() T {
 	if !slf.silent {
 		now := time.Now().Unix()
 		if now-slf.warn >= 1 {
-			log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), zap.Stack("stack"))
+			log.Warn("Pool", log.String("Get", "the number of buffer members is insufficient, consider whether it is due to unreleased or inappropriate buffer size"), log.Stack("stack"))
 			slf.warn = now
 		}
 	}
