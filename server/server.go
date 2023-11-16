@@ -359,7 +359,7 @@ func (slf *Server) Run(addr string) error {
 			log.String("ip", ip.String()),
 			log.String("listen", slf.addr),
 		)
-		log.Error("Server", log.String(serverMark, "===================================================================="))
+		log.Info("Server", log.String(serverMark, "===================================================================="))
 		slf.OnStartFinishEvent()
 		time.Sleep(time.Second)
 		if !slf.isShutdown.Load() {
