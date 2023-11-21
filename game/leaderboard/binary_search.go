@@ -1,4 +1,4 @@
-package ranking
+package leaderboard
 
 import (
 	"encoding/json"
@@ -6,28 +6,28 @@ import (
 	"github.com/kercylan98/minotaur/utils/generic"
 )
 
-// NewList 创建一个排名从 0 开始的排行榜
-func NewList[CompetitorID comparable, Score generic.Ordered](options ...ListOption[CompetitorID, Score]) *List[CompetitorID, Score] {
-	rankingList := &List[CompetitorID, Score]{
-		event:       new(event[CompetitorID, Score]),
-		rankCount:   100,
-		competitors: concurrent.NewBalanceMap[CompetitorID, Score](),
+// NewBinarySearch 创建一个基于内存的二分查找排行榜
+func NewBinarySearch[CompetitorID comparable, Score generic.Ordered](options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score] {
+	leaderboard := &BinarySearch[CompetitorID, Score]{
+		binarySearchEvent: new(binarySearchEvent[CompetitorID, Score]),
+		rankCount:         100,
+		competitors:       concurrent.NewBalanceMap[CompetitorID, Score](),
 	}
 	for _, option := range options {
-		option(rankingList)
+		option(leaderboard)
 	}
-	return rankingList
+	return leaderboard
 }
 
-type List[CompetitorID comparable, Score generic.Ordered] struct {
-	*event[CompetitorID, Score]
+type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
+	*binarySearchEvent[CompetitorID, Score]
 	asc         bool
 	rankCount   int
 	competitors *concurrent.BalanceMap[CompetitorID, Score]
 	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
 
-	rankChangeEventHandles      []RankChangeEventHandle[CompetitorID, Score]
-	rankClearBeforeEventHandles []RankClearBeforeEventHandle[CompetitorID, Score]
+	rankChangeEventHandles      []BinarySearchRankChangeEventHandle[CompetitorID, Score]
+	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }
 
 type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
@@ -37,7 +37,7 @@ type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
 
 // Competitor 声明排行榜竞争者
 //   - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
-func (slf *List[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
+func (slf *BinarySearch[CompetitorID, Score]) Competitor(competitorId CompetitorID, score Score) {
 	v, exist := slf.competitors.GetExist(competitorId)
 	if exist {
 		if slf.Cmp(v, score) == 0 {
@@ -66,7 +66,7 @@ func (slf *List[CompetitorID, Score]) Competitor(competitorId CompetitorID, scor
 }
 
 // RemoveCompetitor 删除特定竞争者
-func (slf *List[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
+func (slf *BinarySearch[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID) {
 	if !slf.competitors.Exist(competitorId) {
 		return
 	}
@@ -83,13 +83,13 @@ func (slf *List[CompetitorID, Score]) RemoveCompetitor(competitorId CompetitorID
 }
 
 // Size 获取竞争者数量
-func (slf *List[CompetitorID, Score]) Size() int {
+func (slf *BinarySearch[CompetitorID, Score]) Size() int {
 	return slf.competitors.Size()
 }
 
 // GetRankDefault 获取竞争者排名，如果竞争者不存在则返回默认值
 //   - 排名从 0 开始
-func (slf *List[CompetitorID, Score]) GetRankDefault(competitorId CompetitorID, defaultValue int) int {
+func (slf *BinarySearch[CompetitorID, Score]) GetRankDefault(competitorId CompetitorID, defaultValue int) int {
 	rank, err := slf.GetRank(competitorId)
 	if err != nil {
 		return defaultValue
@@ -99,10 +99,10 @@ func (slf *List[CompetitorID, Score]) GetRankDefault(competitorId CompetitorID, 
 
 // GetRank 获取竞争者排名
 //   - 排名从 0 开始
-func (slf *List[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
+func (slf *BinarySearch[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, error) {
 	competitorScore, exist := slf.competitors.GetExist(competitorId)
 	if !exist {
-		return 0, ErrListNotExistCompetitor
+		return 0, ErrNotExistCompetitor
 	}
 
 	low, high := 0, len(slf.scores)-1
@@ -131,25 +131,25 @@ func (slf *List[CompetitorID, Score]) GetRank(competitorId CompetitorID) (int, e
 			low = mid + 1
 		}
 	}
-	return 0, ErrListIndexErr
+	return 0, ErrIndexErr
 }
 
 // GetCompetitor 获取特定排名的竞争者
-func (slf *List[CompetitorID, Score]) GetCompetitor(rank int) (competitorId CompetitorID, err error) {
+func (slf *BinarySearch[CompetitorID, Score]) GetCompetitor(rank int) (competitorId CompetitorID, err error) {
 	if rank < 0 || rank >= len(slf.scores) {
-		return competitorId, ErrListNonexistentRanking
+		return competitorId, ErrNonexistentRanking
 	}
 	return slf.scores[rank].CompetitorId, nil
 }
 
 // GetCompetitorWithRange 获取第start名到第end名竞争者
-func (slf *List[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
+func (slf *BinarySearch[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]CompetitorID, error) {
 	if start < 1 || end < start {
-		return nil, ErrListNonexistentRanking
+		return nil, ErrNonexistentRanking
 	}
 	total := len(slf.scores)
 	if start > total {
-		return nil, ErrListNonexistentRanking
+		return nil, ErrNonexistentRanking
 	}
 	if end > total {
 		end = total
@@ -162,16 +162,16 @@ func (slf *List[CompetitorID, Score]) GetCompetitorWithRange(start, end int) ([]
 }
 
 // GetScore 获取竞争者成绩
-func (slf *List[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score Score, err error) {
+func (slf *BinarySearch[CompetitorID, Score]) GetScore(competitorId CompetitorID) (score Score, err error) {
 	data, ok := slf.competitors.GetExist(competitorId)
 	if !ok {
-		return score, ErrListNotExistCompetitor
+		return score, ErrNotExistCompetitor
 	}
 	return data, nil
 }
 
 // GetScoreDefault 获取竞争者成绩，不存在时返回默认值
-func (slf *List[CompetitorID, Score]) GetScoreDefault(competitorId CompetitorID, defaultValue Score) Score {
+func (slf *BinarySearch[CompetitorID, Score]) GetScoreDefault(competitorId CompetitorID, defaultValue Score) Score {
 	score, err := slf.GetScore(competitorId)
 	if err != nil {
 		return defaultValue
@@ -181,7 +181,7 @@ func (slf *List[CompetitorID, Score]) GetScoreDefault(competitorId CompetitorID,
 
 // GetAllCompetitor 获取所有竞争者ID
 //   - 结果为名次有序的
-func (slf *List[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
+func (slf *BinarySearch[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 	var result []CompetitorID
 	for _, data := range slf.scores {
 		result = append(result, data.CompetitorId)
@@ -190,13 +190,13 @@ func (slf *List[CompetitorID, Score]) GetAllCompetitor() []CompetitorID {
 }
 
 // Clear 清空排行榜
-func (slf *List[CompetitorID, Score]) Clear() {
+func (slf *BinarySearch[CompetitorID, Score]) Clear() {
 	slf.OnRankClearBeforeEvent()
 	slf.competitors.Clear()
 	slf.scores = make([]*scoreItem[CompetitorID, Score], 0)
 }
 
-func (slf *List[CompetitorID, Score]) Cmp(s1, s2 Score) int {
+func (slf *BinarySearch[CompetitorID, Score]) Cmp(s1, s2 Score) int {
 	var result int
 	if s1 > s2 {
 		result = 1
@@ -212,7 +212,7 @@ func (slf *List[CompetitorID, Score]) Cmp(s1, s2 Score) int {
 	}
 }
 
-func (slf *List[CompetitorID, Score]) competitor(competitorId CompetitorID, oldScore Score, oldRank int, score Score, low, high int) {
+func (slf *BinarySearch[CompetitorID, Score]) competitor(competitorId CompetitorID, oldScore Score, oldRank int, score Score, low, high int) {
 	for low <= high {
 		mid := (low + high) / 2
 		data := slf.scores[mid]
@@ -262,7 +262,7 @@ func (slf *List[CompetitorID, Score]) competitor(competitorId CompetitorID, oldS
 	slf.scores = slf.scores[0:count]
 }
 
-func (slf *List[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
+func (slf *BinarySearch[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	var t struct {
 		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
@@ -278,7 +278,7 @@ func (slf *List[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-func (slf *List[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
+func (slf *BinarySearch[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	var t struct {
 		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
 		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
@@ -291,21 +291,21 @@ func (slf *List[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&t)
 }
 
-func (slf *List[CompetitorID, Score]) RegRankChangeEvent(handle RankChangeEventHandle[CompetitorID, Score]) {
+func (slf *BinarySearch[CompetitorID, Score]) RegRankChangeEvent(handle BinarySearchRankChangeEventHandle[CompetitorID, Score]) {
 	slf.rankChangeEventHandles = append(slf.rankChangeEventHandles, handle)
 }
 
-func (slf *List[CompetitorID, Score]) OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score) {
+func (slf *BinarySearch[CompetitorID, Score]) OnRankChangeEvent(competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score) {
 	for _, handle := range slf.rankChangeEventHandles {
 		handle(slf, competitorId, oldRank, newRank, oldScore, newScore)
 	}
 }
 
-func (slf *List[CompetitorID, Score]) RegRankClearBeforeEvent(handle RankClearBeforeEventHandle[CompetitorID, Score]) {
+func (slf *BinarySearch[CompetitorID, Score]) RegRankClearBeforeEvent(handle BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]) {
 	slf.rankClearBeforeEventHandles = append(slf.rankClearBeforeEventHandles, handle)
 }
 
-func (slf *List[CompetitorID, Score]) OnRankClearBeforeEvent() {
+func (slf *BinarySearch[CompetitorID, Score]) OnRankClearBeforeEvent() {
 	for _, handle := range slf.rankClearBeforeEventHandles {
 		handle(slf)
 	}
