@@ -117,11 +117,16 @@ func (slf *StateLine[State]) GetTimeByState(state State) time.Time {
 // GetNextTimeByState 获取指定状态的下一个时间点
 func (slf *StateLine[State]) GetNextTimeByState(state State) time.Time {
 	for i := 0; i < len(slf.states); i++ {
-		if slf.states[i] == state && i < len(slf.points)-1 {
+		if slf.states[i] == state && i+1 < len(slf.points) {
 			return slf.points[i+1]
 		}
 	}
-	return time.Time{}
+	return slf.points[0]
+}
+
+// GetLastState 获取最后一个状态
+func (slf *StateLine[State]) GetLastState() State {
+	return slf.states[len(slf.states)-1]
 }
 
 // GetPrevTimeByState 获取指定状态的上一个时间点
@@ -147,19 +152,25 @@ func (slf *StateLine[State]) GetIndexByState(state State) int {
 // GetStateByTime 获取指定时间点的状态
 func (slf *StateLine[State]) GetStateByTime(t time.Time) State {
 	for i := len(slf.points) - 1; i >= 0; i-- {
-		if i == len(slf.points)-1 && slf.points[i].Before(t) {
-			return slf.states[0]
-		}
-		if slf.points[i].Before(t) {
+		point := slf.points[i]
+		if point.Before(t) || point.Equal(t) {
 			return slf.states[i]
 		}
 	}
-	return slf.states[0]
+	return slf.states[len(slf.points)-1]
 }
 
 // GetTimeByIndex 获取指定索引的时间点
 func (slf *StateLine[State]) GetTimeByIndex(index int) time.Time {
 	return slf.points[index]
+}
+
+// Move 时间线整体移动
+func (slf *StateLine[State]) Move(d time.Duration) *StateLine[State] {
+	for i := 0; i < len(slf.points); i++ {
+		slf.points[i] = slf.points[i].Add(d)
+	}
+	return slf
 }
 
 // GetNextStateTimeByIndex 获取指定索引的下一个时间点
@@ -175,7 +186,8 @@ func (slf *StateLine[State]) GetPrevStateTimeByIndex(index int) time.Time {
 // GetStateIndexByTime 获取指定时间点的索引
 func (slf *StateLine[State]) GetStateIndexByTime(t time.Time) int {
 	for i := len(slf.points) - 1; i >= 0; i-- {
-		if slf.points[i].Before(t) {
+		var point = slf.points[i]
+		if point.Before(t) || point.Equal(t) {
 			return i
 		}
 	}
@@ -195,7 +207,8 @@ func (slf *StateLine[State]) GetStateByIndex(index int) State {
 // GetTriggerByTime 获取指定时间点的触发器
 func (slf *StateLine[State]) GetTriggerByTime(t time.Time) []func() {
 	for i := len(slf.points) - 1; i >= 0; i-- {
-		if slf.points[i].Before(t) {
+		var point = slf.points[i]
+		if point.Before(t) || point.Equal(t) {
 			return slf.trigger[i]
 		}
 	}
