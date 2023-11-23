@@ -1,16 +1,19 @@
 package activity
 
-func newData[PlayerID comparable, ActivityData any, PlayerData any]() *Data[PlayerID, ActivityData, PlayerData] {
-	return &Data[PlayerID, ActivityData, PlayerData]{
-		PlayerData:       make(map[PlayerID]PlayerData),
-		PlayerLastNewDay: make(map[PlayerID]int64),
-	}
+import "time"
+
+// DataMeta 全局活动数据
+type DataMeta[Data any] struct {
+	Start      time.Time `json:"start,omitempty"`      // 活动开始时间
+	End        time.Time `json:"end,omitempty"`        // 活动结束时间
+	Data       Data      `json:"data,omitempty"`       // 活动数据
+	LastNewDay time.Time `json:"lastNewDay,omitempty"` // 上次跨天时间
 }
 
-// Data 活动数据信息
-type Data[PlayerID comparable, ActivityData any, PlayerData any] struct {
-	Data             ActivityData            // 活动全局数据
-	PlayerData       map[PlayerID]PlayerData // 活动玩家数据
-	LastNewDay       int64                   // 最后触发新的一天的时间戳
-	PlayerLastNewDay map[PlayerID]int64      // 玩家最后触发新的一天的时间戳
+// EntityDataMeta 活动实体数据
+type EntityDataMeta[Data any] struct {
+	Start      time.Time `json:"start,omitempty"`      // 对象参与活动时间
+	End        time.Time `json:"end,omitempty"`        // 对象结束活动时间
+	Data       Data      `json:"data,omitempty"`       // 活动数据
+	LastNewDay time.Time `json:"lastNewDay,omitempty"` // 上次跨天时间
 }

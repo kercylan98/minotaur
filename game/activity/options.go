@@ -1,60 +1,56 @@
 package activity
 
 import (
+	"github.com/kercylan98/minotaur/utils/generic"
 	"time"
 )
 
-type Option[PlayerID comparable, ActivityData, PlayerData any] func(activity *Activity[PlayerID, ActivityData, PlayerData])
+// Option 活动选项
+type Option[Type, ID generic.Basic] func(*Activity[Type, ID])
 
-// WithData 通过指定活动数据的方式来创建活动
-func WithData[PlayerID comparable, ActivityData, PlayerData any](data *Data[PlayerID, ActivityData, PlayerData]) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.data = data
+// WithUpcomingTime 设置活动预告时间
+func WithUpcomingTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		activity.tl.AddState(stateUpcoming, t)
 	}
 }
 
-// WithActivityData 通过指定活动全局数据的方式来创建活动
-//   - 该活动数据将会被作为活动的全局数据
-//   - 默认情况下活动本身不包含任何数据
-func WithActivityData[PlayerID comparable, ActivityData, PlayerData any](data ActivityData) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.data.Data = data
+// WithStartTime 设置活动开始时间
+func WithStartTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		activity.tl.AddState(stateStarted, t)
 	}
 }
 
-// WithPlayerDataLoadHandle 通过指定玩家数据加载函数的方式来创建活动
-//   - 该函数将会在玩家数据加载时被调用
-//   - 活动中的玩家数据将会被按需加载，只有在玩家加入活动时才会被加载
-func WithPlayerDataLoadHandle[PlayerID comparable, ActivityData, PlayerData any](handle func(activity *Activity[PlayerID, ActivityData, PlayerData], playerId PlayerID) PlayerData) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.playerDataLoadHandle = handle
+// WithEndTime 设置活动结束时间
+func WithEndTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		activity.tl.AddState(stateEnded, t)
 	}
 }
 
-// WithBeforeShowTime 通过指定活动开始前的展示时间的方式来创建活动
-func WithBeforeShowTime[PlayerID comparable, ActivityData, PlayerData any](showTime time.Duration) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.beforeShow = activity.period.Start().Add(-showTime)
+// WithExtendedShowTime 设置延长展示时间
+func WithExtendedShowTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		activity.tl.AddState(stateExtendedShowEnded, t)
 	}
 }
 
-// WithAfterShowTime 通过指定活动结束后的展示时间的方式来创建活动
-func WithAfterShowTime[PlayerID comparable, ActivityData, PlayerData any](showTime time.Duration) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.afterShow = activity.period.End().Add(showTime)
+// WithLoop 设置活动循环，时间间隔小于等于 0 表示不循环
+//   - 当活动状态展示结束后，会根据该选项设置的时间间隔重新开始
+func WithLoop[Type, ID generic.Basic](interval time.Duration) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		if interval <= 0 {
+			interval = 0
+		}
+		activity.loop = interval
 	}
 }
 
-// WithLastNewDay 通过指定活动最后触发新的一天的时间戳的方式来创建活动
-func WithLastNewDay[PlayerID comparable, ActivityData, PlayerData any](lastNewDay int64) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.data.LastNewDay = lastNewDay
-	}
-}
-
-// WithPlayerLastNewDay 通过指定玩家最后触发新的一天的时间戳的方式来创建活动
-func WithPlayerLastNewDay[PlayerID comparable, ActivityData, PlayerData any](playerLastNewDay map[PlayerID]int64) Option[PlayerID, ActivityData, PlayerData] {
-	return func(activity *Activity[PlayerID, ActivityData, PlayerData]) {
-		activity.data.PlayerLastNewDay = playerLastNewDay
+// WithLazy 设置活动数据懒加载
+//   - 该选项仅用于全局数据，默认情况下，活动全局数据会在活动注册时候加载，如果设置了该选项，则会在第一次获取数据时候加载
+func WithLazy[Type, ID generic.Basic](lazy bool) Option[Type, ID] {
+	return func(activity *Activity[Type, ID]) {
+		activity.lazy = lazy
 	}
 }
