@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.2](https://github.com/kercylan98/minotaur/compare/v0.3.1...v0.3.2) (2023-11-23)
+
+
+### Features | 新特性
+
+* activity 并发安全优化 ([7c2a825](https://github.com/kercylan98/minotaur/commit/7c2a825408e05a1039f6f15272746a0ad7d6a2e6))
+* times 包新增 Line 时间线结构，提供了时间线性状态的实现 ([a9c84ca](https://github.com/kercylan98/minotaur/commit/a9c84caa52d690ca86364666a34fbd61a1fd35f8))
+
+
+### Bug Fixes | 修复
+
+* server 启动日志包含错误的 Error 日志修复 ([a3b4a9a](https://github.com/kercylan98/minotaur/commit/a3b4a9afe288bdb1573c68591ee31dfe1a361761))
+* 修复时间线 times.Line 部分逻辑 ([193635c](https://github.com/kercylan98/minotaur/commit/193635c1a991df7192dc608ecf4e4ea0d9214612))
+
+
+### Code Refactoring | 重构
+
+* activity 包重构，整体优化使用体验，活动支持提前展示、及延长展示、持久化、数据保留周期、循环活动等 ([4a41538](https://github.com/kercylan98/minotaur/commit/4a415384602263ed409a3df2c3a46557125fa636))
+* ranking 包更名为 leaderboard，ranking.List 更名为 leaderboard.BinarySearch ([2fe797e](https://github.com/kercylan98/minotaur/commit/2fe797e1c2d6da00373de48ecc1adab7bacefdf5))
+
 ## [0.3.1](https://github.com/kercylan98/minotaur/compare/v0.3.0...v0.3.1) (2023-11-13)
 
 
