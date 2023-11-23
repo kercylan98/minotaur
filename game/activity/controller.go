@@ -1,6 +1,9 @@
 package activity
 
-import "github.com/kercylan98/minotaur/utils/generic"
+import (
+	"github.com/kercylan98/minotaur/utils/generic"
+	"sync"
+)
 
 type none byte
 
@@ -52,59 +55,81 @@ type Controller[Type, ID generic.Basic, Data any, EntityID generic.Basic, Entity
 	entityInitializer func(activityType Type, activityId ID, data map[ID]*DataMeta[Data], entityData map[ID]map[EntityID]*EntityDataMeta[EntityData]) // 实体数据初始化器
 	globalData        map[ID]*DataMeta[Data]                                                                                                          // 全局数据
 	entityData        map[ID]map[EntityID]*EntityDataMeta[EntityData]                                                                                 // 实体数据
+	mutex             sync.RWMutex
 }
 
 // GetGlobalData 获取特定活动全局数据
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) GetGlobalData(activityId ID) Data {
 	slf.globalDataLoader(activityId)
+	slf.mutex.RLock()
+	defer slf.mutex.RUnlock()
 	return slf.globalData[activityId].Data
 }
 
 // GetEntityData 获取特定活动实体数据
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) GetEntityData(activityId ID, entityId EntityID) EntityData {
 	slf.entityDataLoader(activityId, entityId)
+	slf.mutex.RLock()
+	defer slf.mutex.RUnlock()
 	return slf.entityData[activityId][entityId].Data
 }
 
 // GetAllEntityData 获取特定活动所有实体数据
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) GetAllEntityData(activityId ID) map[EntityID]EntityData {
 	var entities = make(map[EntityID]EntityData)
+	slf.mutex.RLock()
 	for k, v := range slf.entityData[activityId] {
 		entities[k] = v.Data
 	}
+	slf.mutex.RUnlock()
 	return entities
 }
 
 // IsOpen 活动是否开启
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) IsOpen(activityId ID) bool {
+	slf.mutex.RLock()
 	activity, exist := slf.activities[activityId]
+	slf.mutex.RUnlock()
 	if !exist {
 		return false
 	}
+	activity.mutex.RLock()
+	defer activity.mutex.RUnlock()
 	return activity.state == stateStarted
 }
 
 // IsShow 活动是否展示
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) IsShow(activityId ID) bool {
+	slf.mutex.RLock()
 	activity, exist := slf.activities[activityId]
+	slf.mutex.RUnlock()
 	if !exist {
 		return false
 	}
+	activity.mutex.RLock()
+	defer activity.mutex.RUnlock()
 	return activity.state == stateUpcoming || (activity.state == stateEnded && activity.tl.HasState(stateExtendedShowEnded))
 }
 
 // IsOpenOrShow 活动是否开启或展示
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) IsOpenOrShow(activityId ID) bool {
+	slf.mutex.RLock()
 	activity, exist := slf.activities[activityId]
+	slf.mutex.RUnlock()
 	if !exist {
 		return false
 	}
+
+	activity.mutex.RLock()
+	defer activity.mutex.RUnlock()
 	return activity.state == stateStarted || activity.state == stateUpcoming || (activity.state == stateEnded && activity.tl.HasState(stateExtendedShowEnded))
 }
 
 // Refresh 刷新活动
 func (slf *Controller[Type, ID, Data, EntityID, EntityData]) Refresh(activityId ID) {
+	slf.mutex.RLock()
 	activity, exist := slf.activities[activityId]
+	slf.mutex.RUnlock()
 	if !exist {
 		return
 	}

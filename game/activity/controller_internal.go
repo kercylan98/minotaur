@@ -32,11 +32,15 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 	defer controllersLock.Unlock()
 	controller.activities = make(map[ID]*Activity[Type, ID])
 	controllerGlobalDataReader = append(controllerGlobalDataReader, func(handler func(activityType, activityId, data any)) {
+		controller.mutex.RLock()
+		defer controller.mutex.RUnlock()
 		for activityId, data := range controller.globalData {
 			handler(activityType, activityId, data)
 		}
 	})
 	controllerEntityDataReader = append(controllerEntityDataReader, func(handler func(activityType, activityId, entityId, data any)) {
+		controller.mutex.RLock()
+		defer controller.mutex.RUnlock()
 		for activityId, entities := range controller.entityData {
 			for entityId, data := range entities {
 				handler(activityType, activityId, entityId, data)
@@ -51,6 +55,8 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 			tof = tof.Elem()
 		}
 		controller.globalDataLoader = func(activityId any) {
+			controller.mutex.Lock()
+			defer controller.mutex.Unlock()
 			var id = activityId.(ID)
 			if _, exist := controller.globalData[id]; exist {
 				return
@@ -71,6 +77,8 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 			tof = tof.Elem()
 		}
 		controller.entityDataLoader = func(activityId any, entityId any) {
+			controller.mutex.Lock()
+			defer controller.mutex.Unlock()
 			var id, eid = activityId.(ID), entityId.(EntityID)
 			entities, exist := controller.entityData[id]
 			if !exist {
@@ -92,6 +100,7 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 	controllers[activityType] = controller
 	controllerRegisters[activityType] = func(activityType, activityId any) (act any, optionInitCallback func(activity any)) {
 		var at, ai = activityType.(Type), activityId.(ID)
+		controller.mutex.Lock()
 		activity, exist := controller.activities[ai]
 		if !exist {
 			activity = &Activity[Type, ID]{
@@ -107,6 +116,7 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 				},
 			}
 		}
+		controller.mutex.Unlock()
 		controller.activities[activity.id] = activity
 		return activity, func(activity any) {
 			act := activity.(*Activity[Type, ID])
@@ -120,6 +130,8 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 	}
 	controllerReset[activityType] = func(activityId any) {
 		var id = activityId.(ID)
+		controller.mutex.Lock()
+		defer controller.mutex.Unlock()
 		delete(controller.globalData, id)
 		delete(controller.entityData, id)
 	}

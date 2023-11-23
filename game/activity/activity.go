@@ -115,7 +115,7 @@ type Activity[Type, ID generic.Basic] struct {
 	tickerKey    string                 // 定时器 key
 	retention    time.Duration          // 活动数据保留时间
 	retentionKey string                 // 保留定时器 key
-	mutex        sync.Mutex             // 互斥锁
+	mutex        sync.RWMutex
 
 	getLastNewDayTime func() time.Time // 获取上次新的一天的时间
 	setLastNewDayTime func(time.Time)  // 设置上次新的一天的时间
