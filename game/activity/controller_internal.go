@@ -3,155 +3,105 @@ package activity
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/times"
 	"reflect"
-	"sync"
 	"time"
 )
 
 var (
-	controllers                map[any]any                                                                                 // type -> controller （特定类型活动控制器）
-	controllerRegisters        map[any]func(activityType, activityId any) (act any, optionInitCallback func(activity any)) // type -> register （控制活动注册到特定类型控制器的注册机）
-	controllerGlobalDataReader []func(handler func(activityType, activityId, data any))                                    // 活动全局数据读取器
-	controllerEntityDataReader []func(handler func(activityType, activityId, entityId, data any))                          // 活动实体数据读取器
-	controllerReset            map[any]func(activityId any)                                                                // type -> reset （活动数据重置器）
-	controllersLock            sync.RWMutex
+	activityRegister         map[any]func(activityId any, options *Options) (activity any)      // type -> register （控制活动注册到特定类型控制器的注册机）
+	activityGlobalDataLoader []func(handler func(activityType, activityId, data any))           // 全局数据加载器
+	activityEntityDataLoader []func(handler func(activityType, activityId, entityId, data any)) // 实体数据加载器
 )
 
 func init() {
-	controllers = make(map[any]any)
-	controllerRegisters = make(map[any]func(activityType, activityId any) (act any, optionInitCallback func(activity any)))
-	controllerGlobalDataReader = make([]func(handler func(activityType, activityId, data any)), 0)
-	controllerEntityDataReader = make([]func(handler func(activityType, activityId, entityId, data any)), 0)
-	controllerReset = make(map[any]func(activityId any))
+	activityRegister = make(map[any]func(activityId any, options *Options) (activity any))
 }
 
-// regController 注册活动类型
-func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, EntityData any](activityType Type, controller *Controller[Type, ID, Data, EntityID, EntityData]) *Controller[Type, ID, Data, EntityID, EntityData] {
-	controllersLock.Lock()
-	defer controllersLock.Unlock()
+// regController 注册活动类型控制器
+func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, EntityData any](controller *Controller[Type, ID, Data, EntityID, EntityData]) *Controller[Type, ID, Data, EntityID, EntityData] {
+	var entityZero EntityData
 	controller.activities = make(map[ID]*Activity[Type, ID])
-	controllerGlobalDataReader = append(controllerGlobalDataReader, func(handler func(activityType, activityId, data any)) {
-		controller.mutex.RLock()
-		defer controller.mutex.RUnlock()
-		for activityId, data := range controller.globalData {
-			handler(activityType, activityId, data)
-		}
-	})
-	controllerEntityDataReader = append(controllerEntityDataReader, func(handler func(activityType, activityId, entityId, data any)) {
-		controller.mutex.RLock()
-		defer controller.mutex.RUnlock()
-		for activityId, entities := range controller.entityData {
-			for entityId, data := range entities {
-				handler(activityType, activityId, entityId, data)
-			}
-		}
-	})
+	controller.globalData = make(map[ID]*DataMeta[Data])
+	controller.entityTof = reflect.TypeOf(entityZero)
+	if controller.entityTof.Kind() == reflect.Pointer {
+		controller.entityTof = controller.entityTof.Elem()
+	}
 
-	if controller.globalData != nil {
-		var d Data
-		var tof = reflect.TypeOf(d)
-		if tof.Kind() == reflect.Pointer {
-			tof = tof.Elem()
-		}
-		controller.globalDataLoader = func(activityId any) {
-			controller.mutex.Lock()
-			defer controller.mutex.Unlock()
-			var id = activityId.(ID)
-			if _, exist := controller.globalData[id]; exist {
-				return
-			}
-			data := &DataMeta[Data]{
-				Data: reflect.New(tof).Interface().(Data),
-			}
-			if controller.globalInit != nil {
-				controller.globalInit(id, data)
-			}
-			controller.globalData[id] = data
-		}
+	// 反射类型
+	var (
+		zero Data
+		tof  = reflect.TypeOf(zero)
+	)
+	if tof.Kind() == reflect.Pointer {
+		tof = tof.Elem()
 	}
-	if controller.entityData != nil {
-		var d Data
-		var tof = reflect.TypeOf(d)
-		if tof.Kind() == reflect.Pointer {
-			tof = tof.Elem()
-		}
-		controller.entityDataLoader = func(activityId any, entityId any) {
-			controller.mutex.Lock()
-			defer controller.mutex.Unlock()
-			var id, eid = activityId.(ID), entityId.(EntityID)
-			entities, exist := controller.entityData[id]
-			if !exist {
-				entities = make(map[EntityID]*EntityDataMeta[EntityData])
-				controller.entityData[id] = entities
-			}
-			if _, exist = entities[eid]; exist {
-				return
-			}
-			data := &EntityDataMeta[EntityData]{
-				Data: reflect.New(tof).Interface().(EntityData),
-			}
-			if controller.entityInit != nil {
-				controller.entityInit(id, eid, data)
-			}
-			entities[eid] = data
-		}
-	}
-	controllers[activityType] = controller
-	controllerRegisters[activityType] = func(activityType, activityId any) (act any, optionInitCallback func(activity any)) {
-		var at, ai = activityType.(Type), activityId.(ID)
+
+	// 活动注册机（注册机内不加载活动数据，仅定义基本活动信息）
+	activityRegister[controller.t] = func(aid any, options *Options) any {
+		activityId := aid.(ID)
 		controller.mutex.Lock()
-		activity, exist := controller.activities[ai]
+		activity, exist := controller.activities[activityId]
 		if !exist {
 			activity = &Activity[Type, ID]{
-				t:         at,
-				id:        ai,
-				tl:        times.NewStateLine[byte](stateClosed),
-				tickerKey: fmt.Sprintf("activity:%d:%v", reflect.ValueOf(at).Kind(), ai),
+				t:         controller.t,
+				id:        activityId,
+				options:   options,
+				tickerKey: fmt.Sprintf("activity:%d:%v", reflect.ValueOf(controller.t).Kind(), activityId),
 				getLastNewDayTime: func() time.Time {
-					return controller.globalData[ai].LastNewDay
+					return controller.globalData[activityId].LastNewDay
 				},
 				setLastNewDayTime: func(t time.Time) {
-					controller.globalData[ai].LastNewDay = t
+					controller.globalData[activityId].LastNewDay = t
+				},
+				clearData: func() {
+					controller.mutex.Lock()
+					defer controller.mutex.Unlock()
+					delete(controller.globalData, activityId)
+					delete(controller.entityData, activityId)
+				},
+				initializeData: func() {
+					controller.mutex.Lock()
+					defer controller.mutex.Unlock()
+					controller.globalData[activityId] = &DataMeta[Data]{
+						Data: reflect.New(tof).Interface().(Data),
+					}
+					if controller.entityData == nil {
+						controller.entityData = make(map[ID]map[EntityID]*EntityDataMeta[EntityData])
+					}
+					controller.entityData[activityId] = make(map[EntityID]*EntityDataMeta[EntityData])
 				},
 			}
+			if activity.options == nil {
+				activity.options = NewOptions()
+			}
+			if activity.options.Tl == nil || activity.options.Tl.GetStateCount() == 0 {
+				activity.options.Tl = times.NewStateLine[byte](stateClosed)
+			}
+			controller.activities[activityId] = activity
 		}
 		controller.mutex.Unlock()
-		controller.activities[activity.id] = activity
-		return activity, func(activity any) {
-			act := activity.(*Activity[Type, ID])
-			if !act.lazy {
-				controller.GetGlobalData(ai)
+
+		// 全局数据加载器
+		activityGlobalDataLoader = append(activityGlobalDataLoader, func(handler func(activityType any, activityId any, data any)) {
+			controller.mutex.RLock()
+			data := controller.globalData[activityId]
+			controller.mutex.RUnlock()
+			handler(controller.t, activityId, data)
+		})
+
+		// 实体数据加载器
+		activityEntityDataLoader = append(activityEntityDataLoader, func(handler func(activityType any, activityId any, entityId any, data any)) {
+			controller.mutex.RLock()
+			entities := hash.Copy(controller.entityData[activityId])
+			controller.mutex.RUnlock()
+			for entityId, data := range entities {
+				handler(controller.t, activityId, entityId, data)
 			}
-			if act.retention > 0 {
-				act.retentionKey = fmt.Sprintf("%s:retention", act.tickerKey)
-			}
-		}
+		})
+		return activity
 	}
-	controllerReset[activityType] = func(activityId any) {
-		var id = activityId.(ID)
-		controller.mutex.Lock()
-		defer controller.mutex.Unlock()
-		delete(controller.globalData, id)
-		delete(controller.entityData, id)
-	}
+
 	return controller
-}
-
-// getControllerRegister 获取活动类型注册机
-func getControllerRegister[Type generic.Basic](activityType Type) func(activityType, activityId any) (act any, optionInitCallback func(activity any)) {
-	controllersLock.RLock()
-	defer controllersLock.RUnlock()
-	return controllerRegisters[activityType]
-}
-
-// resetActivityData 重置活动数据
-func resetActivityData[Type, ID generic.Basic](activityType Type, activityId ID) {
-	controllersLock.RLock()
-	defer controllersLock.RUnlock()
-	reset, exist := controllerReset[activityType]
-	if !exist {
-		return
-	}
-	reset(activityId)
 }
