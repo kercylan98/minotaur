@@ -112,7 +112,7 @@ func (slf *Activity[Type, ID]) refresh() {
 	slf.mutex.Lock()
 	defer slf.mutex.Unlock()
 	curr := time.Now()
-	if slf.state = slf.options.Tl.GetStateByTime(curr); slf.state == stateUpcoming {
+	if slf.state = slf.options.Tl.GetStateByTime(curr); slf.state == stateUpcoming || (slf.state == stateStarted && !slf.options.Tl.HasState(stateUpcoming)) {
 		ticker.StopTimer(slf.retentionKey)
 		slf.initializeData()
 	}

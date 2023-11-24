@@ -9,22 +9,22 @@ import (
 type none byte
 
 // DefineNoneDataActivity 声明无数据的活动类型
-func DefineNoneDataActivity[Type, ID generic.Basic](activityType Type) NoneDataActivityController[Type, ID, none, none, none] {
-	return regController(&Controller[Type, ID, none, none, none]{
+func DefineNoneDataActivity[Type, ID generic.Basic](activityType Type) NoneDataActivityController[Type, ID, *none, none, *none] {
+	return regController(&Controller[Type, ID, *none, none, *none]{
 		t: activityType,
 	})
 }
 
 // DefineGlobalDataActivity 声明拥有全局数据的活动类型
-func DefineGlobalDataActivity[Type, ID generic.Basic, Data any](activityType Type) GlobalDataActivityController[Type, ID, Data, none, none] {
-	return regController(&Controller[Type, ID, Data, none, none]{
+func DefineGlobalDataActivity[Type, ID generic.Basic, Data any](activityType Type) GlobalDataActivityController[Type, ID, Data, none, *none] {
+	return regController(&Controller[Type, ID, Data, none, *none]{
 		t: activityType,
 	})
 }
 
 // DefineEntityDataActivity 声明拥有实体数据的活动类型
-func DefineEntityDataActivity[Type, ID, EntityID generic.Basic, EntityData any](activityType Type) EntityDataActivityController[Type, ID, none, EntityID, EntityData] {
-	return regController(&Controller[Type, ID, none, EntityID, EntityData]{
+func DefineEntityDataActivity[Type, ID, EntityID generic.Basic, EntityData any](activityType Type) EntityDataActivityController[Type, ID, *none, EntityID, EntityData] {
+	return regController(&Controller[Type, ID, *none, EntityID, EntityData]{
 		t: activityType,
 	})
 }
