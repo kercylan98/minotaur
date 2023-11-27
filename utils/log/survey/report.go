@@ -1,6 +1,7 @@
 package survey
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/utils/super"
 	"strings"
 )
@@ -9,9 +10,23 @@ func newReport(analyzer *Analyzer) *Report {
 	report := &Report{
 		analyzer: analyzer,
 		Name:     "ROOT",
-		Values:   analyzer.v,
+		Values:   make(map[string]any),
 		Counter:  analyzer.vc,
 		Subs:     make([]*Report, 0, len(analyzer.subs)),
+	}
+	for k, v := range analyzer.v {
+		if format, exist := analyzer.format[k]; exist {
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						panic(fmt.Errorf("format key[%s] value[%v] error: %v", k, v, err))
+					}
+				}()
+				report.Values[k] = format(v)
+			}()
+			continue
+		}
+		report.Values[k] = v
 	}
 	for k, v := range analyzer.subs {
 		sub := newReport(v)
