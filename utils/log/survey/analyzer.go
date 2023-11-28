@@ -12,6 +12,7 @@ type Analyzer struct {
 	vc     map[string]int64    // 记录了每个 key 生效的计数数量
 	repeat map[string]struct{} // 去重信息
 	subs   map[string]*Analyzer
+	format map[string]func(v any) any // 格式化函数
 	m      sync.Mutex
 }
 
@@ -28,6 +29,16 @@ func (slf *Analyzer) Sub(key string) *Analyzer {
 		slf.subs[key] = sub
 	}
 	return sub
+}
+
+// SetFormat 设置格式化函数
+func (slf *Analyzer) SetFormat(key string, format func(v any) any) {
+	slf.m.Lock()
+	defer slf.m.Unlock()
+	if slf.format == nil {
+		slf.format = make(map[string]func(v any) any)
+	}
+	slf.format[key] = format
 }
 
 // SetValueIfGreaterThan 设置指定 key 的值，当新值大于旧值时

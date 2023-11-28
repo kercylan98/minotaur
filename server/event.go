@@ -239,6 +239,9 @@ func (slf *event) RegConnectionReceivePacketEvent(handle ConnectionReceivePacket
 }
 
 func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
+	if slf.Server.runtime.packetWarnSize > 0 && len(packet) > slf.Server.runtime.packetWarnSize {
+		log.Warn("Server", log.String("OnConnectionReceivePacketEvent", fmt.Sprintf("packet size %d > %d", len(packet), slf.Server.runtime.packetWarnSize)))
+	}
 	slf.connectionReceivePacketEventHandles.RangeValue(func(index int, value ConnectionReceivePacketEventHandle) bool {
 		value(slf.Server, conn, packet)
 		return true

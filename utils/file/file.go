@@ -2,6 +2,7 @@ package file
 
 import (
 	"bufio"
+	"github.com/kercylan98/minotaur/utils/slice"
 	"io"
 	"os"
 	"path/filepath"
@@ -149,25 +150,35 @@ func Paths(dir string) []string {
 	return paths
 }
 
-// ReadLineWithParallel 并行的分行读取文件并行处理，处理过程中会将每一行的内容传入 handlerFunc 中进行处理，当过程中如果产生错误则会发生 panic，过程前发生错误将会返回 error
+// ReadLineWithParallelByChannel 并行的分行读取文件并行处理，处理过程中会将每一行的内容传入 handlerFunc 中进行处理
 //   - 由于是并行处理，所以处理过程中的顺序是不确定的。
-func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(string)) error {
+//   - 可通过 start 参数指定开始读取的位置，如果不指定则从文件开头开始读取。
+func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(string), start ...int64) (n int64, err error) {
 	file, err := os.Open(filename)
+	offset := slice.GetValue(start, 0)
 	if err != nil {
-		return err
+		return offset, err
 	}
 	defer func() {
 		_ = file.Close()
 	}()
 
-	chunks := FindLineChunks(file, chunkSize)
+	chunks := FindLineChunksByOffset(file, offset, chunkSize)
+	var end int64
+	var endMutex sync.Mutex
 	var wg sync.WaitGroup
 	for _, chunk := range chunks {
 		wg.Add(1)
 		go func(chunk [2]int64) {
 			defer wg.Done()
 
-			r := io.NewSectionReader(file, chunk[0], chunk[1]-chunk[0])
+			endMutex.Lock()
+			e := chunk[1] - chunk[0]
+			if e > end {
+				end = e + 1
+			}
+			endMutex.Unlock()
+			r := io.NewSectionReader(file, chunk[0], e)
 
 			scanner := bufio.NewScanner(r)
 			for scanner.Scan() {
@@ -175,12 +186,12 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 			}
 
 			if err := scanner.Err(); err != nil {
-				panic(err)
+				return
 			}
 		}(chunk)
 	}
 	wg.Wait()
-	return nil
+	return end, nil
 }
 
 // FindLineChunks 查找文件按照每行划分的分块，每个分块的大小将在 chunkSize 和分割后的分块距离行首及行尾的距离中范围内
@@ -188,6 +199,11 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 //   - 当过程中发生错误将会发生 panic
 //   - 返回值的成员是一个长度为 2 的数组，第一个元素是分块的起始位置，第二个元素是分块的结束位置
 func FindLineChunks(file *os.File, chunkSize int64) [][2]int64 {
+	return FindLineChunksByOffset(file, 0, chunkSize)
+}
+
+// FindLineChunksByOffset 该函数与 FindLineChunks 类似，不同的是该函数可以指定 offset 从指定位置开始读取文件
+func FindLineChunksByOffset(file *os.File, offset, chunkSize int64) [][2]int64 {
 	var chunks [][2]int64
 
 	fileSize, err := file.Seek(0, io.SeekEnd)
@@ -199,7 +215,7 @@ func FindLineChunks(file *os.File, chunkSize int64) [][2]int64 {
 		panic(err)
 	}
 
-	currentPos := int64(0)
+	currentPos := offset
 	for currentPos < fileSize {
 		start := currentPos
 		if start != 0 { // 不是文件的开头

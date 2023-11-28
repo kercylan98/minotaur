@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"github.com/gorhill/cronexpr"
 	"reflect"
 	"sync"
 	"time"
@@ -72,20 +73,33 @@ func (slf *Ticker) GetSchedulers() []string {
 	return names
 }
 
+// Cron 通过 cron 表达式设置一个调度器，当 cron 表达式错误时，将会引发 panic
+func (slf *Ticker) Cron(name, expression string, handleFunc interface{}, args ...interface{}) {
+	expr := cronexpr.MustParse(expression)
+	slf.loop(name, 0, 0, expr, 0, handleFunc, args...)
+}
+
 // After 设置一个在特定时间后运行一次的调度器
 func (slf *Ticker) After(name string, after time.Duration, handleFunc interface{}, args ...interface{}) {
-	slf.Loop(name, after, timingWheelTick, 1, handleFunc, args...)
+	slf.loop(name, after, timingWheelTick, nil, 1, handleFunc, args...)
 }
 
 // Loop 设置一个在特定时间后反复运行的调度器
 func (slf *Ticker) Loop(name string, after, interval time.Duration, times int, handleFunc interface{}, args ...interface{}) {
+	slf.loop(name, after, interval, nil, times, handleFunc, args...)
+}
+
+// Loop 设置一个在特定时间后反复运行的调度器
+func (slf *Ticker) loop(name string, after, interval time.Duration, expr *cronexpr.Expression, times int, handleFunc interface{}, args ...interface{}) {
 	slf.StopTimer(name)
 
-	if after < timingWheelTick {
-		after = timingWheelTick
-	}
-	if interval < timingWheelTick {
-		interval = timingWheelTick
+	if expr == nil {
+		if after < timingWheelTick {
+			after = timingWheelTick
+		}
+		if interval < timingWheelTick {
+			interval = timingWheelTick
+		}
 	}
 
 	var values = make([]reflect.Value, len(args))
@@ -101,6 +115,7 @@ func (slf *Ticker) Loop(name string, after, interval time.Duration, times int, h
 		cbFunc:   reflect.ValueOf(handleFunc),
 		cbArgs:   values,
 		ticker:   slf,
+		expr:     expr,
 	}
 
 	slf.lock.Lock()

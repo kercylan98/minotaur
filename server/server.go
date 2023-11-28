@@ -34,6 +34,7 @@ func New(network Network, options ...Option) *Server {
 	server := &Server{
 		runtime: &runtime{
 			messagePoolSize: DefaultMessageBufferSize,
+			packetWarnSize:  DefaultPacketWarnSize,
 		},
 		option:       &option{},
 		network:      network,

@@ -1,56 +1,72 @@
 package activity
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/utils/times"
 	"time"
 )
 
-// Option 活动选项
-type Option[Type, ID generic.Basic] func(*Activity[Type, ID])
+// NewOptions 创建活动选项
+func NewOptions() *Options {
+	return new(Options)
+}
+
+// initOptions 初始化活动选项
+func initOptions(opts ...*Options) *Options {
+	var opt *Options
+	if len(opts) > 0 {
+		opt = opts[0]
+	}
+	if opt == nil {
+		opt = NewOptions()
+	}
+	return opt
+}
+
+// Options 活动选项
+type Options struct {
+	Tl   *times.StateLine[byte] // 活动时间线
+	Loop time.Duration          // 活动循环，时间间隔小于等于 0 表示不循环
+}
 
 // WithUpcomingTime 设置活动预告时间
-func WithUpcomingTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		activity.tl.AddState(stateUpcoming, t)
+func (slf *Options) WithUpcomingTime(t time.Time) *Options {
+	if slf.Tl == nil {
+		slf.Tl = times.NewStateLine[byte](stateClosed)
 	}
+	slf.Tl.AddState(stateUpcoming, t)
+	return slf
 }
 
 // WithStartTime 设置活动开始时间
-func WithStartTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		activity.tl.AddState(stateStarted, t)
+func (slf *Options) WithStartTime(t time.Time) *Options {
+	if slf.Tl == nil {
+		slf.Tl = times.NewStateLine[byte](stateClosed)
 	}
+	slf.Tl.AddState(stateStarted, t)
+	return slf
 }
 
 // WithEndTime 设置活动结束时间
-func WithEndTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		activity.tl.AddState(stateEnded, t)
+func (slf *Options) WithEndTime(t time.Time) *Options {
+	if slf.Tl == nil {
+		slf.Tl = times.NewStateLine[byte](stateClosed)
 	}
+	slf.Tl.AddState(stateEnded, t)
+	return slf
 }
 
 // WithExtendedShowTime 设置延长展示时间
-func WithExtendedShowTime[Type, ID generic.Basic](t time.Time) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		activity.tl.AddState(stateExtendedShowEnded, t)
+func (slf *Options) WithExtendedShowTime(t time.Time) *Options {
+	if slf.Tl == nil {
+		slf.Tl = times.NewStateLine[byte](stateClosed)
 	}
+	slf.Tl.AddState(stateExtendedShowEnded, t)
+	return slf
 }
 
 // WithLoop 设置活动循环，时间间隔小于等于 0 表示不循环
 //   - 当活动状态展示结束后，会根据该选项设置的时间间隔重新开始
-func WithLoop[Type, ID generic.Basic](interval time.Duration) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		if interval <= 0 {
-			interval = 0
-		}
-		activity.loop = interval
-	}
-}
-
-// WithLazy 设置活动数据懒加载
-//   - 该选项仅用于全局数据，默认情况下，活动全局数据会在活动注册时候加载，如果设置了该选项，则会在第一次获取数据时候加载
-func WithLazy[Type, ID generic.Basic](lazy bool) Option[Type, ID] {
-	return func(activity *Activity[Type, ID]) {
-		activity.lazy = lazy
-	}
+func (slf *Options) WithLoop(interval time.Duration) *Options {
+	slf.Loop = interval
+	return slf
 }

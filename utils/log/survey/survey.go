@@ -127,7 +127,7 @@ func Close(names ...string) {
 //   - 适用于外部进程对于日志文件的读取，但是需要注意的是，此时日志文件可能正在被写入，所以可能会读取到错误的数据
 func Analyze(filePath string, handle func(analyzer *Analyzer, record R)) *Report {
 	analyzer := new(Analyzer)
-	err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
+	_, err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
 		handle(analyzer, R(s))
 	})
 	if err != nil {
@@ -141,7 +141,7 @@ func Analyze(filePath string, handle func(analyzer *Analyzer, record R)) *Report
 func AnalyzeMulti(filePaths []string, handle func(analyzer *Analyzer, record R)) *Report {
 	analyzer := new(Analyzer)
 	for _, filePath := range filePaths {
-		err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
+		_, err := file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
 			handle(analyzer, R(s))
 		})
 		if err != nil {
@@ -150,4 +150,20 @@ func AnalyzeMulti(filePaths []string, handle func(analyzer *Analyzer, record R))
 	}
 
 	return newReport(analyzer)
+}
+
+// IncrementAnalyze 增量分析，返回一个函数，每次调用该函数都会分析文件中新增的内容
+func IncrementAnalyze(filePath string, handle func(analyzer *Analyzer, record R)) func() (*Report, error) {
+	var analyzer = new(Analyzer)
+	var offset int64
+	return func() (*Report, error) {
+		var err error
+		offset, err = file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
+			handle(analyzer, R(s))
+		}, offset)
+		if err != nil {
+			return nil, err
+		}
+		return newReport(analyzer), nil
+	}
 }

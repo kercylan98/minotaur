@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-func TestClose(t *testing.T) {
+func TestIncrementAnalyze(t *testing.T) {
 	path := `./test/day.2023-09-06.log`
 
-	report := survey.Analyze(path, func(analyzer *survey.Analyzer, record survey.R) {
+	reader := survey.IncrementAnalyze(path, func(analyzer *survey.Analyzer, record survey.R) {
 		switch record.GetString("type") {
 		case "open_conn":
 			analyzer.IncreaseValueNonRepeat("开播人数", record, 1, "live_id")
@@ -44,5 +44,11 @@ func TestClose(t *testing.T) {
 		}
 	})
 
-	fmt.Println(report.FilterSub("warzone0009"))
+	for i := 0; i < 10; i++ {
+		report, err := reader()
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println(report.FilterSub("warzone0009"))
+	}
 }

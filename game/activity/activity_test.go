@@ -16,8 +16,9 @@ type PlayerData struct {
 }
 
 func TestRegTypeByGlobalData(t *testing.T) {
-	controller := activity.DefineGlobalDataActivity[int, int, *ActivityData](1, func(activityId int, data *activity.DataMeta[*ActivityData]) {
-		data.Data.players = append(data.Data.players, "temp")
+
+	controller := activity.DefineGlobalDataActivity[int, int, *ActivityData](1).InitializeGlobalData(func(activityId int, data *activity.DataMeta[*ActivityData]) {
+		data.Data.players = []string{"1", "2", "3"}
 	})
 
 	activity.RegUpcomingEvent(1, func(activityId int) {
@@ -48,12 +49,12 @@ func TestRegTypeByGlobalData(t *testing.T) {
 
 	now := time.Now()
 
-	if err := activity.LoadOrRefreshActivity(1, 1,
-		activity.WithUpcomingTime[int, int](now.Add(1*time.Second)),
-		activity.WithStartTime[int, int](now.Add(2*times.Second)),
-		activity.WithEndTime[int, int](now.Add(3*times.Second)),
-		activity.WithExtendedShowTime[int, int](now.Add(4*times.Second)),
-		activity.WithLoop[int, int](3*times.Second),
+	if err := activity.LoadOrRefreshActivity(1, 1, activity.NewOptions().
+		WithUpcomingTime(now.Add(1*time.Second)).
+		WithStartTime(now.Add(2*times.Second)).
+		WithEndTime(now.Add(3*times.Second)).
+		WithExtendedShowTime(now.Add(4*times.Second)).
+		WithLoop(3*times.Second),
 	); err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,9 @@
 package str
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 const (
 	None      = ""  // 空字符串
@@ -193,4 +196,14 @@ func CamelStringBytes(str []byte) []byte {
 		}
 	}
 	return camelStr
+}
+
+// SortJoin 将多个字符串排序后拼接
+func SortJoin(delimiter string, s ...string) string {
+	var strList = make([]string, 0, len(s))
+	for _, str := range s {
+		strList = append(strList, str)
+	}
+	slices.Sort(strList)
+	return strings.Join(strList, delimiter)
 }

@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"github.com/gorhill/cronexpr"
 	"reflect"
 	"sync"
 	"time"
@@ -26,6 +27,8 @@ type Scheduler struct {
 	ticker *Ticker
 
 	lock sync.RWMutex
+
+	expr *cronexpr.Expression
 }
 
 // Name 获取调度器名称
@@ -38,8 +41,12 @@ func (slf *Scheduler) Next(prev time.Time) time.Time {
 	slf.lock.RLock()
 	defer slf.lock.RUnlock()
 
-	if slf.kill || (slf.total > 0 && slf.trigger > slf.total) {
+	if slf.kill || (slf.expr != nil && slf.total > 0 && slf.trigger > slf.total) {
 		return time.Time{}
+	}
+	if slf.expr != nil {
+		next := slf.expr.Next(prev)
+		return next
 	}
 	if slf.trigger == 0 {
 		slf.trigger++

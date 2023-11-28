@@ -78,7 +78,7 @@ import (
 
 func main() {
 	srv := server.New(server.NetworkWebsocket)
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet server.Packet) {
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})
 	if err := srv.Run(":9999"); err != nil {
@@ -173,6 +173,7 @@ func main() {
 	wait.Wait()
 }
 ```
+在分布式环境中，如果存在类似于多服务器需要同时间刷新配置时，可使用`Cron`表达式设置定时任务。
 
 ### 流操作
 可以通过 `stream` 包快速开启对`切片`和`map`的流式操作，例如：

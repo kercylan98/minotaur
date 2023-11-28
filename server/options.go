@@ -41,6 +41,21 @@ type runtime struct {
 	websocketWriteCompression bool                    // websocket写入压缩
 	limitLife                 time.Duration           // 限制最大生命周期
 	shuntMatcher              func(conn *Conn) string // 分流匹配器
+	packetWarnSize            int                     // 数据包大小警告
+}
+
+// WithPacketWarnSize 通过数据包大小警告的方式创建服务器，当数据包大小超过指定大小时，将会输出 WARN 类型的日志
+//   - 默认值为 DefaultPacketWarnSize
+//   - 当 size <= 0 时，表示不设置警告
+func WithPacketWarnSize(size int) Option {
+	return func(srv *Server) {
+		if size <= 0 {
+			srv.packetWarnSize = 0
+			log.Info("WithPacketWarnSize", log.String("State", "Ignore"), log.String("Reason", "size <= 0"))
+			return
+		}
+		srv.packetWarnSize = size
+	}
 }
 
 // WithShunt 通过连接数据包分流的方式创建服务器
