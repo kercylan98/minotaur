@@ -155,14 +155,15 @@ func Paths(dir string) []string {
 //   - 可通过 start 参数指定开始读取的位置，如果不指定则从文件开头开始读取。
 func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(string), start ...int64) (n int64, err error) {
 	file, err := os.Open(filename)
+	offset := slice.GetValue(start, 0)
 	if err != nil {
-		return 0, err
+		return offset, err
 	}
 	defer func() {
 		_ = file.Close()
 	}()
 
-	chunks := FindLineChunksByOffset(file, slice.GetValue(start, 0), chunkSize)
+	chunks := FindLineChunksByOffset(file, offset, chunkSize)
 	var end int64
 	var endMutex sync.Mutex
 	var wg sync.WaitGroup
