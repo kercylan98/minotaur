@@ -195,14 +195,6 @@ func WithGRPCServerOptions(options ...grpc.ServerOption) Option {
 	}
 }
 
-// WithRunMode 通过特定模式运行服务器
-//   - 默认为 RunModeDev
-func WithRunMode(mode RunMode) Option {
-	return func(srv *Server) {
-		srv.runMode = mode
-	}
-}
-
 // WithWebsocketMessageType 设置仅支持特定类型的Websocket消息
 func WithWebsocketMessageType(messageTypes ...int) Option {
 	return func(srv *Server) {

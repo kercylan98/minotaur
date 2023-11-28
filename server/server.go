@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kercylan98/minotaur/server/internal/logger"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
@@ -14,7 +15,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/timer"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
-	"github.com/panjf2000/gnet/pkg/logging"
 	"github.com/xtaci/kcp-go/v5"
 	"google.golang.org/grpc"
 	"net"
@@ -67,7 +67,7 @@ func New(network Network, options ...Option) *Server {
 			server.antsPoolSize = DefaultAsyncPoolSize
 		}
 		var err error
-		server.ants, err = ants.NewPool(server.antsPoolSize, ants.WithLogger(log.GetLogger()))
+		server.ants, err = ants.NewPool(server.antsPoolSize, ants.WithLogger(new(logger.Ants)))
 		if err != nil {
 			panic(err)
 		}
@@ -93,7 +93,6 @@ type Server struct {
 	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
 	network                  Network                               // 网络类型
 	addr                     string                                // 侦听地址
-	runMode                  RunMode                               // 运行模式
 	systemSignal             chan os.Signal                        // 系统信号
 	closeChannel             chan struct{}                         // 关闭信号
 	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
@@ -177,8 +176,7 @@ func (slf *Server) Run(addr string) error {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			if err := gnet.Serve(slf.gServer, protoAddr,
-				gnet.WithLogger(log.GetLogger()),
-				gnet.WithLogLevel(super.If(slf.runMode == RunModeProd, logging.ErrorLevel, logging.DebugLevel)),
+				gnet.WithLogger(new(logger.GNet)),
 				gnet.WithTicker(true),
 				gnet.WithMulticore(true),
 			); err != nil {
@@ -230,18 +228,19 @@ func (slf *Server) Run(addr string) error {
 			}
 		})
 	case NetworkHttp:
-		switch slf.runMode {
-		case RunModeDev:
-			gin.SetMode(gin.DebugMode)
-		case RunModeTest:
-			gin.SetMode(gin.TestMode)
-		case RunModeProd:
-			gin.SetMode(gin.ReleaseMode)
-		}
 		go func() {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
 			slf.httpServer.Addr = slf.addr
+			gin.SetMode(gin.ReleaseMode)
+			slf.ginServer.Use(func(c *gin.Context) {
+				t := time.Now()
+				c.Next()
+				log.Info("Server", log.String("type", "http"),
+					log.String("method", c.Request.Method), log.Int("status", c.Writer.Status()),
+					log.String("ip", c.ClientIP()), log.String("path", c.Request.URL.Path),
+					log.Duration("cost", time.Since(t)))
+			})
 			go connectionInitHandle(nil)
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
