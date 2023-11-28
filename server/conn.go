@@ -296,6 +296,9 @@ func (slf *Conn) init() {
 		},
 	)
 	slf.loop = writeloop.NewWriteLoop[*connPacket](slf.pool, func(data *connPacket) error {
+		if slf.server.runtime.packetWarnSize > 0 && len(data.packet) > slf.server.runtime.packetWarnSize {
+			log.Warn("Conn.Write", log.String("State", "PacketWarn"), log.String("Reason", "PacketSize"), log.String("ID", slf.GetID()), log.Int("PacketSize", len(data.packet)))
+		}
 		var err error
 		if slf.delay > 0 || slf.fluctuation > 0 {
 			time.Sleep(random.Duration(int64(slf.delay-slf.fluctuation), int64(slf.delay+slf.fluctuation)))
