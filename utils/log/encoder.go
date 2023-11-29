@@ -4,7 +4,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
 )
 
 type Encoder struct {
@@ -29,23 +28,10 @@ func (slf *Encoder) Build(options ...LoggerOption) *Minotaur {
 		panic(err)
 	}
 	options = append([]LoggerOption{zap.AddCaller(), zap.AddCallerSkip(1)}, options...)
-	l = l.WithOptions(options...)
-	if len(slf.cores) == 0 {
-		// stdout、stderr，不使用 lumberjack.Logger
-		slf.cores = append(slf.cores, zapcore.NewCore(
-			slf.e,
-			zapcore.Lock(os.Stdout),
-			zapcore.InfoLevel,
-		))
-		slf.cores = append(slf.cores, zapcore.NewCore(
-			slf.e,
-			zapcore.Lock(os.Stderr),
-			zapcore.ErrorLevel,
-		))
-	}
-	l = l.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-		return zapcore.NewTee(slf.cores...)
+	options = append(options, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(append(slf.cores, core)...)
 	}))
+	l = l.WithOptions(options...)
 	return &Minotaur{
 		Logger:  l,
 		Sugared: l.Sugar(),
