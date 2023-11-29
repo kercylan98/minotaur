@@ -156,8 +156,11 @@ func AnalyzeMulti(filePaths []string, handle func(analyzer *Analyzer, record R))
 func IncrementAnalyze(filePath string, handle func(analyzer *Analyzer, record R)) func() (*Report, error) {
 	var analyzer = new(Analyzer)
 	var offset int64
+	var m = new(sync.Mutex)
 	return func() (*Report, error) {
 		var err error
+		m.Lock()
+		defer m.Unlock()
 		offset, err = file.ReadLineWithParallel(filePath, 1*1024*1024*1024, func(s string) {
 			handle(analyzer, R(s))
 		}, offset)
