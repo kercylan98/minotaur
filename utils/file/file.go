@@ -163,6 +163,11 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 		_ = file.Close()
 	}()
 
+	fileSize, err := file.Seek(0, io.SeekEnd)
+	if err != nil || offset-1 >= fileSize {
+		return offset, err
+	}
+
 	chunks := FindLineChunksByOffset(file, offset, chunkSize)
 	var end int64
 	var endMutex sync.Mutex
