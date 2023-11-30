@@ -158,6 +158,8 @@ func WithWebsocketReadDeadline(t time.Duration) Option {
 }
 
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
+//   - size：服务器定时器时间轮大小
+//   - connSize：服务器连接定时器时间轮大小
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
 func WithTicker(size, connSize int, autonomy bool) Option {
 	return func(srv *Server) {
