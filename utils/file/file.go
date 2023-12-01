@@ -181,7 +181,7 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 			defer wg.Done()
 
 			endMutex.Lock()
-			e := chunk[1] - chunk[0]
+			e := chunk[1]
 			if e > end {
 				end = e + 1
 			}
