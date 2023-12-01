@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.3](https://github.com/kercylan98/minotaur/compare/v0.3.2...v0.3.3) (2023-11-28)
+
+
+### Features | 新特性
+
+* server.Server 默认开启数据包大小警告，可通过 server.WithPacketWarnSize 关闭或调整警告大小，默认为 1MB ([173dd11](https://github.com/kercylan98/minotaur/commit/173dd11d4dfb69132ed9923cbcae6e8fd11ade9e))
+* str 包新增 SortJoin 函数，在执行 Join 前对字符串进行拼接 ([844fb30](https://github.com/kercylan98/minotaur/commit/844fb3059e8809eff90cdbd1dc2ac0a1f594ca06))
+* survey 包支持对报告字段进行格式化处理 ([ed5be97](https://github.com/kercylan98/minotaur/commit/ed5be97234436030845ef7975f6eabd0e62e5eaf))
+* timer.Ticker 新增 Cron 函数，支持通过 Cron 表达式下发定时任务 ([4117607](https://github.com/kercylan98/minotaur/commit/4117607c8f226bc95e2f1a942e444a09fc5fe913))
+* 为 survey 包增加增量读取功能并改善错误处理 ([9f27da2](https://github.com/kercylan98/minotaur/commit/9f27da2dce15847139011d178447bf7c19783fa6))
+* 增加了增量读取功能并改善了错误处理 ([b11baa3](https://github.com/kercylan98/minotaur/commit/b11baa3653cb6f4532c40649b8c5b0ddc0b12acb))
+
+
+### Bug Fixes | 修复
+
+* 修复 activity 类型转换错误问题，增加案例目录 activity/internal/example ([3a33947](https://github.com/kercylan98/minotaur/commit/3a3394752c8b1cf5eb8aa3e9fed94e56cc917254))
+
+
+### Docs | 文档优化
+
+* README 计时器段落增加 Cron 提示 ([6469c47](https://github.com/kercylan98/minotaur/commit/6469c473e709595491173bd823b6ad9a83bd8725))
+* 修正 [#65](https://github.com/kercylan98/minotaur/issues/65) 中 [@kuchaguangjie](https://github.com/kuchaguangjie) 提到的 WebSocket 例子参数错误的文档 ([5c954f0](https://github.com/kercylan98/minotaur/commit/5c954f0c2aea6a2192f5f210a292711fef3b3f88))
+
+
+### Performance Improvements | 性能优化
+
+* activity 包整体使用体验及性能优化，减少不必要的转换及反射，优化代码结构，优化可读性 ([605a308](https://github.com/kercylan98/minotaur/commit/605a308d558659dd99de877fb50c17f5f76f2d44))
+
 ## [0.3.2](https://github.com/kercylan98/minotaur/compare/v0.3.1...v0.3.2) (2023-11-23)
 
 
