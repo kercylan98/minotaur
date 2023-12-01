@@ -40,7 +40,7 @@ func (slf *MultipleServer) Run() {
 		go func(address string, server *Server) {
 			var lock sync.Mutex
 			var startFinish bool
-			server.startFinishEventHandles.Append(func(srv *Server) {
+			server.startFinishEventHandlers.Append(func(srv *Server) {
 				lock.Lock()
 				defer lock.Unlock()
 				if !startFinish {

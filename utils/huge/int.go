@@ -1,6 +1,9 @@
 package huge
 
-import "math/big"
+import (
+	"github.com/kercylan98/minotaur/utils/generic"
+	"math/big"
+)
 
 var (
 	IntNegativeOne = NewInt(-1)    // 默认初始化的-1值Int，应当将其当作常量使用
@@ -12,19 +15,25 @@ var (
 	IntTenThousand = NewInt(10000) // 默认初始化的10000值Int，应当将其当作常量使用
 )
 
-type IntRestrain interface {
-	uint | uint8 | uint16 | uint32 | uint64 | int | int8 | int16 | int32 | int64
-}
-
 type Int big.Int
 
-func NewInt[T IntRestrain](x T, exp ...T) *Int {
-	num := int64(x)
-	i := big.NewInt(num)
-	for _, t := range exp {
-		i = i.Exp(i, big.NewInt(int64(t)), nil)
+// NewInt 创建一个 Int
+func NewInt[T generic.Number](x T) *Int {
+	return (*Int)(big.NewInt(int64(x)))
+}
+
+// NewIntByString 通过字符串创建一个 Int
+//   - 如果字符串不是一个合法的数字，则返回 0
+func NewIntByString(i string) *Int {
+	v, suc := new(big.Int).SetString(i, 10)
+	if !suc {
+		return IntZero.Copy()
 	}
-	return (*Int)(i)
+	return (*Int)(v)
+}
+
+func applyIntOperation[T generic.Number](v *Int, i T, op func(*big.Int, *big.Int) *big.Int) *Int {
+	return (*Int)(op(v.ToBigint(), NewInt(i).ToBigint()))
 }
 
 func (slf *Int) Copy() *Int {
@@ -86,6 +95,7 @@ func (slf *Int) ToBigint() *big.Int {
 	return (*big.Int)(slf)
 }
 
+// Cmp 比较，当 slf > i 时返回 1，当 slf < i 时返回 -1，当 slf == i 时返回 0
 func (slf *Int) Cmp(i *Int) int {
 	return slf.ToBigint().Cmp(i.ToBigint())
 }
@@ -285,4 +295,287 @@ func (slf *Int) SubUint32(i uint32) *Int {
 func (slf *Int) SubUint64(i uint64) *Int {
 	x := slf.ToBigint()
 	return (*Int)(x.Sub(x, NewInt(i).ToBigint()))
+}
+
+func (slf *Int) Div(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Div(x, i.ToBigint()))
+}
+
+func (slf *Int) DivInt(i int) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivInt8(i int8) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivInt16(i int16) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivInt32(i int32) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivInt64(i int64) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivUint(i uint) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivUint8(i uint8) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivUint16(i uint16) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivUint32(i uint32) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) DivUint64(i uint64) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Div)
+}
+
+func (slf *Int) Mod(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Mod(x, i.ToBigint()))
+}
+
+func (slf *Int) ModInt(i int) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModInt8(i int8) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModInt16(i int16) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModInt32(i int32) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModInt64(i int64) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModUint(i uint) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModUint8(i uint8) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModUint16(i uint16) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModUint32(i uint32) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) ModUint64(i uint64) *Int {
+	return applyIntOperation(slf, i, NewInt(i).ToBigint().Mod)
+}
+
+func (slf *Int) Pow(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, i.ToBigint(), nil))
+}
+
+func (slf *Int) PowInt(i int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowInt8(i int8) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowInt16(i int16) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowInt32(i int32) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowInt64(i int64) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowUint(i uint) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowUint8(i uint8) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowUint16(i uint16) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowUint32(i uint32) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+func (slf *Int) PowUint64(i uint64) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Exp(x, NewInt(i).ToBigint(), nil))
+}
+
+// Lsh 左移
+func (slf *Int) Lsh(i int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Lsh(x, uint(i)))
+}
+
+// Rsh 右移
+func (slf *Int) Rsh(i int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Rsh(x, uint(i)))
+}
+
+// And 与
+func (slf *Int) And(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.And(x, i.ToBigint()))
+}
+
+// AndNot 与非
+func (slf *Int) AndNot(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.AndNot(x, i.ToBigint()))
+}
+
+// Or 或
+func (slf *Int) Or(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Or(x, i.ToBigint()))
+}
+
+// Xor 异或
+func (slf *Int) Xor(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Xor(x, i.ToBigint()))
+}
+
+// Not 非
+func (slf *Int) Not() *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Not(x))
+}
+
+// Sqrt 平方根
+func (slf *Int) Sqrt() *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Sqrt(x))
+}
+
+// GCD 最大公约数
+func (slf *Int) GCD(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.GCD(nil, nil, x, i.ToBigint()))
+}
+
+// LCM 最小公倍数
+func (slf *Int) LCM(i *Int) *Int {
+	sb := slf.ToBigint()
+	ib := i.ToBigint()
+	gcd := new(big.Int).GCD(nil, nil, sb, ib)
+	absProduct := new(big.Int).Mul(sb, ib).Abs(new(big.Int).Mul(sb, ib))
+	lcm := new(big.Int).Div(absProduct, gcd)
+	return (*Int)(lcm)
+}
+
+// ModInverse 模反元素
+func (slf *Int) ModInverse(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.ModInverse(x, i.ToBigint()))
+}
+
+// ModSqrt 模平方根
+func (slf *Int) ModSqrt(i *Int) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.ModSqrt(x, i.ToBigint()))
+}
+
+// BitLen 二进制长度
+func (slf *Int) BitLen() int {
+	return slf.ToBigint().BitLen()
+}
+
+// Bit 二进制位
+func (slf *Int) Bit(i int) uint {
+	return slf.ToBigint().Bit(i)
+}
+
+// SetBit 设置二进制位
+func (slf *Int) SetBit(i int, v uint) *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.SetBit(x, i, v))
+}
+
+// Neg 返回数字的相反数
+func (slf *Int) Neg() *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Neg(x))
+}
+
+// Abs 返回数字的绝对值
+func (slf *Int) Abs() *Int {
+	x := slf.ToBigint()
+	return (*Int)(x.Abs(x))
+}
+
+// Sign 返回数字的符号
+//   - 1：正数
+//   - 0：零
+//   - -1：负数
+func (slf *Int) Sign() int {
+	return slf.ToBigint().Sign()
+}
+
+// IsPositive 是否为正数
+func (slf *Int) IsPositive() bool {
+	return slf.Sign() > 0
+}
+
+// IsNegative 是否为负数
+func (slf *Int) IsNegative() bool {
+	return slf.Sign() < 0
+}
+
+// IsEven 是否为偶数
+func (slf *Int) IsEven() bool {
+	return slf.ToBigint().Bit(0) == 0
+}
+
+// IsOdd 是否为奇数
+func (slf *Int) IsOdd() bool {
+	return slf.ToBigint().Bit(0) == 1
+}
+
+// ProportionalCalc 比例计算，该函数会再 formula 返回值的基础上除以 proportional
+//   - formula 为计算公式，该公式的参数为调用该函数的 Int 的拷贝
+func (slf *Int) ProportionalCalc(proportional *Int, formula func(v *Int) *Int) *Int {
+	return formula(slf.Copy()).Div(proportional)
 }

@@ -1,16 +1,22 @@
 package log
 
-import (
-	"github.com/panjf2000/ants/v2"
-	"github.com/panjf2000/gnet/pkg/logging"
-)
+var logger Logger
 
-var logger Logger = NewLog()
+func init() {
+	logger = Default().Build()
+}
+
+// SetLogger 设置日志记录器
+func SetLogger(l Logger) {
+	if m, ok := l.(*Minotaur); ok && m != nil {
+		_ = m.Sync()
+		_ = m.Sugared.Sync()
+	}
+	logger = l
+}
 
 // Logger 适用于 Minotaur 的日志接口
 type Logger interface {
-	ants.Logger
-	logging.Logger
 	// Debug 在 DebugLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
 	Debug(msg string, fields ...Field)
 	// Info 在 InfoLevel 记录一条消息。该消息包括在日志站点传递的任何字段以及记录器上累积的任何字段
@@ -66,14 +72,4 @@ func Panic(msg string, fields ...Field) {
 //   - 然后记录器调用 os.Exit(1)，即使 FatalLevel 的日志记录被禁用
 func Fatal(msg string, fields ...Field) {
 	logger.Fatal(msg, fields...)
-}
-
-// SetLogger 设置日志记录器
-func SetLogger(log Logger) {
-	logger = log
-}
-
-// GetLogger 获取日志记录器
-func GetLogger() Logger {
-	return logger
 }

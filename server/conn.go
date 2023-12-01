@@ -106,9 +106,10 @@ func newBotConn(server *Server) *Conn {
 	return c
 }
 
-// Conn 服务器连接单次会话的包装
+// Conn 服务器连接单次消息的包装
 type Conn struct {
 	*connection
+	wst int
 	ctx context.Context
 }
 
@@ -160,7 +161,7 @@ func (slf *Conn) GetWebsocketRequest() *http.Request {
 
 // IsBot 是否是机器人连接
 func (slf *Conn) IsBot() bool {
-	return slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
+	return slf != nil && slf.ws == nil && slf.gn == nil && slf.kcp == nil && slf.gw == nil
 }
 
 // RemoteAddr 获取远程地址
@@ -229,15 +230,15 @@ func (slf *Conn) IsWebsocket() bool {
 	return slf.server.network == NetworkWebsocket
 }
 
-// GetWST 获取websocket消息类型
+// GetWST 获取本次 websocket 消息类型
+//   - 默认将与发送类型相同
 func (slf *Conn) GetWST() int {
-	wst, _ := slf.ctx.Value(contextKeyWST).(int)
-	return wst
+	return slf.wst
 }
 
-// SetWST 设置websocket消息类型
+// SetWST 设置本次 websocket 消息类型
 func (slf *Conn) SetWST(wst int) *Conn {
-	slf.ctx = context.WithValue(slf.ctx, contextKeyWST, wst)
+	slf.wst = wst
 	return slf
 }
 
@@ -255,7 +256,6 @@ func (slf *Conn) PushUniqueAsyncMessage(name string, caller func() error, callba
 }
 
 // Write 向连接中写入数据
-//   - messageType: websocket模式中指定消息类型
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 	if slf.gw != nil {
 		slf.gw(packet)
@@ -356,9 +356,7 @@ func (slf *Conn) Close(err ...error) {
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
-	if slf.server.shuntMatcher != nil {
-		slf.server.releaseDispatcher(slf.server.shuntMatcher(slf))
-	}
+	slf.server.releaseDispatcher(slf)
 	slf.pool.Close()
 	slf.loop.Close()
 	slf.mu.Unlock()

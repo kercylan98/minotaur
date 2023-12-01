@@ -1,26 +1,39 @@
 package log
 
 import (
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"time"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-type Encoder = zapcore.Encoder
+type Encoder struct {
+	e     zapcore.Encoder
+	cores []Core
+	conf  *Config
+}
 
-// NewEncoder 创建一个 Minotaur 默认使用的编码器
-func NewEncoder() Encoder {
-	return zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
-		MessageKey:  "msg",
-		LevelKey:    "level",
-		EncodeLevel: zapcore.CapitalLevelEncoder,
-		TimeKey:     "ts",
-		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.Format(time.DateTime))
-		},
-		CallerKey:    "file",
-		EncodeCaller: zapcore.ShortCallerEncoder,
-		EncodeDuration: func(d time.Duration, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendInt64(int64(d) / 1000000)
-		},
-	})
+func (slf *Encoder) Split(config *lumberjack.Logger) *Encoder {
+	slf.cores = append(slf.cores, zapcore.NewCore(slf.e, zapcore.AddSync(config), zapcore.DebugLevel))
+	return slf
+}
+
+func (slf *Encoder) AddCore(ws WriteSyncer, enab LevelEnabler) *Encoder {
+	slf.cores = append(slf.cores, zapcore.NewCore(slf.e, ws, enab))
+	return slf
+}
+
+func (slf *Encoder) Build(options ...LoggerOption) *Minotaur {
+	l, err := slf.conf.Build()
+	if err != nil {
+		panic(err)
+	}
+	options = append([]LoggerOption{zap.AddCaller(), zap.AddCallerSkip(1)}, options...)
+	options = append(options, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(append(slf.cores, core)...)
+	}))
+	l = l.WithOptions(options...)
+	return &Minotaur{
+		Logger:  l,
+		Sugared: l.Sugar(),
+	}
 }
