@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.3.4](https://github.com/kercylan98/minotaur/compare/v0.3.3...v0.3.4) (2023-12-01)
+
+
+### Features | 新特性
+
+* huge.Int 增加部分辅助函数 ([6127fb6](https://github.com/kercylan98/minotaur/commit/6127fb63e1c4771341bb3ae30109162749575540))
+* sole 包支持获取自增循环的 id，同时支持自增循环的 string 类型的数字 id ([8e94a66](https://github.com/kercylan98/minotaur/commit/8e94a6681ed3538eb1b260b34e2c1b782cbff02e))
+* super 包新增 OldVersion 和 CompareVersion 函数用于版本比较 ([23d2235](https://github.com/kercylan98/minotaur/commit/23d223508bfa6c12739669dc91d1b0df4a9c7b37))
+
+
+### Bug Fixes | 修复
+
+* log 包日志配置无效问题修复 ([c6b929a](https://github.com/kercylan98/minotaur/commit/c6b929afe8dec07e210159b34a21ebb086dda8e5))
+* 修复 ReadLineWithParallel 当读取到文件尾时，返回的 offset 有误的问题 ([f6ea696](https://github.com/kercylan98/minotaur/commit/f6ea696df66d8e1d5a86668bd61e10ff0e33b8a9))
+
+
+### Docs | 文档优化
+
+* 修正 [@kuchaguangjie](https://github.com/kuchaguangjie) 在 [#67](https://github.com/kercylan98/minotaur/issues/67) 提到的 README.md 服务器定时器示例错误、补充 WithTicker 函数注释 ([6922999](https://github.com/kercylan98/minotaur/commit/6922999039883d674d9c70d1429a586249f889ab))
+* 更新 README.md 文件中对于分流服务器部分的说明 ([61b4ef7](https://github.com/kercylan98/minotaur/commit/61b4ef7a8c5f754c0ac3ffb680e2737599579927))
+
+
+### Code Refactoring | 重构
+
+* 优化及重构 server 包关于 WebSocket 的消息类型和消息分流部分内容 ([dc557a0](https://github.com/kercylan98/minotaur/commit/dc557a06d4e3fa4b0c1f2aa4d33b865f4776ebea))
+* 重构日志模块并清理未使用的依赖 ([d3ad49d](https://github.com/kercylan98/minotaur/commit/d3ad49d11e54aa5eee7d4a33c57f938b1380715c))
+
+
+### Tests | 新增或优化测试用例
+
+* 为 buffer.Unbounded 添加基准测试 ([08115d4](https://github.com/kercylan98/minotaur/commit/08115d463b5de1afaefa0c85e6020053c23b8536))
+
 ## [0.3.3](https://github.com/kercylan98/minotaur/compare/v0.3.2...v0.3.3) (2023-11-28)
 
 
