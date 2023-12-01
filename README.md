@@ -90,27 +90,35 @@ func main() {
 > Websocket地址: ws://127.0.0.1:9999
 
 ### 分流服务器
-分流服务器可以将客户端分流到不同的分组上，每个分组中为串行处理，不同分组之间并行处理。
+分流服务器可以将消息分流到不同的分组上，每个分组中为串行处理，不同分组之间并行处理。
 ```go
 package main
 
 import "github.com/kercylan98/minotaur/server"
 
 func main() {
-	srv := server.New(server.NetworkWebsocket,
-		server.WithShunt(func(conn *server.Conn) string {
-			return conn.GetData("roomId").(string)
-		}),
-	)
+	srv := server.New(server.NetworkWebsocket)
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		// 通过 user_id 进行分流，不同用户的消息将不会互相阻塞
+		srv.UseShunt(conn, conn.Gata("user_id").(string))
+	})
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
-		conn.Write(packet)
+		var roomId = "default"
+		switch string(packet) {
+		case "JoinRoom":
+            // 将用户所处的分流渠道切换到 roomId 渠道，此刻同一分流渠道的消息将会按队列顺序处理
+            srv.UseShunt(conn, roomId)
+		case "LeaveRoom":
+            // 将用户所处分流切换为用户自身的分流渠道
+            srv.UseShunt(conn, conn.Gata("user_id").(string))
+		}
 	})
 	if err := srv.Run(":9999"); err != nil {
 		panic(err)
 	}
 }
 ```
-> 该示例中假设各房间互不干涉，故通过`server.WithShunt`将连接通过`roomId`进行分组，提高并发处理能力。
+> 该示例中模拟了用户分流渠道在自身渠道和房间渠道切换的过程，通过`UseShunt`对连接分流渠道进行设置，提高并发处理能力。
 
 ### 服务器死锁检测
 `Minotaur`内置了服务器消息死锁检测功能，可通过`server.WithDeadlockDetect`进行开启。
