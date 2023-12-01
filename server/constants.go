@@ -16,7 +16,3 @@ const (
 	DefaultWebsocketReadDeadline = 30 * time.Second
 	DefaultPacketWarnSize        = 1024 * 1024 * 1 // 1MB
 )
-
-const (
-	contextKeyWST = "_wst" // WebSocket 消息类型
-)

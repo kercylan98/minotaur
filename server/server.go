@@ -36,13 +36,15 @@ func New(network Network, options ...Option) *Server {
 			messagePoolSize: DefaultMessageBufferSize,
 			packetWarnSize:  DefaultPacketWarnSize,
 		},
-		option:       &option{},
-		network:      network,
-		online:       concurrent.NewBalanceMap[string, *Conn](),
-		closeChannel: make(chan struct{}, 1),
-		systemSignal: make(chan os.Signal, 1),
-		ctx:          context.Background(),
-		dispatchers:  make(map[string]*dispatcher),
+		option:           &option{},
+		network:          network,
+		online:           concurrent.NewBalanceMap[string, *Conn](),
+		closeChannel:     make(chan struct{}, 1),
+		systemSignal:     make(chan os.Signal, 1),
+		ctx:              context.Background(),
+		dispatchers:      make(map[string]*dispatcher),
+		dispatcherMember: map[string]map[string]*Conn{},
+		currDispatcher:   map[string]*dispatcher{},
 	}
 	server.event = newEvent(server)
 
@@ -91,6 +93,7 @@ type Server struct {
 	messagePool              *concurrent.Pool[*Message]            // 消息池
 	ctx                      context.Context                       // 上下文
 	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
+	systemDispatcher         *dispatcher                           // 系统消息分发器
 	network                  Network                               // 网络类型
 	addr                     string                                // 侦听地址
 	systemSignal             chan os.Signal                        // 系统信号
@@ -101,7 +104,9 @@ type Server struct {
 	isShutdown               atomic.Bool                           // 是否已关闭
 	messageCounter           atomic.Int64                          // 消息计数器
 	isRunning                bool                                  // 是否正在运行
-	dispatchers              map[string]*dispatcher                // 消息分发器
+	dispatchers              map[string]*dispatcher                // 消息分发器集合
+	dispatcherMember         map[string]map[string]*Conn           // 消息分发器包含的连接
+	currDispatcher           map[string]*dispatcher                // 当前连接所处消息分发器
 }
 
 // Run 使用特定地址运行服务器
@@ -125,6 +130,7 @@ func (slf *Server) Run(addr string) error {
 	}
 	slf.event.check()
 	slf.addr = addr
+	slf.systemDispatcher = generateDispatcher(serverSystemDispatcher, slf.dispatchMessage)
 	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
 	var messageInitFinish = make(chan struct{}, 1)
 	var connectionInitHandle = func(callback func()) {
@@ -146,8 +152,7 @@ func (slf *Server) Run(addr string) error {
 		}
 		go func() {
 			messageInitFinish <- struct{}{}
-			d, _ := slf.useDispatcher(serverSystemDispatcher)
-			d.start()
+			slf.systemDispatcher.start()
 		}()
 	}
 
@@ -200,7 +205,6 @@ func (slf *Server) Run(addr string) error {
 
 				conn := newKcpConn(slf, session)
 				slf.OnConnectionOpenedEvent(conn)
-				slf.OnConnectionOpenedAfterEvent(conn)
 
 				go func(conn *Conn) {
 					defer func() {
@@ -568,30 +572,70 @@ func (slf *Server) GetMessageCount() int64 {
 	return slf.messageCounter.Load()
 }
 
-// useDispatcher 添加消息分发器
-//   - 该函数在分发器不重复的情况下将创建分发器，当分发器已存在将直接返回
-func (slf *Server) useDispatcher(name string) (*dispatcher, bool) {
+// UseShunt 切换连接所使用的消息分流渠道，当分流渠道 name 不存在时将会创建一个新的分流渠道，否则将会加入已存在的分流渠道
+//   - 默认情况下，所有连接都使用系统通道进行消息分发，当指定消息分流渠道时，将会使用指定的消息分流渠道进行消息分发
+func (slf *Server) UseShunt(conn *Conn, name string) {
 	slf.dispatcherLock.Lock()
+	defer slf.dispatcherLock.Unlock()
 	d, exist := slf.dispatchers[name]
-	if exist {
-		slf.dispatcherLock.Unlock()
-		return d, false
+	if !exist {
+		d = generateDispatcher(name, slf.dispatchMessage)
+		go d.start()
+		slf.dispatchers[name] = d
 	}
-	d = generateDispatcher(slf.dispatchMessage)
-	slf.dispatchers[name] = d
-	slf.dispatcherLock.Unlock()
-	return d, true
+
+	curr, exist := slf.currDispatcher[conn.GetID()]
+	if exist {
+		if curr.name == name {
+			return
+		}
+
+		delete(slf.dispatcherMember[curr.name], conn.GetID())
+		if len(slf.dispatcherMember[curr.name]) == 0 {
+			curr.close()
+			delete(slf.dispatchers, curr.name)
+		}
+	}
+
+	member, exist := slf.dispatcherMember[name]
+	if !exist {
+		member = map[string]*Conn{}
+		slf.dispatcherMember[name] = member
+	}
+
+	member[conn.GetID()] = conn
+}
+
+// getConnDispatcher 获取连接所使用的消息分发器
+func (slf *Server) getConnDispatcher(conn *Conn) *dispatcher {
+	if conn == nil {
+		return slf.systemDispatcher
+	}
+	slf.dispatcherLock.RLock()
+	defer slf.dispatcherLock.RUnlock()
+	d, exist := slf.currDispatcher[conn.GetID()]
+	if exist {
+		return d
+	}
+	return slf.systemDispatcher
 }
 
 // releaseDispatcher 关闭消息分发器
-func (slf *Server) releaseDispatcher(name string) {
-	slf.dispatcherLock.Lock()
-	d, exist := slf.dispatchers[name]
-	if exist {
-		delete(slf.dispatchers, name)
-		d.close()
+func (slf *Server) releaseDispatcher(conn *Conn) {
+	if conn == nil {
+		return
 	}
-	slf.dispatcherLock.Unlock()
+	slf.dispatcherLock.Lock()
+	defer slf.dispatcherLock.Unlock()
+	d, exist := slf.currDispatcher[conn.GetID()]
+	if exist {
+		delete(slf.dispatcherMember[d.name], conn.GetID())
+		if len(slf.dispatcherMember[d.name]) == 0 {
+			d.close()
+			delete(slf.dispatchers, d.name)
+		}
+		delete(slf.currDispatcher, conn.GetID())
+	}
 }
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
@@ -602,20 +646,13 @@ func (slf *Server) pushMessage(message *Message) {
 	}
 	var dispatcher *dispatcher
 	switch message.t {
-	case MessageTypePacket:
-		if slf.shuntMatcher == nil {
-			dispatcher, _ = slf.useDispatcher(serverSystemDispatcher)
-			break
-		}
-		fallthrough
-	case MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback, MessageTypeUniqueShuntAsync, MessageTypeUniqueShuntAsyncCallback:
-		var created bool
-		dispatcher, created = slf.useDispatcher(slf.shuntMatcher(message.conn))
-		if created {
-			go dispatcher.start()
-		}
+	case MessageTypePacket,
+		MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback,
+		MessageTypeUniqueShuntAsync, MessageTypeUniqueShuntAsyncCallback,
+		MessageTypeShunt:
+		dispatcher = slf.getConnDispatcher(message.conn)
 	case MessageTypeSystem, MessageTypeAsync, MessageTypeUniqueAsync, MessageTypeAsyncCallback, MessageTypeUniqueAsyncCallback, MessageTypeError, MessageTypeTicker:
-		dispatcher, _ = slf.useDispatcher(serverSystemDispatcher)
+		dispatcher = slf.systemDispatcher
 	}
 	if dispatcher == nil {
 		return
@@ -756,7 +793,7 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 		}
 	case MessageTypeAsyncCallback, MessageTypeShuntAsyncCallback, MessageTypeUniqueAsyncCallback, MessageTypeUniqueShuntAsyncCallback:
 		msg.errHandler(msg.err)
-	case MessageTypeSystem:
+	case MessageTypeSystem, MessageTypeShunt:
 		msg.ordinaryHandler()
 	default:
 		log.Warn("Server", log.String("not support message type", msg.t.String()))
@@ -790,20 +827,12 @@ func (slf *Server) PushAsyncCallbackMessage(err error, callback func(err error),
 //   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushAsyncMessage 进行转发
 //   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
 func (slf *Server) PushShuntAsyncMessage(conn *Conn, caller func() error, callback func(err error), mark ...log.Field) {
-	if slf.shuntMatcher == nil {
-		slf.PushAsyncMessage(caller, callback)
-		return
-	}
 	slf.pushMessage(slf.messagePool.Get().castToShuntAsyncMessage(conn, caller, callback, mark...))
 }
 
 // PushShuntAsyncCallbackMessage 向特定分发器中推送 MessageTypeAsyncCallback 消息，消息执行与 MessageTypeAsyncCallback 一致
 //   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushAsyncCallbackMessage 进行转发
 func (slf *Server) PushShuntAsyncCallbackMessage(conn *Conn, err error, callback func(err error), mark ...log.Field) {
-	if slf.shuntMatcher == nil {
-		slf.PushAsyncCallbackMessage(err, callback)
-		return
-	}
 	slf.pushMessage(slf.messagePool.Get().castToShuntAsyncCallbackMessage(conn, err, callback, mark...))
 }
 
@@ -811,7 +840,7 @@ func (slf *Server) PushShuntAsyncCallbackMessage(conn *Conn, err error, callback
 //   - 当存在 WithShunt 的选项时，将会根据选项中的 shuntMatcher 进行分发，否则将在系统分发器中处理消息
 func (slf *Server) PushPacketMessage(conn *Conn, wst int, packet []byte, mark ...log.Field) {
 	slf.pushMessage(slf.messagePool.Get().castToPacketMessage(
-		&Conn{ctx: context.WithValue(conn.ctx, contextKeyWST, wst), connection: conn.connection},
+		&Conn{wst: wst, connection: conn.connection},
 		packet,
 	))
 }
@@ -828,13 +857,9 @@ func (slf *Server) PushTickerMessage(name string, caller func(), mark ...log.Fie
 }
 
 // PushShuntTickerMessage 向特定分发器中推送 MessageTypeTicker 消息，消息执行与 MessageTypeTicker 一致
-//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushTickerMessage 进行转发
+//   - 需要注意的是，当未指定 UseShunt 时，将会通过 PushTickerMessage 进行转发
 //   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
 func (slf *Server) PushShuntTickerMessage(conn *Conn, name string, caller func(), mark ...log.Field) {
-	if slf.shuntMatcher == nil {
-		slf.PushTickerMessage(name, caller)
-		return
-	}
 	slf.pushMessage(slf.messagePool.Get().castToShuntTickerMessage(conn, name, caller, mark...))
 }
 
@@ -850,23 +875,15 @@ func (slf *Server) PushUniqueAsyncCallbackMessage(unique string, err error, call
 }
 
 // PushUniqueShuntAsyncMessage 向特定分发器中推送 MessageTypeAsync 消息，消息执行与 MessageTypeAsync 一致
-//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushUniqueAsyncMessage 进行转发
+//   - 需要注意的是，当未指定 UseShunt 时，将会通过系统分流渠道进行转发
 //   - 不同的是当上一个相同的 unique 消息未执行完成时，将会忽略该消息
 func (slf *Server) PushUniqueShuntAsyncMessage(conn *Conn, unique string, caller func() error, callback func(err error), mark ...log.Field) {
-	if slf.shuntMatcher == nil {
-		slf.PushUniqueAsyncMessage(unique, caller, callback)
-		return
-	}
 	slf.pushMessage(slf.messagePool.Get().castToUniqueShuntAsyncMessage(conn, unique, caller, callback, mark...))
 }
 
 // PushUniqueShuntAsyncCallbackMessage 向特定分发器中推送 MessageTypeAsyncCallback 消息，消息执行与 MessageTypeAsyncCallback 一致
-//   - 需要注意的是，当未指定 WithShunt 时，将会通过 PushUniqueAsyncCallbackMessage 进行转发
+//   - 需要注意的是，当未指定 UseShunt 时，将会通过系统分流渠道进行转发
 func (slf *Server) PushUniqueShuntAsyncCallbackMessage(conn *Conn, unique string, err error, callback func(err error), mark ...log.Field) {
-	if slf.shuntMatcher == nil {
-		slf.PushUniqueAsyncCallbackMessage(unique, err, callback)
-		return
-	}
 	slf.pushMessage(slf.messagePool.Get().castToUniqueShuntAsyncCallbackMessage(conn, unique, err, callback, mark...))
 }
 
@@ -877,4 +894,9 @@ func (slf *Server) PushUniqueShuntAsyncCallbackMessage(conn *Conn, unique string
 //   - mark 为可选的日志标记，当发生异常时，将会在日志中进行体现
 func (slf *Server) PushErrorMessage(err error, errAction MessageErrorAction, mark ...log.Field) {
 	slf.pushMessage(slf.messagePool.Get().castToErrorMessage(err, errAction, mark...))
+}
+
+// PushShuntMessage 向特定分发器中推送 MessageTypeShunt 消息，消息执行与 MessageTypeSystem 一致，不同的是将会在特定分发器中执行
+func (slf *Server) PushShuntMessage(conn *Conn, caller func(), mark ...log.Field) {
+	slf.pushMessage(slf.messagePool.Get().castToShuntMessage(conn, caller, mark...))
 }

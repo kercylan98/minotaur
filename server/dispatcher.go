@@ -8,8 +8,9 @@ import (
 var dispatcherUnique = struct{}{}
 
 // generateDispatcher 生成消息分发器
-func generateDispatcher(handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
+func generateDispatcher(name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
 	return &dispatcher{
+		name:    name,
 		buffer:  buffer.NewUnboundedN[*Message](),
 		handler: handler,
 		uniques: haxmap.New[string, struct{}](),
@@ -18,6 +19,7 @@ func generateDispatcher(handler func(dispatcher *dispatcher, message *Message)) 
 
 // dispatcher 消息分发器
 type dispatcher struct {
+	name    string
 	buffer  *buffer.Unbounded[*Message]
 	uniques *haxmap.Map[string, struct{}]
 	handler func(dispatcher *dispatcher, message *Message)

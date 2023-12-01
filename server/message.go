@@ -44,6 +44,9 @@ const (
 
 	// MessageTypeSystem 系统消息类型
 	MessageTypeSystem
+
+	// MessageTypeShunt 普通分流消息类型
+	MessageTypeShunt
 )
 
 var messageNames = map[MessageType]string{
@@ -60,6 +63,7 @@ var messageNames = map[MessageType]string{
 	MessageTypeUniqueShuntAsync:         "MessageTypeUniqueShuntAsync",
 	MessageTypeUniqueShuntAsyncCallback: "MessageTypeUniqueShuntAsyncCallback",
 	MessageTypeSystem:                   "MessageTypeSystem",
+	MessageTypeShunt:                    "MessageTypeShunt",
 }
 
 const (
@@ -207,5 +211,11 @@ func (slf *Message) castToSystemMessage(caller func(), mark ...log.Field) *Messa
 // castToErrorMessage 将消息转换为错误消息
 func (slf *Message) castToErrorMessage(err error, action MessageErrorAction, mark ...log.Field) *Message {
 	slf.t, slf.err, slf.errAction, slf.marks = MessageTypeError, err, action, mark
+	return slf
+}
+
+// castToShuntMessage 将消息转换为分流消息
+func (slf *Message) castToShuntMessage(conn *Conn, caller func(), mark ...log.Field) *Message {
+	slf.t, slf.conn, slf.ordinaryHandler, slf.marks = MessageTypeShunt, conn, caller, mark
 	return slf
 }

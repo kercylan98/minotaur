@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/client"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/times"
 	"testing"
 	"time"
@@ -28,13 +27,6 @@ func TestNew(t *testing.T) {
 		//if srv.GetOnlineCount() > 1 {
 		//	conn.Close()
 		//}
-	})
-
-	srv.RegStartFinishEvent(func(srv *server.Server) {
-		log.Warn("启动完成")
-		log.Error("启动完成")
-		log.Info("启动完成")
-		log.Debug("启动完成")
 	})
 
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {

@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"google.golang.org/grpc"
-	"runtime/debug"
 	"time"
 )
 
@@ -29,19 +28,18 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect            time.Duration           // 是否开启死锁检测
-	supportMessageTypes       map[int]bool            // websocket模式下支持的消息类型
-	certFile, keyFile         string                  // TLS文件
-	messagePoolSize           int                     // 消息池大小
-	ticker                    *timer.Ticker           // 定时器
-	tickerAutonomy            bool                    // 定时器是否独立运行
-	connTickerSize            int                     // 连接定时器大小
-	websocketReadDeadline     time.Duration           // websocket连接超时时间
-	websocketCompression      int                     // websocket压缩等级
-	websocketWriteCompression bool                    // websocket写入压缩
-	limitLife                 time.Duration           // 限制最大生命周期
-	shuntMatcher              func(conn *Conn) string // 分流匹配器
-	packetWarnSize            int                     // 数据包大小警告
+	deadlockDetect            time.Duration // 是否开启死锁检测
+	supportMessageTypes       map[int]bool  // websocket模式下支持的消息类型
+	certFile, keyFile         string        // TLS文件
+	messagePoolSize           int           // 消息池大小
+	ticker                    *timer.Ticker // 定时器
+	tickerAutonomy            bool          // 定时器是否独立运行
+	connTickerSize            int           // 连接定时器大小
+	websocketReadDeadline     time.Duration // websocket连接超时时间
+	websocketCompression      int           // websocket压缩等级
+	websocketWriteCompression bool          // websocket写入压缩
+	limitLife                 time.Duration // 限制最大生命周期
+	packetWarnSize            int           // 数据包大小警告
 }
 
 // WithPacketWarnSize 通过数据包大小警告的方式创建服务器，当数据包大小超过指定大小时，将会输出 WARN 类型的日志
@@ -55,32 +53,6 @@ func WithPacketWarnSize(size int) Option {
 			return
 		}
 		srv.packetWarnSize = size
-	}
-}
-
-// WithShunt 通过连接数据包分流的方式创建服务器
-//   - 在分流的情况下，将会使用分流通道处理数据包，而不是使用系统通道，消息的执行将转移到对应的分流通道内进行串行处理，默认情况下所有消息都是串行处理的，适用于例如不同游戏房间并行处理，游戏房间内部消息串行处理的情况
-//   - shuntMatcher：用于匹配连接的函数，返回值为分流通道的 GUID 和是否允许创建新的分流通道，当返回不允许创建新的分流通道时，将会使用使用默认的系统通道
-//
-// 将被分流的消息类型（更多类型有待斟酌）：
-//   - MessageTypePacket
-//
-// 注意事项：
-//   - 当分流匹配过程发生 panic 将会在系统通道内处理消息，并打印日志
-func WithShunt(shuntMatcher func(conn *Conn) string) Option {
-	return func(srv *Server) {
-		if shuntMatcher == nil {
-			log.Warn("WithShunt", log.String("State", "Ignore"), log.String("Reason", "shuntMatcher is nil"))
-			return
-		}
-		srv.shuntMatcher = func(conn *Conn) string {
-			defer func() {
-				if err := recover(); err != nil {
-					log.Error("ShuntMatcher", log.String("State", "Panic"), log.Any("Error", err), log.String("Stack", string(debug.Stack())))
-				}
-			}()
-			return shuntMatcher(conn)
-		}
 	}
 }
 
