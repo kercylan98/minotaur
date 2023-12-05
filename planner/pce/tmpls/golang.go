@@ -48,13 +48,13 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 					{{.Name}}Sign,
 				{{- end}}
 			}
-			mutex sync.Mutex
+			mutex sync.RWMutex
 		)
 		
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}
-					{{.Name}} {{$.GetVariable .}} // {{.Desc}}
+					c{{.Name}} {{$.GetVariable .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
@@ -62,7 +62,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		var (
 			{{- range .Templates}}
 				{{- if $.HasIndex .}}{{- else}}
-					{{.Name}} *{{$.GetConfigName .}} // {{.Desc}}
+					c{{.Name}} *{{$.GetConfigName .}} // {{.Desc}}
 				{{- end}}
 			{{- end}}
 		)
@@ -169,7 +169,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 						{{- else}}
 							temp := new({{$.GetConfigName .}})
 						{{- end}}
-						if err := json.Unmarshal(data, &{{.Name}}); err != nil {
+						if err := json.Unmarshal(data, &c{{.Name}}); err != nil {
 							log.Error("Config", log.String("Name", "{{.Name}}"), log.Bool("Invalid", true), log.Err(err))
 							return
 						}
@@ -185,8 +185,8 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 			cs := make(map[Sign]any)
 
 			{{- range .Templates}}
-				{{.Name}} = _{{.Name}}
-				cs[{{.Name}}Sign] = {{.Name}}
+				c{{.Name}} = _{{.Name}}
+				cs[{{.Name}}Sign] = c{{.Name}}
 			{{- end}}
 
 			configs.Store(&cs)
@@ -194,8 +194,8 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 
 		// GetConfigs 获取所有配置
 		func GetConfigs() map[Sign]any {
-			mutex.Lock()
-			defer mutex.Unlock()
+			mutex.RLock()
+			defer mutex.RUnlock()
 			return hash.Copy(*configs.Load())
 		}
 
@@ -210,6 +210,25 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 			defer mutex.Unlock()
 			handle(hash.Copy(*configs.Load()))
 		}	
+
+		{{- range .Templates}}
+			{{- if $.HasIndex .}}
+				// {{.Name}} 获取{{.Desc}}
+				func {{.Name}}() {{$.GetVariable .}} {	
+					mutex.RLock()
+					defer mutex.RUnlock()	
+					return c{{.Name}}
+				}	
+			{{- else}}	
+				// {{.Name}} 获取{{.Desc}}
+				func {{.Name}}() *{{$.GetConfigName .}} {	
+					mutex.RLock()
+					defer mutex.RUnlock()	
+					return c{{.Name}}	
+				}	
+			{{- end}}
+		{{- end}}	
+
 	`, slf)
 }
 
