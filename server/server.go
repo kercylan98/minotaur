@@ -695,6 +695,7 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 			case <-ctx.Done():
 				if err := ctx.Err(); err == context.DeadlineExceeded {
 					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("SuspectedDeadlock", msg))
+					slf.OnDeadlockDetectEvent(msg)
 				}
 			}
 		}(ctx, msg)
