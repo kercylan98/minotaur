@@ -2,7 +2,6 @@ package file
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/kercylan98/minotaur/utils/slice"
 	"io"
 	"os"
@@ -188,7 +187,6 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 			}
 			endMutex.Unlock()
 			r := io.NewSectionReader(file, chunk[0], e-chunk[0])
-			fmt.Println(chunk[0], e)
 
 			scanner := bufio.NewScanner(r)
 			for scanner.Scan() {
