@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.3.5](https://github.com/kercylan98/minotaur/compare/v0.3.4...v0.3.5) (2023-12-11)
+
+
+### Features | 新特性
+
+* maths 新增 MakeLastDigitsZero 函数，用于将传入数字的末位 n 位设置为 0 ([f060af2](https://github.com/kercylan98/minotaur/commit/f060af2b7d4beb9249de8bc0add72042578a3f7c))
+* server 新增 DeadlockDetectEvent，以便于发生疑似死锁时刻能够执行通知等行为 ([b4ade2c](https://github.com/kercylan98/minotaur/commit/b4ade2c003eabb73a5f8bfe292c8f4487dfbfbaa))
+* super 包新增 NumberToRome 函数，支持将整数转为罗马数字 ([5ffd816](https://github.com/kercylan98/minotaur/commit/5ffd8163f0ff1c6fb70cf8c3ac6e23383b59b08c))
+
+
+### Bug Fixes | 修复
+
+* 修复 file.ReadLineWithParallel 函数由于错误的读取数量导致重复读和效率低下的问题 ([f19e7cc](https://github.com/kercylan98/minotaur/commit/f19e7ccefa846ff36a300a965a28046ee3147ec7))
+* 修复 file.ReadLineWithParallel 函数返回的偏移值不准确的问题 ([f3ae5a3](https://github.com/kercylan98/minotaur/commit/f3ae5a3957b0984bf345077f699ff9aaf58c3763))
+* 修复 log 日志切割不生效问题 ([9068c57](https://github.com/kercylan98/minotaur/commit/9068c57299322a7ddca5285910f8cbf55908a73e))
+
+
+### Docs | 文档优化
+
+* README.md 分流服务器说明优化 ([342d3cd](https://github.com/kercylan98/minotaur/commit/342d3cd75f8b1975375fa3d93a218cd54236a757))
+
+
+### Code Refactoring | 重构
+
+* 调整配置导表工具中 Go 配置文件导出结构，将直接读取更改为线程安全的读取 ([8b2f2aa](https://github.com/kercylan98/minotaur/commit/8b2f2aa1683e013a5ec25d557498f214a7ad88a5))
+
+
+### Tests | 新增或优化测试用例
+
+* super 包中新增版本比较相关的测试用例 ([52c92c8](https://github.com/kercylan98/minotaur/commit/52c92c884493bcdb5c02f2e410eb0123bc2ce97a))
+
 ## [0.3.4](https://github.com/kercylan98/minotaur/compare/v0.3.3...v0.3.4) (2023-12-01)
 
 
