@@ -12,8 +12,10 @@ type Encoder struct {
 	conf  *Config
 }
 
-func (slf *Encoder) Split(config *lumberjack.Logger) *Encoder {
-	slf.cores = append(slf.cores, zapcore.NewCore(slf.e, zapcore.AddSync(config), zapcore.DebugLevel))
+func (slf *Encoder) Split(config *lumberjack.Logger, level LevelEnabler) *Encoder {
+	slf.cores = append(slf.cores, zapcore.NewCore(slf.e,
+		zapcore.NewMultiWriteSyncer(zapcore.AddSync(config)),
+		level))
 	return slf
 }
 
