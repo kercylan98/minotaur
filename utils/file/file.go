@@ -181,12 +181,12 @@ func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(str
 			defer wg.Done()
 
 			endMutex.Lock()
-			e := chunk[1] - chunk[0]
+			e := chunk[1]
 			if e > end {
 				end = e + 1
 			}
 			endMutex.Unlock()
-			r := io.NewSectionReader(file, chunk[0], e)
+			r := io.NewSectionReader(file, chunk[0], e-chunk[0])
 
 			scanner := bufio.NewScanner(r)
 			for scanner.Scan() {

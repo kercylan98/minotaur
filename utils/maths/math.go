@@ -204,3 +204,14 @@ func IsOdd[V generic.Integer](n V) bool {
 func IsEven[V generic.Integer](n V) bool {
 	return 0 == (int64(n) & 1)
 }
+
+// MakeLastDigitsZero 返回一个新的数，其中 num 的最后 digits 位数被设为零。
+//   - 函数首先创建一个 10 的 digits 次方的遮罩，然后通过整除和乘以这个遮罩来使 num 的最后 digits 位归零。
+//   - 当 T 类型为浮点型时，将被向下取整后再进行转换
+func MakeLastDigitsZero[T generic.Number](num T, digits int) T {
+	var mask int64 = 1
+	for i := 0; i < digits; i++ {
+		mask *= 10
+	}
+	return T(int64(num) / mask * mask)
+}

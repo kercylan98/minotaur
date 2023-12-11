@@ -31,6 +31,7 @@ type ShuntChannelClosedEventHandler func(srv *Server, guid int64)
 type ConnectionPacketPreprocessEventHandler func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
 type MessageExecBeforeEventHandler func(srv *Server, message *Message) bool
 type MessageReadyEventHandler func(srv *Server)
+type OnDeadlockDetectEventHandler func(srv *Server, message *Message)
 
 func newEvent(srv *Server) *event {
 	return &event{
@@ -50,6 +51,7 @@ func newEvent(srv *Server) *event {
 		connectionPacketPreprocessEventHandlers: slice.NewPriority[ConnectionPacketPreprocessEventHandler](),
 		messageExecBeforeEventHandlers:          slice.NewPriority[MessageExecBeforeEventHandler](),
 		messageReadyEventHandlers:               slice.NewPriority[MessageReadyEventHandler](),
+		dedeadlockDetectEventHandlers:           slice.NewPriority[OnDeadlockDetectEventHandler](),
 	}
 }
 
@@ -70,6 +72,7 @@ type event struct {
 	connectionPacketPreprocessEventHandlers *slice.Priority[ConnectionPacketPreprocessEventHandler]
 	messageExecBeforeEventHandlers          *slice.Priority[MessageExecBeforeEventHandler]
 	messageReadyEventHandlers               *slice.Priority[MessageReadyEventHandler]
+	dedeadlockDetectEventHandlers           *slice.Priority[OnDeadlockDetectEventHandler]
 
 	consoleCommandEventHandlers        map[string]*slice.Priority[ConsoleCommandEventHandler]
 	consoleCommandEventHandlerInitOnce sync.Once
@@ -431,6 +434,27 @@ func (slf *event) OnMessageReadyEvent() {
 	}()
 	slf.messageReadyEventHandlers.RangeValue(func(index int, value MessageReadyEventHandler) bool {
 		value(slf.Server)
+		return true
+	})
+}
+
+// RegDeadlockDetectEvent 在死锁检测触发时立即执行被注册的事件处理函数
+func (slf *event) RegDeadlockDetectEvent(handler OnDeadlockDetectEventHandler, priority ...int) {
+	slf.dedeadlockDetectEventHandlers.Append(handler, slice.GetValue(priority, 0))
+}
+
+func (slf *event) OnDeadlockDetectEvent(message *Message) {
+	if slf.dedeadlockDetectEventHandlers.Len() == 0 {
+		return
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error("Server", log.String("OnDeadlockDetectEvent", fmt.Sprintf("%v", err)))
+			debug.PrintStack()
+		}
+	}()
+	slf.dedeadlockDetectEventHandlers.RangeValue(func(index int, value OnDeadlockDetectEventHandler) bool {
+		value(slf.Server, message)
 		return true
 	})
 }
