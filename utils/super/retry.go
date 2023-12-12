@@ -1,6 +1,7 @@
 package super
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -46,8 +47,9 @@ func RetryByRule(f func() error, rule func(count int) time.Duration) error {
 //   - maxDelay：最大延迟
 //   - multiplier：延迟时间的乘数，通常为 2
 //   - randomization：延迟时间的随机化因子，通常为 0.5
-func RetryByExponentialBackoff(f func() error, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64) error {
-	return ConditionalRetryByExponentialBackoff(f, nil, maxRetries, baseDelay, maxDelay, multiplier, randomization)
+//   - ignoreErrors：忽略的错误，当 f 返回的错误在 ignoreErrors 中时，将不会进行重试
+func RetryByExponentialBackoff(f func() error, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64, ignoreErrors ...error) error {
+	return ConditionalRetryByExponentialBackoff(f, nil, maxRetries, baseDelay, maxDelay, multiplier, randomization, ignoreErrors...)
 }
 
 // ConditionalRetryByExponentialBackoff 该函数与 RetryByExponentialBackoff 类似，但是可以被中断
@@ -55,7 +57,7 @@ func RetryByExponentialBackoff(f func() error, maxRetries int, baseDelay, maxDel
 //
 // 该函数通常用于在重试过程中，需要中断重试的场景，例如：
 //   - 用户请求开始游戏，由于网络等情况，进入重试状态。此时用户再次发送开始游戏请求，此时需要中断之前的重试，避免重复进入游戏
-func ConditionalRetryByExponentialBackoff(f func() error, cond func() bool, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64) error {
+func ConditionalRetryByExponentialBackoff(f func() error, cond func() bool, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64, ignoreErrors ...error) error {
 	retry := 0
 	for {
 		if cond != nil && !cond() {
@@ -65,9 +67,14 @@ func ConditionalRetryByExponentialBackoff(f func() error, cond func() bool, maxR
 		if err == nil {
 			return nil
 		}
+		for _, ignore := range ignoreErrors {
+			if errors.Is(err, ignore) {
+				return err
+			}
+		}
 
 		if retry >= maxRetries {
-			return fmt.Errorf("max retries reached: %v", err)
+			return fmt.Errorf("max retries reached: %w", err)
 		}
 
 		delay := float64(baseDelay) * math.Pow(multiplier, float64(retry))
