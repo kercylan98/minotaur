@@ -81,20 +81,23 @@ func (slf *Ticker) Cron(name, expression string, handleFunc interface{}, args ..
 
 // CronByInstantly 与 Cron 相同，但是会立即执行一次
 func (slf *Ticker) CronByInstantly(name, expression string, handleFunc interface{}, args ...interface{}) {
-	var values = make([]reflect.Value, len(args))
-	for i, v := range args {
-		values[i] = reflect.ValueOf(v)
-	}
-	f := reflect.ValueOf(handleFunc)
-	slf.lock.RLock()
-	defer slf.lock.RUnlock()
-	if slf.handle != nil {
-		slf.handle(name, func() {
+	func(name, expression string, handleFunc interface{}, args ...interface{}) {
+		var values = make([]reflect.Value, len(args))
+		for i, v := range args {
+			values[i] = reflect.ValueOf(v)
+		}
+		f := reflect.ValueOf(handleFunc)
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+		if slf.handle != nil {
+			slf.handle(name, func() {
+				f.Call(values)
+			})
+		} else {
 			f.Call(values)
-		})
-	} else {
-		f.Call(values)
-	}
+		}
+	}(name, expression, handleFunc, args...)
+
 	slf.Cron(name, expression, handleFunc, args...)
 }
 
