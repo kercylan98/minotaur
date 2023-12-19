@@ -676,8 +676,8 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 		var fields = make([]log.Field, 0, len(message.marks)+4)
 		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
 		fields = append(fields, message.marks...)
-		fields = append(fields, log.Stack("stack"))
-		log.Warn("Server", fields...)
+		//fields = append(fields, log.Stack("stack"))
+		log.Warn("ServerLowMessage", fields...)
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
