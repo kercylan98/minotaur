@@ -27,7 +27,12 @@ type Signed interface {
 
 // Unsigned 无符号整数类型
 type Unsigned interface {
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+	UnsignedNumber | ~uintptr
+}
+
+// UnsignedNumber 无符号数字类型
+type UnsignedNumber interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
 // Float 浮点类型
