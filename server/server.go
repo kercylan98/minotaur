@@ -596,6 +596,7 @@ func (slf *Server) UseShunt(conn *Conn, name string) {
 			delete(slf.dispatchers, curr.name)
 		}
 	}
+	slf.currDispatcher[conn.GetID()] = d
 
 	member, exist := slf.dispatcherMember[name]
 	if !exist {

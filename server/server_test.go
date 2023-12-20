@@ -24,6 +24,9 @@ func TestNew(t *testing.T) {
 		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
 	})
 	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		srv.UseShunt(conn, "1")
+		srv.UseShunt(conn, "2")
+		srv.UseShunt(conn, "3")
 		//if srv.GetOnlineCount() > 1 {
 		//	conn.Close()
 		//}
