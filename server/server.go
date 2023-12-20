@@ -693,7 +693,7 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 		go func(ctx context.Context, msg *Message) {
 			select {
 			case <-ctx.Done():
-				if err := ctx.Err(); err == context.DeadlineExceeded {
+				if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("SuspectedDeadlock", msg))
 					slf.OnDeadlockDetectEvent(msg)
 				}
@@ -708,9 +708,7 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 				stack := string(debug.Stack())
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
 				fmt.Println(stack)
-				if e, ok := err.(error); ok {
-					slf.OnMessageErrorEvent(msg, e)
-				}
+				slf.OnMessageErrorEvent(msg, fmt.Errorf("%v", err))
 			}
 			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
 				dispatcher.antiUnique(msg.name)
@@ -729,7 +727,9 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 
 	switch msg.t {
 	case MessageTypePacket:
-		if !slf.OnConnectionPacketPreprocessEvent(msg.conn, msg.packet, func(newPacket []byte) { msg.packet = newPacket }) {
+		if !slf.OnConnectionPacketPreprocessEvent(msg.conn, msg.packet, func(newPacket []byte) {
+			msg.packet = newPacket
+		}) {
 			slf.OnConnectionReceivePacketEvent(msg.conn, msg.packet)
 		}
 	case MessageTypeError:
