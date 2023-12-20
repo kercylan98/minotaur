@@ -702,28 +702,31 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	}
 
 	present := time.Now()
-	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
-		defer func(msg *Message) {
+	defer func(msg *Message) {
+		super.Handle(cancel)
+		if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
 				fmt.Println(stack)
-				slf.OnMessageErrorEvent(msg, fmt.Errorf("%v", err))
+				e, ok := err.(error)
+				if !ok {
+					e = fmt.Errorf("%v", err)
+				}
+				slf.OnMessageErrorEvent(msg, e)
 			}
 			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
 				dispatcher.antiUnique(msg.name)
 			}
 
-			super.Handle(cancel)
 			slf.low(msg, present, time.Millisecond*100)
 			slf.messageCounter.Add(-1)
 
 			if !slf.isShutdown.Load() {
 				slf.messagePool.Release(msg)
 			}
-
-		}(msg)
-	}
+		}
+	}(msg)
 
 	switch msg.t {
 	case MessageTypePacket:
@@ -753,9 +756,11 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 					stack := string(debug.Stack())
 					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
 					fmt.Println(stack)
-					if e, ok := err.(error); ok {
-						slf.OnMessageErrorEvent(msg, e)
+					e, ok := err.(error)
+					if !ok {
+						e = fmt.Errorf("%v", err)
 					}
+					slf.OnMessageErrorEvent(msg, e)
 				}
 				super.Handle(cancel)
 				slf.low(msg, present, time.Second)
