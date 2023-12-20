@@ -352,6 +352,10 @@ func (slf *Server) Run(addr string) error {
 		return ErrCanNotSupportNetwork
 	}
 
+	if slf.multiple == nil && slf.network != NetworkKcp {
+		kcp.SystemTimedSched.Close()
+	}
+
 	<-messageInitFinish
 	close(messageInitFinish)
 	messageInitFinish = nil
