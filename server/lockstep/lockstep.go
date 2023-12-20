@@ -123,6 +123,9 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		return
 	}
 	slf.running = true
+	if slf.ticker == nil {
+		slf.ticker = timer.GetTicker(10)
+	}
 	slf.runningLock.Unlock()
 	slf.currentFrame = slf.initFrame
 
@@ -175,7 +178,10 @@ func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 	slf.running = false
 	slf.runningLock.Unlock()
 
-	slf.ticker.StopTimer("lockstep")
+	if slf.ticker != nil {
+		slf.ticker.Release()
+	}
+	slf.ticker = nil
 
 	slf.OnLockstepStoppedEvent()
 

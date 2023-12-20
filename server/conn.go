@@ -277,7 +277,7 @@ func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 }
 
 func (slf *Conn) init() {
-	if slf.server.ticker != nil {
+	if slf.server.ticker != nil && slf.server.connTickerSize > 0 {
 		if slf.server.tickerAutonomy {
 			slf.ticker = timer.GetTicker(slf.server.connTickerSize)
 		} else {
@@ -335,6 +335,9 @@ func (slf *Conn) init() {
 func (slf *Conn) Close(err ...error) {
 	slf.mu.Lock()
 	if slf.closed {
+		if slf.ticker != nil {
+			slf.ticker.Release()
+		}
 		slf.mu.Unlock()
 		return
 	}

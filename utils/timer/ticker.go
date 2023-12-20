@@ -38,7 +38,11 @@ func (slf *Ticker) Release() {
 	}
 	slf.lock.Unlock()
 
-	slf.timer.tickers = append(slf.timer.tickers, slf)
+	if len(slf.timer.tickers) < tickerPoolSize {
+		slf.timer.tickers = append(slf.timer.tickers, slf)
+	} else {
+		slf.wheel.Stop()
+	}
 }
 
 // StopTimer 停止特定名称的调度器
