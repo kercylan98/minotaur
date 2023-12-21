@@ -279,9 +279,9 @@ func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
 func (slf *Conn) init() {
 	if slf.server.ticker != nil && slf.server.connTickerSize > 0 {
 		if slf.server.tickerAutonomy {
-			slf.ticker = timer.GetTicker(slf.server.connTickerSize)
+			slf.ticker = slf.server.tickerPool.GetTicker(slf.server.connTickerSize)
 		} else {
-			slf.ticker = timer.GetTicker(slf.server.connTickerSize, timer.WithCaller(func(name string, caller func()) {
+			slf.ticker = slf.server.tickerPool.GetTicker(slf.server.connTickerSize, timer.WithCaller(func(name string, caller func()) {
 				slf.server.PushShuntTickerMessage(slf, name, caller)
 			}))
 		}

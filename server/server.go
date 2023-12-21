@@ -493,6 +493,9 @@ func (slf *Server) shutdown(err error) {
 			log.Error("Server", log.Err(shutdownErr))
 		}
 	}
+	if slf.tickerPool != nil {
+		slf.tickerPool.Release()
+	}
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
