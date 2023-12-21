@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.6](https://github.com/kercylan98/minotaur/compare/v0.3.5...v0.3.6) (2023-12-21)
+
+
+### Other | 其他更改
+
+* Russh vulnerable to Prefix Truncation Attack against ChaCha20-Poly1305 and Encrypt-then-MAC [#7](https://github.com/kercylan98/minotaur/issues/7) ([34a680e](https://github.com/kercylan98/minotaur/commit/34a680e710c1925aac94cc68d8aa800f9cee3a65))
+* 优化 server 包消息分发 cancel 处理逻辑 ([e60017c](https://github.com/kercylan98/minotaur/commit/e60017c0ebe7d762a388dc1d51bee5f2306b16d5))
+* 优化 server 包消息分发时对于 cancel 的处理逻辑 ([2ff7db9](https://github.com/kercylan98/minotaur/commit/2ff7db96d274b0c039830702f5a5d4365a658e5c))
+* 优化 server 包部分 error 的处理方式 ([82ecb98](https://github.com/kercylan98/minotaur/commit/82ecb983971710fcc02b64e17bca13254bc799d0))
+* 修改 server.WithTicker 将不再使用标准池的定时器，而是自行维护定时器池 ([4f3b4eb](https://github.com/kercylan98/minotaur/commit/4f3b4eb1d5a0051e7d57217cb07c0c973359d82c))
+
+
+### Features | 新特性
+
+* generic 包新增 Unsigned 表示无符号整数的约束类型 ([9371890](https://github.com/kercylan98/minotaur/commit/9371890638ba8194278b4222d778768aa9025f80))
+* slice 包新增 PagedSlice 结构，它通过分页管理内存并减少频繁的内存分配来提高性能 ([7069431](https://github.com/kercylan98/minotaur/commit/70694311c6fa4b939b5d2f320da65edfda2a8b9b))
+* super 包新增比特掩码类型 BitMask，可通过 super.Mask 函数创建。该类型可替代 super.Permission ([38cc312](https://github.com/kercylan98/minotaur/commit/38cc3129ba15d4ff7f06782c74d990834bbc0471))
+* super.RetryByExponentialBackoff 和 super.ConditionalRetryByExponentialBackoff 支持设置忽略的错误，当返回忽略的错误时将不再进行重试 ([5714a43](https://github.com/kercylan98/minotaur/commit/5714a437cca056df300bb1ee9133d974dd0473fe))
+* timer.Pool 新增 Release 函数，可主动释放池中的所有定时器及池子本身 ([ae98963](https://github.com/kercylan98/minotaur/commit/ae98963ecc168f099d03e7c379736c2d567b6ace))
+* timer.Ticker 新增 CronByInstantly 函数，支持在设置定时任务前先执行一次任务 ([12619b5](https://github.com/kercylan98/minotaur/commit/12619b5fa4008a803eb2f62947732de7ad9b0d7f))
+* 优化 timer 包的 GetTicker 获取到的为内置定时器池中的定时器，可通过 timer.NewTimer 创建定时器池另行使用 ([1ae1c8d](https://github.com/kercylan98/minotaur/commit/1ae1c8d65c6f9ef11a8455cf1f13354dea624fc7))
+* 移除 super.BitMask 以 super.BitSet 替代，super.BitSet 是一个可动态增长的比特位集合 ([05c65e9](https://github.com/kercylan98/minotaur/commit/05c65e9efdc44a416fe7293d3f407072044c6d8f))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 包未使用 KCP 服务器时会有额外的定时器损耗的问题 ([4d72e8c](https://github.com/kercylan98/minotaur/commit/4d72e8cbcba656dca7a3938275e9bd01d3116015))
+* 修复 server.Server 在使用 UseShunt 函数时由于未记录当前分发器导致的内存泄漏问题 ([7e09229](https://github.com/kercylan98/minotaur/commit/7e092293301628c28be4191eacc623d23978d955))
+* 修复 timer.Ticker 和 lockstep 包存在的内存泄漏问题 ([508e30f](https://github.com/kercylan98/minotaur/commit/508e30fb5bf7c5915db90065523e76a9ed3852ef))
+* 修复 timer.Ticker 的 CronByInstantly 函数导致的死锁问题 ([8a8610f](https://github.com/kercylan98/minotaur/commit/8a8610f756a6e17934c0ea5d908edccdffab5ee5))
+
+
+### Styling | 可读性优化
+
+* 修改 timer.Timer 名字为 timer.Pool ([50181c7](https://github.com/kercylan98/minotaur/commit/50181c7ecbcd2f9d37c9a3ceceed88dc6143444f))
+* 移除 server 慢消息无意义的堆栈信息，优化消息的 String 函数返回的不再是简单的消息类型 ([ba24b09](https://github.com/kercylan98/minotaur/commit/ba24b09c71afba891b888bc51308ba9e4503c325))
+
+
+### Performance Improvements | 性能优化
+
+* 移除 lockstep 对 timer.Ticket 的依赖，更改为 time.Ticker 实现，减少不必要的资源占用 ([9038bfc](https://github.com/kercylan98/minotaur/commit/9038bfc2b529934866555a57dd36fae5d788ad04))
+
 ## [0.3.5](https://github.com/kercylan98/minotaur/compare/v0.3.4...v0.3.5) (2023-12-11)
 
 
