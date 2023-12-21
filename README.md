@@ -5,24 +5,23 @@
 ![](https://komarev.com/ghpvc/?username=kercylan98)
 <a target="_blank" href="https://goreportcard.com/report/github.com/kercylan98/minotaur"><img src="https://goreportcard.com/badge/github.com/kercylan98/minotaur?style=flat-square" /></a>
 
-Minotaur 是一个基于Golang 1.20 编写的服务端开发支持库，其中采用了大量泛型设计，用于游戏服务器开发。
+Minotaur 是一个基于 Golang 1.20 编写的服务端开发支持库，其中采用了大量泛型设计，主要被用于游戏服务器开发，但由于拥有大量通用的功能，也常被用于 WEB 开发。
 
-## 目录结构概况
+## 特色内容
 ```mermaid
 mindmap
   root((Minotaur))
-    /configuration 配置管理功能
-    /game 游戏通用功能
-      /builtin 游戏通用功能内置实现
-    /notify 通知功能接口定义
-    /planner 策划相关工具目录
-      /pce 配置导表功能实现
-    /server 网络服务器支持
-      /client 长连接客户端
-      /lockstep 帧同步组件
-      /router 消息路由器
-    /utils 工具结构函数目录
-    /examples 示例代码目录
+    所有功能均为可选的，引入即用
+    基于动态分流的异步消息支持
+    兼容各类实现的帧同步组件
+    多级消息路由器，轻松搭建跨服服务
+    开箱即用的配置导表工具
+    强大的 utils 包
+      常用的切片、map、随机、时间、数学、文件、类型转换等工具函数
+      适用于定时、编排、组合、匹配、校验等行为的组件
+      版本比较、重试、耗时计数等（super package）
+    活动、任务、AOI、寻路、战斗、移动、房间等通用游戏组件
+    针对扑克牌玩法的大量支持
 ```
 
 ## Server 架构预览
