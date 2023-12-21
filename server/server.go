@@ -707,9 +707,9 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	}
 
 	present := time.Now()
-	defer func(msg *Message) {
-		super.Handle(cancel)
-		if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
+	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
+		defer func(msg *Message) {
+			super.Handle(cancel)
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
@@ -730,8 +730,12 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 			if !slf.isShutdown.Load() {
 				slf.messagePool.Release(msg)
 			}
+		}(msg)
+	} else {
+		if cancel != nil {
+			defer cancel()
 		}
-	}(msg)
+	}
 
 	switch msg.t {
 	case MessageTypePacket:
