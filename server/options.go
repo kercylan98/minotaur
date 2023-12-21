@@ -32,6 +32,7 @@ type runtime struct {
 	supportMessageTypes       map[int]bool  // websocket模式下支持的消息类型
 	certFile, keyFile         string        // TLS文件
 	messagePoolSize           int           // 消息池大小
+	tickerPool                *timer.Pool   // 定时器池
 	ticker                    *timer.Ticker // 定时器
 	tickerAutonomy            bool          // 定时器是否独立运行
 	connTickerSize            int           // 连接定时器大小
@@ -130,17 +131,22 @@ func WithWebsocketReadDeadline(t time.Duration) Option {
 }
 
 // WithTicker 通过定时器创建服务器，为服务器添加定时器功能
+//   - poolSize：指定服务器定时器池大小，当池子内的定时器数量超出该值后，多余的定时器在释放时将被回收，该值小于等于 0 时将使用 timer.DefaultTickerPoolSize
 //   - size：服务器定时器时间轮大小
-//   - connSize：服务器连接定时器时间轮大小
+//   - connSize：服务器连接定时器时间轮大小，当该值小于等于 0 的时候，在新连接建立时将不再为其创建定时器
 //   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
-func WithTicker(size, connSize int, autonomy bool) Option {
+func WithTicker(poolSize, size, connSize int, autonomy bool) Option {
 	return func(srv *Server) {
+		if poolSize <= 0 {
+			poolSize = timer.DefaultTickerPoolSize
+		}
+		srv.tickerPool = timer.NewPool(poolSize)
 		srv.connTickerSize = connSize
 		srv.tickerAutonomy = autonomy
 		if !autonomy {
-			srv.ticker = timer.GetTicker(size)
+			srv.ticker = srv.tickerPool.GetTicker(size)
 		} else {
-			srv.ticker = timer.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
+			srv.ticker = srv.tickerPool.GetTicker(size, timer.WithCaller(func(name string, caller func()) {
 				srv.PushTickerMessage(name, caller)
 			}))
 		}

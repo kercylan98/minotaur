@@ -11,7 +11,7 @@ import (
 
 func TestNew(t *testing.T) {
 	//limiter := rate.NewLimiter(rate.Every(time.Second), 100)
-	srv := server.New(server.NetworkWebsocket, server.WithMessageBufferSize(1024*1024), server.WithPProf())
+	srv := server.New(server.NetworkWebsocket, server.WithTicker(-1, 200, 10, false), server.WithMessageBufferSize(1024*1024), server.WithPProf())
 	//srv.RegMessageExecBeforeEvent(func(srv *server.Server, message *server.Message) bool {
 	//	t, c := srv.TimeoutContext(time.Second * 5)
 	//	defer c()
@@ -24,6 +24,9 @@ func TestNew(t *testing.T) {
 		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
 	})
 	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		srv.UseShunt(conn, "1")
+		srv.UseShunt(conn, "2")
+		srv.UseShunt(conn, "3")
 		//if srv.GetOnlineCount() > 1 {
 		//	conn.Close()
 		//}

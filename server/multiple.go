@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
+	"github.com/xtaci/kcp-go/v5"
 	"math"
 	"os"
 	"os/signal"
@@ -35,8 +36,12 @@ func (slf *MultipleServer) Run() {
 		close(runtimeExceptionChannel)
 	}()
 	var wait sync.WaitGroup
+	var hasKcp bool
 	for i := 0; i < len(slf.servers); i++ {
 		wait.Add(1)
+		if slf.servers[i].network == NetworkKcp {
+			hasKcp = true
+		}
 		go func(address string, server *Server) {
 			var lock sync.Mutex
 			var startFinish bool
@@ -62,6 +67,9 @@ func (slf *MultipleServer) Run() {
 		}(slf.addresses[i], slf.servers[i])
 	}
 	wait.Wait()
+	if !hasKcp {
+		kcp.SystemTimedSched.Close()
+	}
 
 	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
 	ip, _ := network.IP()

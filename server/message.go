@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/super"
 )
 
 const (
@@ -128,7 +129,17 @@ func (slf *Message) MessageType() MessageType {
 
 // String 返回消息的字符串表示
 func (slf *Message) String() string {
-	return slf.t.String()
+	var info = struct {
+		Type   string `json:"type,omitempty"`
+		Name   string `json:"name,omitempty"`
+		Packet string `json:"packet,omitempty"`
+	}{
+		Type:   slf.t.String(),
+		Name:   slf.name,
+		Packet: string(slf.packet),
+	}
+
+	return string(super.MarshalJSON(info))
 }
 
 // String 返回消息类型的字符串表示

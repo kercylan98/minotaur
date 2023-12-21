@@ -11,10 +11,11 @@ import (
 
 // Ticker 定时器
 type Ticker struct {
-	timer  *Timer
+	timer  *Pool
 	wheel  *timingwheel.TimingWheel
 	timers map[string]*Scheduler
 	lock   sync.RWMutex
+
 	handle func(name string, caller func())
 	mark   string
 }
@@ -25,7 +26,7 @@ func (slf *Ticker) Mark() string {
 	return slf.mark
 }
 
-// Release 释放定时器，并将定时器重新放回 Timer 池中
+// Release 释放定时器，并将定时器重新放回 Pool 池中
 func (slf *Ticker) Release() {
 	slf.timer.lock.Lock()
 	defer slf.timer.lock.Unlock()
@@ -38,7 +39,11 @@ func (slf *Ticker) Release() {
 	}
 	slf.lock.Unlock()
 
-	slf.timer.tickers = append(slf.timer.tickers, slf)
+	if len(slf.timer.tickers) < tickerPoolSize && !slf.timer.closed {
+		slf.timer.tickers = append(slf.timer.tickers, slf)
+	} else {
+		slf.wheel.Stop()
+	}
 }
 
 // StopTimer 停止特定名称的调度器
@@ -77,6 +82,28 @@ func (slf *Ticker) GetSchedulers() []string {
 func (slf *Ticker) Cron(name, expression string, handleFunc interface{}, args ...interface{}) {
 	expr := cronexpr.MustParse(expression)
 	slf.loop(name, 0, 0, expr, 0, handleFunc, args...)
+}
+
+// CronByInstantly 与 Cron 相同，但是会立即执行一次
+func (slf *Ticker) CronByInstantly(name, expression string, handleFunc interface{}, args ...interface{}) {
+	func(name, expression string, handleFunc interface{}, args ...interface{}) {
+		var values = make([]reflect.Value, len(args))
+		for i, v := range args {
+			values[i] = reflect.ValueOf(v)
+		}
+		f := reflect.ValueOf(handleFunc)
+		slf.lock.RLock()
+		defer slf.lock.RUnlock()
+		if slf.handle != nil {
+			slf.handle(name, func() {
+				f.Call(values)
+			})
+		} else {
+			f.Call(values)
+		}
+	}(name, expression, handleFunc, args...)
+
+	slf.Cron(name, expression, handleFunc, args...)
 }
 
 // After 设置一个在特定时间后运行一次的调度器

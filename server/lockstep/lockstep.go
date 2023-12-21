@@ -2,7 +2,6 @@ package lockstep
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/utils/timer"
 	"sync"
 	"time"
 )
@@ -11,7 +10,6 @@ import (
 func NewLockstep[ClientID comparable, Command any](options ...Option[ClientID, Command]) *Lockstep[ClientID, Command] {
 	lockstep := &Lockstep[ClientID, Command]{
 		currentFrame: -1,
-		ticker:       timer.GetTicker(10),
 		frameRate:    15,
 		serialization: func(frame int64, commands []Command) []byte {
 			frameStruct := struct {
@@ -55,7 +53,7 @@ type Lockstep[ClientID comparable, Command any] struct {
 
 	frameCache     map[int64][]byte // 帧序列化缓存
 	frameCacheLock sync.RWMutex     // 帧序列化缓存锁
-	ticker         *timer.Ticker    // 定时器
+	ticker         *time.Ticker     // 定时器
 
 	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
@@ -123,46 +121,52 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 		return
 	}
 	slf.running = true
+	if slf.ticker == nil {
+		slf.ticker = time.NewTicker(time.Second / time.Duration(slf.frameRate))
+	}
 	slf.runningLock.Unlock()
 	slf.currentFrame = slf.initFrame
 
-	slf.ticker.Loop("lockstep", timer.Instantly, time.Second/time.Duration(slf.frameRate), timer.Forever, func() {
-
-		slf.currentFrameLock.RLock()
-		if slf.frameLimit > 0 && slf.currentFrame >= slf.frameLimit {
-			slf.currentFrameLock.RUnlock()
-			slf.StopBroadcast()
-			return
-		}
-		slf.currentFrameLock.RUnlock()
-		slf.currentFrameLock.Lock()
-		slf.currentFrame++
-		currentFrame := slf.currentFrame
-		currentCommands := slf.currentCommands
-		slf.currentCommands = make([]Command, 0, len(currentCommands))
-		slf.currentFrameLock.Unlock()
-
-		slf.clientLock.RLock()
-		defer slf.clientLock.RUnlock()
-		slf.frameCacheLock.Lock()
-		defer slf.frameCacheLock.Unlock()
-
-		for clientId, client := range slf.clients {
-			var i = slf.clientFrame[clientId]
-			if i < slf.initFrame {
-				i = slf.initFrame
-			}
-			for ; i < currentFrame; i++ {
-				cache, exist := slf.frameCache[i]
-				if !exist {
-					cache = slf.serialization(i, currentCommands)
-					slf.frameCache[i] = cache
+	go func(ls *Lockstep[ClientID, Command]) {
+		for range ls.ticker.C {
+			go func(ls *Lockstep[ClientID, Command]) {
+				ls.currentFrameLock.RLock()
+				if ls.frameLimit > 0 && ls.currentFrame >= ls.frameLimit {
+					ls.currentFrameLock.RUnlock()
+					ls.StopBroadcast()
+					return
 				}
-				client.Write(cache)
-			}
-			slf.clientFrame[clientId] = currentFrame
+				ls.currentFrameLock.RUnlock()
+				ls.currentFrameLock.Lock()
+				ls.currentFrame++
+				currentFrame := ls.currentFrame
+				currentCommands := ls.currentCommands
+				ls.currentCommands = make([]Command, 0, len(currentCommands))
+				ls.currentFrameLock.Unlock()
+
+				ls.clientLock.RLock()
+				defer ls.clientLock.RUnlock()
+				ls.frameCacheLock.Lock()
+				defer ls.frameCacheLock.Unlock()
+
+				for clientId, client := range ls.clients {
+					var i = ls.clientFrame[clientId]
+					if i < ls.initFrame {
+						i = ls.initFrame
+					}
+					for ; i < currentFrame; i++ {
+						cache, exist := ls.frameCache[i]
+						if !exist {
+							cache = ls.serialization(i, currentCommands)
+							ls.frameCache[i] = cache
+						}
+						client.Write(cache)
+					}
+					ls.clientFrame[clientId] = currentFrame
+				}
+			}(ls)
 		}
-	})
+	}(slf)
 }
 
 // StopBroadcast 停止广播
@@ -175,7 +179,10 @@ func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 	slf.running = false
 	slf.runningLock.Unlock()
 
-	slf.ticker.StopTimer("lockstep")
+	if slf.ticker != nil {
+		slf.ticker.Stop()
+	}
+	slf.ticker = nil
 
 	slf.OnLockstepStoppedEvent()
 

@@ -352,6 +352,10 @@ func (slf *Server) Run(addr string) error {
 		return ErrCanNotSupportNetwork
 	}
 
+	if slf.multiple == nil && slf.network != NetworkKcp {
+		kcp.SystemTimedSched.Close()
+	}
+
 	<-messageInitFinish
 	close(messageInitFinish)
 	messageInitFinish = nil
@@ -489,6 +493,9 @@ func (slf *Server) shutdown(err error) {
 			log.Error("Server", log.Err(shutdownErr))
 		}
 	}
+	if slf.tickerPool != nil {
+		slf.tickerPool.Release()
+	}
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
@@ -596,6 +603,7 @@ func (slf *Server) UseShunt(conn *Conn, name string) {
 			delete(slf.dispatchers, curr.name)
 		}
 	}
+	slf.currDispatcher[conn.GetID()] = d
 
 	member, exist := slf.dispatcherMember[name]
 	if !exist {
@@ -676,8 +684,8 @@ func (slf *Server) low(message *Message, present time.Time, expect time.Duration
 		var fields = make([]log.Field, 0, len(message.marks)+4)
 		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
 		fields = append(fields, message.marks...)
-		fields = append(fields, log.Stack("stack"))
-		log.Warn("Server", fields...)
+		//fields = append(fields, log.Stack("stack"))
+		log.Warn("ServerLowMessage", fields...)
 		slf.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -693,7 +701,7 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 		go func(ctx context.Context, msg *Message) {
 			select {
 			case <-ctx.Done():
-				if err := ctx.Err(); err == context.DeadlineExceeded {
+				if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("SuspectedDeadlock", msg))
 					slf.OnDeadlockDetectEvent(msg)
 				}
@@ -704,32 +712,39 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	present := time.Now()
 	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
 		defer func(msg *Message) {
+			super.Handle(cancel)
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
 				fmt.Println(stack)
-				if e, ok := err.(error); ok {
-					slf.OnMessageErrorEvent(msg, e)
+				e, ok := err.(error)
+				if !ok {
+					e = fmt.Errorf("%v", err)
 				}
+				slf.OnMessageErrorEvent(msg, e)
 			}
 			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
 				dispatcher.antiUnique(msg.name)
 			}
 
-			super.Handle(cancel)
 			slf.low(msg, present, time.Millisecond*100)
 			slf.messageCounter.Add(-1)
 
 			if !slf.isShutdown.Load() {
 				slf.messagePool.Release(msg)
 			}
-
 		}(msg)
+	} else {
+		if cancel != nil {
+			defer cancel()
+		}
 	}
 
 	switch msg.t {
 	case MessageTypePacket:
-		if !slf.OnConnectionPacketPreprocessEvent(msg.conn, msg.packet, func(newPacket []byte) { msg.packet = newPacket }) {
+		if !slf.OnConnectionPacketPreprocessEvent(msg.conn, msg.packet, func(newPacket []byte) {
+			msg.packet = newPacket
+		}) {
 			slf.OnConnectionReceivePacketEvent(msg.conn, msg.packet)
 		}
 	case MessageTypeError:
@@ -753,9 +768,11 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 					stack := string(debug.Stack())
 					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
 					fmt.Println(stack)
-					if e, ok := err.(error); ok {
-						slf.OnMessageErrorEvent(msg, e)
+					e, ok := err.(error)
+					if !ok {
+						e = fmt.Errorf("%v", err)
 					}
+					slf.OnMessageErrorEvent(msg, e)
 				}
 				super.Handle(cancel)
 				slf.low(msg, present, time.Second)
