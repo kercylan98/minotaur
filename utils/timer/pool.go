@@ -22,6 +22,7 @@ type Pool struct {
 	tickers        []*Ticker
 	lock           sync.Mutex
 	tickerPoolSize int
+	closed         bool
 }
 
 // ChangePoolSize 改变定时器池大小
@@ -58,4 +59,18 @@ func (slf *Pool) GetTicker(size int, options ...Option) *Ticker {
 	}
 	ticker.wheel.Start()
 	return ticker
+}
+
+// Release 释放定时器池的资源，释放后由其产生的 Ticker 在 Ticker.Release 后将不再回到池中，而是直接释放
+//   - 虽然定时器池已被释放，但是依旧可以产出 Ticker
+func (slf *Pool) Release() {
+	slf.lock.Lock()
+	defer slf.lock.Unlock()
+	slf.closed = true
+	for _, ticker := range slf.tickers {
+		ticker.wheel.Stop()
+	}
+	slf.tickers = nil
+	slf.tickerPoolSize = 0
+	return
 }

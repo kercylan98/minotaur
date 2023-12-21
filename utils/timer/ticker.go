@@ -39,7 +39,7 @@ func (slf *Ticker) Release() {
 	}
 	slf.lock.Unlock()
 
-	if len(slf.timer.tickers) < tickerPoolSize {
+	if len(slf.timer.tickers) < tickerPoolSize && !slf.timer.closed {
 		slf.timer.tickers = append(slf.timer.tickers, slf)
 	} else {
 		slf.wheel.Stop()
