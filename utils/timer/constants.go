@@ -15,3 +15,7 @@ const (
 const (
 	NoMark = "" // 没有设置标记的定时器
 )
+
+const (
+	DefaultTickerPoolSize = 96
+)
