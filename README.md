@@ -26,7 +26,7 @@ mindmap
 ```
 
 ## Server 架构预览
-![server-gdi.jpg](.github/images/server-gdi.jpg)
+![server-gdi.svg](.github/images/server-gdi.svg)
 
 ## 安装
 注意：依赖于 **[Go](https://go.dev/) 1.20 +**
