@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.7](https://github.com/kercylan98/minotaur/compare/v0.3.6...v0.3.7) (2023-12-21)
+
+
+### Other | 其他更改
+
+* 更新 README.md Server 架构图 ([19b4509](https://github.com/kercylan98/minotaur/commit/19b4509fd3d17b48d33befecf96417aa071309d4))
+* 更新 README.md 文件 ([ab71777](https://github.com/kercylan98/minotaur/commit/ab7177795b33bdffb937f5794060364a5c423830))
+
 ## [0.3.6](https://github.com/kercylan98/minotaur/compare/v0.3.5...v0.3.6) (2023-12-21)
 
 
