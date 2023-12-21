@@ -11,10 +11,11 @@ import (
 
 // Ticker 定时器
 type Ticker struct {
-	timer  *Timer
+	timer  *Pool
 	wheel  *timingwheel.TimingWheel
 	timers map[string]*Scheduler
 	lock   sync.RWMutex
+
 	handle func(name string, caller func())
 	mark   string
 }
@@ -25,7 +26,7 @@ func (slf *Ticker) Mark() string {
 	return slf.mark
 }
 
-// Release 释放定时器，并将定时器重新放回 Timer 池中
+// Release 释放定时器，并将定时器重新放回 Pool 池中
 func (slf *Ticker) Release() {
 	slf.timer.lock.Lock()
 	defer slf.timer.lock.Unlock()
