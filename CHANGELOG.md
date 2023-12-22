@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.4.0](https://github.com/kercylan98/minotaur/compare/v0.3.6...v0.4.0) (2023-12-22)
+
+
+### Other | 其他更改
+
+* 更新 README.md Server 架构图 ([19b4509](https://github.com/kercylan98/minotaur/commit/19b4509fd3d17b48d33befecf96417aa071309d4))
+* 更新 README.md 文件 ([ab71777](https://github.com/kercylan98/minotaur/commit/ab7177795b33bdffb937f5794060364a5c423830))
+
+
+### Docs | 文档优化
+
+* 优化 game 包 README.md ([b86d0ef](https://github.com/kercylan98/minotaur/commit/b86d0ef702bb52807e756fa858245d8805ae3d94))
+
+
+### Code Refactoring | 重构
+
+* 将 fsm 包从 game 包中移动至 utils 包 ([4ce6043](https://github.com/kercylan98/minotaur/commit/4ce6043c7298de8bca463f97bcd1905a7b0f55e9))
+* 将 moving、aoi、leaderboard 包从 game 包中移动至 utils 包 ([f26feb8](https://github.com/kercylan98/minotaur/commit/f26feb8bcdc4bc0c75481388dea7182091abdc14))
+* 移除 game 包中不合理的 Actor、Position2D、Position2DSet、Position3D 接口 ([2b13b19](https://github.com/kercylan98/minotaur/commit/2b13b192729e1dd3d31069560a1b583e5987b3e7))
+* 移除 game 包中大量陈旧及不合理设计 ([af0165a](https://github.com/kercylan98/minotaur/commit/af0165af719afa0c6795c0d299d26a298ea046ed))
+* 移除 router 包中已过时的 Level1Router、Level2Router、Level3Router，可使用 router.Multistage 进行替代 ([c4e2034](https://github.com/kercylan98/minotaur/commit/c4e2034bef307a0d92a68da70328a1a833ddd5ca))
+* 移除不再推荐的 room 包，可使用 space 包进行替代 ([197fcfd](https://github.com/kercylan98/minotaur/commit/197fcfd78df208e0a7c9bc1f9615ba8e672d7b9d))
+* 移除过时的 poker 包。其中 poker.Rule 的可替代品为 combination.Combination、combination.Matcher、combination.Validator，poker.CardPile 的可替代品为 deck.Deck、deck.Group ([41246ef](https://github.com/kercylan98/minotaur/commit/41246ef365af285647bdd706c9f92a2811080d10))
+* 移除过时的 round.Round 实现，使用 round.TurnBased 替代 ([1e0ef4b](https://github.com/kercylan98/minotaur/commit/1e0ef4b0627e9662b1aa86b0323a715c864fa309))
+* 移除过时的 server.NewHttpWrapper 函数、server.Server.HttpServer 函数当需要使用 Gin 相关功能时不再需要通过 Gin 函数获取 ([fde6d52](https://github.com/kercylan98/minotaur/commit/fde6d52c607d3d5be7b11152eaeccfe8a2ecbe7b))
+* 重构 aoi 包实现，移除对 game.Actor、game.Position2D 等接口的依赖 ([d56ebde](https://github.com/kercylan98/minotaur/commit/d56ebde2f95a3221d7766217295a78a21e71587b))
+* 重构 moving 包实现，移除对 game.Actor、game.Position2D 等接口的依赖 ([0a22f6d](https://github.com/kercylan98/minotaur/commit/0a22f6d5033e2b39a7ced2a3e8ab9f26eaefb19e))
+
 ## [0.3.6](https://github.com/kercylan98/minotaur/compare/v0.3.5...v0.3.6) (2023-12-21)
 
 
