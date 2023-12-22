@@ -5,6 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"google.golang.org/grpc"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -28,19 +30,36 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect            time.Duration // 是否开启死锁检测
-	supportMessageTypes       map[int]bool  // websocket模式下支持的消息类型
-	certFile, keyFile         string        // TLS文件
-	messagePoolSize           int           // 消息池大小
-	tickerPool                *timer.Pool   // 定时器池
-	ticker                    *timer.Ticker // 定时器
-	tickerAutonomy            bool          // 定时器是否独立运行
-	connTickerSize            int           // 连接定时器大小
-	websocketReadDeadline     time.Duration // websocket连接超时时间
-	websocketCompression      int           // websocket压缩等级
-	websocketWriteCompression bool          // websocket写入压缩
-	limitLife                 time.Duration // 限制最大生命周期
-	packetWarnSize            int           // 数据包大小警告
+	deadlockDetect            time.Duration   // 是否开启死锁检测
+	supportMessageTypes       map[int]bool    // websocket模式下支持的消息类型
+	certFile, keyFile         string          // TLS文件
+	messagePoolSize           int             // 消息池大小
+	tickerPool                *timer.Pool     // 定时器池
+	ticker                    *timer.Ticker   // 定时器
+	tickerAutonomy            bool            // 定时器是否独立运行
+	connTickerSize            int             // 连接定时器大小
+	websocketReadDeadline     time.Duration   // websocket连接超时时间
+	websocketCompression      int             // websocket压缩等级
+	websocketWriteCompression bool            // websocket写入压缩
+	limitLife                 time.Duration   // 限制最大生命周期
+	packetWarnSize            int             // 数据包大小警告
+	messageStatisticsDuration time.Duration   // 消息统计时长
+	messageStatisticsLimit    int             // 消息统计数量
+	messageStatistics         []*atomic.Int64 // 消息统计数量
+	messageStatisticsLock     *sync.RWMutex   // 消息统计锁
+}
+
+// WithMessageStatistics 通过消息统计的方式创建服务器
+//   - 默认不开启，当 duration 和 limit 均大于 0 的时候，服务器将记录每 duration 期间的消息数量，并保留最多 limit 条
+func WithMessageStatistics(duration time.Duration, limit int) Option {
+	return func(srv *Server) {
+		if duration <= 0 || limit <= 0 {
+			return
+		}
+		srv.messageStatisticsDuration = duration
+		srv.messageStatisticsLimit = limit
+		srv.messageStatisticsLock = new(sync.RWMutex)
+	}
 }
 
 // WithPacketWarnSize 通过数据包大小警告的方式创建服务器，当数据包大小超过指定大小时，将会输出 WARN 类型的日志

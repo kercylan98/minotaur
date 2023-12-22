@@ -20,7 +20,7 @@ func (slf *HttpRouter[Context]) handlesConvert(handlers []HandlerFunc[Context]) 
 	for i := 0; i < len(handlers); i++ {
 		handler := handlers[i]
 		handles = append(handles, func(ctx *gin.Context) {
-			slf.srv.messageCounter.Add(1)
+			slf.srv.hitMessageStatistics()
 			defer func() {
 				slf.srv.messageCounter.Add(-1)
 			}()
