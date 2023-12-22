@@ -1,3 +1,4 @@
+// Package activity 活动状态管理
 package activity
 
 import (
