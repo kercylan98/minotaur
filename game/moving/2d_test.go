@@ -3,6 +3,7 @@ package moving_test
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/game/moving"
+	"github.com/kercylan98/minotaur/utils/geometry"
 	"sync"
 	"testing"
 	"time"
@@ -10,27 +11,24 @@ import (
 
 type MoveEntity struct {
 	guid  int64
-	x, y  float64
+	pos   geometry.Point[float64]
 	speed float64
 }
 
-func (slf *MoveEntity) SetGuid(guid int64) {
-}
-
-func (slf *MoveEntity) GetGuid() int64 {
+func (slf *MoveEntity) GetTwoDimensionalEntityID() int64 {
 	return slf.guid
-}
-
-func (slf *MoveEntity) GetPosition() (x, y float64) {
-	return slf.x, slf.y
-}
-
-func (slf *MoveEntity) SetPosition(x, y float64) {
-	slf.x, slf.y = x, y
 }
 
 func (slf *MoveEntity) GetSpeed() float64 {
 	return slf.speed
+}
+
+func (slf *MoveEntity) GetPosition() geometry.Point[float64] {
+	return slf.pos
+}
+
+func (slf *MoveEntity) SetPosition(pos geometry.Point[float64]) {
+	slf.pos = pos
 }
 
 func NewEntity(guid int64, speed float64) *MoveEntity {
@@ -41,7 +39,7 @@ func NewEntity(guid int64, speed float64) *MoveEntity {
 }
 
 func TestNewTwoDimensional(t *testing.T) {
-	m := moving.NewTwoDimensional()
+	m := moving.NewTwoDimensional[int64, float64]()
 	defer func() {
 		m.Release()
 	}()
@@ -50,21 +48,21 @@ func TestNewTwoDimensional(t *testing.T) {
 func TestTwoDimensional_StopMove(t *testing.T) {
 	var wait sync.WaitGroup
 
-	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit(time.Second))
+	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
 	defer func() {
 		m.Release()
 	}()
 
-	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity, oldX, oldY float64) {
-		x, y := entity.GetPosition()
-		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetGuid(), time.Now().UnixMilli(), oldX, oldY, x, y))
+	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
+		x, y := entity.GetPosition().GetXY()
+		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli(), oldX, oldY, x, y))
 	})
-	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
-		fmt.Println(fmt.Sprintf("%d : %d | destination", entity.GetGuid(), time.Now().UnixMilli()))
+	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println(fmt.Sprintf("%d : %d | destination", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
 		wait.Done()
 	})
-	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
-		fmt.Println(fmt.Sprintf("%d : %d | stop", entity.GetGuid(), time.Now().UnixMilli()))
+	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println(fmt.Sprintf("%d : %d | stop", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
 		wait.Done()
 	})
 

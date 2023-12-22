@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleNewTwoDimensional() {
-	m := moving.NewTwoDimensional()
+	m := moving.NewTwoDimensional[int64, float64]()
 	defer func() {
 		m.Release()
 	}()
@@ -19,13 +19,13 @@ func ExampleNewTwoDimensional() {
 }
 
 func ExampleTwoDimensional_MoveTo() {
-	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit(time.Second))
+	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
 	defer func() {
 		m.Release()
 	}()
 
 	var wait sync.WaitGroup
-	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
+	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
 		fmt.Println("done")
 		wait.Done()
 	})
@@ -41,20 +41,20 @@ func ExampleTwoDimensional_MoveTo() {
 }
 
 func ExampleTwoDimensional_StopMove() {
-	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit(time.Second))
+	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
 	defer func() {
 		m.Release()
 	}()
 
 	var wait sync.WaitGroup
-	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity, oldX, oldY float64) {
+	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
 		fmt.Println("move")
 	})
-	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
+	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
 		fmt.Println("stop")
 		wait.Done()
 	})
-	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional, entity moving.TwoDimensionalEntity) {
+	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
 		fmt.Println("done")
 		wait.Done()
 	})
