@@ -7,18 +7,6 @@ import (
 
 type HttpWrapperHandleFunc[CTX any] func(ctx CTX)
 
-// NewHttpWrapper 创建 http 包装器
-//
-// Deprecated: 从 Minotaur 0.0.29 开始，由于该函数基于 *Server.HttpRouter 函数设计，已弃用。
-// 如果需要单纯的对 *gin.Engine 进行包装，可以使用 NewGinWrapper 函数进行包装。该函数已不在建议对 server.Server 使用。
-// 如果需要对 Server.HttpServer 进行包装，可以使用 NewHttpHandleWrapper 函数进行包装。
-func NewHttpWrapper[CTX any](server *Server, pack func(ctx *gin.Context) CTX) *HttpWrapper[CTX] {
-	return &HttpWrapper[CTX]{
-		server:     server.ginServer,
-		packHandle: pack,
-	}
-}
-
 // NewGinWrapper 创建 gin 包装器，用于对 NewHttpWrapper 函数的替代
 func NewGinWrapper[CTX any](server *gin.Engine, pack func(ctx *gin.Context) CTX) *HttpWrapper[CTX] {
 	return &HttpWrapper[CTX]{
