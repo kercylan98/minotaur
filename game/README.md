@@ -20,7 +20,7 @@ Game 包提供了游戏领域中常见的功能实现，例如活动、任务、
 >  - 活动结束后延长展示结束事件
 >  - 新的一天事件
 
-## package battle [`战斗`](./fight)
+## package fight [`战斗`](./fight)
 在 `fight` 中目前仅提供了回合制[`TurnBased`](./fight/turn_based.go)的实现。
 - [`TurnBased`](./fight/turn_based.go) 仅提供了回合制的基本实现，开发者可以根据自己的需求进行扩展。其中包括：回合切换、回合开始、回合结束、回合超时、根据速度调节下次行动间隔。
 
