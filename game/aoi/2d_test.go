@@ -3,26 +3,24 @@ package aoi_test
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/game/aoi"
+	"github.com/kercylan98/minotaur/utils/geometry"
 	"github.com/kercylan98/minotaur/utils/random"
 	"testing"
 	"time"
 )
 
 type Ent struct {
-	guid         int64
-	x, y, vision float64
+	guid   int64
+	pos    geometry.Point[float64]
+	vision float64
 }
 
-func (slf *Ent) SetGuid(guid int64) {
-	slf.guid = guid
-}
-
-func (slf *Ent) GetGuid() int64 {
+func (slf *Ent) GetTwoDimensionalEntityID() int64 {
 	return slf.guid
 }
 
-func (slf *Ent) GetPosition() (x, y float64) {
-	return slf.x, slf.y
+func (slf *Ent) GetPosition() geometry.Point[float64] {
+	return slf.pos
 }
 
 func (slf *Ent) GetVision() float64 {
@@ -30,14 +28,13 @@ func (slf *Ent) GetVision() float64 {
 }
 
 func TestNewTwoDimensional(t *testing.T) {
-	aoiTW := aoi.NewTwoDimensional[*Ent](10000, 10000, 100, 100)
+	aoiTW := aoi.NewTwoDimensional[int64, float64, *Ent](10000, 10000, 100, 100)
 
 	start := time.Now()
 	for i := 0; i < 50000; i++ {
 		aoiTW.AddEntity(&Ent{
 			guid:   int64(i),
-			x:      float64(random.Int(0, 10000)),
-			y:      float64(random.Int(0, 10000)),
+			pos:    geometry.NewPoint[float64](float64(random.Int64(0, 10000)), float64(random.Int64(0, 10000))),
 			vision: 200,
 		})
 	}
