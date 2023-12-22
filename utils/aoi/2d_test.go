@@ -2,7 +2,7 @@ package aoi_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game/aoi"
+	"github.com/kercylan98/minotaur/utils/aoi"
 	"github.com/kercylan98/minotaur/utils/geometry"
 	"github.com/kercylan98/minotaur/utils/random"
 	"testing"

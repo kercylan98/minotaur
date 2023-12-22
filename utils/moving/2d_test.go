@@ -2,8 +2,8 @@ package moving_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game/moving"
 	"github.com/kercylan98/minotaur/utils/geometry"
+	moving2 "github.com/kercylan98/minotaur/utils/moving"
 	"sync"
 	"testing"
 	"time"
@@ -39,7 +39,7 @@ func NewEntity(guid int64, speed float64) *MoveEntity {
 }
 
 func TestNewTwoDimensional(t *testing.T) {
-	m := moving.NewTwoDimensional[int64, float64]()
+	m := moving2.NewTwoDimensional[int64, float64]()
 	defer func() {
 		m.Release()
 	}()
@@ -48,20 +48,20 @@ func TestNewTwoDimensional(t *testing.T) {
 func TestTwoDimensional_StopMove(t *testing.T) {
 	var wait sync.WaitGroup
 
-	m := moving.NewTwoDimensional(moving.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
+	m := moving2.NewTwoDimensional(moving2.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
 	defer func() {
 		m.Release()
 	}()
 
-	m.RegPosition2DChangeEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
+	m.RegPosition2DChangeEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
 		x, y := entity.GetPosition().GetXY()
 		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli(), oldX, oldY, x, y))
 	})
-	m.RegPosition2DDestinationEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
+	m.RegPosition2DDestinationEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
 		fmt.Println(fmt.Sprintf("%d : %d | destination", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
 		wait.Done()
 	})
-	m.RegPosition2DStopMoveEvent(func(moving *moving.TwoDimensional[int64, float64], entity moving.TwoDimensionalEntity[int64, float64]) {
+	m.RegPosition2DStopMoveEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
 		fmt.Println(fmt.Sprintf("%d : %d | stop", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
 		wait.Done()
 	})

@@ -2,11 +2,11 @@ package leaderboard_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/game/leaderboard"
+	leaderboard2 "github.com/kercylan98/minotaur/utils/leaderboard"
 )
 
 func ExampleNewBinarySearch() {
-	bs := leaderboard.NewBinarySearch[string, int](leaderboard.WithBinarySearchCount[string, int](10))
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
 
 	fmt.Println(bs != nil)
 	// Output:
@@ -14,7 +14,7 @@ func ExampleNewBinarySearch() {
 }
 
 func ExampleBinarySearch_Competitor() {
-	bs := leaderboard.NewBinarySearch[string, int](leaderboard.WithBinarySearchCount[string, int](10))
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
@@ -39,7 +39,7 @@ func ExampleBinarySearch_Competitor() {
 }
 
 func ExampleBinarySearch_RemoveCompetitor() {
-	bs := leaderboard.NewBinarySearch[string, int](leaderboard.WithBinarySearchCount[string, int](10))
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
@@ -63,7 +63,7 @@ func ExampleBinarySearch_RemoveCompetitor() {
 }
 
 func ExampleBinarySearch_GetRank() {
-	bs := leaderboard.NewBinarySearch[string, int](leaderboard.WithBinarySearchCount[string, int](10))
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
 
 	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
 	for i := 1; i <= 15; i++ {
