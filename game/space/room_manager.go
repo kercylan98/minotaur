@@ -25,7 +25,7 @@ type RoomManager[EntityID comparable, RoomID comparable, Entity generic.IdR[Enti
 // AssumeControl 将房间控制权交由 RoomManager 接管，返回 RoomController 实例
 //   - 当任何房间需要被 RoomManager 管理时，都应该调用该方法获取到 RoomController 实例后进行操作
 //   - 房间被接管后需要在释放房间控制权时调用 RoomController.Destroy 方法，否则将会导致 RoomManager 一直持有房间资源
-func (rm *RoomManager[EntityID, RoomID, Entity, Room]) AssumeControl(room Room, options ...*RoomControllerOptions) *RoomController[EntityID, RoomID, Entity, Room] {
+func (rm *RoomManager[EntityID, RoomID, Entity, Room]) AssumeControl(room Room, options ...*RoomControllerOptions[EntityID, RoomID, Entity, Room]) *RoomController[EntityID, RoomID, Entity, Room] {
 	controller := newRoomController(rm, room, mergeRoomControllerOptions(options...))
 	rm.OnRoomAssumeControlEvent(controller)
 	return controller
