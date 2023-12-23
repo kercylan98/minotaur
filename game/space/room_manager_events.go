@@ -8,6 +8,7 @@ type (
 	RoomAddEntityEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]]      func(controller *RoomController[EntityID, RoomID, Entity, Room], entity Entity)
 	RoomRemoveEntityEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]]   func(controller *RoomController[EntityID, RoomID, Entity, Room], entity Entity)
 	RoomChangePasswordEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] func(controller *RoomController[EntityID, RoomID, Entity, Room], oldPassword, password *string)
+	RoomOwnerChangeEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]]    func(controller *RoomController[EntityID, RoomID, Entity, Room], oldOwner, owner *EntityID)
 )
 
 type roomManagerEvents[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] struct {
@@ -16,6 +17,19 @@ type roomManagerEvents[EntityID comparable, RoomID comparable, Entity generic.Id
 	roomAddEntityEventHandles      []RoomAddEntityEventHandle[EntityID, RoomID, Entity, Room]
 	roomRemoveEntityEventHandles   []RoomRemoveEntityEventHandle[EntityID, RoomID, Entity, Room]
 	roomChangePasswordEventHandles []RoomChangePasswordEventHandle[EntityID, RoomID, Entity, Room]
+	roomOwnerChangeEventHandles    []RoomOwnerChangeEventHandle[EntityID, RoomID, Entity, Room]
+}
+
+// RegRoomOwnerChangeEvent 注册房间所有者变更事件，当触发事件时，房间所有者已经被修改
+func (rme *roomManagerEvents[EntityID, RoomID, Entity, Room]) RegRoomOwnerChangeEvent(handle RoomOwnerChangeEventHandle[EntityID, RoomID, Entity, Room]) {
+	rme.roomOwnerChangeEventHandles = append(rme.roomOwnerChangeEventHandles, handle)
+}
+
+// OnRoomOwnerChangeEvent 房间所有者变更事件
+func (rme *roomManagerEvents[EntityID, RoomID, Entity, Room]) OnRoomOwnerChangeEvent(controller *RoomController[EntityID, RoomID, Entity, Room], oldOwner, owner *EntityID) {
+	for _, handle := range rme.roomOwnerChangeEventHandles {
+		handle(controller, oldOwner, owner)
+	}
 }
 
 // RegRoomAssumeControlEvent 注册房间接管事件

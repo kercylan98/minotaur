@@ -7,7 +7,9 @@ import (
 	"sync"
 )
 
-func newRoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]](manager *RoomManager[EntityID, RoomID, Entity, Room], room Room, options *RoomControllerOptions) *RoomController[EntityID, RoomID, Entity, Room] {
+const UnknownSeat = -1 // 未知座位号
+
+func newRoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]](manager *RoomManager[EntityID, RoomID, Entity, Room], room Room, options *RoomControllerOptions[EntityID, RoomID, Entity, Room]) *RoomController[EntityID, RoomID, Entity, Room] {
 	controller := &RoomController[EntityID, RoomID, Entity, Room]{
 		manager:  manager,
 		options:  options,
@@ -25,13 +27,66 @@ func newRoomController[EntityID comparable, RoomID comparable, Entity generic.Id
 // RoomController 对房间进行操作的控制器，由 RoomManager 接管后返回
 type RoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] struct {
 	manager         *RoomManager[EntityID, RoomID, Entity, Room]
-	options         *RoomControllerOptions
+	options         *RoomControllerOptions[EntityID, RoomID, Entity, Room]
 	room            Room
 	entities        map[EntityID]Entity
 	entitiesRWMutex sync.RWMutex
 
 	vacancy []int       // 空缺的座位
 	seat    []*EntityID // 座位上的玩家
+	owner   *EntityID   // 房主
+}
+
+// HasOwner 判断是否有房主
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) HasOwner() bool {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	return rc.owner != nil
+}
+
+// IsOwner 判断是否为房主
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) IsOwner(entityId EntityID) bool {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	return rc.owner != nil && *rc.owner == entityId
+}
+
+// GetOwner 获取房主
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetOwner() Entity {
+	return rc.GetEntity(*rc.owner)
+}
+
+// GetOwnerID 获取房主 ID
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetOwnerID() EntityID {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	return *rc.owner
+}
+
+// GetOwnerExist 获取房间，并返回房主是否存在的状态
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetOwnerExist() (Entity, bool) {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	entity, exist := rc.entities[*rc.owner]
+	return entity, exist
+}
+
+// SetOwner 设置房主
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) SetOwner(entityId EntityID) {
+	rc.entitiesRWMutex.Lock()
+	defer rc.entitiesRWMutex.Unlock()
+	old := *rc.owner
+	rc.owner = &entityId
+	rc.manager.OnRoomOwnerChangeEvent(rc, &old, &entityId)
+}
+
+// DelOwner 删除房主，将房间设置为无主的状态
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) DelOwner() {
+	rc.entitiesRWMutex.Lock()
+	defer rc.entitiesRWMutex.Unlock()
+	old := *rc.owner
+	rc.owner = nil
+	rc.manager.OnRoomOwnerChangeEvent(rc, &old, nil)
 }
 
 // JoinSeat 设置特定对象加入座位，当具体的座位不存在的时候，将会自动分配座位
@@ -93,7 +148,41 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetSeat(entityId Entit
 			return i
 		}
 	}
-	return -1
+	return UnknownSeat
+}
+
+// GetFirstNotEmptySeat 获取第一个非空座位号，如果没有非空座位，将返回 UnknownSeat
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetFirstNotEmptySeat() int {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	for i, seat := range rc.seat {
+		if seat != nil {
+			return i
+		}
+	}
+	return UnknownSeat
+}
+
+// GetFirstEmptySeatEntity 获取第一个空座位上的实体，如果没有空座位，将返回空实体
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetFirstEmptySeatEntity() (entity Entity) {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	for _, seat := range rc.seat {
+		if seat == nil {
+			return rc.entities[*seat]
+		}
+	}
+	return entity
+}
+
+// GetRandomEntity 获取随机实体，如果房间中没有实体，将返回空实体
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetRandomEntity() (entity Entity) {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	for _, entity = range rc.entities {
+		return entity
+	}
+	return entity
 }
 
 // GetNotEmptySeat 获取非空座位
@@ -117,7 +206,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEmptySeat() []int {
 
 // HasSeat 判断是否有座位
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) HasSeat(entityId EntityID) bool {
-	return rc.GetSeat(entityId) != -1
+	return rc.GetSeat(entityId) != UnknownSeat
 }
 
 // GetSeatEntityCount 获取座位上的实体数量
@@ -220,6 +309,14 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntity(id EntityID)
 	return rc.entities[id]
 }
 
+// GetEntityExist 获取实体，并返回实体是否存在的状态
+func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntityExist(id EntityID) (Entity, bool) {
+	rc.entitiesRWMutex.RLock()
+	defer rc.entitiesRWMutex.RUnlock()
+	entity, exist := rc.entities[id]
+	return entity, exist
+}
+
 // GetEntityIDs 获取所有实体ID
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntityIDs() []EntityID {
 	rc.entitiesRWMutex.RLock()
@@ -282,6 +379,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) AddEntityByPassword(en
 
 // RemoveEntity 移除实体
 //   - 当实体被移除时如果实体在座位上，将会自动离开座位
+//   - 如果实体为房主，将会根据 RoomControllerOptions.WithOwnerInherit 函数的设置进行继承
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) RemoveEntity(id EntityID) {
 	rc.entitiesRWMutex.RLock()
 	defer rc.entitiesRWMutex.RUnlock()
@@ -292,15 +390,26 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) RemoveEntity(id Entity
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) removeEntity(id EntityID) {
 	rc.leaveSeat(id)
 	entity, exist := rc.entities[id]
-	delete(rc.entities, id)
 	if !exist {
 		return
+	}
+	delete(rc.entities, id)
+	if !rc.options.ownerInherit {
+		if rc.owner != nil && *rc.owner == id {
+			rc.owner = nil
+		}
+	} else {
+		if rc.owner != nil && *rc.owner == id {
+			rc.owner = rc.options.ownerInheritHandler(rc)
+			defer rc.manager.OnRoomOwnerChangeEvent(rc, &id, rc.owner)
+		}
 	}
 	rc.manager.OnRoomRemoveEntityEvent(rc, entity)
 }
 
 // RemoveAllEntities 移除该房间中的所有实体
 //   - 当实体被移除时如果实体在座位上，将会自动离开座位
+//   - 如果实体为房主，将会根据 RoomControllerOptions.WithOwnerInherit 函数的设置进行继承
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) RemoveAllEntities() {
 	rc.entitiesRWMutex.Lock()
 	defer rc.entitiesRWMutex.Unlock()
