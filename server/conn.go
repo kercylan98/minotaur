@@ -286,7 +286,7 @@ func (slf *Conn) init() {
 			}))
 		}
 	}
-	slf.pool = concurrent.NewPool[*connPacket](10*1024,
+	slf.pool = concurrent.NewPool[connPacket](
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {
@@ -360,7 +360,6 @@ func (slf *Conn) Close(err ...error) {
 		slf.ticker.Release()
 	}
 	slf.server.releaseDispatcher(slf)
-	slf.pool.Close()
 	slf.loop.Close()
 	slf.mu.Unlock()
 	if len(err) > 0 {

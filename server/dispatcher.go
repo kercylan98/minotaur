@@ -11,7 +11,7 @@ var dispatcherUnique = struct{}{}
 func generateDispatcher(name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
 	return &dispatcher{
 		name:    name,
-		buffer:  buffer.NewUnboundedN[*Message](),
+		buffer:  buffer.NewUnbounded[*Message](),
 		handler: handler,
 		uniques: haxmap.New[string, struct{}](),
 	}

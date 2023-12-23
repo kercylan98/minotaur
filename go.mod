@@ -16,6 +16,7 @@ require (
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/sony/sonyflake v1.2.0
 	github.com/spf13/cobra v1.7.0
+	github.com/stretchr/testify v1.8.3
 	github.com/tealeg/xlsx v1.0.5
 	github.com/tidwall/gjson v1.16.0
 	github.com/xtaci/kcp-go/v5 v5.6.3
@@ -29,6 +30,7 @@ require (
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -48,6 +50,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/templexxx/cpu v0.1.0 // indirect

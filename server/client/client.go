@@ -62,7 +62,7 @@ func (slf *Client) Run(block ...bool) error {
 		return err
 	}
 	slf.closed = false
-	slf.pool = concurrent.NewPool[*Packet](10*1024, func() *Packet {
+	slf.pool = concurrent.NewPool[Packet](func() *Packet {
 		return new(Packet)
 	}, func(data *Packet) {
 		data.wst = 0
@@ -100,7 +100,6 @@ func (slf *Client) Close(err ...error) {
 	slf.closed = true
 	slf.core.Close()
 	slf.loop.Close()
-	slf.pool.Close()
 	slf.mutex.Unlock()
 	if len(err) > 0 {
 		slf.OnConnectionClosedEvent(slf, err[0])

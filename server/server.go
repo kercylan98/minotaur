@@ -33,8 +33,7 @@ import (
 func New(network Network, options ...Option) *Server {
 	server := &Server{
 		runtime: &runtime{
-			messagePoolSize: DefaultMessageBufferSize,
-			packetWarnSize:  DefaultPacketWarnSize,
+			packetWarnSize: DefaultPacketWarnSize,
 		},
 		option:           &option{},
 		network:          network,
@@ -101,7 +100,6 @@ type Server struct {
 	systemSignal             chan os.Signal                        // 系统信号
 	closeChannel             chan struct{}                         // 关闭信号
 	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
-	messageLock              sync.RWMutex                          // 消息锁
 	dispatcherLock           sync.RWMutex                          // 消息分发器锁
 	isShutdown               atomic.Bool                           // 是否已关闭
 	messageCounter           atomic.Int64                          // 消息计数器
@@ -134,43 +132,29 @@ func (slf *Server) Run(addr string) error {
 	slf.addr = addr
 	slf.startMessageStatistics()
 	slf.systemDispatcher = generateDispatcher(serverSystemDispatcher, slf.dispatchMessage)
-	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
-	var messageInitFinish = make(chan struct{}, 1)
-	var connectionInitHandle = func(callback func()) {
-		slf.messageLock.Lock()
-		slf.messagePool = concurrent.NewPool[*Message](slf.messagePoolSize,
-			func() *Message {
-				return &Message{}
-			},
-			func(data *Message) {
-				data.reset()
-			},
-		)
-		slf.messageLock.Unlock()
-		if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
-			slf.gServer = &gNet{Server: slf}
-		}
-		if callback != nil {
-			go callback()
-		}
-		go func() {
-			messageInitFinish <- struct{}{}
-			slf.systemDispatcher.start()
-		}()
+	slf.messagePool = concurrent.NewPool[Message](
+		func() *Message {
+			return &Message{}
+		},
+		func(data *Message) {
+			data.reset()
+		},
+	)
+	if slf.network != NetworkHttp && slf.network != NetworkWebsocket && slf.network != NetworkGRPC {
+		slf.gServer = &gNet{Server: slf}
 	}
+	var protoAddr = fmt.Sprintf("%s://%s", slf.network, slf.addr)
+	go slf.systemDispatcher.start()
 
 	switch slf.network {
 	case NetworkNone:
-		go connectionInitHandle(func() {
-			slf.isRunning = true
-			slf.OnStartBeforeEvent()
-		})
+		slf.isRunning = true
+		slf.OnStartBeforeEvent()
 	case NetworkGRPC:
 		listener, err := net.Listen(string(NetworkTcp), slf.addr)
 		if err != nil {
 			return err
 		}
-		go connectionInitHandle(nil)
 		go func() {
 			slf.isRunning = true
 			slf.OnStartBeforeEvent()
@@ -180,60 +164,56 @@ func (slf *Server) Run(addr string) error {
 			}
 		}()
 	case NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix:
-		go connectionInitHandle(func() {
-			slf.isRunning = true
-			slf.OnStartBeforeEvent()
-			if err := gnet.Serve(slf.gServer, protoAddr,
-				gnet.WithLogger(new(logger.GNet)),
-				gnet.WithTicker(true),
-				gnet.WithMulticore(true),
-			); err != nil {
-				slf.isRunning = false
-				slf.PushErrorMessage(err, MessageErrorActionShutdown)
-			}
-		})
+		slf.isRunning = true
+		slf.OnStartBeforeEvent()
+		if err := gnet.Serve(slf.gServer, protoAddr,
+			gnet.WithLogger(new(logger.GNet)),
+			gnet.WithTicker(true),
+			gnet.WithMulticore(true),
+		); err != nil {
+			slf.isRunning = false
+			slf.PushErrorMessage(err, MessageErrorActionShutdown)
+		}
 	case NetworkKcp:
 		listener, err := kcp.ListenWithOptions(slf.addr, nil, 0, 0)
 		if err != nil {
 			return err
 		}
-		go connectionInitHandle(func() {
-			slf.isRunning = true
-			slf.OnStartBeforeEvent()
-			for {
-				session, err := listener.AcceptKCP()
-				if err != nil {
-					continue
-				}
-
-				conn := newKcpConn(slf, session)
-				slf.OnConnectionOpenedEvent(conn)
-
-				go func(conn *Conn) {
-					defer func() {
-						if err := recover(); err != nil {
-							e, ok := err.(error)
-							if !ok {
-								e = fmt.Errorf("%v", err)
-							}
-							conn.Close(e)
-						}
-					}()
-
-					buf := make([]byte, 4096)
-					for !conn.IsClosed() {
-						n, err := conn.kcp.Read(buf)
-						if err != nil {
-							if conn.IsClosed() {
-								break
-							}
-							panic(err)
-						}
-						slf.PushPacketMessage(conn, 0, buf[:n])
-					}
-				}(conn)
+		slf.isRunning = true
+		slf.OnStartBeforeEvent()
+		for {
+			session, err := listener.AcceptKCP()
+			if err != nil {
+				continue
 			}
-		})
+
+			conn := newKcpConn(slf, session)
+			slf.OnConnectionOpenedEvent(conn)
+
+			go func(conn *Conn) {
+				defer func() {
+					if err := recover(); err != nil {
+						e, ok := err.(error)
+						if !ok {
+							e = fmt.Errorf("%v", err)
+						}
+						conn.Close(e)
+					}
+				}()
+
+				buf := make([]byte, 4096)
+				for !conn.IsClosed() {
+					n, err := conn.kcp.Read(buf)
+					if err != nil {
+						if conn.IsClosed() {
+							break
+						}
+						panic(err)
+					}
+					slf.PushPacketMessage(conn, 0, buf[:n])
+				}
+			}(conn)
+		}
 	case NetworkHttp:
 		go func() {
 			slf.isRunning = true
@@ -248,7 +228,6 @@ func (slf *Server) Run(addr string) error {
 					log.String("ip", c.ClientIP()), log.String("path", c.Request.URL.Path),
 					log.Duration("cost", time.Since(t)))
 			})
-			go connectionInitHandle(nil)
 			if len(slf.certFile)+len(slf.keyFile) > 0 {
 				if err := slf.httpServer.ListenAndServeTLS(slf.certFile, slf.keyFile); err != nil {
 					slf.isRunning = false
@@ -263,94 +242,92 @@ func (slf *Server) Run(addr string) error {
 
 		}()
 	case NetworkWebsocket:
-		go connectionInitHandle(func() {
-			var pattern string
-			var index = strings.Index(addr, "/")
-			if index == -1 {
-				pattern = "/"
-			} else {
-				pattern = addr[index:]
-				slf.addr = slf.addr[:index]
+		var pattern string
+		var index = strings.Index(addr, "/")
+		if index == -1 {
+			pattern = "/"
+		} else {
+			pattern = addr[index:]
+			slf.addr = slf.addr[:index]
+		}
+		var upgrade = websocket.Upgrader{
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		}
+		http.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
+			ip := request.Header.Get("X-Real-IP")
+			ws, err := upgrade.Upgrade(writer, request, nil)
+			if err != nil {
+				return
 			}
-			var upgrade = websocket.Upgrader{
-				ReadBufferSize:  4096,
-				WriteBufferSize: 4096,
-				CheckOrigin: func(r *http.Request) bool {
-					return true
-				},
+			if len(ip) == 0 {
+				addr := ws.RemoteAddr().String()
+				if index := strings.LastIndex(addr, ":"); index != -1 {
+					ip = addr[0:index]
+				}
 			}
-			http.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
-				ip := request.Header.Get("X-Real-IP")
-				ws, err := upgrade.Upgrade(writer, request, nil)
-				if err != nil {
-					return
-				}
-				if len(ip) == 0 {
-					addr := ws.RemoteAddr().String()
-					if index := strings.LastIndex(addr, ":"); index != -1 {
-						ip = addr[0:index]
-					}
-				}
-				if slf.websocketCompression > 0 {
-					_ = ws.SetCompressionLevel(slf.websocketCompression)
-				}
-				ws.EnableWriteCompression(slf.websocketWriteCompression)
-				conn := newWebsocketConn(slf, ws, ip)
-				conn.SetData(wsRequestKey, request)
-				for k, v := range request.URL.Query() {
-					if len(v) == 1 {
-						conn.SetData(k, v[0])
-					} else {
-						conn.SetData(k, v)
-					}
-				}
-				slf.OnConnectionOpenedEvent(conn)
-
-				defer func() {
-					if err := recover(); err != nil {
-						e, ok := err.(error)
-						if !ok {
-							e = fmt.Errorf("%v", err)
-						}
-						conn.Close(e)
-					}
-				}()
-				for !conn.IsClosed() {
-					if slf.websocketReadDeadline > 0 {
-						if err := ws.SetReadDeadline(time.Now().Add(slf.websocketReadDeadline)); err != nil {
-							panic(err)
-						}
-					}
-					messageType, packet, readErr := ws.ReadMessage()
-					if readErr != nil {
-						if conn.IsClosed() {
-							break
-						}
-						panic(readErr)
-					}
-					if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
-						panic(ErrWebsocketIllegalMessageType)
-					}
-					slf.PushPacketMessage(conn, messageType, packet)
-				}
-			})
-			go func() {
-				slf.isRunning = true
-				slf.OnStartBeforeEvent()
-				if len(slf.certFile)+len(slf.keyFile) > 0 {
-					if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
-						slf.isRunning = false
-						slf.PushErrorMessage(err, MessageErrorActionShutdown)
-					}
+			if slf.websocketCompression > 0 {
+				_ = ws.SetCompressionLevel(slf.websocketCompression)
+			}
+			ws.EnableWriteCompression(slf.websocketWriteCompression)
+			conn := newWebsocketConn(slf, ws, ip)
+			conn.SetData(wsRequestKey, request)
+			for k, v := range request.URL.Query() {
+				if len(v) == 1 {
+					conn.SetData(k, v[0])
 				} else {
-					if err := http.ListenAndServe(slf.addr, nil); err != nil {
-						slf.isRunning = false
-						slf.PushErrorMessage(err, MessageErrorActionShutdown)
+					conn.SetData(k, v)
+				}
+			}
+			slf.OnConnectionOpenedEvent(conn)
+
+			defer func() {
+				if err := recover(); err != nil {
+					e, ok := err.(error)
+					if !ok {
+						e = fmt.Errorf("%v", err)
+					}
+					conn.Close(e)
+				}
+			}()
+			for !conn.IsClosed() {
+				if slf.websocketReadDeadline > 0 {
+					if err := ws.SetReadDeadline(time.Now().Add(slf.websocketReadDeadline)); err != nil {
+						panic(err)
 					}
 				}
-
-			}()
+				messageType, packet, readErr := ws.ReadMessage()
+				if readErr != nil {
+					if conn.IsClosed() {
+						break
+					}
+					panic(readErr)
+				}
+				if len(slf.supportMessageTypes) > 0 && !slf.supportMessageTypes[messageType] {
+					panic(ErrWebsocketIllegalMessageType)
+				}
+				slf.PushPacketMessage(conn, messageType, packet)
+			}
 		})
+		go func() {
+			slf.isRunning = true
+			slf.OnStartBeforeEvent()
+			if len(slf.certFile)+len(slf.keyFile) > 0 {
+				if err := http.ListenAndServeTLS(slf.addr, slf.certFile, slf.keyFile, nil); err != nil {
+					slf.isRunning = false
+					slf.PushErrorMessage(err, MessageErrorActionShutdown)
+				}
+			} else {
+				if err := http.ListenAndServe(slf.addr, nil); err != nil {
+					slf.isRunning = false
+					slf.PushErrorMessage(err, MessageErrorActionShutdown)
+				}
+			}
+
+		}()
 	default:
 		return ErrCanNotSupportNetwork
 	}
@@ -359,9 +336,6 @@ func (slf *Server) Run(addr string) error {
 		kcp.SystemTimedSched.Close()
 	}
 
-	<-messageInitFinish
-	close(messageInitFinish)
-	messageInitFinish = nil
 	if slf.multiple == nil {
 		ip, _ := network.IP()
 		log.Info("Server", log.String(serverMark, "===================================================================="))
@@ -652,7 +626,7 @@ func (slf *Server) releaseDispatcher(conn *Conn) {
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
 func (slf *Server) pushMessage(message *Message) {
-	if slf.messagePool.IsClose() || !slf.OnMessageExecBeforeEvent(message) {
+	if !slf.OnMessageExecBeforeEvent(message) {
 		slf.messagePool.Release(message)
 		return
 	}
@@ -863,7 +837,7 @@ func (slf *Server) PushShuntAsyncCallbackMessage(conn *Conn, err error, callback
 func (slf *Server) PushPacketMessage(conn *Conn, wst int, packet []byte, mark ...log.Field) {
 	slf.pushMessage(slf.messagePool.Get().castToPacketMessage(
 		&Conn{wst: wst, connection: conn.connection},
-		packet,
+		packet, mark...,
 	))
 }
 

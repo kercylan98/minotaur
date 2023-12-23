@@ -33,7 +33,6 @@ type runtime struct {
 	deadlockDetect            time.Duration   // 是否开启死锁检测
 	supportMessageTypes       map[int]bool    // websocket模式下支持的消息类型
 	certFile, keyFile         string          // TLS文件
-	messagePoolSize           int             // 消息池大小
 	tickerPool                *timer.Pool     // 定时器池
 	ticker                    *timer.Ticker   // 定时器
 	tickerAutonomy            bool            // 定时器是否独立运行
@@ -208,18 +207,6 @@ func WithWebsocketMessageType(messageTypes ...int) Option {
 			}
 		}
 		srv.supportMessageTypes = supports
-	}
-}
-
-// WithMessageBufferSize 通过特定的消息缓冲池大小运行服务器
-//   - 默认大小为 DefaultMessageBufferSize
-//   - 消息数量超出这个值的时候，消息处理将会造成更大的开销（频繁创建新的结构体），同时服务器将输出警告内容
-func WithMessageBufferSize(size int) Option {
-	return func(srv *Server) {
-		if size <= 0 {
-			size = 1024
-		}
-		srv.messagePoolSize = size
 	}
 }
 
