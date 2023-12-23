@@ -1,16 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/server"
 )
 
 func main() {
-	srv := server.New(server.NetworkWebsocket,
-		server.WithShunt(func(conn *server.Conn) string {
-			return fmt.Sprint(conn.GetData("roomId"))
-		}),
-	)
+	srv := server.New(server.NetworkWebsocket)
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		srv.UseShunt(conn, conn.GetData("room_id").(string))
+	})
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
 		conn.Write(packet)
 	})

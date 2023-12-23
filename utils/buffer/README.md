@@ -48,7 +48,7 @@ import (
 )
 
 func main() {
-    unbounded := buffer.NewUnboundedN[int]()
+    unbounded := buffer.NewUnbounded[int]()
     for i := 0; i < 10; i++ {
         unbounded.Put(i)
     }

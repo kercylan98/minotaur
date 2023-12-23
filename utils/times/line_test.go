@@ -16,5 +16,5 @@ func TestNewStateLine(t *testing.T) {
 		return true
 	})
 
-	t.Log(sl.GetState(time.Now()))
+	t.Log(sl.GetStateByTime(time.Now()))
 }
