@@ -128,7 +128,18 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 	slf.currentFrame = slf.initFrame
 
 	go func(ls *Lockstep[ClientID, Command]) {
-		for range ls.ticker.C {
+		for {
+			ls.runningLock.RLock()
+			if ls.ticker == nil || !ls.running {
+				ls.runningLock.RUnlock()
+				break
+			}
+			_, ok := <-ls.ticker.C
+			ls.runningLock.RUnlock()
+			if !ok {
+				break
+			}
+
 			go func(ls *Lockstep[ClientID, Command]) {
 				ls.currentFrameLock.RLock()
 				if ls.frameLimit > 0 && ls.currentFrame >= ls.frameLimit {
@@ -165,6 +176,7 @@ func (slf *Lockstep[ClientID, Command]) StartBroadcast() {
 					ls.clientFrame[clientId] = currentFrame
 				}
 			}(ls)
+
 		}
 	}(slf)
 }
@@ -177,12 +189,12 @@ func (slf *Lockstep[ClientID, Command]) StopBroadcast() {
 		return
 	}
 	slf.running = false
-	slf.runningLock.Unlock()
 
 	if slf.ticker != nil {
 		slf.ticker.Stop()
 	}
 	slf.ticker = nil
+	slf.runningLock.Unlock()
 
 	slf.OnLockstepStoppedEvent()
 
