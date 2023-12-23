@@ -9,15 +9,8 @@ import (
 //
 // 该缓冲区来源于 gRPC 的实现，用于在不使用额外 goroutine 的情况下实现无界缓冲区
 //   - 该缓冲区的所有方法都是线程安全的，除了用于同步的互斥锁外，不会阻塞任何东西
-func NewUnbounded[V any](generateNil func() V) *Unbounded[V] {
-	return &Unbounded[V]{c: make(chan V, 1), nil: generateNil()}
-}
-
-// NewUnboundedN 与 NewUnbounded 相同，只是省略了 generateNil 参数
-func NewUnboundedN[V any]() *Unbounded[V] {
-	return NewUnbounded[V](func() (v V) {
-		return v
-	})
+func NewUnbounded[V any]() *Unbounded[V] {
+	return &Unbounded[V]{c: make(chan V, 1)}
 }
 
 // Unbounded 是无界缓冲区的实现
@@ -26,7 +19,6 @@ type Unbounded[V any] struct {
 	closed  bool
 	mu      sync.Mutex
 	backlog []V
-	nil     V
 }
 
 // Put 将数据放入缓冲区
@@ -57,7 +49,6 @@ func (slf *Unbounded[V]) Load() {
 	if len(slf.backlog) > 0 {
 		select {
 		case slf.c <- slf.backlog[0]:
-			slf.backlog[0] = slf.nil
 			slf.backlog = slf.backlog[1:]
 		default:
 		}
