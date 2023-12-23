@@ -15,23 +15,25 @@ import (
 	"time"
 )
 
-type StartBeforeEventHandler func(srv *Server)
-type StartFinishEventHandler func(srv *Server)
-type StopEventHandler func(srv *Server)
-type ConnectionReceivePacketEventHandler func(srv *Server, conn *Conn, packet []byte)
-type ConnectionOpenedEventHandler func(srv *Server, conn *Conn)
-type ConnectionClosedEventHandler func(srv *Server, conn *Conn, err any)
-type MessageErrorEventHandler func(srv *Server, message *Message, err error)
-type MessageLowExecEventHandler func(srv *Server, message *Message, cost time.Duration)
-type ConsoleCommandEventHandler func(srv *Server, command string, params ConsoleParams)
-type ConnectionOpenedAfterEventHandler func(srv *Server, conn *Conn)
-type ConnectionWritePacketBeforeEventHandler func(srv *Server, conn *Conn, packet []byte) []byte
-type ShuntChannelCreatedEventHandler func(srv *Server, guid int64)
-type ShuntChannelClosedEventHandler func(srv *Server, guid int64)
-type ConnectionPacketPreprocessEventHandler func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
-type MessageExecBeforeEventHandler func(srv *Server, message *Message) bool
-type MessageReadyEventHandler func(srv *Server)
-type OnDeadlockDetectEventHandler func(srv *Server, message *Message)
+type (
+	StartBeforeEventHandler                 func(srv *Server)
+	StartFinishEventHandler                 func(srv *Server)
+	StopEventHandler                        func(srv *Server)
+	ConnectionReceivePacketEventHandler     func(srv *Server, conn *Conn, packet []byte)
+	ConnectionOpenedEventHandler            func(srv *Server, conn *Conn)
+	ConnectionClosedEventHandler            func(srv *Server, conn *Conn, err any)
+	MessageErrorEventHandler                func(srv *Server, message *Message, err error)
+	MessageLowExecEventHandler              func(srv *Server, message *Message, cost time.Duration)
+	ConsoleCommandEventHandler              func(srv *Server, command string, params ConsoleParams)
+	ConnectionOpenedAfterEventHandler       func(srv *Server, conn *Conn)
+	ConnectionWritePacketBeforeEventHandler func(srv *Server, conn *Conn, packet []byte) []byte
+	ShuntChannelCreatedEventHandler         func(srv *Server, guid int64)
+	ShuntChannelClosedEventHandler          func(srv *Server, guid int64)
+	ConnectionPacketPreprocessEventHandler  func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
+	MessageExecBeforeEventHandler           func(srv *Server, message *Message) bool
+	MessageReadyEventHandler                func(srv *Server)
+	OnDeadlockDetectEventHandler            func(srv *Server, message *Message)
+)
 
 func newEvent(srv *Server) *event {
 	return &event{
@@ -51,7 +53,7 @@ func newEvent(srv *Server) *event {
 		connectionPacketPreprocessEventHandlers: slice.NewPriority[ConnectionPacketPreprocessEventHandler](),
 		messageExecBeforeEventHandlers:          slice.NewPriority[MessageExecBeforeEventHandler](),
 		messageReadyEventHandlers:               slice.NewPriority[MessageReadyEventHandler](),
-		dedeadlockDetectEventHandlers:           slice.NewPriority[OnDeadlockDetectEventHandler](),
+		deadlockDetectEventHandlers:             slice.NewPriority[OnDeadlockDetectEventHandler](),
 	}
 }
 
@@ -72,7 +74,7 @@ type event struct {
 	connectionPacketPreprocessEventHandlers *slice.Priority[ConnectionPacketPreprocessEventHandler]
 	messageExecBeforeEventHandlers          *slice.Priority[MessageExecBeforeEventHandler]
 	messageReadyEventHandlers               *slice.Priority[MessageReadyEventHandler]
-	dedeadlockDetectEventHandlers           *slice.Priority[OnDeadlockDetectEventHandler]
+	deadlockDetectEventHandlers             *slice.Priority[OnDeadlockDetectEventHandler]
 
 	consoleCommandEventHandlers        map[string]*slice.Priority[ConsoleCommandEventHandler]
 	consoleCommandEventHandlerInitOnce sync.Once
@@ -440,11 +442,11 @@ func (slf *event) OnMessageReadyEvent() {
 
 // RegDeadlockDetectEvent 在死锁检测触发时立即执行被注册的事件处理函数
 func (slf *event) RegDeadlockDetectEvent(handler OnDeadlockDetectEventHandler, priority ...int) {
-	slf.dedeadlockDetectEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.deadlockDetectEventHandlers.Append(handler, slice.GetValue(priority, 0))
 }
 
 func (slf *event) OnDeadlockDetectEvent(message *Message) {
-	if slf.dedeadlockDetectEventHandlers.Len() == 0 {
+	if slf.deadlockDetectEventHandlers.Len() == 0 {
 		return
 	}
 	defer func() {
@@ -453,7 +455,7 @@ func (slf *event) OnDeadlockDetectEvent(message *Message) {
 			debug.PrintStack()
 		}
 	}()
-	slf.dedeadlockDetectEventHandlers.RangeValue(func(index int, value OnDeadlockDetectEventHandler) bool {
+	slf.deadlockDetectEventHandlers.RangeValue(func(index int, value OnDeadlockDetectEventHandler) bool {
 		value(slf.Server, message)
 		return true
 	})

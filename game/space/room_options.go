@@ -22,17 +22,17 @@ type RoomControllerOptions struct {
 }
 
 // WithMaxEntityCount 设置房间最大实体数量
-func (slf *RoomControllerOptions) WithMaxEntityCount(maxEntityCount int) *RoomControllerOptions {
+func (rco *RoomControllerOptions) WithMaxEntityCount(maxEntityCount int) *RoomControllerOptions {
 	if maxEntityCount > 0 {
-		slf.maxEntityCount = &maxEntityCount
+		rco.maxEntityCount = &maxEntityCount
 	}
-	return slf
+	return rco
 }
 
 // WithPassword 设置房间密码
-func (slf *RoomControllerOptions) WithPassword(password string) *RoomControllerOptions {
+func (rco *RoomControllerOptions) WithPassword(password string) *RoomControllerOptions {
 	if password != "" {
-		slf.password = &password
+		rco.password = &password
 	}
-	return slf
+	return rco
 }
