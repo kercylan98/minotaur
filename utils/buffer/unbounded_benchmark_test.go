@@ -6,29 +6,12 @@ import (
 )
 
 func BenchmarkUnboundedBuffer(b *testing.B) {
-	ub := buffer.NewUnboundedN[int]()
+	ub := buffer.NewUnbounded[int]()
 
-	b.Run("Put", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			ub.Put(i)
-		}
-	})
-
-	b.Run("Load", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			ub.Load()
-		}
-	})
-
-	// 先填充数据以防止 Get 被阻塞
-	for i := 0; i < b.N; i++ {
-		ub.Put(i)
-	}
-
-	b.Run("Get", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			ub.Put(i)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			ub.Put(1)
 			<-ub.Get()
 			ub.Load()
 		}
