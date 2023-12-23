@@ -2,16 +2,15 @@ package server
 
 import (
 	"github.com/alphadose/haxmap"
-	"github.com/kercylan98/minotaur/utils/buffer"
 )
 
 var dispatcherUnique = struct{}{}
 
 // generateDispatcher 生成消息分发器
-func generateDispatcher(name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
+func generateDispatcher(size int, name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
 	return &dispatcher{
 		name:    name,
-		buffer:  buffer.NewUnbounded[*Message](),
+		buffer:  make(chan *Message, size),
 		handler: handler,
 		uniques: haxmap.New[string, struct{}](),
 	}
@@ -20,7 +19,7 @@ func generateDispatcher(name string, handler func(dispatcher *dispatcher, messag
 // dispatcher 消息分发器
 type dispatcher struct {
 	name    string
-	buffer  *buffer.Unbounded[*Message]
+	buffer  chan *Message
 	uniques *haxmap.Map[string, struct{}]
 	handler func(dispatcher *dispatcher, message *Message)
 }
@@ -37,20 +36,34 @@ func (slf *dispatcher) antiUnique(name string) {
 func (slf *dispatcher) start() {
 	for {
 		select {
-		case message, ok := <-slf.buffer.Get():
+		case message, ok := <-slf.buffer:
 			if !ok {
 				return
 			}
-			slf.buffer.Load()
 			slf.handler(slf, message)
 		}
 	}
 }
 
 func (slf *dispatcher) put(message *Message) {
-	slf.buffer.Put(message)
+	slf.buffer <- message
 }
 
 func (slf *dispatcher) close() {
-	slf.buffer.Close()
+	close(slf.buffer)
+}
+
+func (slf *dispatcher) transfer(target *dispatcher) {
+	if target == nil {
+		return
+	}
+	for {
+		select {
+		case message, ok := <-slf.buffer:
+			if !ok {
+				return
+			}
+			target.buffer <- message
+		}
+	}
 }

@@ -46,6 +46,32 @@ type runtime struct {
 	messageStatisticsLimit    int             // 消息统计数量
 	messageStatistics         []*atomic.Int64 // 消息统计数量
 	messageStatisticsLock     *sync.RWMutex   // 消息统计锁
+	dispatcherBufferSize      int             // 消息分发器缓冲区大小
+	connWriteBufferSize       int             // 连接写入缓冲区大小
+}
+
+// WithConnWriteBufferSize 通过连接写入缓冲区大小的方式创建服务器
+//   - 默认值为 DefaultConnWriteBufferSize
+//   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
+func WithConnWriteBufferSize(size int) Option {
+	return func(srv *Server) {
+		if size <= 0 {
+			return
+		}
+		srv.connWriteBufferSize = size
+	}
+}
+
+// WithDispatcherBufferSize 通过消息分发器缓冲区大小的方式创建服务器
+//   - 默认值为 DefaultDispatcherBufferSize
+//   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
+func WithDispatcherBufferSize(size int) Option {
+	return func(srv *Server) {
+		if size <= 0 {
+			return
+		}
+		srv.dispatcherBufferSize = size
+	}
 }
 
 // WithMessageStatistics 通过消息统计的方式创建服务器

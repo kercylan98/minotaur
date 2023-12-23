@@ -33,7 +33,9 @@ import (
 func New(network Network, options ...Option) *Server {
 	server := &Server{
 		runtime: &runtime{
-			packetWarnSize: DefaultPacketWarnSize,
+			packetWarnSize:       DefaultPacketWarnSize,
+			dispatcherBufferSize: DefaultDispatcherBufferSize,
+			connWriteBufferSize:  DefaultConnWriteBufferSize,
 		},
 		option:           &option{},
 		network:          network,
@@ -131,7 +133,7 @@ func (slf *Server) Run(addr string) error {
 	slf.event.check()
 	slf.addr = addr
 	slf.startMessageStatistics()
-	slf.systemDispatcher = generateDispatcher(serverSystemDispatcher, slf.dispatchMessage)
+	slf.systemDispatcher = generateDispatcher(slf.dispatcherBufferSize, serverSystemDispatcher, slf.dispatchMessage)
 	slf.messagePool = concurrent.NewPool[Message](
 		func() *Message {
 			return &Message{}
@@ -564,7 +566,7 @@ func (slf *Server) UseShunt(conn *Conn, name string) {
 	defer slf.dispatcherLock.Unlock()
 	d, exist := slf.dispatchers[name]
 	if !exist {
-		d = generateDispatcher(name, slf.dispatchMessage)
+		d = generateDispatcher(slf.dispatcherBufferSize, name, slf.dispatchMessage)
 		go d.start()
 		slf.dispatchers[name] = d
 	}
@@ -577,8 +579,9 @@ func (slf *Server) UseShunt(conn *Conn, name string) {
 
 		delete(slf.dispatcherMember[curr.name], conn.GetID())
 		if len(slf.dispatcherMember[curr.name]) == 0 {
-			curr.close()
 			delete(slf.dispatchers, curr.name)
+			curr.transfer(d)
+			curr.close()
 		}
 	}
 	slf.currDispatcher[conn.GetID()] = d

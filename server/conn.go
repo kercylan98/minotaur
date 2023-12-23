@@ -126,7 +126,7 @@ type connection struct {
 	data        map[any]any
 	closed      bool
 	pool        *concurrent.Pool[*connPacket]
-	loop        *writeloop.WriteLoop[*connPacket]
+	loop        writeloop.WriteLoop[*connPacket]
 	mu          sync.Mutex
 	openTime    time.Time
 	delay       time.Duration
@@ -295,7 +295,7 @@ func (slf *Conn) init() {
 			data.callback = nil
 		},
 	)
-	slf.loop = writeloop.NewWriteLoop[*connPacket](slf.pool, func(data *connPacket) error {
+	slf.loop = writeloop.NewChannel[*connPacket](slf.pool, slf.server.connWriteBufferSize, func(data *connPacket) error {
 		if slf.server.runtime.packetWarnSize > 0 && len(data.packet) > slf.server.runtime.packetWarnSize {
 			log.Warn("Conn.Write", log.String("State", "PacketWarn"), log.String("Reason", "PacketSize"), log.String("ID", slf.GetID()), log.Int("PacketSize", len(data.packet)))
 		}
