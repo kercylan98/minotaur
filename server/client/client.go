@@ -31,7 +31,7 @@ type Client struct {
 	mutex  sync.Mutex
 	closed bool                          // 是否已关闭
 	pool   *concurrent.Pool[*Packet]     // 数据包缓冲池
-	loop   *writeloop.WriteLoop[*Packet] // 写入循环
+	loop   *writeloop.Unbounded[*Packet] // 写入循环
 	block  chan struct{}                 // 以阻塞方式运行
 }
 
@@ -69,7 +69,7 @@ func (slf *Client) Run(block ...bool) error {
 		data.data = nil
 		data.callback = nil
 	})
-	slf.loop = writeloop.NewWriteLoop[*Packet](slf.pool, func(message *Packet) error {
+	slf.loop = writeloop.NewUnbounded[*Packet](slf.pool, func(message *Packet) error {
 		err := slf.core.Write(message)
 		if message.callback != nil {
 			message.callback(err)

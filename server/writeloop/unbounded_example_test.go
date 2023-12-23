@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func ExampleNewWriteLoop() {
+func ExampleNewUnbounded() {
 	pool := concurrent.NewPool[Message](func() *Message {
 		return &Message{}
 	}, func(data *Message) {
@@ -15,7 +15,7 @@ func ExampleNewWriteLoop() {
 	})
 	var wait sync.WaitGroup
 	wait.Add(10)
-	wl := writeloop.NewWriteLoop(pool, func(message *Message) error {
+	wl := writeloop.NewUnbounded(pool, func(message *Message) error {
 		fmt.Println(message.ID)
 		wait.Done()
 		return nil

@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func BenchmarkWriteLoop_Put(b *testing.B) {
-	wl := writeloop.NewWriteLoop(wp, func(message *Message) error {
+func BenchmarkUnbounded_Put(b *testing.B) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
 		return nil
 	}, nil)
 

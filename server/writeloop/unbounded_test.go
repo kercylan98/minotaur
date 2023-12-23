@@ -17,8 +17,8 @@ var wp = concurrent.NewPool(func() *Message {
 	data.ID = 0
 })
 
-func TestNewWriteLoop(t *testing.T) {
-	wl := writeloop.NewWriteLoop(wp, func(message *Message) error {
+func TestNewUnbounded(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
 		t.Log(message.ID)
 		return nil
 	}, func(err any) {
@@ -28,8 +28,8 @@ func TestNewWriteLoop(t *testing.T) {
 	wl.Close()
 }
 
-func TestWriteLoop_Put(t *testing.T) {
-	wl := writeloop.NewWriteLoop(wp, func(message *Message) error {
+func TestUnbounded_Put(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
 		t.Log(message.ID)
 		return nil
 	}, func(err any) {
@@ -46,8 +46,8 @@ func TestWriteLoop_Put(t *testing.T) {
 	wl.Close()
 }
 
-func TestWriteLoop_Close(t *testing.T) {
-	wl := writeloop.NewWriteLoop(wp, func(message *Message) error {
+func TestUnbounded_Close(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
 		t.Log(message.ID)
 		return nil
 	}, func(err any) {
