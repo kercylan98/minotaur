@@ -138,7 +138,7 @@ func (slf *Message) castToTickerMessage(name string, caller func(), mark ...log.
 
 // castToShuntTickerMessage 将消息转换为分发器定时器消息
 func (slf *Message) castToShuntTickerMessage(conn *Conn, name string, caller func(), mark ...log.Field) *Message {
-	slf.t, slf.conn, slf.name, slf.ordinaryHandler, slf.marks = MessageTypeShuntTicker, slf.conn, name, caller, mark
+	slf.t, slf.conn, slf.name, slf.ordinaryHandler, slf.marks = MessageTypeShuntTicker, conn, name, caller, mark
 	return slf
 }
 
