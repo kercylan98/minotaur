@@ -16,7 +16,7 @@ end
 Client->Server:通过 WebSocket、TCP、UDP、KCP 等协议与服务器建立连接
 loop Write Loop
 Server ->Client:写入数据包
-abox left of Server: 数据包将被写入对应连接的无界缓冲区内等待发送 ，写入\n缓冲区后逻辑视为处理完毕，网络 IO 不会阻塞分流渠道
+abox left of Server: 数据包将被写入对应连接的缓冲区内等待发送 ，写入\n缓冲区后逻辑视为处理完毕，网络 IO 不会阻塞分流渠道
 end
 Server -->Shunt: (SystemMessage) OnConnectionOpenedEvent
 Shunt --> Shunt: 消息处理
@@ -25,7 +25,7 @@ Shunt --> Shunt: 消息处理
 
 loop Read Loop
 Client->Server:发送数据包
-abox right of Client: 数据包将被发送到连接对应分流渠道的无界缓冲区内
+abox right of Client: 数据包将被发送到连接对应分流渠道的缓冲区内
 Server -->Shunt: (ShuntMessage) OnConnectionReceivePacketEvent
 Shunt --> Shunt: 消息处理
 Shunt --> Server: 回复消息
