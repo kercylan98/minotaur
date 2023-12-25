@@ -206,7 +206,7 @@ func (slf *event) RegConnectionClosedEvent(handler ConnectionClosedEventHandler,
 }
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
-	slf.PushSystemMessage(func() {
+	slf.PushShuntMessage(conn, func() {
 		slf.Server.online.Delete(conn.GetID())
 		slf.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
 			value(slf.Server, conn, err)

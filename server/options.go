@@ -30,24 +30,33 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect            time.Duration   // 是否开启死锁检测
-	supportMessageTypes       map[int]bool    // websocket模式下支持的消息类型
-	certFile, keyFile         string          // TLS文件
-	tickerPool                *timer.Pool     // 定时器池
-	ticker                    *timer.Ticker   // 定时器
-	tickerAutonomy            bool            // 定时器是否独立运行
-	connTickerSize            int             // 连接定时器大小
-	websocketReadDeadline     time.Duration   // websocket连接超时时间
-	websocketCompression      int             // websocket压缩等级
-	websocketWriteCompression bool            // websocket写入压缩
-	limitLife                 time.Duration   // 限制最大生命周期
-	packetWarnSize            int             // 数据包大小警告
-	messageStatisticsDuration time.Duration   // 消息统计时长
-	messageStatisticsLimit    int             // 消息统计数量
-	messageStatistics         []*atomic.Int64 // 消息统计数量
-	messageStatisticsLock     *sync.RWMutex   // 消息统计锁
-	dispatcherBufferSize      int             // 消息分发器缓冲区大小
-	connWriteBufferSize       int             // 连接写入缓冲区大小
+	deadlockDetect               time.Duration   // 是否开启死锁检测
+	supportMessageTypes          map[int]bool    // websocket模式下支持的消息类型
+	certFile, keyFile            string          // TLS文件
+	tickerPool                   *timer.Pool     // 定时器池
+	ticker                       *timer.Ticker   // 定时器
+	tickerAutonomy               bool            // 定时器是否独立运行
+	connTickerSize               int             // 连接定时器大小
+	websocketReadDeadline        time.Duration   // websocket连接超时时间
+	websocketCompression         int             // websocket压缩等级
+	websocketWriteCompression    bool            // websocket写入压缩
+	limitLife                    time.Duration   // 限制最大生命周期
+	packetWarnSize               int             // 数据包大小警告
+	messageStatisticsDuration    time.Duration   // 消息统计时长
+	messageStatisticsLimit       int             // 消息统计数量
+	messageStatistics            []*atomic.Int64 // 消息统计数量
+	messageStatisticsLock        *sync.RWMutex   // 消息统计锁
+	dispatcherBufferSize         int             // 消息分发器缓冲区大小
+	connWriteBufferSize          int             // 连接写入缓冲区大小
+	disableAutomaticReleaseShunt bool            // 是否禁用自动释放分流渠道
+}
+
+// WithDisableAutomaticReleaseShunt 通过禁用自动释放分流渠道的方式创建服务器
+//   - 默认不开启，当禁用自动释放分流渠道时，服务器将不会在连接断开时自动释放分流渠道，需要手动调用 ReleaseShunt 方法释放
+func WithDisableAutomaticReleaseShunt() Option {
+	return func(srv *Server) {
+		srv.runtime.disableAutomaticReleaseShunt = true
+	}
 }
 
 // WithConnWriteBufferSize 通过连接写入缓冲区大小的方式创建服务器
