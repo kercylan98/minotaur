@@ -2,6 +2,7 @@ package super
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -76,4 +77,17 @@ func (slf *errorManager) init() *errorManager {
 	slf.errorMapper = make(map[error]int)
 	slf.errorMapperRef = make(map[error]error)
 	return slf
+}
+
+// RecoverTransform recover 错误转换
+func RecoverTransform(a any) error {
+	if a == nil {
+		return nil
+	}
+	switch a.(type) {
+	case error:
+		return a.(error)
+	default:
+		return fmt.Errorf("%v", a)
+	}
 }
