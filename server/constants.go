@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/gorilla/websocket"
+	"net/http"
 	"time"
 )
 
@@ -17,3 +19,13 @@ const (
 	DefaultDispatcherBufferSize  = 1024 * 16
 	DefaultConnWriteBufferSize   = 1024 * 1
 )
+
+func DefaultWebsocketUpgrader() *websocket.Upgrader {
+	return &websocket.Upgrader{
+		ReadBufferSize:  4096,
+		WriteBufferSize: 4096,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+}

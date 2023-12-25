@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/server/internal/logger"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
@@ -196,12 +195,8 @@ func (slf *Server) Run(addr string) error {
 
 			go func(conn *Conn) {
 				defer func() {
-					if err := recover(); err != nil {
-						e, ok := err.(error)
-						if !ok {
-							e = fmt.Errorf("%v", err)
-						}
-						conn.Close(e)
+					if err := super.RecoverTransform(recover()); err != nil {
+						conn.Close(err)
 					}
 				}()
 
@@ -254,16 +249,12 @@ func (slf *Server) Run(addr string) error {
 			pattern = addr[index:]
 			slf.addr = slf.addr[:index]
 		}
-		var upgrade = websocket.Upgrader{
-			ReadBufferSize:  4096,
-			WriteBufferSize: 4096,
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
+		if slf.websocketUpgrader == nil {
+			slf.websocketUpgrader = DefaultWebsocketUpgrader()
 		}
 		http.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
 			ip := request.Header.Get("X-Real-IP")
-			ws, err := upgrade.Upgrade(writer, request, nil)
+			ws, err := slf.websocketUpgrader.Upgrade(writer, request, nil)
 			if err != nil {
 				return
 			}
@@ -289,12 +280,8 @@ func (slf *Server) Run(addr string) error {
 			slf.OnConnectionOpenedEvent(conn)
 
 			defer func() {
-				if err := recover(); err != nil {
-					e, ok := err.(error)
-					if !ok {
-						e = fmt.Errorf("%v", err)
-					}
-					conn.Close(e)
+				if err := super.RecoverTransform(recover()); err != nil {
+					conn.Close(err)
 				}
 			}()
 			for !conn.IsClosed() {
@@ -734,15 +721,11 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
 		defer func(msg *Message) {
 			super.Handle(cancel)
-			if err := recover(); err != nil {
+			if err := super.RecoverTransform(recover()); err != nil {
 				stack := string(debug.Stack())
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("error", err), log.String("stack", stack))
 				fmt.Println(stack)
-				e, ok := err.(error)
-				if !ok {
-					e = fmt.Errorf("%v", err)
-				}
-				slf.OnMessageErrorEvent(msg, e)
+				slf.OnMessageErrorEvent(msg, err)
 			}
 			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
 				dispatcher.antiUnique(msg.name)
@@ -782,18 +765,14 @@ func (slf *Server) dispatchMessage(dispatcher *dispatcher, msg *Message) {
 	case MessageTypeAsync, MessageTypeShuntAsync, MessageTypeUniqueAsync, MessageTypeUniqueShuntAsync:
 		if err := slf.ants.Submit(func() {
 			defer func() {
-				if err := recover(); err != nil {
+				if err := super.RecoverTransform(recover()); err != nil {
 					if msg.t == MessageTypeUniqueAsync || msg.t == MessageTypeUniqueShuntAsync {
 						dispatcher.antiUnique(msg.name)
 					}
 					stack := string(debug.Stack())
 					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
 					fmt.Println(stack)
-					e, ok := err.(error)
-					if !ok {
-						e = fmt.Errorf("%v", err)
-					}
-					slf.OnMessageErrorEvent(msg, e)
+					slf.OnMessageErrorEvent(msg, err)
 				}
 				super.Handle(cancel)
 				slf.low(msg, present, time.Second)
