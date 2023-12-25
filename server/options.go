@@ -13,15 +13,15 @@ import (
 
 const (
 	// WebsocketMessageTypeText 表示文本数据消息。文本消息负载被解释为 UTF-8 编码的文本数据
-	WebsocketMessageTypeText = 1
+	WebsocketMessageTypeText = websocket.TextMessage
 	// WebsocketMessageTypeBinary 表示二进制数据消息
-	WebsocketMessageTypeBinary = 2
+	WebsocketMessageTypeBinary = websocket.BinaryMessage
 	// WebsocketMessageTypeClose 表示关闭控制消息。可选消息负载包含数字代码和文本。使用 FormatCloseMessage 函数来格式化关闭消息负载
-	WebsocketMessageTypeClose = 8
+	WebsocketMessageTypeClose = websocket.CloseMessage
 	// WebsocketMessageTypePing 表示 ping 控制消息。可选的消息负载是 UTF-8 编码的文本
-	WebsocketMessageTypePing = 9
+	WebsocketMessageTypePing = websocket.PingMessage
 	// WebsocketMessageTypePong 表示一个 pong 控制消息。可选的消息负载是 UTF-8 编码的文本
-	WebsocketMessageTypePong = 10
+	WebsocketMessageTypePong = websocket.PongMessage
 )
 
 type Option func(srv *Server)
