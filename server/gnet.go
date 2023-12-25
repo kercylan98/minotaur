@@ -8,42 +8,47 @@ import (
 
 type gNet struct {
 	*Server
+	state chan<- error
 }
 
-func (slf *gNet) OnInitComplete(server gnet.Server) (action gnet.Action) {
+func (g *gNet) OnInitComplete(server gnet.Server) (action gnet.Action) {
+	if g.state != nil {
+		g.state <- nil
+		g.state = nil
+	}
 	return
 }
 
-func (slf *gNet) OnShutdown(server gnet.Server) {
+func (g *gNet) OnShutdown(server gnet.Server) {
 	return
 }
 
-func (slf *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
-	conn := newGNetConn(slf.Server, c)
+func (g *gNet) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
+	conn := newGNetConn(g.Server, c)
 	c.SetContext(conn)
-	slf.OnConnectionOpenedEvent(conn)
+	g.OnConnectionOpenedEvent(conn)
 	return
 }
 
-func (slf *gNet) OnClosed(c gnet.Conn, err error) (action gnet.Action) {
+func (g *gNet) OnClosed(c gnet.Conn, err error) (action gnet.Action) {
 	conn := c.Context().(*Conn)
 	conn.Close(err)
 	return
 }
 
-func (slf *gNet) PreWrite(c gnet.Conn) {
+func (g *gNet) PreWrite(c gnet.Conn) {
 	return
 }
 
-func (slf *gNet) AfterWrite(c gnet.Conn, b []byte) {
+func (g *gNet) AfterWrite(c gnet.Conn, b []byte) {
 	return
 }
 
-func (slf *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	slf.Server.PushPacketMessage(c.Context().(*Conn), 0, bytes.Clone(packet))
+func (g *gNet) React(packet []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	g.Server.PushPacketMessage(c.Context().(*Conn), 0, bytes.Clone(packet))
 	return nil, gnet.None
 }
 
-func (slf *gNet) Tick() (delay time.Duration, action gnet.Action) {
+func (g *gNet) Tick() (delay time.Duration, action gnet.Action) {
 	return
 }

@@ -16,23 +16,27 @@ import (
 )
 
 type (
-	StartBeforeEventHandler                 func(srv *Server)
-	StartFinishEventHandler                 func(srv *Server)
-	StopEventHandler                        func(srv *Server)
-	ConnectionReceivePacketEventHandler     func(srv *Server, conn *Conn, packet []byte)
+	MessageReadyEventHandler func(srv *Server)
+	StartBeforeEventHandler  func(srv *Server)
+	StartFinishEventHandler  func(srv *Server)
+	StopEventHandler         func(srv *Server)
+
 	ConnectionOpenedEventHandler            func(srv *Server, conn *Conn)
-	ConnectionClosedEventHandler            func(srv *Server, conn *Conn, err any)
-	MessageErrorEventHandler                func(srv *Server, message *Message, err error)
-	MessageLowExecEventHandler              func(srv *Server, message *Message, cost time.Duration)
-	ConsoleCommandEventHandler              func(srv *Server, command string, params ConsoleParams)
 	ConnectionOpenedAfterEventHandler       func(srv *Server, conn *Conn)
-	ConnectionWritePacketBeforeEventHandler func(srv *Server, conn *Conn, packet []byte) []byte
-	ShuntChannelCreatedEventHandler         func(srv *Server, guid int64)
-	ShuntChannelClosedEventHandler          func(srv *Server, guid int64)
 	ConnectionPacketPreprocessEventHandler  func(srv *Server, conn *Conn, packet []byte, abort func(), usePacket func(newPacket []byte))
-	MessageExecBeforeEventHandler           func(srv *Server, message *Message) bool
-	MessageReadyEventHandler                func(srv *Server)
-	OnDeadlockDetectEventHandler            func(srv *Server, message *Message)
+	ConnectionReceivePacketEventHandler     func(srv *Server, conn *Conn, packet []byte)
+	ConnectionWritePacketBeforeEventHandler func(srv *Server, conn *Conn, packet []byte) []byte
+	ConnectionClosedEventHandler            func(srv *Server, conn *Conn, err any)
+
+	ShuntChannelCreatedEventHandler func(srv *Server, name string)
+	ShuntChannelClosedEventHandler  func(srv *Server, name string)
+
+	MessageExecBeforeEventHandler func(srv *Server, message *Message) bool
+	MessageLowExecEventHandler    func(srv *Server, message *Message, cost time.Duration)
+	MessageErrorEventHandler      func(srv *Server, message *Message, err error)
+
+	ConsoleCommandEventHandler   func(srv *Server, command string, params ConsoleParams)
+	OnDeadlockDetectEventHandler func(srv *Server, message *Message)
 )
 
 func newEvent(srv *Server) *event {
@@ -207,7 +211,7 @@ func (slf *event) RegConnectionClosedEvent(handler ConnectionClosedEventHandler,
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 	slf.PushShuntMessage(conn, func() {
-		slf.Server.online.Delete(conn.GetID())
+		slf.Server.online.Del(conn.GetID())
 		slf.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
 			value(slf.Server, conn, err)
 			return true
@@ -340,10 +344,10 @@ func (slf *event) RegShuntChannelCreatedEvent(handler ShuntChannelCreatedEventHa
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
-func (slf *event) OnShuntChannelCreatedEvent(guid int64) {
+func (slf *event) OnShuntChannelCreatedEvent(name string) {
 	slf.PushSystemMessage(func() {
 		slf.shuntChannelCreatedEventHandlers.RangeValue(func(index int, value ShuntChannelCreatedEventHandler) bool {
-			value(slf.Server, guid)
+			value(slf.Server, name)
 			return true
 		})
 	}, log.String("Event", "OnShuntChannelCreatedEvent"))
@@ -355,10 +359,10 @@ func (slf *event) RegShuntChannelCloseEvent(handler ShuntChannelClosedEventHandl
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
-func (slf *event) OnShuntChannelClosedEvent(guid int64) {
+func (slf *event) OnShuntChannelClosedEvent(name string) {
 	slf.PushSystemMessage(func() {
 		slf.shuntChannelClosedEventHandlers.RangeValue(func(index int, value ShuntChannelClosedEventHandler) bool {
-			value(slf.Server, guid)
+			value(slf.Server, name)
 			return true
 		})
 	}, log.String("Event", "OnShuntChannelClosedEvent"))
@@ -459,14 +463,4 @@ func (slf *event) OnDeadlockDetectEvent(message *Message) {
 		value(slf.Server, message)
 		return true
 	})
-}
-
-func (slf *event) check() {
-	switch slf.network {
-	case NetworkHttp, NetworkGRPC, NetworkNone:
-	default:
-		if slf.connectionReceivePacketEventHandlers.Len() == 0 {
-			log.Warn("Server", log.String("ConnectionReceivePacketEvent", "invalid server, no packets processed"))
-		}
-	}
 }

@@ -11,6 +11,32 @@ import (
 
 func TestNew(t *testing.T) {
 	srv := server.New(server.NetworkWebsocket, server.WithPProf())
+	srv.RegStartBeforeEvent(func(srv *server.Server) {
+		fmt.Println("启动前")
+	})
+	srv.RegStartFinishEvent(func(srv *server.Server) {
+		fmt.Println("启动完成")
+	})
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
+		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
+	})
+
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+
+func TestNew2(t *testing.T) {
+	srv := server.New(server.NetworkWebsocket, server.WithPProf())
+	srv.RegStartBeforeEvent(func(srv *server.Server) {
+		fmt.Println("启动前")
+	})
+	srv.RegStartFinishEvent(func(srv *server.Server) {
+		fmt.Println("启动完成")
+	})
 	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
 		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
 	})

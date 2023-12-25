@@ -1,8 +1,6 @@
 package server
 
 import (
-	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/network"
 	"github.com/xtaci/kcp-go/v5"
 	"math"
 	"os"
@@ -71,16 +69,7 @@ func (slf *MultipleServer) Run() {
 		kcp.SystemTimedSched.Close()
 	}
 
-	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
-	ip, _ := network.IP()
-	for _, server := range slf.servers {
-		log.Info("Server", log.String(serverMultipleMark, "RunningInfo"),
-			log.Any("network", server.network),
-			log.String("ip", ip.String()),
-			log.String("listen", server.addr),
-		)
-	}
-	log.Info("Server", log.String(serverMultipleMark, "===================================================================="))
+	ShowServersInfo(serverMultipleMark, slf.servers...)
 
 	systemSignal := make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

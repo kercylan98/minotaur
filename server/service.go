@@ -28,10 +28,3 @@ func BindService(srv *Server, services ...Service) {
 		})
 	}
 }
-
-// onServicesInit 服务初始化
-func onServicesInit(srv *Server) {
-	for _, service := range srv.services {
-		service()
-	}
-}
