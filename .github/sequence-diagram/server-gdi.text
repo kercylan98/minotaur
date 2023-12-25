@@ -33,5 +33,5 @@ Server --> Server: 写入 Write Loop
 end
 
 Client <->Server: 断开或关闭连接
-Server -->Shunt: (SystemMessage) OnConnectionClosedEvent
+Server -->Shunt: (ShuntMessage) OnConnectionClosedEvent
 Shunt --> Shunt: 消息处理
