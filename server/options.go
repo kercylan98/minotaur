@@ -6,6 +6,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/timer"
 	"google.golang.org/grpc"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -31,26 +32,38 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect               time.Duration       // 是否开启死锁检测
-	supportMessageTypes          map[int]bool        // websocket 模式下支持的消息类型
-	certFile, keyFile            string              // TLS文件
-	tickerPool                   *timer.Pool         // 定时器池
-	ticker                       *timer.Ticker       // 定时器
-	tickerAutonomy               bool                // 定时器是否独立运行
-	connTickerSize               int                 // 连接定时器大小
-	websocketReadDeadline        time.Duration       // websocket 连接超时时间
-	websocketCompression         int                 // websocket 压缩等级
-	websocketWriteCompression    bool                // websocket 写入压缩
-	limitLife                    time.Duration       // 限制最大生命周期
-	packetWarnSize               int                 // 数据包大小警告
-	messageStatisticsDuration    time.Duration       // 消息统计时长
-	messageStatisticsLimit       int                 // 消息统计数量
-	messageStatistics            []*atomic.Int64     // 消息统计数量
-	messageStatisticsLock        *sync.RWMutex       // 消息统计锁
-	dispatcherBufferSize         int                 // 消息分发器缓冲区大小
-	connWriteBufferSize          int                 // 连接写入缓冲区大小
-	disableAutomaticReleaseShunt bool                // 是否禁用自动释放分流渠道
-	websocketUpgrader            *websocket.Upgrader // websocket 升级器
+	deadlockDetect               time.Duration                                                                       // 是否开启死锁检测
+	supportMessageTypes          map[int]bool                                                                        // websocket 模式下支持的消息类型
+	certFile, keyFile            string                                                                              // TLS文件
+	tickerPool                   *timer.Pool                                                                         // 定时器池
+	ticker                       *timer.Ticker                                                                       // 定时器
+	tickerAutonomy               bool                                                                                // 定时器是否独立运行
+	connTickerSize               int                                                                                 // 连接定时器大小
+	websocketReadDeadline        time.Duration                                                                       // websocket 连接超时时间
+	websocketCompression         int                                                                                 // websocket 压缩等级
+	websocketWriteCompression    bool                                                                                // websocket 写入压缩
+	limitLife                    time.Duration                                                                       // 限制最大生命周期
+	packetWarnSize               int                                                                                 // 数据包大小警告
+	messageStatisticsDuration    time.Duration                                                                       // 消息统计时长
+	messageStatisticsLimit       int                                                                                 // 消息统计数量
+	messageStatistics            []*atomic.Int64                                                                     // 消息统计数量
+	messageStatisticsLock        *sync.RWMutex                                                                       // 消息统计锁
+	dispatcherBufferSize         int                                                                                 // 消息分发器缓冲区大小
+	connWriteBufferSize          int                                                                                 // 连接写入缓冲区大小
+	disableAutomaticReleaseShunt bool                                                                                // 是否禁用自动释放分流渠道
+	websocketUpgrader            *websocket.Upgrader                                                                 // websocket 升级器
+	websocketConnInitializer     func(writer http.ResponseWriter, request *http.Request, conn *websocket.Conn) error // websocket 连接初始化
+}
+
+// WithWebsocketConnInitializer 通过 websocket 连接初始化的方式创建服务器，当 initializer 返回错误时，服务器将不会处理该连接的后续逻辑
+//   - 该选项仅在创建 NetworkWebsocket 服务器时有效
+func WithWebsocketConnInitializer(initializer func(writer http.ResponseWriter, request *http.Request, conn *websocket.Conn) error) Option {
+	return func(srv *Server) {
+		if srv.network != NetworkWebsocket {
+			return
+		}
+		srv.websocketConnInitializer = initializer
+	}
 }
 
 // WithWebsocketUpgrade 通过指定 websocket.Upgrader 的方式创建服务器

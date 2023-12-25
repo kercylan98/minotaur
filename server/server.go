@@ -258,6 +258,11 @@ func (slf *Server) Run(addr string) error {
 			if err != nil {
 				return
 			}
+			if slf.websocketConnInitializer != nil {
+				if err = slf.websocketConnInitializer(writer, request, ws); err != nil {
+					return
+				}
+			}
 			if len(ip) == 0 {
 				addr := ws.RemoteAddr().String()
 				if index := strings.LastIndex(addr, ":"); index != -1 {
