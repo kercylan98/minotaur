@@ -97,18 +97,19 @@ type Server struct {
 	cancel                   context.CancelFunc                    // 停止上下文
 	online                   *concurrent.BalanceMap[string, *Conn] // 在线连接
 	systemDispatcher         *dispatcher                           // 系统消息分发器
-	network                  Network                               // 网络类型
-	addr                     string                                // 侦听地址
 	systemSignal             chan os.Signal                        // 系统信号
 	closeChannel             chan struct{}                         // 关闭信号
 	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
-	dispatcherLock           sync.RWMutex                          // 消息分发器锁
-	isShutdown               atomic.Bool                           // 是否已关闭
-	messageCounter           atomic.Int64                          // 消息计数器
-	isRunning                bool                                  // 是否正在运行
 	dispatchers              map[string]*dispatcher                // 消息分发器集合
 	dispatcherMember         map[string]map[string]*Conn           // 消息分发器包含的连接
 	currDispatcher           map[string]*dispatcher                // 当前连接所处消息分发器
+	dispatcherLock           sync.RWMutex                          // 消息分发器锁
+	isShutdown               atomic.Bool                           // 是否已关闭
+	messageCounter           atomic.Int64                          // 消息计数器
+	addr                     string                                // 侦听地址
+	network                  Network                               // 网络类型
+	isRunning                bool                                  // 是否正在运行
+	services                 []func()                              // 服务
 }
 
 // Run 使用特定地址运行服务器
@@ -130,6 +131,7 @@ func (slf *Server) Run(addr string) error {
 	if slf.event == nil {
 		return ErrConstructed
 	}
+	onServicesInit(slf)
 	slf.event.check()
 	slf.addr = addr
 	slf.startMessageStatistics()
