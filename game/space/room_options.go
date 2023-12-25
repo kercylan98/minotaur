@@ -34,11 +34,11 @@ func (rco *RoomControllerOptions[EntityID, RoomID, Entity, Room]) WithOwnerInher
 		rco.ownerInheritHandler = inheritHandler[0]
 	} else if inherit {
 		rco.ownerInheritHandler = func(controller *RoomController[EntityID, RoomID, Entity, Room]) *EntityID {
-			if e := controller.GetFirstEmptySeatEntity(); e != nil {
+			if e := controller.GetFirstEmptySeatEntity(); !generic.IsNil(e) {
 				var id = e.GetId()
 				return &id
 			}
-			if e := controller.GetRandomEntity(); e != nil {
+			if e := controller.GetRandomEntity(); !generic.IsNil(e) {
 				var id = e.GetId()
 				return &id
 			}
