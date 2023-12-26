@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.4.1](https://github.com/kercylan98/minotaur/compare/v0.4.0...v0.4.1) (2023-12-25)
+
+
+### Other | 其他更改
+
+* 示例及 buffer README.md 更新 ([c3e1581](https://github.com/kercylan98/minotaur/commit/c3e1581289660b57291bc4a4108d2a3d785b7713))
+* 移除 writeloop 的 defer recover 行为，发生未处理错误将不再 panic，更改为输出 Error 日志 ([32576fb](https://github.com/kercylan98/minotaur/commit/32576fbc79c41e21098b10efaa7ea0b999556781))
+
+
+### Features | 新特性
+
+* activity 和 fight 包文档优化 ([7693518](https://github.com/kercylan98/minotaur/commit/7693518640f25193fb012a41aabf04e53b978930))
+* compress 新增 tar 和 zip 解压缩函数 ([6bd987f](https://github.com/kercylan98/minotaur/commit/6bd987fce5d78cbd1c208e098a066dedca0b3fe5))
+* huge 包新增 Float 实现 ([af189ab](https://github.com/kercylan98/minotaur/commit/af189ab26b1ebf876e44ba508dc8d8600c2ec96f))
+* server 包增加消息统计相关函数 ([05aeed0](https://github.com/kercylan98/minotaur/commit/05aeed05a1533e87237aefca0890533134eda4d2))
+* server 包新增 WithDisableAutomaticReleaseShunt 可选项，可禁止分流渠道自动释放。增加 ReleaseShunt、HasShunt、GetShuntNum 等函数。优化系统分流渠道将不再能够被释放 ([d9ef347](https://github.com/kercylan98/minotaur/commit/d9ef3474a721ef7d98e0bfd9509378d25d18ef69))
+* space.RoomController 支持设置房主 ([a269845](https://github.com/kercylan98/minotaur/commit/a269845dbbdc3827bf8626d038f4a9d9b87f786e))
+
+
+### Bug Fixes | 修复
+
+* lockstep 定时器导致空指针问题处理 ([ceffa2e](https://github.com/kercylan98/minotaur/commit/ceffa2e46fcf7aa246345af5a12e0c95fbaa50ab))
+* 修复 space.RoomManager.AssumeControl 函数编译错误的问题 ([3f099e6](https://github.com/kercylan98/minotaur/commit/3f099e6f8e0c3a4540d8d88856745d71b1cb28b8))
+
+
+### Docs | 文档优化
+
+* game 文档错误修正 ([e43185f](https://github.com/kercylan98/minotaur/commit/e43185f953d5e652ac817b5194f6c19f2a96a108))
+* 优化 aoi、arrangement、buffer、combination、compress 包文档 ([1afae90](https://github.com/kercylan98/minotaur/commit/1afae90f695dc8be8b4736d94e930e2c70280283))
+* 增加 lockstep 包 README.md 文档 ([aebdb53](https://github.com/kercylan98/minotaur/commit/aebdb53bc63fcf495fb28ab230af2ad833342061))
+* 增加 space 包 README.md 文档，优化 room 相关内容可读性 ([9d9f7a3](https://github.com/kercylan98/minotaur/commit/9d9f7a3854227232be2a077b6653dc6d6f47f725))
+* 增加 writeloop 文档 ([307e500](https://github.com/kercylan98/minotaur/commit/307e500b82abb3e48851971346fd866ec96d938d))
+* 补充 writeloop 的 README.md 相关的 Channel 部分 ([610ee0d](https://github.com/kercylan98/minotaur/commit/610ee0d649da268ad104dbf328dca05e83807cd3))
+
+
+### Code Refactoring | 重构
+
+* server.Server 兼容新的 concurrent.Pool 和 buffer.Unbounded ([eb28d42](https://github.com/kercylan98/minotaur/commit/eb28d42bf19c7cd57af79284505f5fbbe88485ba))
+* writeloop.WriteLoop 更名为 Unbounded，新增基于 chan 实现的 WriteLoop ([4b85cea](https://github.com/kercylan98/minotaur/commit/4b85ceaf131c5f9657e0b8b9a58df2fea763967b))
+* 优化 concurrent.Pool 的实现，移除构造函数中对 size 的要求。更改为使用 sync.Pool 的内置实现 ([3877b28](https://github.com/kercylan98/minotaur/commit/3877b28baaab60d3ca03f1b639bd123c5488d687))
+* 移除不再适用的 game.Player 和 builtin 包 ([7b4d6bc](https://github.com/kercylan98/minotaur/commit/7b4d6bc069ca6fba3ac96fb7f83340df97aae1c3))
+
+
+### Performance Improvements | 性能优化
+
+* 去除 buffer.Unbounded 不必要的构造函数和 nil 字段 ([7111350](https://github.com/kercylan98/minotaur/commit/711135002217c9ccb16f944dfbf26a9b5f934c0d))
+* 更改 server 和 conn 的消息实现为 channel ([d27fa7c](https://github.com/kercylan98/minotaur/commit/d27fa7c246319d2d4119c892b1808643db20a5e7))
+
+
+### Tests | 新增或优化测试用例
+
+* concurrent.Pool 增加测试用例 ([8f4e652](https://github.com/kercylan98/minotaur/commit/8f4e65219e6c9b42e128e0491bf2af7e06d3a32b))
+* writeloop 包增加测试用例 ([f52d73e](https://github.com/kercylan98/minotaur/commit/f52d73e20e49bdda14cc345b17ff6cd664b3aab7))
+* 增加 buffer.Unbounded 测试用例 ([cc5274c](https://github.com/kercylan98/minotaur/commit/cc5274ce62c670f6e8f7a4d684c70e1bde80416f))
+
 ## [0.4.0](https://github.com/kercylan98/minotaur/compare/v0.3.6...v0.4.0) (2023-12-22)
 
 
