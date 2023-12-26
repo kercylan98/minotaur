@@ -69,7 +69,7 @@ func (slf *MultipleServer) Run() {
 		kcp.SystemTimedSched.Close()
 	}
 
-	ShowServersInfo(serverMultipleMark, slf.servers...)
+	showServersInfo(serverMultipleMark, slf.servers...)
 
 	systemSignal := make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
