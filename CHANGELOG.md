@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.4.2](https://github.com/kercylan98/minotaur/compare/v0.4.1...v0.4.2) (2023-12-26)
+
+
+### Other | 其他更改
+
+* 优化 server 包中 websocket 消息类型常量的指向 ([2639412](https://github.com/kercylan98/minotaur/commit/2639412f96e12459dc7c57225949dcbc60043418))
+* 移除无用的 server.ConnReadonly ([aaa0079](https://github.com/kercylan98/minotaur/commit/aaa007939f2f49f358de9f9d60cb932077677dd1))
+
+
+### Features | 新特性
+
+* server 包新增 service 模式的加载函数 server.BindService ([bdf4a23](https://github.com/kercylan98/minotaur/commit/bdf4a237df5e055851f06002e98d8727c5357e2c))
+* server 包新增 WithWebsocketConnInitializer 函数，支持对 websocket 连接打开后进行初始化设置 ([7ee4b89](https://github.com/kercylan98/minotaur/commit/7ee4b893cdc3e2bea8c2be39e254e4f3b13c5695))
+* server 包新增 WithWebsocketUpgrade 函数，支持自定义 websocket.Upgrader ([e960d07](https://github.com/kercylan98/minotaur/commit/e960d07f49adb83359f92543053b2efe1e35d182))
+* super 包新增 RecoverTransform 函数，用于将 recover() 结果转化为 error ([7efe88a](https://github.com/kercylan98/minotaur/commit/7efe88a0f4a8918541087d95a5d94a49a974727f))
+
+
+### Bug Fixes | 修复
+
+* 修复 room_options.go 中空指针检查方式错误的问题 ([556d1cd](https://github.com/kercylan98/minotaur/commit/556d1cdc020c1ab1e7cd2e7bee76366311415e9a))
+* 修复 server 中分流定时消息无法命中分流渠道的问题 ([de43f53](https://github.com/kercylan98/minotaur/commit/de43f531317c664a31d85dc14264b42652aadde5))
+* 修复 server.WithDispatcherBufferSize 过小的情况下，在消息中发布新消息导致永久阻塞的问题 ([b39625c](https://github.com/kercylan98/minotaur/commit/b39625c0cb5e1e8c04d10c263b0a9d75c6de6d40))
+
+
+### Docs | 文档优化
+
+* README.md 架构图优化 ([bd150a3](https://github.com/kercylan98/minotaur/commit/bd150a32e87119ecc2570e9a80c3697acaed5453))
+
+
+### Styling | 可读性优化
+
+* 优化 server 包代码可读性 ([af0a5a1](https://github.com/kercylan98/minotaur/commit/af0a5a1c25de46d2ea03abf777a40bd2723536c3))
+
 ## [0.4.1](https://github.com/kercylan98/minotaur/compare/v0.4.0...v0.4.1) (2023-12-25)
 
 
