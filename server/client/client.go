@@ -27,17 +27,28 @@ func CloneClient(client *Client) *Client {
 // Client 客户端
 type Client struct {
 	*events
-	core   Core
-	mutex  sync.Mutex
-	closed bool                          // 是否已关闭
-	pool   *concurrent.Pool[*Packet]     // 数据包缓冲池
-	loop   *writeloop.Unbounded[*Packet] // 写入循环
-	block  chan struct{}                 // 以阻塞方式运行
+	core           Core
+	mutex          sync.Mutex
+	closed         bool                        // 是否已关闭
+	pool           *concurrent.Pool[*Packet]   // 数据包缓冲池
+	loop           *writeloop.Channel[*Packet] // 写入循环
+	loopBufferSize int                         // 写入循环缓冲区大小
+	block          chan struct{}               // 以阻塞方式运行
 }
 
 // Run 运行客户端，当客户端已运行时，会先关闭客户端再重新运行
 //   - block 以阻塞方式运行
 func (slf *Client) Run(block ...bool) error {
+	return slf.RunByBufferSize(1024*10, block...)
+}
+
+// RunByBufferSize 指定写入循环缓冲区大小运行客户端，当客户端已运行时，会先关闭客户端再重新运行
+//   - block 以阻塞方式运行
+func (slf *Client) RunByBufferSize(size int, block ...bool) error {
+	if size <= 0 {
+		return errors.New("buffer size must be greater than 0")
+	}
+	slf.loopBufferSize = size
 	slf.mutex.Lock()
 	if !slf.closed {
 		slf.mutex.Unlock()
@@ -69,7 +80,7 @@ func (slf *Client) Run(block ...bool) error {
 		data.data = nil
 		data.callback = nil
 	})
-	slf.loop = writeloop.NewUnbounded[*Packet](slf.pool, func(message *Packet) error {
+	slf.loop = writeloop.NewChannel[*Packet](slf.pool, slf.loopBufferSize, func(message *Packet) error {
 		err := slf.core.Write(message)
 		if message.callback != nil {
 			message.callback(err)
