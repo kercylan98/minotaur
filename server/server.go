@@ -129,7 +129,7 @@ func (srv *Server) Run(addr string) (err error) {
 	onServicesInit(srv)
 	onMessageSystemInit(srv)
 	if srv.multiple == nil {
-		ShowServersInfo(serverMark, srv)
+		showServersInfo(serverMark, srv)
 	}
 	if err = <-startState; err != nil {
 		return err
@@ -780,11 +780,12 @@ func (srv *Server) HasMessageStatistics() bool {
 	return srv.runtime.messageStatisticsLock != nil
 }
 
-// ShowServersInfo 显示服务器信息
-func ShowServersInfo(mark string, servers ...*Server) {
+// showServersInfo 显示服务器信息
+func showServersInfo(mark string, servers ...*Server) {
 	var serverInfos = make([]func(), 0, len(servers))
 	var ip, _ = network.IP()
 	for _, srv := range servers {
+		srv := srv
 		serverInfos = append(serverInfos, func() {
 			log.Info("Server", log.String(mark, "RunningInfo"), log.Any("network", srv.network), log.String("ip", ip.String()), log.String("listen", srv.addr))
 		})
