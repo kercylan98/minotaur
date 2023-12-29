@@ -434,6 +434,11 @@ func (srv *Server) pushMessage(message *Message) {
 func (srv *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
 	cost := time.Since(present)
 	if cost > expect {
+		if message == nil {
+			log.Warn("ServerLowMessage", log.String("type", "HTTP"), log.String("cost", cost.String()), log.Any("message", messageReplace))
+			srv.OnMessageLowExecEvent(nil, cost)
+			return
+		}
 		if len(messageReplace) > 0 {
 			for i, s := range messageReplace {
 				message.marks = append(message.marks, log.String(fmt.Sprintf("Other-%d", i+1), s))
