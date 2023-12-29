@@ -18,6 +18,7 @@ const (
 	DefaultPacketWarnSize        = 1024 * 1024 * 1 // 1MB
 	DefaultDispatcherBufferSize  = 1024 * 16
 	DefaultConnWriteBufferSize   = 1024 * 1
+	DefaultConnHubBufferSize     = 1024 * 1
 )
 
 func DefaultWebsocketUpgrader() *websocket.Upgrader {

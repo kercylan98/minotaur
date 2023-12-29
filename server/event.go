@@ -211,7 +211,7 @@ func (slf *event) RegConnectionClosedEvent(handler ConnectionClosedEventHandler,
 
 func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 	slf.PushShuntMessage(conn, func() {
-		slf.Server.online.Del(conn.GetID())
+		slf.unregisterConn(conn.GetID())
 		slf.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
 			value(slf.Server, conn, err)
 			return true
@@ -231,7 +231,7 @@ func (slf *event) RegConnectionOpenedEvent(handler ConnectionOpenedEventHandler,
 
 func (slf *event) OnConnectionOpenedEvent(conn *Conn) {
 	slf.PushSystemMessage(func() {
-		slf.Server.online.Set(conn.GetID(), conn)
+		slf.registerConn(conn)
 		slf.connectionOpenedEventHandlers.RangeValue(func(index int, value ConnectionOpenedEventHandler) bool {
 			value(slf.Server, conn)
 			return true

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alphadose/haxmap"
 	"github.com/gin-gonic/gin"
 	"github.com/kercylan98/minotaur/server/internal/logger"
 	"github.com/kercylan98/minotaur/utils/concurrent"
@@ -36,9 +35,9 @@ func New(network Network, options ...Option) *Server {
 			dispatcherBufferSize: DefaultDispatcherBufferSize,
 			connWriteBufferSize:  DefaultConnWriteBufferSize,
 		},
+		hub:              &hub{},
 		option:           &option{},
 		network:          network,
-		online:           haxmap.New[string, *Conn](),
 		closeChannel:     make(chan struct{}, 1),
 		systemSignal:     make(chan os.Signal, 1),
 		dispatchers:      make(map[string]*dispatcher),
@@ -71,6 +70,7 @@ type Server struct {
 	*event                                               // 事件
 	*runtime                                             // 运行时
 	*option                                              // 可选项
+	*hub                                                 // 连接集合
 	ginServer                *gin.Engine                 // HTTP模式下的路由器
 	httpServer               *http.Server                // HTTP模式下的服务器
 	grpcServer               *grpc.Server                // GRPC模式下的服务器
@@ -80,7 +80,6 @@ type Server struct {
 	messagePool              *concurrent.Pool[*Message]  // 消息池
 	ctx                      context.Context             // 上下文
 	cancel                   context.CancelFunc          // 停止上下文
-	online                   *haxmap.Map[string, *Conn]  // 在线连接
 	systemDispatcher         *dispatcher                 // 系统消息分发器
 	systemSignal             chan os.Signal              // 系统信号
 	closeChannel             chan struct{}               // 关闭信号
@@ -106,6 +105,7 @@ func (srv *Server) preCheckAndAdaptation(addr string) (startState <-chan error, 
 		kcp.SystemTimedSched.Close()
 	}
 
+	srv.hub.run(srv.ctx)
 	return srv.network.adaptation(srv), nil
 }
 
@@ -172,52 +172,6 @@ func (srv *Server) Context() context.Context {
 // TimeoutContext 获取服务器超时上下文，context.WithTimeout 的简写
 func (srv *Server) TimeoutContext(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(srv.ctx, timeout)
-}
-
-// GetOnlineCount 获取在线人数
-func (srv *Server) GetOnlineCount() int {
-	return int(srv.online.Len())
-}
-
-// GetOnlineBotCount 获取在线机器人数量
-func (srv *Server) GetOnlineBotCount() int {
-	var count int
-	srv.online.ForEach(func(id string, conn *Conn) bool {
-		if conn.IsBot() {
-			count++
-		}
-		return true
-	})
-	return count
-}
-
-// GetOnline 获取在线连接
-func (srv *Server) GetOnline(id string) *Conn {
-	c, _ := srv.online.Get(id)
-	return c
-}
-
-// GetOnlineAll 获取所有在线连接
-func (srv *Server) GetOnlineAll() map[string]*Conn {
-	var m = map[string]*Conn{}
-	srv.online.ForEach(func(id string, conn *Conn) bool {
-		m[id] = conn
-		return true
-	})
-	return m
-}
-
-// IsOnline 是否在线
-func (srv *Server) IsOnline(id string) bool {
-	_, exist := srv.online.Get(id)
-	return exist
-}
-
-// CloseConn 关闭连接
-func (srv *Server) CloseConn(id string) {
-	if conn, exist := srv.online.Get(id); exist {
-		conn.Close()
-	}
 }
 
 // Ticker 获取服务器定时器
