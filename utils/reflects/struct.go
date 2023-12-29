@@ -1,19 +1,9 @@
 package reflects
 
 import (
-	"fmt"
 	"reflect"
 	"unsafe"
 )
-
-// DeepCopy 深拷贝
-func DeepCopy[T any](src T) T {
-	vof := reflect.Indirect(reflect.ValueOf(src))
-	tof := vof.Type()
-	fmt.Println(tof)
-
-	return src
-}
 
 // GetPtrUnExportFiled 获取指针类型的未导出字段
 func GetPtrUnExportFiled(s reflect.Value, filedIndex int) reflect.Value {
