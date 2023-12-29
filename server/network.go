@@ -128,7 +128,7 @@ func (n Network) gNetMode(state chan<- error, srv *Server) {
 			gnet.WithTicker(true),
 			gnet.WithMulticore(true),
 		); err != nil {
-			srv.gServer.state <- err
+			super.TryWriteChannel(srv.gServer.state, err)
 		}
 	}(srv)
 }
@@ -143,7 +143,7 @@ func (n Network) grpcMode(state chan<- error, srv *Server) {
 	lis := (&listener{srv: srv, Listener: l, state: state}).init()
 	go func(srv *Server, lis *listener) {
 		if err = srv.grpcServer.Serve(lis); err != nil {
-			lis.state <- err
+			super.TryWriteChannel(lis.state, err)
 		}
 	}(srv, lis)
 }
@@ -152,7 +152,7 @@ func (n Network) grpcMode(state chan<- error, srv *Server) {
 func (n Network) kcpMode(state chan<- error, srv *Server) {
 	l, err := kcp.ListenWithOptions(srv.addr, nil, 0, 0)
 	if err != nil {
-		state <- err
+		super.TryWriteChannel(state, err)
 		return
 	}
 	lis := (&listener{srv: srv, kcpListener: l, state: state}).init()
@@ -195,7 +195,7 @@ func (n Network) httpMode(state chan<- error, srv *Server) {
 	srv.httpServer.Addr = srv.addr
 	l, err := net.Listen(string(NetworkTcp), srv.addr)
 	if err != nil {
-		state <- err
+		super.TryWriteChannel(state, err)
 		return
 	}
 	gin.SetMode(gin.ReleaseMode)
@@ -215,7 +215,7 @@ func (n Network) httpMode(state chan<- error, srv *Server) {
 			err = lis.srv.httpServer.Serve(lis)
 		}
 		if err != nil {
-			lis.state <- err
+			super.TryWriteChannel(lis.state, err)
 		}
 	}((&listener{srv: srv, Listener: l, state: state}).init())
 }
@@ -224,7 +224,7 @@ func (n Network) httpMode(state chan<- error, srv *Server) {
 func (n Network) websocketMode(state chan<- error, srv *Server) {
 	l, err := net.Listen(string(NetworkTcp), srv.addr)
 	if err != nil {
-		state <- err
+		super.TryWriteChannel(state, err)
 		return
 	}
 	var pattern string
@@ -302,7 +302,7 @@ func (n Network) websocketMode(state chan<- error, srv *Server) {
 			err = http.Serve(lis, nil)
 		}
 		if err != nil {
-			lis.state <- err
+			super.TryWriteChannel(lis.state, err)
 		}
 	}((&listener{srv: srv, Listener: l, state: state}).init())
 }
