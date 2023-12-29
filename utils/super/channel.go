@@ -10,3 +10,13 @@ func TryWriteChannel[T any](ch chan<- T, data T) bool {
 		return false
 	}
 }
+
+// TryWriteChannelByHandler 尝试写入 channel，如果 channel 无法写入则执行 handler
+//   - 无法写入的情况包括：channel 已满、channel 已关闭
+func TryWriteChannelByHandler[T any](ch chan<- T, data T, handler func()) {
+	select {
+	case ch <- data:
+	default:
+		handler()
+	}
+}
