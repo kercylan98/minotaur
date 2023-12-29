@@ -29,25 +29,24 @@ func Del[V any](slice *[]V, index int) {
 }
 
 // Copy 复制特定切片
-func Copy[V any](slice []V) []V {
-	var s = make([]V, len(slice), len(slice))
-	for i := 0; i < len(slice); i++ {
-		s[i] = slice[i]
+//   - 该函数已经可使用标准库 slices.Clone 代替，但是由于调用者可能繁多，所以该函数将不会被移除
+func Copy[S ~[]V, V any](slice S) S {
+	if slice == nil {
+		return nil
 	}
-	return s
+	return append(slice[:0:0], slice...)
 }
 
 // CopyMatrix 复制二维数组
-func CopyMatrix[V any](slice [][]V) [][]V {
-	var s = make([][]V, len(slice), len(slice))
-	for i := 0; i < len(slice); i++ {
-		is := make([]V, len(slice[0]))
-		for j := 0; j < len(slice[0]); j++ {
-			is[j] = slice[i][j]
-		}
-		s[i] = is
+func CopyMatrix[S ~[][]V, V any](slice S) S {
+	if slice == nil {
+		return nil
 	}
-	return s
+	var result = make(S, len(slice))
+	for i := 0; i < len(slice); i++ {
+		result[i] = Copy(slice[i])
+	}
+	return result
 }
 
 // Insert 在特定索引插入元素
