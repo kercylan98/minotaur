@@ -20,21 +20,10 @@ const (
 // NewHandler 创建一个更偏向于人类可读的处理程序，该处理程序也是默认的处理程序
 func NewHandler(w io.Writer, opts *Options) slog.Handler {
 	if opts == nil {
-		opts = NewOptions().apply()
-	} else {
-		opts = opts.apply()
+		opts = NewOptions()
 	}
-	if len(opts.Handlers) > 0 {
-		var handlers = make([]slog.Handler, len(opts.Handlers))
-		for i, s := range opts.Handlers {
-			handlers[i] = s
-		}
-		mh := NewMultiHandler(handlers...)
-		return mh
-	}
-
 	return &handler{
-		opts: opts,
+		opts: opts.apply(),
 		w:    w,
 	}
 }
@@ -51,16 +40,22 @@ type handler struct {
 func (h *handler) clone() *handler {
 	return &handler{
 		groupPrefix: h.groupPrefix,
+		opts:        NewOptions().With(h.opts).apply(),
 		groups:      h.groups,
 		w:           h.w,
 	}
 }
 
 func (h *handler) Enabled(_ context.Context, level slog.Level) bool {
-	return level >= h.opts.Level.Level()
+	return level >= h.opts.Level.Load().(slog.Leveler).Level()
 }
 
 func (h *handler) Handle(_ context.Context, r slog.Record) error {
+	lv := h.opts.Level.Load().(slog.Leveler).Level()
+	if r.Level < lv {
+		return nil
+	}
+
 	buf := newBuffer(h)
 	defer buf.Free()
 
@@ -73,7 +68,9 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	buf.WriteBytes(' ')
 
 	if h.opts.Caller {
-		fs := runtime.CallersFrames([]uintptr{r.PC})
+		pcs := make([]uintptr, 1)
+		runtime.CallersFrames(pcs[:runtime.Callers(h.opts.CallerSkip, pcs)])
+		fs := runtime.CallersFrames(pcs)
 		f, _ := fs.Next()
 		if f.File != "" {
 			src := &slog.Source{
@@ -109,6 +106,9 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	defer h.mu.Unlock()
 
 	_, err := h.w.Write(*buf.bytes)
+	if lv == DPanicLevel && h.opts.DevMode {
+		panic(r.Message)
+	}
 	return err
 }
 

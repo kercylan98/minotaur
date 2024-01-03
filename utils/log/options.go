@@ -2,6 +2,7 @@ package log
 
 import (
 	"log/slog"
+	"sync/atomic"
 	"time"
 )
 
@@ -10,7 +11,7 @@ const (
 	DefaultTimePrefix          = ""
 	DefaultTimePrefixDelimiter = "="
 	DefaultCaller              = true
-	DefaultCallerSkip          = 3
+	DefaultCallerSkip          = 4
 	DefaultFieldPrefix         = ""
 	DefaultLevel               = DebugLevel
 	DefaultErrTrace            = true
@@ -54,8 +55,10 @@ type (
 	Option func(opts *Options)
 	// Options 日志选项
 	Options struct {
-		opts                     []Option
-		Handlers                 []slog.Handler                                        // 处理程序
+		r       *RuntimeHandler // 运行时处理器
+		opts    []Option        // 可选项
+		applyed bool            // 是否已应用
+
 		TimeLayout               string                                                // 时间格式化字符串
 		TimePrefix               string                                                // 时间前缀
 		TimePrefixDelimiter      string                                                // 时间前缀分隔符
@@ -63,7 +66,7 @@ type (
 		CallerSkip               int                                                   // 跳过的调用层数
 		CallerFormat             func(file string, line int) (repFile, refLine string) // 调用者信息格式化函数
 		FieldPrefix              string                                                // 字段前缀
-		Level                    slog.Leveler                                          // 日志级别
+		Level                    atomic.Value                                          // 日志级别
 		ErrTrace                 bool                                                  // 是否显示错误堆栈
 		ErrTraceBeauty           bool                                                  // 是否美化错误堆栈
 		KVDelimiter              string                                                // 键值对分隔符
@@ -81,14 +84,17 @@ type (
 		MessageColor             string                                                // 消息颜色
 		DevMode                  bool                                                  // 是否为开发模式
 	}
+	RuntimeHandler struct {
+		opts *Options
+	}
 )
 
 // WithDev 设置可选项为开发模式
 //   - 开发模式适用于本地开发环境，会以更友好的方式输出日志
 func (o *Options) WithDev() *Options {
 	o.opts = append(o.opts, func(opts *Options) {
+		opts.r = &RuntimeHandler{opts: opts}
 		opts.DevMode = DefaultDevMode
-		opts.Handlers = nil
 		opts.TimeLayout = DefaultTimeLayout
 		opts.TimePrefix = DefaultTimePrefix
 		opts.TimePrefixDelimiter = DefaultTimePrefixDelimiter
@@ -96,7 +102,7 @@ func (o *Options) WithDev() *Options {
 		opts.CallerSkip = DefaultCallerSkip
 		opts.CallerFormat = CallerBasicFormat
 		opts.FieldPrefix = DefaultFieldPrefix
-		opts.Level = DefaultLevel
+		opts.Level.Store(DefaultLevel)
 		opts.ErrTrace = DefaultErrTrace
 		opts.ErrTraceBeauty = DefaultErrTraceBeauty
 		opts.KVDelimiter = DefaultKVDelimiter
@@ -150,20 +156,17 @@ func (o *Options) WithTest() *Options {
 	return o
 }
 
+// GerRuntimeHandler 获取运行时处理器
+func (o *Options) GerRuntimeHandler() *RuntimeHandler {
+	return o.r
+}
+
 // WithDevMode 设置是否为开发模式
 //   - 默认值为 DefaultDevMode
 //   - 开发模式下将影响部分功能，例如 DPanic
 func (o *Options) WithDevMode(enable bool) *Options {
 	o.append(func(opts *Options) {
 		opts.DevMode = enable
-	})
-	return o
-}
-
-// WithHandler 设置处理程序
-func (o *Options) WithHandler(handlers ...slog.Handler) *Options {
-	o.append(func(opts *Options) {
-		opts.Handlers = handlers
 	})
 	return o
 }
@@ -318,7 +321,7 @@ func (o *Options) WithErrTrace(enable bool) *Options {
 //   - 默认日志级别为 DefaultLevel
 func (o *Options) WithLevel(level slog.Leveler) *Options {
 	o.append(func(opts *Options) {
-		opts.Level = level
+		opts.Level.Store(level)
 	})
 	return o
 }
@@ -387,6 +390,10 @@ func (o *Options) With(opts ...*Options) *Options {
 
 // apply 应用日志选项
 func (o *Options) apply() *Options {
+	if o.applyed {
+		return o
+	}
+	o.applyed = true
 	for _, opt := range o.opts {
 		opt(o)
 	}
@@ -395,6 +402,19 @@ func (o *Options) apply() *Options {
 
 // append 添加日志选项
 func (o *Options) append(opts ...Option) *Options {
+	if o.applyed {
+		return o
+	}
 	o.opts = append(o.opts, opts...)
 	return o
+}
+
+// ChangeLevel 改变日志级别
+func (h *RuntimeHandler) ChangeLevel(level slog.Leveler) {
+	h.opts.Level.Store(level)
+}
+
+// Level 获取日志级别
+func (h *RuntimeHandler) Level() slog.Level {
+	return h.opts.Level.Load().(slog.Level)
 }
