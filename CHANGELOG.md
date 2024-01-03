@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.4.4](https://github.com/kercylan98/minotaur/compare/v0.4.3...v0.4.4) (2024-01-03)
+
+
+### Other | 其他更改
+
+* server 包部分内容可读性优化，增加健壮度 ([472fdc3](https://github.com/kercylan98/minotaur/commit/472fdc3a188e34fcf2bf52daa7b4e9d1129e3599))
+
+
+### Features | 新特性
+
+* sher 包新增 map 相关映射操作 ([7086281](https://github.com/kercylan98/minotaur/commit/708628139985109a4fa192319c3eed6c33270623))
+* sher 包新增将任一切片转换为 []any 的函数 ([bb06cbf](https://github.com/kercylan98/minotaur/commit/bb06cbfeb0418fa462743c3e6b2e7833ade2cbff))
+* super 包新增 TryWriteChannel 函数，支持尝试性的对 channel 进行写入 ([5b53e8a](https://github.com/kercylan98/minotaur/commit/5b53e8a2ac697bd3503740c8e564c8b485b6c664))
+* super 包新增 TryWriteChannelByHandler 函数，支持尝试写入 channel，如果 channel 无法写入则执行 handler ([efbde3e](https://github.com/kercylan98/minotaur/commit/efbde3e3f80973800854b3e9c1f3bb27f8004b38))
+* 修复 HTTP 服务器慢消息空指针问题 ([31c68e4](https://github.com/kercylan98/minotaur/commit/31c68e42b758492f008822674e37434b3b5a8ecb))
+* 修复 HTTP 服务器满消息空指针问题 ([68bc005](https://github.com/kercylan98/minotaur/commit/68bc005fe1fb997a0d50d94d8b1a653072473512))
+* 新增 utils/sher 包，包含了对 slice 及 hash 常用的操作函数。用于未来对 utils/slice 和 utils/hash 包进行替换 ([515cbc6](https://github.com/kercylan98/minotaur/commit/515cbc66ebe609aa3757ea0c89c8ba11a465e74c))
+
+
+### Bug Fixes | 修复
+
+* 修复 server.hub 广播时未解锁的问题，优化处理逻辑 ([80f38ff](https://github.com/kercylan98/minotaur/commit/80f38ffe9c5a603e432ee00692c9b9bc35ac65c7))
+
+
+### Code Refactoring | 重构
+
+* 优化 slice 包中的 Copy 和 CopyMatrix 的函数签名和实现方式，不影响已有代码 ([cf42ed6](https://github.com/kercylan98/minotaur/commit/cf42ed649a026f7e93cb825e0f3bbf8b03722263))
+* 移除 reflects.DeepCopy 无效函数 ([a7b0497](https://github.com/kercylan98/minotaur/commit/a7b0497d4f0591a955fc0c40655da5c09fbdd18d))
+* 重构 log 包，由 zap 改为 slog ([71a3b34](https://github.com/kercylan98/minotaur/commit/71a3b343048fa4a0d725d59977f99d1f0cc0cfbb))
+
+
+### Performance Improvements | 性能优化
+
+* 优化 server.Server 连接管理机制，优化 GetOnlineCount、GetOnlineBotCount 性能 ([5e5fe8a](https://github.com/kercylan98/minotaur/commit/5e5fe8acca8b2ef7a302997b0211a3103415bdf9))
+
 ## [0.4.3](https://github.com/kercylan98/minotaur/compare/v0.4.2...v0.4.3) (2023-12-27)
 
 
