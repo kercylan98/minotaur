@@ -9,6 +9,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
+	"github.com/kercylan98/minotaur/utils/sher"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -451,7 +452,7 @@ func (srv *Server) low(message *Message, present time.Time, expect time.Duration
 		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
 		fields = append(fields, message.marks...)
 		//fields = append(fields, log.Stack("stack"))
-		log.Warn("ServerLowMessage", fields...)
+		log.Warn("ServerLowMessage", sher.SliceCastToAny(fields)...)
 		srv.OnMessageLowExecEvent(message, cost)
 	}
 }
@@ -742,14 +743,14 @@ func showServersInfo(mark string, servers ...*Server) {
 	for _, srv := range servers {
 		srv := srv
 		serverInfos = append(serverInfos, func() {
-			log.Info("Server", log.String(mark, "RunningInfo"), log.Any("network", srv.network), log.String("ip", ip.String()), log.String("listen", srv.addr))
+			log.Info(mark, log.String("", "RunningInfo"), log.Any("network", srv.network), log.String("ip", ip.String()), log.String("listen", srv.addr))
 		})
 	}
-	log.Info("Server", log.String(mark, "===================================================================="))
+	log.Info(mark, log.String("", "===================================================================="))
 	for _, info := range serverInfos {
 		info()
 	}
-	log.Info("Server", log.String(mark, "===================================================================="))
+	log.Info(mark, log.String("", "===================================================================="))
 }
 
 // onServicesInit 服务初始化
