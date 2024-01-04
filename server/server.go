@@ -452,7 +452,7 @@ func (srv *Server) low(message *Message, present time.Time, expect time.Duration
 		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
 		fields = append(fields, message.marks...)
 		//fields = append(fields, log.Stack("stack"))
-		log.Warn("ServerLowMessage", sher.SliceCastToAny(fields)...)
+		log.Warn("ServerLowMessage", sher.ConvertSliceToAny(fields)...)
 		srv.OnMessageLowExecEvent(message, cost)
 	}
 }
