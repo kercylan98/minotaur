@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.3](https://github.com/kercylan98/minotaur/compare/v0.4.2...v0.4.3) (2023-12-27)
+
+
+### Other | 其他更改
+
+* 排除 codacy 检查 md 文件，([#43](https://github.com/kercylan98/minotaur/issues/43)) ([#44](https://github.com/kercylan98/minotaur/issues/44)) ([#45](https://github.com/kercylan98/minotaur/issues/45)) ([#46](https://github.com/kercylan98/minotaur/issues/46)) ([#47](https://github.com/kercylan98/minotaur/issues/47)) ([#48](https://github.com/kercylan98/minotaur/issues/48)) ([#49](https://github.com/kercylan98/minotaur/issues/49)) ([#50](https://github.com/kercylan98/minotaur/issues/50)) ([#51](https://github.com/kercylan98/minotaur/issues/51)) ([#52](https://github.com/kercylan98/minotaur/issues/52)) ([256d62d](https://github.com/kercylan98/minotaur/commit/256d62d499d50238566170beecd798e78a21904a))
+
+
+### Features | 新特性
+
+* reflects 包新增 FuncWrapper 相关函数 ([5a898f5](https://github.com/kercylan98/minotaur/commit/5a898f58dc37027b3ba1b5deac6f573bb8d3c52f))
+
+
+### Bug Fixes | 修复
+
+* 修改 ShowServersInfo 函数可见性，修复服务器地址打印的指针问题 ([26aa2d9](https://github.com/kercylan98/minotaur/commit/26aa2d9ff8c064105f4e8f44bad5da9046d76718))
+
+
+### Performance Improvements | 性能优化
+
+* client 包由无界缓冲区调整为基于 chan 实现的缓冲区，新增 RunByBufferSize 函数支持以指定缓冲区大小运行 ([bdbcc1b](https://github.com/kercylan98/minotaur/commit/bdbcc1bb358deacbc2250a46b22ad758c7067f9b))
+
 ## [0.4.2](https://github.com/kercylan98/minotaur/compare/v0.4.1...v0.4.2) (2023-12-26)
 
 
