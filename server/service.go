@@ -15,6 +15,7 @@ type Service interface {
 // BindService 绑定服务到特定 Server，被绑定的服务将会在 Server 初始化时执行 Service.OnInit 方法
 func BindService(srv *Server, services ...Service) {
 	for _, service := range services {
+		service := service
 		srv.services = append(srv.services, func() {
 			name := reflect.TypeOf(service).String()
 			defer func(name string) {
