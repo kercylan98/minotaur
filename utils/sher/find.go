@@ -2,6 +2,37 @@ package sher
 
 import "github.com/kercylan98/minotaur/utils/generic"
 
+// FindInSlice 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
+func FindInSlice[S ~[]V, V any](slice S, handler func(v V) bool) (i int, t V) {
+	if slice == nil {
+		return -1, t
+	}
+	for i, v := range slice {
+		if handler(v) {
+			return i, v
+		}
+	}
+	return -1, t
+}
+
+// FindInSliceByBinary 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
+func FindInSliceByBinary[S ~[]V, V any](slice S, handler func(v V) bool) (i int, t V) {
+	low := 0
+	high := len(slice) - 1
+
+	for low <= high {
+		mid := low + (high-low)/2
+		if handler(slice[mid]) {
+			return mid, slice[mid]
+		} else if handler(slice[mid]) {
+			high = mid - 1
+		} else {
+			low = mid + 1
+		}
+	}
+	return -1, t
+}
+
 // FindMinimumInSlice 获取切片中的最小值
 func FindMinimumInSlice[S ~[]V, V generic.Number](slice S, handler ComparisonHandler[V]) (result V) {
 	if slice == nil {
