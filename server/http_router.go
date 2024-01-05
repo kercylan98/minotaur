@@ -146,3 +146,9 @@ func (slf *HttpRouter[Context]) Group(relativePath string, handlers ...HandlerFu
 		packer: slf.packer,
 	}
 }
+
+// Use 将中间件附加到路由组。
+func (slf *HttpRouter[Context]) Use(middleware ...HandlerFunc[Context]) *HttpRouter[Context] {
+	slf.group.Use(slf.handlesConvert(middleware)...)
+	return slf
+}
