@@ -359,11 +359,6 @@ func (slf *Conn) Close(err ...error) {
 	if slf.ticker != nil {
 		slf.ticker.Release()
 	}
-	if !slf.server.runtime.disableAutomaticReleaseShunt {
-		slf.server.releaseDispatcher(slf)
-	} else {
-
-	}
 	slf.loop.Close()
 	slf.mu.Unlock()
 	if len(err) > 0 {
@@ -371,4 +366,7 @@ func (slf *Conn) Close(err ...error) {
 		return
 	}
 	slf.server.OnConnectionClosedEvent(slf, nil)
+	if !slf.server.runtime.disableAutomaticReleaseShunt {
+		slf.server.releaseDispatcher(slf)
+	}
 }

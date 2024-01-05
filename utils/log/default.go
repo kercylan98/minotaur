@@ -9,11 +9,11 @@ import (
 	"time"
 )
 
-var logger atomic.Pointer[Logger]
-
-func init() {
-	logger.Store(NewLogger(NewHandler(os.Stdout, NewOptions())))
-}
+var logger = func() *atomic.Pointer[Logger] {
+	var p atomic.Pointer[Logger]
+	p.Store(NewLogger(NewHandler(os.Stdout, NewOptions())))
+	return &p
+}()
 
 // Default 获取默认的日志记录器
 func Default() *Logger {

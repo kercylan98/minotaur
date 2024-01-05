@@ -32,9 +32,8 @@ func New(network Network, options ...Option) *Server {
 	network.check()
 	server := &Server{
 		runtime: &runtime{
-			packetWarnSize:       DefaultPacketWarnSize,
-			dispatcherBufferSize: DefaultDispatcherBufferSize,
-			connWriteBufferSize:  DefaultConnWriteBufferSize,
+			packetWarnSize:      DefaultPacketWarnSize,
+			connWriteBufferSize: DefaultConnWriteBufferSize,
 		},
 		hub:              &hub{},
 		option:           &option{},
@@ -307,7 +306,7 @@ func (srv *Server) UseShunt(conn *Conn, name string) {
 	defer srv.dispatcherLock.Unlock()
 	d, exist := srv.dispatchers[name]
 	if !exist {
-		d = generateDispatcher(srv.dispatcherBufferSize, name, srv.dispatchMessage)
+		d = generateDispatcher(name, srv.dispatchMessage)
 		srv.OnShuntChannelCreatedEvent(d.name)
 		go d.start()
 		srv.dispatchers[name] = d
@@ -322,7 +321,6 @@ func (srv *Server) UseShunt(conn *Conn, name string) {
 		delete(srv.dispatcherMember[curr.name], conn.GetID())
 		if curr.name != serverSystemDispatcher && len(srv.dispatcherMember[curr.name]) == 0 {
 			delete(srv.dispatchers, curr.name)
-			curr.transfer(d)
 			srv.OnShuntChannelClosedEvent(d.name)
 			curr.close()
 		}
@@ -771,7 +769,7 @@ func onMessageSystemInit(srv *Server) {
 		},
 	)
 	srv.startMessageStatistics()
-	srv.systemDispatcher = generateDispatcher(srv.dispatcherBufferSize, serverSystemDispatcher, srv.dispatchMessage)
+	srv.systemDispatcher = generateDispatcher(serverSystemDispatcher, srv.dispatchMessage)
 	go srv.systemDispatcher.start()
 	srv.OnMessageReadyEvent()
 }

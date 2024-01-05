@@ -1,38 +1,33 @@
 package server
 
 import (
-	"context"
 	"github.com/alphadose/haxmap"
-	"sync"
+	"github.com/kercylan98/minotaur/utils/buffer"
+	"sync/atomic"
+	"time"
 )
 
 var dispatcherUnique = struct{}{}
 
 // generateDispatcher 生成消息分发器
-func generateDispatcher(size int, name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
+func generateDispatcher(name string, handler func(dispatcher *dispatcher, message *Message)) *dispatcher {
 	d := &dispatcher{
-		name:       name,
-		buffer:     make(chan *Message, size),
-		handler:    handler,
-		uniques:    haxmap.New[string, struct{}](),
-		queueMutex: new(sync.Mutex),
+		name:    name,
+		buf:     buffer.NewUnbounded[*Message](),
+		handler: handler,
+		uniques: haxmap.New[string, struct{}](),
 	}
-	d.ctx, d.cancel = context.WithCancel(context.Background())
-	d.queueCond = sync.NewCond(d.queueMutex)
 	return d
 }
 
 // dispatcher 消息分发器
 type dispatcher struct {
-	name       string
-	buffer     chan *Message
-	uniques    *haxmap.Map[string, struct{}]
-	handler    func(dispatcher *dispatcher, message *Message)
-	ctx        context.Context
-	cancel     context.CancelFunc
-	queue      []*Message
-	queueMutex *sync.Mutex
-	queueCond  *sync.Cond
+	name     string
+	buf      *buffer.Unbounded[*Message]
+	uniques  *haxmap.Map[string, struct{}]
+	handler  func(dispatcher *dispatcher, message *Message)
+	closed   uint32
+	msgCount int64
 }
 
 func (d *dispatcher) unique(name string) bool {
@@ -45,66 +40,44 @@ func (d *dispatcher) antiUnique(name string) {
 }
 
 func (d *dispatcher) start() {
-	d.process()
+	defer d.buf.Close()
 	for {
 		select {
-		case message, ok := <-d.buffer:
+		case message, ok := <-d.buf.Get():
 			if !ok {
 				return
 			}
+			d.buf.Load()
 			d.handler(d, message)
-		}
-	}
-}
 
-func (d *dispatcher) process() {
-	go func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
+			if atomic.AddInt64(&d.msgCount, -1) <= 0 && atomic.LoadUint32(&d.closed) == 1 {
 				return
-			default:
-				d.queueMutex.Lock()
-				if len(d.queue) == 0 {
-					d.queueCond.Wait()
-				}
-				messages := make([]*Message, len(d.queue))
-				copy(messages, d.queue)
-				d.queue = d.queue[:0]
-				d.queueMutex.Unlock()
-				for _, message := range messages {
-					select {
-					case d.buffer <- message:
-					}
-				}
 			}
 		}
-	}(d.ctx)
+	}
 }
 
 func (d *dispatcher) put(message *Message) {
-	d.queueMutex.Lock()
-	d.queue = append(d.queue, message)
-	d.queueCond.Signal()
-	defer d.queueMutex.Unlock()
+	if atomic.CompareAndSwapUint32(&d.closed, 1, 1) {
+		return
+	}
+	atomic.AddInt64(&d.msgCount, 1)
+	d.buf.Put(message)
 }
 
 func (d *dispatcher) close() {
-	close(d.buffer)
-	d.cancel()
-}
+	atomic.CompareAndSwapUint32(&d.closed, 0, 1)
 
-func (d *dispatcher) transfer(target *dispatcher) {
-	if target == nil {
-		return
-	}
-	for {
-		select {
-		case message, ok := <-d.buffer:
-			if !ok {
+	go func() {
+		for {
+			if d.buf.IsClosed() {
 				return
 			}
-			target.buffer <- message
+			if atomic.LoadInt64(&d.msgCount) <= 0 {
+				d.buf.Close()
+				return
+			}
+			time.Sleep(time.Second)
 		}
-	}
+	}()
 }

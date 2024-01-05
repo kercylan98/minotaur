@@ -48,7 +48,6 @@ type runtime struct {
 	messageStatisticsLimit       int                                                                                 // 消息统计数量
 	messageStatistics            []*atomic.Int64                                                                     // 消息统计数量
 	messageStatisticsLock        *sync.RWMutex                                                                       // 消息统计锁
-	dispatcherBufferSize         int                                                                                 // 消息分发器缓冲区大小
 	connWriteBufferSize          int                                                                                 // 连接写入缓冲区大小
 	disableAutomaticReleaseShunt bool                                                                                // 是否禁用自动释放分流渠道
 	websocketUpgrader            *websocket.Upgrader                                                                 // websocket 升级器
@@ -101,14 +100,14 @@ func WithConnWriteBufferSize(size int) Option {
 // WithDispatcherBufferSize 通过消息分发器缓冲区大小的方式创建服务器
 //   - 默认值为 DefaultDispatcherBufferSize
 //   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
-func WithDispatcherBufferSize(size int) Option {
-	return func(srv *Server) {
-		if size <= 0 {
-			return
-		}
-		srv.dispatcherBufferSize = size
-	}
-}
+//func WithDispatcherBufferSize(size int) Option {
+//	return func(srv *Server) {
+//		if size <= 0 {
+//			return
+//		}
+//		srv.dispatcherBufferSize = size
+//	}
+//}
 
 // WithMessageStatistics 通过消息统计的方式创建服务器
 //   - 默认不开启，当 duration 和 limit 均大于 0 的时候，服务器将记录每 duration 期间的消息数量，并保留最多 limit 条
