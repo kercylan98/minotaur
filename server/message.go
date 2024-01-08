@@ -75,6 +75,7 @@ func HasMessageType(mt MessageType) bool {
 
 // Message 服务器消息
 type Message struct {
+	producer         string
 	conn             *Conn
 	ordinaryHandler  func()
 	exceptionHandler func() error
@@ -84,6 +85,10 @@ type Message struct {
 	name             string
 	t                MessageType
 	marks            []log.Field
+}
+
+func (slf *Message) GetProducer() string {
+	return slf.producer
 }
 
 // reset 重置消息结构体
@@ -126,78 +131,91 @@ func (slf MessageType) String() string {
 
 // castToPacketMessage 将消息转换为数据包消息
 func (slf *Message) castToPacketMessage(conn *Conn, packet []byte, mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.packet, slf.marks = MessageTypePacket, conn, packet, mark
 	return slf
 }
 
 // castToTickerMessage 将消息转换为定时器消息
 func (slf *Message) castToTickerMessage(name string, caller func(), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.name, slf.ordinaryHandler, slf.marks = MessageTypeTicker, name, caller, mark
 	return slf
 }
 
 // castToShuntTickerMessage 将消息转换为分发器定时器消息
 func (slf *Message) castToShuntTickerMessage(conn *Conn, name string, caller func(), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.name, slf.ordinaryHandler, slf.marks = MessageTypeShuntTicker, conn, name, caller, mark
 	return slf
 }
 
 // castToAsyncMessage 将消息转换为异步消息
 func (slf *Message) castToAsyncMessage(caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeAsync, caller, callback, mark
 	return slf
 }
 
 // castToAsyncCallbackMessage 将消息转换为异步回调消息
 func (slf *Message) castToAsyncCallbackMessage(err error, caller func(err error), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.err, slf.errHandler, slf.marks = MessageTypeAsyncCallback, err, caller, mark
 	return slf
 }
 
 // castToShuntAsyncMessage 将消息转换为分流异步消息
 func (slf *Message) castToShuntAsyncMessage(conn *Conn, caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeShuntAsync, conn, caller, callback, mark
 	return slf
 }
 
 // castToShuntAsyncCallbackMessage 将消息转换为分流异步回调消息
 func (slf *Message) castToShuntAsyncCallbackMessage(conn *Conn, err error, caller func(err error), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.err, slf.errHandler, slf.marks = MessageTypeShuntAsyncCallback, conn, err, caller, mark
 	return slf
 }
 
 // castToUniqueAsyncMessage 将消息转换为唯一异步消息
 func (slf *Message) castToUniqueAsyncMessage(unique string, caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.name, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeUniqueAsync, unique, caller, callback, mark
 	return slf
 }
 
 // castToUniqueAsyncCallbackMessage 将消息转换为唯一异步回调消息
 func (slf *Message) castToUniqueAsyncCallbackMessage(unique string, err error, caller func(err error), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.name, slf.err, slf.errHandler, slf.marks = MessageTypeUniqueAsyncCallback, unique, err, caller, mark
 	return slf
 }
 
 // castToUniqueShuntAsyncMessage 将消息转换为唯一分流异步消息
 func (slf *Message) castToUniqueShuntAsyncMessage(conn *Conn, unique string, caller func() error, callback func(err error), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.name, slf.exceptionHandler, slf.errHandler, slf.marks = MessageTypeUniqueShuntAsync, conn, unique, caller, callback, mark
 	return slf
 }
 
 // castToUniqueShuntAsyncCallbackMessage 将消息转换为唯一分流异步回调消息
 func (slf *Message) castToUniqueShuntAsyncCallbackMessage(conn *Conn, unique string, err error, caller func(err error), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.name, slf.err, slf.errHandler, slf.marks = MessageTypeUniqueShuntAsyncCallback, conn, unique, err, caller, mark
 	return slf
 }
 
 // castToSystemMessage 将消息转换为系统消息
 func (slf *Message) castToSystemMessage(caller func(), mark ...log.Field) *Message {
+	slf.producer = "sys"
 	slf.t, slf.ordinaryHandler, slf.marks = MessageTypeSystem, caller, mark
 	return slf
 }
 
 // castToShuntMessage 将消息转换为分流消息
 func (slf *Message) castToShuntMessage(conn *Conn, caller func(), mark ...log.Field) *Message {
+	slf.producer = conn.GetID()
 	slf.t, slf.conn, slf.ordinaryHandler, slf.marks = MessageTypeShunt, conn, caller, mark
 	return slf
 }

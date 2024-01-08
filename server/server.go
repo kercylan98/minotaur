@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/kercylan98/minotaur/server/internal/dispatcher"
 	"github.com/kercylan98/minotaur/server/internal/logger"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
@@ -21,7 +22,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
-	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -32,17 +32,15 @@ func New(network Network, options ...Option) *Server {
 	network.check()
 	server := &Server{
 		runtime: &runtime{
-			packetWarnSize:      DefaultPacketWarnSize,
-			connWriteBufferSize: DefaultConnWriteBufferSize,
+			packetWarnSize:       DefaultPacketWarnSize,
+			connWriteBufferSize:  DefaultConnWriteBufferSize,
+			dispatcherBufferSize: DefaultDispatcherBufferSize,
 		},
-		hub:              &hub{},
-		option:           &option{},
-		network:          network,
-		closeChannel:     make(chan struct{}, 1),
-		systemSignal:     make(chan os.Signal, 1),
-		dispatchers:      make(map[string]*dispatcher),
-		dispatcherMember: map[string]map[string]*Conn{},
-		currDispatcher:   map[string]*dispatcher{},
+		hub:          &hub{},
+		option:       &option{},
+		network:      network,
+		closeChannel: make(chan struct{}, 1),
+		systemSignal: make(chan os.Signal, 1),
 	}
 	server.ctx, server.cancel = context.WithCancel(context.Background())
 	server.event = newEvent(server)
@@ -67,32 +65,29 @@ func New(network Network, options ...Option) *Server {
 
 // Server 网络服务器
 type Server struct {
-	*event                                               // 事件
-	*runtime                                             // 运行时
-	*option                                              // 可选项
-	*hub                                                 // 连接集合
-	ginServer                *gin.Engine                 // HTTP模式下的路由器
-	httpServer               *http.Server                // HTTP模式下的服务器
-	grpcServer               *grpc.Server                // GRPC模式下的服务器
-	gServer                  *gNet                       // TCP或UDP模式下的服务器
-	multiple                 *MultipleServer             // 多服务器模式下的服务器
-	ants                     *ants.Pool                  // 协程池
-	messagePool              *concurrent.Pool[*Message]  // 消息池
-	ctx                      context.Context             // 上下文
-	cancel                   context.CancelFunc          // 停止上下文
-	systemDispatcher         *dispatcher                 // 系统消息分发器
-	systemSignal             chan os.Signal              // 系统信号
-	closeChannel             chan struct{}               // 关闭信号
-	multipleRuntimeErrorChan chan error                  // 多服务器模式下的运行时错误
-	dispatchers              map[string]*dispatcher      // 消息分发器集合
-	dispatcherMember         map[string]map[string]*Conn // 消息分发器包含的连接
-	currDispatcher           map[string]*dispatcher      // 当前连接所处消息分发器
-	dispatcherLock           sync.RWMutex                // 消息分发器锁
-	messageCounter           atomic.Int64                // 消息计数器
-	addr                     string                      // 侦听地址
-	network                  Network                     // 网络类型
-	closed                   uint32                      // 服务器是否已关闭
-	services                 []func()                    // 服务
+	*event                                                         // 事件
+	*runtime                                                       // 运行时
+	*option                                                        // 可选项
+	*hub                                                           // 连接集合
+	dispatcherMgr            *dispatcher.Manager[string, *Message] // 消息分发器管理器
+	ginServer                *gin.Engine                           // HTTP模式下的路由器
+	httpServer               *http.Server                          // HTTP模式下的服务器
+	grpcServer               *grpc.Server                          // GRPC模式下的服务器
+	gServer                  *gNet                                 // TCP或UDP模式下的服务器
+	multiple                 *MultipleServer                       // 多服务器模式下的服务器
+	ants                     *ants.Pool                            // 协程池
+	messagePool              *concurrent.Pool[*Message]            // 消息池
+	ctx                      context.Context                       // 上下文
+	cancel                   context.CancelFunc                    // 停止上下文
+	systemSignal             chan os.Signal                        // 系统信号
+	closeChannel             chan struct{}                         // 关闭信号
+	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
+
+	messageCounter atomic.Int64 // 消息计数器
+	addr           string       // 侦听地址
+	network        Network      // 网络类型
+	closed         uint32       // 服务器是否已关闭
+	services       []func()     // 服务
 }
 
 // preCheckAndAdaptation 预检查及适配
@@ -221,13 +216,6 @@ func (srv *Server) shutdown(err error) {
 		srv.ants.Release()
 		srv.ants = nil
 	}
-	srv.dispatcherLock.Lock()
-	for s, d := range srv.dispatchers {
-		srv.OnShuntChannelClosedEvent(d.name)
-		d.close()
-		delete(srv.dispatchers, s)
-	}
-	srv.dispatcherLock.Unlock()
 	if srv.grpcServer != nil {
 		srv.grpcServer.GracefulStop()
 	}
@@ -300,107 +288,27 @@ func (srv *Server) GetMessageCount() int64 {
 
 // UseShunt 切换连接所使用的消息分流渠道，当分流渠道 name 不存在时将会创建一个新的分流渠道，否则将会加入已存在的分流渠道
 //   - 默认情况下，所有连接都使用系统通道进行消息分发，当指定消息分流渠道时，将会使用指定的消息分流渠道进行消息分发
-//   - 在使用 WithDisableAutomaticReleaseShunt 创建服务器后，必须始终在连接不再使用后主动通过 ReleaseShunt 释放消息分流渠道，否则将造成内存泄漏
+//   - 分流渠道会在连接断开时标记为驱逐状态，当分流渠道中的所有消息处理完毕且没有新连接使用时，将会被清除
+//
+// 一些有趣的情况：
+//   - 当连接发送异步消息时，消息会被分为两部分，分别是异步部分和回调部分。异步部分会在当前的分流渠道中处理，而回调部分则是根据回调时所在的分流渠道进行处理
 func (srv *Server) UseShunt(conn *Conn, name string) {
-	srv.dispatcherLock.Lock()
-	defer srv.dispatcherLock.Unlock()
-	d, exist := srv.dispatchers[name]
-	if !exist {
-		d = generateDispatcher(name, srv.dispatchMessage)
-		srv.OnShuntChannelCreatedEvent(d.name)
-		go d.start()
-		srv.dispatchers[name] = d
-	}
-
-	curr, exist := srv.currDispatcher[conn.GetID()]
-	if exist {
-		if curr.name == name {
-			return
-		}
-
-		delete(srv.dispatcherMember[curr.name], conn.GetID())
-		if curr.name != serverSystemDispatcher && len(srv.dispatcherMember[curr.name]) == 0 {
-			delete(srv.dispatchers, curr.name)
-			srv.OnShuntChannelClosedEvent(d.name)
-			curr.close()
-		}
-	}
-	srv.currDispatcher[conn.GetID()] = d
-
-	member, exist := srv.dispatcherMember[name]
-	if !exist {
-		member = map[string]*Conn{}
-		srv.dispatcherMember[name] = member
-	}
-
-	member[conn.GetID()] = conn
+	srv.dispatcherMgr.BindProducer(conn.GetID(), name)
 }
 
 // HasShunt 检查特定消息分流渠道是否存在
 func (srv *Server) HasShunt(name string) bool {
-	srv.dispatcherLock.RLock()
-	defer srv.dispatcherLock.RUnlock()
-	_, exist := srv.dispatchers[name]
-	return exist
+	return srv.dispatcherMgr.HasDispatcher(name)
 }
 
 // GetConnCurrShunt 获取连接当前所使用的消息分流渠道
 func (srv *Server) GetConnCurrShunt(conn *Conn) string {
-	srv.dispatcherLock.RLock()
-	defer srv.dispatcherLock.RUnlock()
-	d, exist := srv.currDispatcher[conn.GetID()]
-	if exist {
-		return d.name
-	}
-	return serverSystemDispatcher
+	return srv.dispatcherMgr.GetDispatcher(conn.GetID()).Name()
 }
 
 // GetShuntNum 获取消息分流渠道数量
 func (srv *Server) GetShuntNum() int {
-	srv.dispatcherLock.RLock()
-	defer srv.dispatcherLock.RUnlock()
-	return len(srv.dispatchers)
-}
-
-// getConnDispatcher 获取连接所使用的消息分发器
-func (srv *Server) getConnDispatcher(conn *Conn) *dispatcher {
-	if conn == nil {
-		return srv.systemDispatcher
-	}
-	srv.dispatcherLock.RLock()
-	defer srv.dispatcherLock.RUnlock()
-	d, exist := srv.currDispatcher[conn.GetID()]
-	if exist {
-		return d
-	}
-	return srv.systemDispatcher
-}
-
-// ReleaseShunt 释放分流渠道中的连接，当分流渠道中不再存在连接时将会自动释放分流渠道
-//   - 在未使用 WithDisableAutomaticReleaseShunt 选项时，当连接关闭时将会自动释放分流渠道中连接的资源占用
-//   - 若执行过程中连接正在使用，将会切换至系统通道
-func (srv *Server) ReleaseShunt(conn *Conn) {
-	srv.releaseDispatcher(conn)
-}
-
-// releaseDispatcher 关闭消息分发器
-func (srv *Server) releaseDispatcher(conn *Conn) {
-	if conn == nil {
-		return
-	}
-	cid := conn.GetID()
-	srv.dispatcherLock.Lock()
-	defer srv.dispatcherLock.Unlock()
-	d, exist := srv.currDispatcher[cid]
-	if exist && d.name != serverSystemDispatcher {
-		delete(srv.dispatcherMember[d.name], cid)
-		if len(srv.dispatcherMember[d.name]) == 0 {
-			srv.OnShuntChannelClosedEvent(d.name)
-			d.close()
-			delete(srv.dispatchers, d.name)
-		}
-		delete(srv.currDispatcher, cid)
-	}
+	return srv.dispatcherMgr.GetDispatcherNum()
 }
 
 // pushMessage 向服务器中写入特定类型的消息，需严格遵守消息属性要求
@@ -409,25 +317,29 @@ func (srv *Server) pushMessage(message *Message) {
 		srv.messagePool.Release(message)
 		return
 	}
-	var dispatcher *dispatcher
+	var d *dispatcher.Dispatcher[string, *Message]
 	switch message.t {
 	case MessageTypePacket,
 		MessageTypeShuntTicker, MessageTypeShuntAsync, MessageTypeShuntAsyncCallback,
 		MessageTypeUniqueShuntAsync, MessageTypeUniqueShuntAsyncCallback,
 		MessageTypeShunt:
-		dispatcher = srv.getConnDispatcher(message.conn)
+		d = srv.dispatcherMgr.GetDispatcher(message.conn.GetID())
 	case MessageTypeSystem, MessageTypeAsync, MessageTypeUniqueAsync, MessageTypeAsyncCallback, MessageTypeUniqueAsyncCallback, MessageTypeTicker:
-		dispatcher = srv.systemDispatcher
+		d = srv.dispatcherMgr.GetSystemDispatcher()
 	}
-	if dispatcher == nil {
+	if d == nil {
 		return
 	}
-	if (message.t == MessageTypeUniqueShuntAsync || message.t == MessageTypeUniqueAsync) && dispatcher.unique(message.name) {
+	if (message.t == MessageTypeUniqueShuntAsync || message.t == MessageTypeUniqueAsync) && d.Unique(message.name) {
 		srv.messagePool.Release(message)
 		return
 	}
+	switch message.t {
+	case MessageTypeShuntAsync, MessageTypeUniqueShuntAsync:
+		d.IncrCount(message.conn.GetID(), 1)
+	}
 	srv.hitMessageStatistics()
-	dispatcher.put(message)
+	d.Put(message)
 }
 
 func (srv *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
@@ -456,7 +368,7 @@ func (srv *Server) low(message *Message, present time.Time, expect time.Duration
 }
 
 // dispatchMessage 消息分发
-func (srv *Server) dispatchMessage(dispatcherIns *dispatcher, msg *Message) {
+func (srv *Server) dispatchMessage(dispatcherIns *dispatcher.Dispatcher[string, *Message], msg *Message) {
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -476,7 +388,7 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher, msg *Message) {
 
 	present := time.Now()
 	if msg.t != MessageTypeAsync && msg.t != MessageTypeUniqueAsync && msg.t != MessageTypeShuntAsync && msg.t != MessageTypeUniqueShuntAsync {
-		defer func(cancel context.CancelFunc, srv *Server, dispatcherIns *dispatcher, msg *Message, present time.Time) {
+		defer func(cancel context.CancelFunc, srv *Server, dispatcherIns *dispatcher.Dispatcher[string, *Message], msg *Message, present time.Time) {
 			super.Handle(cancel)
 			if err := super.RecoverTransform(recover()); err != nil {
 				stack := string(debug.Stack())
@@ -485,7 +397,7 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher, msg *Message) {
 				srv.OnMessageErrorEvent(msg, err)
 			}
 			if msg.t == MessageTypeUniqueAsyncCallback || msg.t == MessageTypeUniqueShuntAsyncCallback {
-				dispatcherIns.antiUnique(msg.name)
+				dispatcherIns.AntiUnique(msg.name)
 			}
 
 			srv.low(msg, present, time.Millisecond*100)
@@ -512,10 +424,14 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher, msg *Message) {
 		msg.ordinaryHandler()
 	case MessageTypeAsync, MessageTypeShuntAsync, MessageTypeUniqueAsync, MessageTypeUniqueShuntAsync:
 		if err := srv.ants.Submit(func() {
-			defer func(cancel context.CancelFunc, srv *Server, dispatcherIns *dispatcher, msg *Message, present time.Time) {
+			defer func(cancel context.CancelFunc, srv *Server, dispatcherIns *dispatcher.Dispatcher[string, *Message], msg *Message, present time.Time) {
+				switch msg.t {
+				case MessageTypeShuntAsync, MessageTypeUniqueShuntAsync:
+					dispatcherIns.IncrCount(msg.conn.GetID(), -1)
+				}
 				if err := super.RecoverTransform(recover()); err != nil {
 					if msg.t == MessageTypeUniqueAsync || msg.t == MessageTypeUniqueShuntAsync {
-						dispatcherIns.antiUnique(msg.name)
+						dispatcherIns.AntiUnique(msg.name)
 					}
 					stack := string(debug.Stack())
 					log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", stack))
@@ -550,7 +466,7 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher, msg *Message) {
 				srv.PushShuntAsyncCallbackMessage(msg.conn, err, msg.errHandler)
 				return
 			}
-			dispatcherIns.antiUnique(msg.name)
+			dispatcherIns.AntiUnique(msg.name)
 			if err != nil {
 				log.Error("Server", log.String("MessageType", messageNames[msg.t]), log.Any("error", err), log.String("stack", string(debug.Stack())))
 			}
@@ -769,7 +685,8 @@ func onMessageSystemInit(srv *Server) {
 		},
 	)
 	srv.startMessageStatistics()
-	srv.systemDispatcher = generateDispatcher(serverSystemDispatcher, srv.dispatchMessage)
-	go srv.systemDispatcher.start()
+	srv.dispatcherMgr = dispatcher.NewManager[string, *Message](srv.dispatcherBufferSize, srv.dispatchMessage).
+		SetDispatcherCreatedHandler(srv.OnShuntChannelCreatedEvent).
+		SetDispatcherClosedHandler(srv.OnShuntChannelClosedEvent)
 	srv.OnMessageReadyEvent()
 }

@@ -216,6 +216,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 			value(slf.Server, conn, err)
 			return true
 		})
+		slf.Server.dispatcherMgr.UnBindProducer(conn.GetID())
 	}, log.String("Event", "OnConnectionClosedEvent"))
 }
 

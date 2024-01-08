@@ -366,7 +366,4 @@ func (slf *Conn) Close(err ...error) {
 		return
 	}
 	slf.server.OnConnectionClosedEvent(slf, nil)
-	if !slf.server.runtime.disableAutomaticReleaseShunt {
-		slf.server.releaseDispatcher(slf)
-	}
 }

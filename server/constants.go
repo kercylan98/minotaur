@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	serverMultipleMark     = "Minotaur Multiple Server"
-	serverMark             = "Minotaur Server"
-	serverSystemDispatcher = "__system" // 系统消息分发器
+	serverMultipleMark = "Minotaur Multiple Server"
+	serverMark         = "Minotaur Server"
 )
 
 const (
