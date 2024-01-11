@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/collection"
-	listings2 "github.com/kercylan98/minotaur/utils/collection/listings"
+	"github.com/kercylan98/minotaur/utils/collection/listings"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
 	"golang.org/x/crypto/ssh/terminal"
@@ -43,45 +43,45 @@ type (
 func newEvent(srv *Server) *event {
 	return &event{
 		Server:                                  srv,
-		startBeforeEventHandlers:                listings2.NewPrioritySlice[StartBeforeEventHandler](),
-		startFinishEventHandlers:                listings2.NewPrioritySlice[StartFinishEventHandler](),
-		stopEventHandlers:                       listings2.NewPrioritySlice[StopEventHandler](),
-		connectionReceivePacketEventHandlers:    listings2.NewPrioritySlice[ConnectionReceivePacketEventHandler](),
-		connectionOpenedEventHandlers:           listings2.NewPrioritySlice[ConnectionOpenedEventHandler](),
-		connectionClosedEventHandlers:           listings2.NewPrioritySlice[ConnectionClosedEventHandler](),
-		messageErrorEventHandlers:               listings2.NewPrioritySlice[MessageErrorEventHandler](),
-		messageLowExecEventHandlers:             listings2.NewPrioritySlice[MessageLowExecEventHandler](),
-		connectionOpenedAfterEventHandlers:      listings2.NewPrioritySlice[ConnectionOpenedAfterEventHandler](),
-		connectionWritePacketBeforeHandlers:     listings2.NewPrioritySlice[ConnectionWritePacketBeforeEventHandler](),
-		shuntChannelCreatedEventHandlers:        listings2.NewPrioritySlice[ShuntChannelCreatedEventHandler](),
-		shuntChannelClosedEventHandlers:         listings2.NewPrioritySlice[ShuntChannelClosedEventHandler](),
-		connectionPacketPreprocessEventHandlers: listings2.NewPrioritySlice[ConnectionPacketPreprocessEventHandler](),
-		messageExecBeforeEventHandlers:          listings2.NewPrioritySlice[MessageExecBeforeEventHandler](),
-		messageReadyEventHandlers:               listings2.NewPrioritySlice[MessageReadyEventHandler](),
-		deadlockDetectEventHandlers:             listings2.NewPrioritySlice[OnDeadlockDetectEventHandler](),
+		startBeforeEventHandlers:                listings.NewPrioritySlice[StartBeforeEventHandler](),
+		startFinishEventHandlers:                listings.NewPrioritySlice[StartFinishEventHandler](),
+		stopEventHandlers:                       listings.NewPrioritySlice[StopEventHandler](),
+		connectionReceivePacketEventHandlers:    listings.NewPrioritySlice[ConnectionReceivePacketEventHandler](),
+		connectionOpenedEventHandlers:           listings.NewPrioritySlice[ConnectionOpenedEventHandler](),
+		connectionClosedEventHandlers:           listings.NewPrioritySlice[ConnectionClosedEventHandler](),
+		messageErrorEventHandlers:               listings.NewPrioritySlice[MessageErrorEventHandler](),
+		messageLowExecEventHandlers:             listings.NewPrioritySlice[MessageLowExecEventHandler](),
+		connectionOpenedAfterEventHandlers:      listings.NewPrioritySlice[ConnectionOpenedAfterEventHandler](),
+		connectionWritePacketBeforeHandlers:     listings.NewPrioritySlice[ConnectionWritePacketBeforeEventHandler](),
+		shuntChannelCreatedEventHandlers:        listings.NewPrioritySlice[ShuntChannelCreatedEventHandler](),
+		shuntChannelClosedEventHandlers:         listings.NewPrioritySlice[ShuntChannelClosedEventHandler](),
+		connectionPacketPreprocessEventHandlers: listings.NewPrioritySlice[ConnectionPacketPreprocessEventHandler](),
+		messageExecBeforeEventHandlers:          listings.NewPrioritySlice[MessageExecBeforeEventHandler](),
+		messageReadyEventHandlers:               listings.NewPrioritySlice[MessageReadyEventHandler](),
+		deadlockDetectEventHandlers:             listings.NewPrioritySlice[OnDeadlockDetectEventHandler](),
 	}
 }
 
 type event struct {
 	*Server
-	startBeforeEventHandlers                *listings2.PrioritySlice[StartBeforeEventHandler]
-	startFinishEventHandlers                *listings2.PrioritySlice[StartFinishEventHandler]
-	stopEventHandlers                       *listings2.PrioritySlice[StopEventHandler]
-	connectionReceivePacketEventHandlers    *listings2.PrioritySlice[ConnectionReceivePacketEventHandler]
-	connectionOpenedEventHandlers           *listings2.PrioritySlice[ConnectionOpenedEventHandler]
-	connectionClosedEventHandlers           *listings2.PrioritySlice[ConnectionClosedEventHandler]
-	messageErrorEventHandlers               *listings2.PrioritySlice[MessageErrorEventHandler]
-	messageLowExecEventHandlers             *listings2.PrioritySlice[MessageLowExecEventHandler]
-	connectionOpenedAfterEventHandlers      *listings2.PrioritySlice[ConnectionOpenedAfterEventHandler]
-	connectionWritePacketBeforeHandlers     *listings2.PrioritySlice[ConnectionWritePacketBeforeEventHandler]
-	shuntChannelCreatedEventHandlers        *listings2.PrioritySlice[ShuntChannelCreatedEventHandler]
-	shuntChannelClosedEventHandlers         *listings2.PrioritySlice[ShuntChannelClosedEventHandler]
-	connectionPacketPreprocessEventHandlers *listings2.PrioritySlice[ConnectionPacketPreprocessEventHandler]
-	messageExecBeforeEventHandlers          *listings2.PrioritySlice[MessageExecBeforeEventHandler]
-	messageReadyEventHandlers               *listings2.PrioritySlice[MessageReadyEventHandler]
-	deadlockDetectEventHandlers             *listings2.PrioritySlice[OnDeadlockDetectEventHandler]
+	startBeforeEventHandlers                *listings.PrioritySlice[StartBeforeEventHandler]
+	startFinishEventHandlers                *listings.PrioritySlice[StartFinishEventHandler]
+	stopEventHandlers                       *listings.PrioritySlice[StopEventHandler]
+	connectionReceivePacketEventHandlers    *listings.PrioritySlice[ConnectionReceivePacketEventHandler]
+	connectionOpenedEventHandlers           *listings.PrioritySlice[ConnectionOpenedEventHandler]
+	connectionClosedEventHandlers           *listings.PrioritySlice[ConnectionClosedEventHandler]
+	messageErrorEventHandlers               *listings.PrioritySlice[MessageErrorEventHandler]
+	messageLowExecEventHandlers             *listings.PrioritySlice[MessageLowExecEventHandler]
+	connectionOpenedAfterEventHandlers      *listings.PrioritySlice[ConnectionOpenedAfterEventHandler]
+	connectionWritePacketBeforeHandlers     *listings.PrioritySlice[ConnectionWritePacketBeforeEventHandler]
+	shuntChannelCreatedEventHandlers        *listings.PrioritySlice[ShuntChannelCreatedEventHandler]
+	shuntChannelClosedEventHandlers         *listings.PrioritySlice[ShuntChannelClosedEventHandler]
+	connectionPacketPreprocessEventHandlers *listings.PrioritySlice[ConnectionPacketPreprocessEventHandler]
+	messageExecBeforeEventHandlers          *listings.PrioritySlice[MessageExecBeforeEventHandler]
+	messageReadyEventHandlers               *listings.PrioritySlice[MessageReadyEventHandler]
+	deadlockDetectEventHandlers             *listings.PrioritySlice[OnDeadlockDetectEventHandler]
 
-	consoleCommandEventHandlers        map[string]*listings2.PrioritySlice[ConsoleCommandEventHandler]
+	consoleCommandEventHandlers        map[string]*listings.PrioritySlice[ConsoleCommandEventHandler]
 	consoleCommandEventHandlerInitOnce sync.Once
 }
 
@@ -109,7 +109,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handler ConsoleCommandE
 	}
 
 	slf.consoleCommandEventHandlerInitOnce.Do(func() {
-		slf.consoleCommandEventHandlers = map[string]*listings2.PrioritySlice[ConsoleCommandEventHandler]{}
+		slf.consoleCommandEventHandlers = map[string]*listings.PrioritySlice[ConsoleCommandEventHandler]{}
 		go func() {
 			for {
 				var input string
@@ -124,7 +124,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handler ConsoleCommandE
 	})
 	list, exist := slf.consoleCommandEventHandlers[command]
 	if !exist {
-		list = listings2.NewPrioritySlice[ConsoleCommandEventHandler]()
+		list = listings.NewPrioritySlice[ConsoleCommandEventHandler]()
 		slf.consoleCommandEventHandlers[command] = list
 	}
 	list.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))

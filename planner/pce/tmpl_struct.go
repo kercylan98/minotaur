@@ -19,7 +19,7 @@ func (slf *TmplStruct) addField(parent, name, desc, fieldType string, fields map
 		Desc: desc,
 		Type: fieldType,
 	}
-	if !collection.FindInMapKey(fields, fieldType) {
+	if !collection.KeyInMap(fields, fieldType) {
 		field.setStruct(parent, name, desc, fieldType, fields)
 	} else {
 		field.Type = GetFieldGolangType(fields[fieldType])

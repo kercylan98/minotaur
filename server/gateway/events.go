@@ -3,7 +3,7 @@ package gateway
 import (
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/utils/collection"
-	listings2 "github.com/kercylan98/minotaur/utils/collection/listings"
+	"github.com/kercylan98/minotaur/utils/collection/listings"
 )
 
 type (
@@ -17,22 +17,22 @@ type (
 
 func newEvents() *events {
 	return &events{
-		connectionOpenedEventHandles:             listings2.NewPrioritySlice[ConnectionOpenedEventHandle](),
-		connectionClosedEventHandles:             listings2.NewPrioritySlice[ConnectionClosedEventHandle](),
-		connectionReceivePacketEventHandles:      listings2.NewPrioritySlice[ConnectionReceivePacketEventHandle](),
-		endpointConnectOpenedEventHandles:        listings2.NewPrioritySlice[EndpointConnectOpenedEventHandle](),
-		endpointConnectClosedEventHandles:        listings2.NewPrioritySlice[EndpointConnectClosedEventHandle](),
-		endpointConnectReceivePacketEventHandles: listings2.NewPrioritySlice[EndpointConnectReceivePacketEventHandle](),
+		connectionOpenedEventHandles:             listings.NewPrioritySlice[ConnectionOpenedEventHandle](),
+		connectionClosedEventHandles:             listings.NewPrioritySlice[ConnectionClosedEventHandle](),
+		connectionReceivePacketEventHandles:      listings.NewPrioritySlice[ConnectionReceivePacketEventHandle](),
+		endpointConnectOpenedEventHandles:        listings.NewPrioritySlice[EndpointConnectOpenedEventHandle](),
+		endpointConnectClosedEventHandles:        listings.NewPrioritySlice[EndpointConnectClosedEventHandle](),
+		endpointConnectReceivePacketEventHandles: listings.NewPrioritySlice[EndpointConnectReceivePacketEventHandle](),
 	}
 }
 
 type events struct {
-	connectionOpenedEventHandles             *listings2.PrioritySlice[ConnectionOpenedEventHandle]
-	connectionClosedEventHandles             *listings2.PrioritySlice[ConnectionClosedEventHandle]
-	connectionReceivePacketEventHandles      *listings2.PrioritySlice[ConnectionReceivePacketEventHandle]
-	endpointConnectOpenedEventHandles        *listings2.PrioritySlice[EndpointConnectOpenedEventHandle]
-	endpointConnectClosedEventHandles        *listings2.PrioritySlice[EndpointConnectClosedEventHandle]
-	endpointConnectReceivePacketEventHandles *listings2.PrioritySlice[EndpointConnectReceivePacketEventHandle]
+	connectionOpenedEventHandles             *listings.PrioritySlice[ConnectionOpenedEventHandle]
+	connectionClosedEventHandles             *listings.PrioritySlice[ConnectionClosedEventHandle]
+	connectionReceivePacketEventHandles      *listings.PrioritySlice[ConnectionReceivePacketEventHandle]
+	endpointConnectOpenedEventHandles        *listings.PrioritySlice[EndpointConnectOpenedEventHandle]
+	endpointConnectClosedEventHandles        *listings.PrioritySlice[EndpointConnectClosedEventHandle]
+	endpointConnectReceivePacketEventHandles *listings.PrioritySlice[EndpointConnectReceivePacketEventHandle]
 }
 
 // RegConnectionOpenedEventHandle 注册客户端连接打开事件处理函数

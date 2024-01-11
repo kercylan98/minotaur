@@ -70,7 +70,7 @@ type (
 
 // HasMessageType 检查是否存在指定的消息类型
 func HasMessageType(mt MessageType) bool {
-	return collection.FindInMapKey(messageNames, mt)
+	return collection.KeyInMap(messageNames, mt)
 }
 
 // Message 服务器消息

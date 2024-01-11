@@ -96,7 +96,7 @@ func (slf *TmplField) handleSlice(fieldName, fieldType string, fields map[string
 	}
 	slf.slice = true
 	t := strings.TrimPrefix(fieldType, "[]")
-	if collection.FindInMapKey(fields, t) {
+	if collection.KeyInMap(fields, t) {
 		slf.Struct = nil
 		slf.Type = t
 	} else {

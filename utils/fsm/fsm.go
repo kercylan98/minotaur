@@ -60,7 +60,7 @@ func (slf *FSM[State, Data]) Unregister(state State) {
 
 // HasState 检查状态机是否存在特定状态
 func (slf *FSM[State, Data]) HasState(state State) bool {
-	return collection.FindInMapKey(slf.states, state)
+	return collection.KeyInMap(slf.states, state)
 }
 
 // Change 改变状态机状态到新的状态

@@ -45,7 +45,7 @@ func (slf *Area[ID, AreaInfo]) IsAllow(item Item[ID]) (constraintErr error, conf
 
 // IsConflict 检测一个成员是否会造成冲突
 func (slf *Area[ID, AreaInfo]) IsConflict(item Item[ID]) bool {
-	if collection.FindInMapKey(slf.items, item.GetID()) {
+	if collection.KeyInMap(slf.items, item.GetID()) {
 		return false
 	}
 	for _, conflict := range slf.conflicts {
@@ -58,7 +58,7 @@ func (slf *Area[ID, AreaInfo]) IsConflict(item Item[ID]) bool {
 
 // GetConflictItems 获取与一个成员产生冲突的所有其他成员
 func (slf *Area[ID, AreaInfo]) GetConflictItems(item Item[ID]) map[ID]Item[ID] {
-	if collection.FindInMapKey(slf.items, item.GetID()) {
+	if collection.KeyInMap(slf.items, item.GetID()) {
 		return nil
 	}
 	var conflictItems map[ID]Item[ID]

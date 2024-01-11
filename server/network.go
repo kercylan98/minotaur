@@ -57,7 +57,7 @@ func GetNetworks() []Network {
 
 // check 检查网络模式是否支持
 func (n Network) check() {
-	if !collection.FindInMapKey(networkNameMap, string(n)) {
+	if !collection.KeyInMap(networkNameMap, string(n)) {
 		panic(fmt.Errorf("unsupported network mode: %s", n))
 	}
 }

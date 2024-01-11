@@ -20,7 +20,7 @@ type Deck[I Item] struct {
 
 // AddGroup 将一个组添加到甲板中
 func (slf *Deck[I]) AddGroup(group *Group[I]) {
-	if !collection.FindInMapKey(slf.groups, group.GetGuid()) {
+	if !collection.KeyInMap(slf.groups, group.GetGuid()) {
 		slf.groups[group.GetGuid()] = group
 		slf.sort = append(slf.sort, group.GetGuid())
 	}

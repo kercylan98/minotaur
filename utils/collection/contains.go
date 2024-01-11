@@ -1,7 +1,5 @@
 package collection
 
-type ComparisonHandler[V any] func(source, target V) bool
-
 // InSlice 检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 func InSlice[S ~[]V, V any](slice S, v V, handler ComparisonHandler[V]) bool {
 	if len(slice) == 0 {
