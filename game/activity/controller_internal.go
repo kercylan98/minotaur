@@ -2,8 +2,8 @@ package activity
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/times"
 	"reflect"
 	"time"
@@ -94,7 +94,7 @@ func regController[Type, ID generic.Basic, Data any, EntityID generic.Basic, Ent
 		// 实体数据加载器
 		activityEntityDataLoader = append(activityEntityDataLoader, func(handler func(activityType any, activityId any, entityId any, data any)) {
 			controller.mutex.RLock()
-			entities := hash.Copy(controller.entityData[activityId])
+			entities := collection.CloneMap(controller.entityData[activityId])
 			controller.mutex.RUnlock()
 			for entityId, data := range entities {
 				handler(controller.t, activityId, entityId, data)

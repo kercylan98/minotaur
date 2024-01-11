@@ -96,7 +96,7 @@ func (slf *Lockstep[ClientID, Command]) GetClientCount() int {
 func (slf *Lockstep[ClientID, Command]) DropCache(handler func(frame int64) bool) {
 	slf.frameCacheLock.Lock()
 	defer slf.frameCacheLock.Unlock()
-	for frame, _ := range slf.frameCache {
+	for frame := range slf.frameCache {
 		if handler(frame) {
 			delete(slf.frameCache, frame)
 		}

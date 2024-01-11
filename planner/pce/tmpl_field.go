@@ -2,7 +2,7 @@ package pce
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/str"
 	"strings"
 )
@@ -96,7 +96,7 @@ func (slf *TmplField) handleSlice(fieldName, fieldType string, fields map[string
 	}
 	slf.slice = true
 	t := strings.TrimPrefix(fieldType, "[]")
-	if hash.Exist(fields, t) {
+	if collection.FindInMapKey(fields, t) {
 		slf.Struct = nil
 		slf.Type = t
 	} else {

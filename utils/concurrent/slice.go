@@ -1,7 +1,7 @@
 package concurrent
 
 import (
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"sync"
 )
 
@@ -55,5 +55,5 @@ func (slf *Slice[T]) Clear() {
 func (slf *Slice[T]) GetData() []T {
 	slf.rw.Lock()
 	defer slf.rw.Unlock()
-	return slice.Copy(slf.data)
+	return collection.CloneSlice(slf.data)
 }

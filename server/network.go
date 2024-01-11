@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/kercylan98/minotaur/server/internal/logger"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
@@ -53,12 +52,12 @@ func init() {
 
 // GetNetworks 获取所有支持的网络模式
 func GetNetworks() []Network {
-	return slice.Copy(networks)
+	return collection.CloneSlice(networks)
 }
 
 // check 检查网络模式是否支持
 func (n Network) check() {
-	if !hash.Exist(networkNameMap, string(n)) {
+	if !collection.FindInMapKey(networkNameMap, string(n)) {
 		panic(fmt.Errorf("unsupported network mode: %s", n))
 	}
 }

@@ -41,7 +41,7 @@ func ZIPUnCompress(dataByte []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		rc.Close()
+		_ = rc.Close()
 	}
 	return result.Bytes(), nil
 }

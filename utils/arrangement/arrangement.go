@@ -1,7 +1,7 @@
 package arrangement
 
 import (
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"sort"
 )
 
@@ -59,8 +59,8 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange() (areas []*Area[ID, AreaInfo], no
 		return slf.areas, slf.items
 	}
 
-	var items = hash.Copy(slf.items)
-	var fixed = hash.Copy(slf.fixed)
+	var items = collection.CloneMap(slf.items)
+	var fixed = collection.CloneMap(slf.fixed)
 
 	// 将固定编排的成员添加到对应的编排区域中，当成员无法添加到对应的编排区域中时，将会被转移至未编排区域
 	for id, isFixed := range fixed {
@@ -94,7 +94,7 @@ func (slf *Arrangement[ID, AreaInfo]) Arrange() (areas []*Area[ID, AreaInfo], no
 	}
 	var editor = &Editor[ID, AreaInfo]{
 		a:       slf,
-		pending: hash.ToSlice(items),
+		pending: collection.ConvertMapValuesToSlice(items),
 		falls:   map[ID]struct{}{},
 	}
 	sort.Slice(editor.pending, func(i, j int) bool {

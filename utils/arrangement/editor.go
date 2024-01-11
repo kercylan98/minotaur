@@ -1,8 +1,7 @@
 package arrangement
 
 import (
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"sort"
 )
 
@@ -33,7 +32,7 @@ func (slf *Editor[ID, AreaInfo]) RemoveAreaItem(area *Area[ID, AreaInfo], item I
 
 // AddAreaItem 将一个成员添加到编排区域中，如果该成员已经存在于编排区域中，则不进行任何操作
 func (slf *Editor[ID, AreaInfo]) AddAreaItem(area *Area[ID, AreaInfo], item Item[ID]) {
-	if hash.Exist(slf.falls, item.GetID()) {
+	if collection.FindInMapKey(slf.falls, item.GetID()) {
 		return
 	}
 	area.items[item.GetID()] = item
@@ -42,12 +41,12 @@ func (slf *Editor[ID, AreaInfo]) AddAreaItem(area *Area[ID, AreaInfo], item Item
 
 // GetAreas 获取所有的编排区域
 func (slf *Editor[ID, AreaInfo]) GetAreas() []*Area[ID, AreaInfo] {
-	return slice.Copy(slf.a.areas)
+	return collection.CloneSlice(slf.a.areas)
 }
 
 // GetAreasWithScoreAsc 获取所有的编排区域，并按照分数升序排序
 func (slf *Editor[ID, AreaInfo]) GetAreasWithScoreAsc(extra ...Item[ID]) []*Area[ID, AreaInfo] {
-	areas := slice.Copy(slf.a.areas)
+	areas := collection.CloneSlice(slf.a.areas)
 	sort.Slice(areas, func(i, j int) bool {
 		return areas[i].GetScore(extra...) < areas[j].GetScore(extra...)
 	})
@@ -56,7 +55,7 @@ func (slf *Editor[ID, AreaInfo]) GetAreasWithScoreAsc(extra ...Item[ID]) []*Area
 
 // GetAreasWithScoreDesc 获取所有的编排区域，并按照分数降序排序
 func (slf *Editor[ID, AreaInfo]) GetAreasWithScoreDesc(extra ...Item[ID]) []*Area[ID, AreaInfo] {
-	areas := slice.Copy(slf.a.areas)
+	areas := collection.CloneSlice(slf.a.areas)
 	sort.Slice(areas, func(i, j int) bool {
 		return areas[i].GetScore(extra...) > areas[j].GetScore(extra...)
 	})

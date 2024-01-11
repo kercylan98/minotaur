@@ -2,7 +2,7 @@ package memory
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/super"
 	"reflect"
@@ -81,7 +81,7 @@ func BindPersistCacheProgram[OutputParamHandlerFunc any](name string, handler Ou
 			cachesRWMutex.RUnlock()
 			return
 		}
-		funcCache = hash.Copy(funcCache)
+		funcCache = collection.CloneMap(funcCache)
 		cachesRWMutex.RUnlock()
 		for _, results := range funcCache {
 			persist.Call(results)
@@ -111,7 +111,7 @@ func BindPersistCacheProgram[OutputParamHandlerFunc any](name string, handler Ou
 					cachesRWMutex.RUnlock()
 					return
 				}
-				funcCache = hash.Copy(funcCache)
+				funcCache = collection.CloneMap(funcCache)
 				cachesRWMutex.RUnlock()
 				delay := opt.delay
 				tick := delay

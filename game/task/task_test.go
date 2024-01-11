@@ -37,7 +37,7 @@ func TestCond(t *testing.T) {
 
 	player := &Player{
 		tasks: map[string][]*Task{
-			task.Type: []*Task{task},
+			task.Type: {task},
 		},
 	}
 	OnRefreshTaskCounterEvent(task.Type, player, 1)

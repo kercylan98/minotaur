@@ -1,9 +1,9 @@
 package aoi
 
 import (
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
 	"github.com/kercylan98/minotaur/utils/geometry"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"math"
 	"sync"
 )
@@ -54,7 +54,7 @@ func (slf *TwoDimensional[EID, PosType, E]) Refresh(entity E) {
 func (slf *TwoDimensional[EID, PosType, E]) GetFocus(id EID) map[EID]E {
 	slf.rw.RLock()
 	defer slf.rw.RUnlock()
-	return hash.Copy(slf.focus[id])
+	return collection.CloneMap(slf.focus[id])
 }
 
 func (slf *TwoDimensional[EID, PosType, E]) SetSize(width, height int) {

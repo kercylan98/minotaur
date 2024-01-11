@@ -2,8 +2,8 @@ package times
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"strings"
 	"time"
 )
@@ -62,7 +62,7 @@ func (slf *StateLine[State]) Check(missingAllowed bool, states ...State) bool {
 func (slf *StateLine[State]) GetMissingStates(states ...State) []State {
 	var missing = make([]State, 0, len(states))
 	for _, state := range states {
-		if !slice.Contains(slf.states, state) {
+		if !collection.InComparableSlice(slf.states, state) {
 			missing = append(missing, state)
 		}
 	}
@@ -71,7 +71,7 @@ func (slf *StateLine[State]) GetMissingStates(states ...State) []State {
 
 // HasState 检查时间线中是否包含指定状态
 func (slf *StateLine[State]) HasState(state State) bool {
-	return slice.Contains(slf.states, state)
+	return collection.InComparableSlice(slf.states, state)
 }
 
 // String 获取时间线的字符串表示
@@ -86,7 +86,7 @@ func (slf *StateLine[State]) String() string {
 // AddState 添加一个状态到时间线中，状态不能与任一时间点重合，否则将被忽略
 //   - onTrigger: 该状态绑定的触发器，该触发器不会被主动执行，需要主动获取触发器执行
 func (slf *StateLine[State]) AddState(state State, t time.Time, onTrigger ...func()) *StateLine[State] {
-	if slice.Contains(slf.states, state) {
+	if collection.InComparableSlice(slf.states, state) {
 		return slf
 	}
 	// 将 t 按照从左到右由早到晚的顺序插入到 points 中

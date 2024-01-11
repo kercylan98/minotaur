@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
 )
@@ -70,7 +70,7 @@ type (
 
 // HasMessageType 检查是否存在指定的消息类型
 func HasMessageType(mt MessageType) bool {
-	return hash.Exist(messageNames, mt)
+	return collection.FindInMapKey(messageNames, mt)
 }
 
 // Message 服务器消息

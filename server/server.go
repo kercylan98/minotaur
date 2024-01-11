@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kercylan98/minotaur/server/internal/dispatcher"
 	"github.com/kercylan98/minotaur/server/internal/logger"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/concurrent"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
-	"github.com/kercylan98/minotaur/utils/sher"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -362,7 +362,7 @@ func (srv *Server) low(message *Message, present time.Time, expect time.Duration
 		fields = append(fields, log.String("type", messageNames[message.t]), log.String("cost", cost.String()), log.String("message", message.String()))
 		fields = append(fields, message.marks...)
 		//fields = append(fields, log.Stack("stack"))
-		log.Warn("ServerLowMessage", sher.ConvertSliceToAny(fields)...)
+		log.Warn("ServerLowMessage", collection.ConvertSliceToAny(fields)...)
 		srv.OnMessageLowExecEvent(message, cost)
 	}
 }

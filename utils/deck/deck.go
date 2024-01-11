@@ -1,8 +1,7 @@
 package deck
 
 import (
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/collection"
 )
 
 // NewDeck 创建一个新的甲板
@@ -21,7 +20,7 @@ type Deck[I Item] struct {
 
 // AddGroup 将一个组添加到甲板中
 func (slf *Deck[I]) AddGroup(group *Group[I]) {
-	if !hash.Exist(slf.groups, group.GetGuid()) {
+	if !collection.FindInMapKey(slf.groups, group.GetGuid()) {
 		slf.groups[group.GetGuid()] = group
 		slf.sort = append(slf.sort, group.GetGuid())
 	}
@@ -30,7 +29,7 @@ func (slf *Deck[I]) AddGroup(group *Group[I]) {
 // RemoveGroup 移除甲板中的一个组
 func (slf *Deck[I]) RemoveGroup(guid int64) {
 	delete(slf.groups, guid)
-	index := slice.GetIndex(slf.sort, guid)
+	index := collection.FindIndexInComparableSlice(slf.sort, guid)
 	if index != -1 {
 		slf.sort = append(slf.sort[:index], slf.sort[index+1:]...)
 	}
@@ -43,7 +42,7 @@ func (slf *Deck[I]) GetCount() int {
 
 // GetGroups 获取所有组
 func (slf *Deck[I]) GetGroups() map[int64]*Group[I] {
-	return hash.Copy(slf.groups)
+	return collection.CloneMap(slf.groups)
 }
 
 // GetGroupsSlice 获取所有组
@@ -57,7 +56,7 @@ func (slf *Deck[I]) GetGroupsSlice() []*Group[I] {
 
 // GetNext 获取特定组的下一个组
 func (slf *Deck[I]) GetNext(guid int64) *Group[I] {
-	index := slice.GetIndex(slf.sort, guid)
+	index := collection.FindIndexInComparableSlice(slf.sort, guid)
 	if index == -1 {
 		return nil
 	}
@@ -69,7 +68,7 @@ func (slf *Deck[I]) GetNext(guid int64) *Group[I] {
 
 // GetPrev 获取特定组的上一个组
 func (slf *Deck[I]) GetPrev(guid int64) *Group[I] {
-	index := slice.GetIndex(slf.sort, guid)
+	index := collection.FindIndexInComparableSlice(slf.sort, guid)
 	if index == -1 {
 		return nil
 	}

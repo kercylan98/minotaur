@@ -45,5 +45,5 @@ func TestNewBot(t *testing.T) {
 		bot.SendPacket([]byte("hello"))
 	})
 
-	srv.Run(":9600")
+	_ = srv.Run(":9600")
 }

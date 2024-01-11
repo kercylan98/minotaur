@@ -2,7 +2,8 @@ package gateway
 
 import (
 	"github.com/kercylan98/minotaur/server"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/collection"
+	listings2 "github.com/kercylan98/minotaur/utils/collection/listings"
 )
 
 type (
@@ -16,27 +17,27 @@ type (
 
 func newEvents() *events {
 	return &events{
-		connectionOpenedEventHandles:             slice.NewPriority[ConnectionOpenedEventHandle](),
-		connectionClosedEventHandles:             slice.NewPriority[ConnectionClosedEventHandle](),
-		connectionReceivePacketEventHandles:      slice.NewPriority[ConnectionReceivePacketEventHandle](),
-		endpointConnectOpenedEventHandles:        slice.NewPriority[EndpointConnectOpenedEventHandle](),
-		endpointConnectClosedEventHandles:        slice.NewPriority[EndpointConnectClosedEventHandle](),
-		endpointConnectReceivePacketEventHandles: slice.NewPriority[EndpointConnectReceivePacketEventHandle](),
+		connectionOpenedEventHandles:             listings2.NewPrioritySlice[ConnectionOpenedEventHandle](),
+		connectionClosedEventHandles:             listings2.NewPrioritySlice[ConnectionClosedEventHandle](),
+		connectionReceivePacketEventHandles:      listings2.NewPrioritySlice[ConnectionReceivePacketEventHandle](),
+		endpointConnectOpenedEventHandles:        listings2.NewPrioritySlice[EndpointConnectOpenedEventHandle](),
+		endpointConnectClosedEventHandles:        listings2.NewPrioritySlice[EndpointConnectClosedEventHandle](),
+		endpointConnectReceivePacketEventHandles: listings2.NewPrioritySlice[EndpointConnectReceivePacketEventHandle](),
 	}
 }
 
 type events struct {
-	connectionOpenedEventHandles             *slice.Priority[ConnectionOpenedEventHandle]
-	connectionClosedEventHandles             *slice.Priority[ConnectionClosedEventHandle]
-	connectionReceivePacketEventHandles      *slice.Priority[ConnectionReceivePacketEventHandle]
-	endpointConnectOpenedEventHandles        *slice.Priority[EndpointConnectOpenedEventHandle]
-	endpointConnectClosedEventHandles        *slice.Priority[EndpointConnectClosedEventHandle]
-	endpointConnectReceivePacketEventHandles *slice.Priority[EndpointConnectReceivePacketEventHandle]
+	connectionOpenedEventHandles             *listings2.PrioritySlice[ConnectionOpenedEventHandle]
+	connectionClosedEventHandles             *listings2.PrioritySlice[ConnectionClosedEventHandle]
+	connectionReceivePacketEventHandles      *listings2.PrioritySlice[ConnectionReceivePacketEventHandle]
+	endpointConnectOpenedEventHandles        *listings2.PrioritySlice[EndpointConnectOpenedEventHandle]
+	endpointConnectClosedEventHandles        *listings2.PrioritySlice[EndpointConnectClosedEventHandle]
+	endpointConnectReceivePacketEventHandles *listings2.PrioritySlice[EndpointConnectReceivePacketEventHandle]
 }
 
 // RegConnectionOpenedEventHandle 注册客户端连接打开事件处理函数
 func (slf *events) RegConnectionOpenedEventHandle(handle ConnectionOpenedEventHandle, priority ...int) {
-	slf.connectionOpenedEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.connectionOpenedEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnConnectionOpenedEvent(gateway *Gateway, conn *server.Conn) {
@@ -48,7 +49,7 @@ func (slf *events) OnConnectionOpenedEvent(gateway *Gateway, conn *server.Conn) 
 
 // RegConnectionClosedEventHandle 注册客户端连接关闭事件处理函数
 func (slf *events) RegConnectionClosedEventHandle(handle ConnectionClosedEventHandle, priority ...int) {
-	slf.connectionClosedEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.connectionClosedEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnConnectionClosedEvent(gateway *Gateway, conn *server.Conn) {
@@ -60,7 +61,7 @@ func (slf *events) OnConnectionClosedEvent(gateway *Gateway, conn *server.Conn) 
 
 // RegConnectionReceivePacketEventHandle 注册客户端连接接收数据包事件处理函数
 func (slf *events) RegConnectionReceivePacketEventHandle(handle ConnectionReceivePacketEventHandle, priority ...int) {
-	slf.connectionReceivePacketEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.connectionReceivePacketEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnConnectionReceivePacketEvent(gateway *Gateway, conn *server.Conn, packet []byte) {
@@ -72,7 +73,7 @@ func (slf *events) OnConnectionReceivePacketEvent(gateway *Gateway, conn *server
 
 // RegEndpointConnectOpenedEventHandle 注册端点连接打开事件处理函数
 func (slf *events) RegEndpointConnectOpenedEventHandle(handle EndpointConnectOpenedEventHandle, priority ...int) {
-	slf.endpointConnectOpenedEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.endpointConnectOpenedEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnEndpointConnectOpenedEvent(gateway *Gateway, endpoint *Endpoint) {
@@ -84,7 +85,7 @@ func (slf *events) OnEndpointConnectOpenedEvent(gateway *Gateway, endpoint *Endp
 
 // RegEndpointConnectClosedEventHandle 注册端点连接关闭事件处理函数
 func (slf *events) RegEndpointConnectClosedEventHandle(handle EndpointConnectClosedEventHandle, priority ...int) {
-	slf.endpointConnectClosedEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.endpointConnectClosedEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnEndpointConnectClosedEvent(gateway *Gateway, endpoint *Endpoint) {
@@ -96,7 +97,7 @@ func (slf *events) OnEndpointConnectClosedEvent(gateway *Gateway, endpoint *Endp
 
 // RegEndpointConnectReceivePacketEventHandle 注册端点连接接收数据包事件处理函数
 func (slf *events) RegEndpointConnectReceivePacketEventHandle(handle EndpointConnectReceivePacketEventHandle, priority ...int) {
-	slf.endpointConnectReceivePacketEventHandles.Append(handle, slice.GetValue(priority, 0))
+	slf.endpointConnectReceivePacketEventHandles.Append(handle, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *events) OnEndpointConnectReceivePacketEvent(gateway *Gateway, endpoint *Endpoint, conn *server.Conn, packet []byte) {

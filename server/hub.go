@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"sync"
 )
 
@@ -96,7 +96,7 @@ func (h *hub) IsOnline(id string) bool {
 // GetOnlineAll 获取所有在线连接
 func (h *hub) GetOnlineAll() map[string]*Conn {
 	h.chanMutex.RLock()
-	cop := hash.Copy(h.connections)
+	cop := collection.CloneMap(h.connections)
 	h.chanMutex.RUnlock()
 	return cop
 }

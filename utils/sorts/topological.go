@@ -12,7 +12,7 @@ type topologicalNode[V any] struct {
 //   - queryDependsHandler: 用于查询切片中每个元素的依赖关系，返回的是一个索引切片，如果没有依赖关系，那么返回空切片
 //
 // 该函数在存在循环依赖的情况下将会返回 ErrCircularDependencyDetected 错误
-func Topological[Index comparable, V any](slice []V, queryIndexHandler func(item V) Index, queryDependsHandler func(item V) []Index) ([]V, error) {
+func Topological[S ~[]V, Index comparable, V any](slice S, queryIndexHandler func(item V) Index, queryDependsHandler func(item V) []Index) (S, error) {
 
 	var nodes = make(map[Index]*topologicalNode[V])
 

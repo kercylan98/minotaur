@@ -5,8 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/planner/pce"
 	"github.com/kercylan98/minotaur/planner/pce/cs"
 	"github.com/kercylan98/minotaur/planner/pce/tmpls"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/file"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/spf13/cobra"
 	"github.com/tealeg/xlsx"
@@ -64,7 +64,7 @@ func init() {
 			var exporter = pce.NewExporter()
 			loader := pce.NewLoader(pce.GetFields())
 
-			excludes := hash.ToMapBool(str.SplitTrimSpace(exclude, ","))
+			excludes := collection.ConvertSliceToBoolMap(str.SplitTrimSpace(exclude, ","))
 			for _, xlsxFile := range xlsxFiles {
 				xf, err := xlsx.OpenFile(xlsxFile)
 				if err != nil {
