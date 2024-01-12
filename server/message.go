@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/server/internal/dispatcher"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
@@ -75,16 +76,23 @@ func HasMessageType(mt MessageType) bool {
 
 // Message 服务器消息
 type Message struct {
-	producer         string
+	dis              *dispatcher.Dispatcher[string, *Message] // 指定消息发送到特定的分发器
 	conn             *Conn
+	err              error
 	ordinaryHandler  func()
 	exceptionHandler func() error
 	errHandler       func(err error)
+	marks            []log.Field
 	packet           []byte
-	err              error
+	producer         string
 	name             string
 	t                MessageType
-	marks            []log.Field
+}
+
+// bindDispatcher 绑定分发器
+func (slf *Message) bindDispatcher(dis *dispatcher.Dispatcher[string, *Message]) *Message {
+	slf.dis = dis
+	return slf
 }
 
 func (slf *Message) GetProducer() string {
@@ -103,6 +111,7 @@ func (slf *Message) reset() {
 	slf.t = 0
 	slf.marks = nil
 	slf.producer = ""
+	slf.dis = nil
 }
 
 // MessageType 返回消息类型

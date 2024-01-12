@@ -137,9 +137,19 @@ func (d *Dispatcher[P, M]) IncrCount(producer P, i int64) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.mc += i
-	d.pmc[producer] += i
-	if d.expel && d.mc <= 0 {
-		close(d.abort)
+	pmc := d.pmc[producer] + i
+	d.pmc[producer] = pmc
+	if d.mc <= 0 {
+		if f := d.pmcF[producer]; f != nil && pmc <= 0 {
+			func(producer P) {
+				defer func(producer P) {
+					if err := super.RecoverTransform(recover()); err != nil {
+						log.Error("Dispatcher.ProducerDoneHandler", log.Any("producer", producer), log.Err(err))
+					}
+				}(producer)
+				f(producer, &Action[P, M]{d: d, unlock: true})
+			}(producer)
+		}
 	}
 }
 
