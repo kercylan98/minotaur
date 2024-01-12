@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.5.0](https://github.com/kercylan98/minotaur/compare/v0.4.4...v0.5.0) (2024-01-12)
+
+
+### Other | 其他更改
+
+* 优化 collection.map 相关函数签名，优化使用体验 ([8d0cbed](https://github.com/kercylan98/minotaur/commit/8d0cbed4f4738c4378a03e8cfd2e37813b9ae7a2))
+* 优化 server 包 http 包装器使用体验 ([8eb9965](https://github.com/kercylan98/minotaur/commit/8eb99658390b518fa13d66624a954043309a84c0))
+
+
+### Features | 新特性
+
+* server 支持通过 WithLowMessageDuration、WithAsyncLowMessageDuration 函数设置慢消息阈值 ([4e1d075](https://github.com/kercylan98/minotaur/commit/4e1d075a059363ab39853e6b92f20668c11d0b74))
+* server.Server 在执行 Shutdown 时将会等待所有消息分发器被释放 ([4f2850b](https://github.com/kercylan98/minotaur/commit/4f2850b355f788199d6270e9c4862188340ff797))
+* sher 包增加部分转换和去重相关函数 ([2ff360c](https://github.com/kercylan98/minotaur/commit/2ff360c48c17573573b8ae41856fadf7e8784c3f))
+* sher 包新增 FindInSlice 和 FindInSliceByBinary 函数 ([96953d7](https://github.com/kercylan98/minotaur/commit/96953d74e224c92916df4c6743122371895a626e))
+* sher 包新增将任一切片转换为 []any 的函数 ([bb06cbf](https://github.com/kercylan98/minotaur/commit/bb06cbfeb0418fa462743c3e6b2e7833ade2cbff))
+* 优化 log 包，支持动态修改日志级别 ([3e41068](https://github.com/kercylan98/minotaur/commit/3e4106861967f0b8f7a57f5365c135fdd323f63e))
+
+
+### Bug Fixes | 修复
+
+* 修复 dispatcher.Dispatcher 在消息归零的时候使用协程运行处理函数可能导致不可知问题的情况，修复消息消费时获取生产者可能已经被释放的问题。修复在无消息时候设置消息完成处理函数不会触发一次的问题 ([7528dc4](https://github.com/kercylan98/minotaur/commit/7528dc4a1b616e35d96dedf0e6afc5330af897c0))
+* 修复 server 包异步分流消息的回调函数在取消分流渠道绑定后会在系统分流渠道执行的问题 ([e760ef2](https://github.com/kercylan98/minotaur/commit/e760ef2a0f6b76cbfe9129ddce19d9004d150866))
+* 修复 server 包连接断开消息分发器阻塞的问题，优化等待消息时打印的日志频率 ([af23744](https://github.com/kercylan98/minotaur/commit/af237448d7b7019adcb5bfc8d6efa135f597c372))
+* 修复 server 包部分问题，修复 log 包在 init 函数调用可能产生的空指针问题 ([3402c83](https://github.com/kercylan98/minotaur/commit/3402c83fd44e6c71db4401ef49667cada293c9c9))
+* 修复 server.Service 初始化的 for 循环指针问题 ([b633f1a](https://github.com/kercylan98/minotaur/commit/b633f1af9fba3c075a25530543576e50520307ce))
+* 修复配置导出 go 代码文件时，引用包错误的问题 ([790e317](https://github.com/kercylan98/minotaur/commit/790e31764f10ee06916e222d896ac9050bc32faa))
+
+
+### Styling | 可读性优化
+
+* 优化 server 包部分代码可读性 ([3b71eca](https://github.com/kercylan98/minotaur/commit/3b71eca5978ab038a215cdeb453c1f81382583e4))
+
+
+### Code Refactoring | 重构
+
+* 移除 slice 包和 hash 包，新增 listings、mappings 包存放数组、切片、映射等数据结构，原 slice、hash 包中的工具函数迁移至 collection 包，与 sher 包合并并移除 sher 包。完善 collection 包测试用例 ([66d9034](https://github.com/kercylan98/minotaur/commit/66d903474d64151389df7fb6245ea8457c492312))
+* 迁移 concurrent.BalanceMap 至 mappings.SyncMap，优化泛型函数签名 ([e3475c6](https://github.com/kercylan98/minotaur/commit/e3475c6c073dd940704de6f791ece7ea210dfe31))
+* 迁移 concurrent.Pool 至 hub.ObjectPool，并将 concurrent 包更名为 hub ([161fbfe](https://github.com/kercylan98/minotaur/commit/161fbfe4e3d0006738463afc62924e073e59c64d))
+* 迁移 concurrent.Slice 至 listings.SyncSlice ([e28a5a2](https://github.com/kercylan98/minotaur/commit/e28a5a259fedce0effbe393df8bec9e75857962c))
+* 重构 log 包，由 zap 改为 slog ([71a3b34](https://github.com/kercylan98/minotaur/commit/71a3b343048fa4a0d725d59977f99d1f0cc0cfbb))
+* 重构 server 包分流渠道设计，修复部分问题 ([3408c21](https://github.com/kercylan98/minotaur/commit/3408c212d0fe4e7f0202c5e7facfcbd69f3712c1))
+
+
+### Tests | 新增或优化测试用例
+
+* collection 包完善测试用例 ([e3d966e](https://github.com/kercylan98/minotaur/commit/e3d966e215883b76ee179586222a43f88f0ada31))
+* dispatcher 包完善测试用例 ([6f78684](https://github.com/kercylan98/minotaur/commit/6f7868483f6d0932f4906ba1b69217e5703a08b3))
+* dispatcher 包完善测试用例 ([90b7e4c](https://github.com/kercylan98/minotaur/commit/90b7e4c1f8dad5f60ac60d250a6b3cd1ab03cabf))
+* 完善 collection 包测试用例 ([e30c578](https://github.com/kercylan98/minotaur/commit/e30c5788c16fad8d073c01bf648e88edc47cfa83))
+* 完善 dispatcher.Dispatcher 注释及测试用例 ([a2a9199](https://github.com/kercylan98/minotaur/commit/a2a9199d415e9e54e33adc66a2e4dc0d20fff9b5))
+* 完善 hub.ObjectPool 测试用例 ([c439ef6](https://github.com/kercylan98/minotaur/commit/c439ef6424f67bddb3a391ee56289510da628909))
+
 ## [0.4.4](https://github.com/kercylan98/minotaur/compare/v0.4.3...v0.4.4) (2024-01-03)
 
 
