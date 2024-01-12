@@ -52,6 +52,26 @@ type runtime struct {
 	websocketUpgrader         *websocket.Upgrader                                                                 // websocket 升级器
 	websocketConnInitializer  func(writer http.ResponseWriter, request *http.Request, conn *websocket.Conn) error // websocket 连接初始化
 	dispatcherBufferSize      int                                                                                 // 消息分发器缓冲区大小
+	lowMessageDuration        time.Duration                                                                       // 慢消息时长
+	asyncLowMessageDuration   time.Duration                                                                       // 异步慢消息时长
+}
+
+// WithLowMessageDuration 通过指定慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
+//   - 默认值为 DefaultLowMessageDuration
+//   - 当 duration <= 0 时，表示关闭慢消息检测
+func WithLowMessageDuration(duration time.Duration) Option {
+	return func(srv *Server) {
+		srv.lowMessageDuration = duration
+	}
+}
+
+// WithAsyncLowMessageDuration 通过指定异步消息的慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
+//   - 默认值为 DefaultAsyncLowMessageDuration
+//   - 当 duration <= 0 时，表示关闭慢消息检测
+func WithAsyncLowMessageDuration(duration time.Duration) Option {
+	return func(srv *Server) {
+		srv.asyncLowMessageDuration = duration
+	}
 }
 
 // WithWebsocketConnInitializer 通过 websocket 连接初始化的方式创建服务器，当 initializer 返回错误时，服务器将不会处理该连接的后续逻辑

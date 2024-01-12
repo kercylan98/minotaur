@@ -32,9 +32,11 @@ func New(network Network, options ...Option) *Server {
 	network.check()
 	server := &Server{
 		runtime: &runtime{
-			packetWarnSize:       DefaultPacketWarnSize,
-			connWriteBufferSize:  DefaultConnWriteBufferSize,
-			dispatcherBufferSize: DefaultDispatcherBufferSize,
+			packetWarnSize:          DefaultPacketWarnSize,
+			connWriteBufferSize:     DefaultConnWriteBufferSize,
+			dispatcherBufferSize:    DefaultDispatcherBufferSize,
+			lowMessageDuration:      DefaultLowMessageDuration,
+			asyncLowMessageDuration: DefaultAsyncLowMessageDuration,
 		},
 		connMgr:      &connMgr{},
 		option:       &option{},
@@ -369,7 +371,13 @@ func (srv *Server) pushMessage(message *Message) {
 	d.Put(message)
 }
 
-func (srv *Server) low(message *Message, present time.Time, expect time.Duration, messageReplace ...string) {
+func (srv *Server) low(message *Message, present time.Time, expect time.Duration, async bool, messageReplace ...string) {
+	switch {
+	case async && srv.asyncLowMessageDuration <= 0:
+		return
+	case !async && srv.lowMessageDuration <= 0:
+		return
+	}
 	cost := time.Since(present)
 	if cost > expect {
 		if message == nil {
@@ -431,7 +439,7 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher.Dispatcher[string, 
 				dispatcherIns.IncrCount(msg.producer, -1)
 			}
 
-			srv.low(msg, present, time.Millisecond*100)
+			srv.low(msg, present, srv.lowMessageDuration, false)
 			srv.messageCounter.Add(-1)
 
 			if atomic.CompareAndSwapUint32(&srv.closed, 0, 0) {
@@ -470,7 +478,7 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher.Dispatcher[string, 
 					srv.OnMessageErrorEvent(msg, err)
 				}
 				super.Handle(cancel)
-				srv.low(msg, present, time.Second)
+				srv.low(msg, present, srv.asyncLowMessageDuration, true)
 				srv.messageCounter.Add(-1)
 
 				if atomic.CompareAndSwapUint32(&srv.closed, 0, 0) {

@@ -27,7 +27,7 @@ func (slf *HttpRouter[Context]) handlesConvert(handlers []HandlerFunc[Context]) 
 			hc := slf.packer(ctx)
 			var now = time.Now()
 			handler(hc)
-			slf.srv.low(nil, now, time.Second, "HTTP ["+ctx.Request.Method+"] "+ctx.Request.RequestURI)
+			slf.srv.low(nil, now, slf.srv.asyncLowMessageDuration, true, "HTTP ["+ctx.Request.Method+"] "+ctx.Request.RequestURI)
 		})
 	}
 	return handles
