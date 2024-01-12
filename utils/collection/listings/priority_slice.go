@@ -129,7 +129,7 @@ func (slf *PrioritySlice[V]) RangePriority(action func(index int, priority int) 
 	})
 }
 
-// Slice 返回切片
+// SyncSlice 返回切片
 func (slf *PrioritySlice[V]) Slice() []V {
 	var vs []V
 	for _, item := range slf.items {
