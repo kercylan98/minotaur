@@ -2,7 +2,7 @@ package leaderboard
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/collection/mappings"
 	"github.com/kercylan98/minotaur/utils/generic"
 )
 
@@ -11,7 +11,7 @@ func NewBinarySearch[CompetitorID comparable, Score generic.Ordered](options ...
 	leaderboard := &BinarySearch[CompetitorID, Score]{
 		binarySearchEvent: new(binarySearchEvent[CompetitorID, Score]),
 		rankCount:         100,
-		competitors:       concurrent.NewBalanceMap[CompetitorID, Score](),
+		competitors:       mappings.NewSyncMap[CompetitorID, Score](),
 	}
 	for _, option := range options {
 		option(leaderboard)
@@ -23,7 +23,7 @@ type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
 	*binarySearchEvent[CompetitorID, Score]
 	asc         bool
 	rankCount   int
-	competitors *concurrent.BalanceMap[CompetitorID, Score]
+	competitors *mappings.SyncMap[CompetitorID, Score]
 	scores      []*scoreItem[CompetitorID, Score] // CompetitorID, Score
 
 	rankChangeEventHandles      []BinarySearchRankChangeEventHandle[CompetitorID, Score]
@@ -264,11 +264,11 @@ func (slf *BinarySearch[CompetitorID, Score]) competitor(competitorId Competitor
 
 func (slf *BinarySearch[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error {
 	var t struct {
-		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
-		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
-		Asc         bool                                        `json:"asc,omitempty"`
+		Competitors *mappings.SyncMap[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]      `json:"scores,omitempty"`
+		Asc         bool                                   `json:"asc,omitempty"`
 	}
-	t.Competitors = concurrent.NewBalanceMap[CompetitorID, Score]()
+	t.Competitors = mappings.NewSyncMap[CompetitorID, Score]()
 	if err := json.Unmarshal(bytes, &t); err != nil {
 		return err
 	}
@@ -280,9 +280,9 @@ func (slf *BinarySearch[CompetitorID, Score]) UnmarshalJSON(bytes []byte) error 
 
 func (slf *BinarySearch[CompetitorID, Score]) MarshalJSON() ([]byte, error) {
 	var t struct {
-		Competitors *concurrent.BalanceMap[CompetitorID, Score] `json:"competitors,omitempty"`
-		Scores      []*scoreItem[CompetitorID, Score]           `json:"scores,omitempty"`
-		Asc         bool                                        `json:"asc,omitempty"`
+		Competitors *mappings.SyncMap[CompetitorID, Score] `json:"competitors,omitempty"`
+		Scores      []*scoreItem[CompetitorID, Score]      `json:"scores,omitempty"`
+		Asc         bool                                   `json:"asc,omitempty"`
 	}
 	t.Competitors = slf.competitors
 	t.Scores = slf.scores
