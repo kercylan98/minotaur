@@ -41,6 +41,17 @@ var (
 	networks       = []Network{
 		NetworkNone, NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix, NetworkHttp, NetworkWebsocket, NetworkKcp, NetworkGRPC,
 	}
+	socketNetworks = map[Network]struct{}{
+		NetworkTcp:       {},
+		NetworkTcp4:      {},
+		NetworkTcp6:      {},
+		NetworkUdp:       {},
+		NetworkUdp4:      {},
+		NetworkUdp6:      {},
+		NetworkUnix:      {},
+		NetworkKcp:       {},
+		NetworkWebsocket: {},
+	}
 )
 
 func init() {
@@ -304,4 +315,9 @@ func (n Network) websocketMode(state chan<- error, srv *Server) {
 			super.TryWriteChannel(lis.state, err)
 		}
 	}((&listener{srv: srv, Listener: l, state: state}).init())
+}
+
+// IsSocket 返回当前服务器的网络模式是否为 Socket 模式
+func (n Network) IsSocket() bool {
+	return collection.KeyInMap(socketNetworks, n)
 }

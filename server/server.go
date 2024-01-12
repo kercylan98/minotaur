@@ -149,9 +149,7 @@ func (srv *Server) Run(addr string) (err error) {
 
 // IsSocket 是否是 Socket 模式
 func (srv *Server) IsSocket() bool {
-	return srv.network == NetworkTcp || srv.network == NetworkTcp4 || srv.network == NetworkTcp6 ||
-		srv.network == NetworkUdp || srv.network == NetworkUdp4 || srv.network == NetworkUdp6 ||
-		srv.network == NetworkUnix || srv.network == NetworkKcp || srv.network == NetworkWebsocket
+	return srv.network.IsSocket()
 }
 
 // RunNone 是 Run("") 的简写，仅适用于运行 NetworkNone 服务器
