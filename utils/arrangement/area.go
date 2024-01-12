@@ -1,6 +1,8 @@
 package arrangement
 
-import "github.com/kercylan98/minotaur/utils/hash"
+import (
+	"github.com/kercylan98/minotaur/utils/collection"
+)
 
 // Area 编排区域
 type Area[ID comparable, AreaInfo any] struct {
@@ -43,7 +45,7 @@ func (slf *Area[ID, AreaInfo]) IsAllow(item Item[ID]) (constraintErr error, conf
 
 // IsConflict 检测一个成员是否会造成冲突
 func (slf *Area[ID, AreaInfo]) IsConflict(item Item[ID]) bool {
-	if hash.Exist(slf.items, item.GetID()) {
+	if collection.KeyInMap(slf.items, item.GetID()) {
 		return false
 	}
 	for _, conflict := range slf.conflicts {
@@ -56,7 +58,7 @@ func (slf *Area[ID, AreaInfo]) IsConflict(item Item[ID]) bool {
 
 // GetConflictItems 获取与一个成员产生冲突的所有其他成员
 func (slf *Area[ID, AreaInfo]) GetConflictItems(item Item[ID]) map[ID]Item[ID] {
-	if hash.Exist(slf.items, item.GetID()) {
+	if collection.KeyInMap(slf.items, item.GetID()) {
 		return nil
 	}
 	var conflictItems map[ID]Item[ID]
@@ -79,7 +81,7 @@ func (slf *Area[ID, AreaInfo]) GetScore(extra ...Item[ID]) float64 {
 	if slf.evaluate == nil {
 		return 0
 	}
-	var items = hash.Copy(slf.items)
+	var items = collection.CloneMap(slf.items)
 	for _, item := range extra {
 		items[item.GetID()] = item
 	}

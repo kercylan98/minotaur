@@ -1,9 +1,8 @@
 package space
 
 import (
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/hash"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"sync"
 )
 
@@ -201,7 +200,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetNotEmptySeat() []in
 // GetEmptySeat 获取空座位
 //   - 空座位需要在有对象离开座位后才可能出现
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEmptySeat() []int {
-	return slice.Copy(rc.vacancy)
+	return collection.CloneSlice(rc.vacancy)
 }
 
 // HasSeat 判断是否有座位
@@ -291,7 +290,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetRoom() Room {
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntities() map[EntityID]Entity {
 	rc.entitiesRWMutex.RLock()
 	defer rc.entitiesRWMutex.RUnlock()
-	return hash.Copy(rc.entities)
+	return collection.CloneMap(rc.entities)
 }
 
 // HasEntity 判断是否有实体
@@ -321,7 +320,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntityExist(id Enti
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetEntityIDs() []EntityID {
 	rc.entitiesRWMutex.RLock()
 	defer rc.entitiesRWMutex.RUnlock()
-	return hash.KeyToSlice(rc.entities)
+	return collection.ConvertMapKeysToSlice(rc.entities)
 }
 
 // GetEntityCount 获取实体数量
@@ -454,7 +453,7 @@ func (rc *RoomController[EntityID, RoomID, Entity, Room]) GetRoomID() RoomID {
 // Broadcast 广播，该函数会将所有房间中满足 conditions 的对象传入 handler 中进行处理
 func (rc *RoomController[EntityID, RoomID, Entity, Room]) Broadcast(handler func(Entity), conditions ...func(Entity) bool) {
 	rc.entitiesRWMutex.RLock()
-	entities := hash.Copy(rc.entities)
+	entities := collection.CloneMap(rc.entities)
 	rc.entitiesRWMutex.RUnlock()
 	for _, entity := range entities {
 		for _, condition := range conditions {

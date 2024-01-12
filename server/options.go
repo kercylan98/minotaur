@@ -32,27 +32,46 @@ type option struct {
 }
 
 type runtime struct {
-	deadlockDetect               time.Duration                                                                       // 是否开启死锁检测
-	supportMessageTypes          map[int]bool                                                                        // websocket 模式下支持的消息类型
-	certFile, keyFile            string                                                                              // TLS文件
-	tickerPool                   *timer.Pool                                                                         // 定时器池
-	ticker                       *timer.Ticker                                                                       // 定时器
-	tickerAutonomy               bool                                                                                // 定时器是否独立运行
-	connTickerSize               int                                                                                 // 连接定时器大小
-	websocketReadDeadline        time.Duration                                                                       // websocket 连接超时时间
-	websocketCompression         int                                                                                 // websocket 压缩等级
-	websocketWriteCompression    bool                                                                                // websocket 写入压缩
-	limitLife                    time.Duration                                                                       // 限制最大生命周期
-	packetWarnSize               int                                                                                 // 数据包大小警告
-	messageStatisticsDuration    time.Duration                                                                       // 消息统计时长
-	messageStatisticsLimit       int                                                                                 // 消息统计数量
-	messageStatistics            []*atomic.Int64                                                                     // 消息统计数量
-	messageStatisticsLock        *sync.RWMutex                                                                       // 消息统计锁
-	dispatcherBufferSize         int                                                                                 // 消息分发器缓冲区大小
-	connWriteBufferSize          int                                                                                 // 连接写入缓冲区大小
-	disableAutomaticReleaseShunt bool                                                                                // 是否禁用自动释放分流渠道
-	websocketUpgrader            *websocket.Upgrader                                                                 // websocket 升级器
-	websocketConnInitializer     func(writer http.ResponseWriter, request *http.Request, conn *websocket.Conn) error // websocket 连接初始化
+	deadlockDetect            time.Duration                                                                       // 是否开启死锁检测
+	supportMessageTypes       map[int]bool                                                                        // websocket 模式下支持的消息类型
+	certFile, keyFile         string                                                                              // TLS文件
+	tickerPool                *timer.Pool                                                                         // 定时器池
+	ticker                    *timer.Ticker                                                                       // 定时器
+	tickerAutonomy            bool                                                                                // 定时器是否独立运行
+	connTickerSize            int                                                                                 // 连接定时器大小
+	websocketReadDeadline     time.Duration                                                                       // websocket 连接超时时间
+	websocketCompression      int                                                                                 // websocket 压缩等级
+	websocketWriteCompression bool                                                                                // websocket 写入压缩
+	limitLife                 time.Duration                                                                       // 限制最大生命周期
+	packetWarnSize            int                                                                                 // 数据包大小警告
+	messageStatisticsDuration time.Duration                                                                       // 消息统计时长
+	messageStatisticsLimit    int                                                                                 // 消息统计数量
+	messageStatistics         []*atomic.Int64                                                                     // 消息统计数量
+	messageStatisticsLock     *sync.RWMutex                                                                       // 消息统计锁
+	connWriteBufferSize       int                                                                                 // 连接写入缓冲区大小
+	websocketUpgrader         *websocket.Upgrader                                                                 // websocket 升级器
+	websocketConnInitializer  func(writer http.ResponseWriter, request *http.Request, conn *websocket.Conn) error // websocket 连接初始化
+	dispatcherBufferSize      int                                                                                 // 消息分发器缓冲区大小
+	lowMessageDuration        time.Duration                                                                       // 慢消息时长
+	asyncLowMessageDuration   time.Duration                                                                       // 异步慢消息时长
+}
+
+// WithLowMessageDuration 通过指定慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
+//   - 默认值为 DefaultLowMessageDuration
+//   - 当 duration <= 0 时，表示关闭慢消息检测
+func WithLowMessageDuration(duration time.Duration) Option {
+	return func(srv *Server) {
+		srv.lowMessageDuration = duration
+	}
+}
+
+// WithAsyncLowMessageDuration 通过指定异步消息的慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
+//   - 默认值为 DefaultAsyncLowMessageDuration
+//   - 当 duration <= 0 时，表示关闭慢消息检测
+func WithAsyncLowMessageDuration(duration time.Duration) Option {
+	return func(srv *Server) {
+		srv.asyncLowMessageDuration = duration
+	}
 }
 
 // WithWebsocketConnInitializer 通过 websocket 连接初始化的方式创建服务器，当 initializer 返回错误时，服务器将不会处理该连接的后续逻辑
@@ -75,14 +94,6 @@ func WithWebsocketUpgrade(upgrader *websocket.Upgrader) Option {
 			return
 		}
 		srv.websocketUpgrader = upgrader
-	}
-}
-
-// WithDisableAutomaticReleaseShunt 通过禁用自动释放分流渠道的方式创建服务器
-//   - 默认不开启，当禁用自动释放分流渠道时，服务器将不会在连接断开时自动释放分流渠道，需要手动调用 ReleaseShunt 方法释放
-func WithDisableAutomaticReleaseShunt() Option {
-	return func(srv *Server) {
-		srv.runtime.disableAutomaticReleaseShunt = true
 	}
 }
 

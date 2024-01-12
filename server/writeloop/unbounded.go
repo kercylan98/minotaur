@@ -2,7 +2,7 @@ package writeloop
 
 import (
 	"github.com/kercylan98/minotaur/utils/buffer"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/kercylan98/minotaur/utils/log"
 )
 
@@ -12,7 +12,7 @@ import (
 //   - errorHandler 错误处理函数
 //
 // 传入 writeHandler 的消息对象是从 pool 中获取的，并且在 writeHandler 执行完成后会被放回 pool 中，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
-func NewUnbounded[Message any](pool *concurrent.Pool[Message], writeHandler func(message Message) error, errorHandler func(err any)) *Unbounded[Message] {
+func NewUnbounded[Message any](pool *hub.ObjectPool[Message], writeHandler func(message Message) error, errorHandler func(err any)) *Unbounded[Message] {
 	wl := &Unbounded[Message]{
 		buf: buffer.NewUnbounded[Message](),
 	}
@@ -47,7 +47,7 @@ type Unbounded[Message any] struct {
 	buf *buffer.Unbounded[Message]
 }
 
-// Put 将数据放入写循环，message 应该来源于 concurrent.Pool
+// Put 将数据放入写循环，message 应该来源于 hub.ObjectPool
 func (slf *Unbounded[Message]) Put(message Message) {
 	slf.buf.Put(message)
 }

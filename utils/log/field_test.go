@@ -1,16 +1,25 @@
-package log_test
+package log
 
 import (
-	"github.com/kercylan98/minotaur/utils/log"
+	"log/slog"
 	"testing"
+	"time"
 )
 
 func TestStack(t *testing.T) {
 
-	log.Debug("TestStack")
-	log.Info("TestStack")
-	log.Warn("TestStack")
-	log.Error("TestStack")
+	var i int
+	for {
+		time.Sleep(time.Second)
+		Debug("TestStack")
+		Info("TestStack")
+		Warn("TestStack")
+		Error("TestStack")
+		i++
+		if i == 3 {
+			Default().Logger.Handler().(*handler).opts.GerRuntimeHandler().ChangeLevel(slog.LevelInfo)
+		}
+	}
 	//log.Panic("TestStack")
 	//log.DPanic("TestStack")
 	//log.Fatal("TestStack")

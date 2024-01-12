@@ -1,8 +1,8 @@
 package maths
 
 import (
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"sort"
 )
 
@@ -35,7 +35,7 @@ func Compare[V generic.Ordered](a V, expression CompareExpression, b V) bool {
 }
 
 // IsContinuity 检查一组值是否连续
-func IsContinuity[V generic.Integer](values []V) bool {
+func IsContinuity[S ~[]V, V generic.Integer](values S) bool {
 	length := len(values)
 	if length == 0 {
 		return false
@@ -52,10 +52,10 @@ func IsContinuity[V generic.Integer](values []V) bool {
 }
 
 // IsContinuityWithSort 检查一组值排序后是否连续
-func IsContinuityWithSort[V generic.Integer](values []V) bool {
-	sli := slice.Copy(values)
-	sort.Slice(sli, func(i, j int) bool {
-		return sli[i] < sli[j]
+func IsContinuityWithSort[S ~[]V, V generic.Integer](values S) bool {
+	s := collection.CloneSlice(values)
+	sort.Slice(s, func(i, j int) bool {
+		return s[i] < s[j]
 	})
-	return IsContinuity(sli)
+	return IsContinuity(s)
 }

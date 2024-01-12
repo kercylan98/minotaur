@@ -2,7 +2,7 @@ package file
 
 import (
 	"bufio"
-	"github.com/kercylan98/minotaur/utils/slice"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"io"
 	"os"
 	"path/filepath"
@@ -150,12 +150,12 @@ func Paths(dir string) []string {
 	return paths
 }
 
-// ReadLineWithParallelByChannel 并行的分行读取文件并行处理，处理过程中会将每一行的内容传入 handlerFunc 中进行处理
+// ReadLineWithParallel 并行的分行读取文件并行处理，处理过程中会将每一行的内容传入 handlerFunc 中进行处理
 //   - 由于是并行处理，所以处理过程中的顺序是不确定的。
 //   - 可通过 start 参数指定开始读取的位置，如果不指定则从文件开头开始读取。
 func ReadLineWithParallel(filename string, chunkSize int64, handlerFunc func(string), start ...int64) (n int64, err error) {
 	file, err := os.Open(filename)
-	offset := slice.GetValue(start, 0)
+	offset := collection.FindFirstOrDefaultInSlice(start, 0)
 	if err != nil {
 		return offset, err
 	}

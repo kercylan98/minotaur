@@ -29,9 +29,9 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 )
 
 func main() {

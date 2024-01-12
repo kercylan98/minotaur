@@ -7,19 +7,19 @@ import (
 // NewHttpContext 基于 gin.Context 创建一个新的 HttpContext
 func NewHttpContext(ctx *gin.Context) *HttpContext {
 	hc := &HttpContext{
-		ctx: ctx,
+		Context: ctx,
 	}
 	return hc
 }
 
 // HttpContext 基于 gin.Context 的 http 请求上下文
 type HttpContext struct {
-	ctx *gin.Context
+	*gin.Context
 }
 
 // Gin 获取 gin.Context
 func (slf *HttpContext) Gin() *gin.Context {
-	return slf.ctx
+	return slf.Context
 }
 
 // ReadTo 读取请求数据到指定结构体，如果失败则返回错误

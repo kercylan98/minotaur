@@ -1,8 +1,8 @@
 package space
 
 import (
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/hash"
 	"sync"
 )
 
@@ -54,7 +54,7 @@ func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetRoom(id RoomID) *RoomC
 func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetRooms() map[RoomID]*RoomController[EntityID, RoomID, Entity, Room] {
 	rm.roomsRWMutex.RLock()
 	defer rm.roomsRWMutex.RUnlock()
-	return hash.Copy(rm.rooms)
+	return collection.CloneMap(rm.rooms)
 }
 
 // GetRoomCount 获取房间管理器接管的房间数量
@@ -68,13 +68,13 @@ func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetRoomCount() int {
 func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetRoomIDs() []RoomID {
 	rm.roomsRWMutex.RLock()
 	defer rm.roomsRWMutex.RUnlock()
-	return hash.KeyToSlice(rm.rooms)
+	return collection.ConvertMapKeysToSlice(rm.rooms)
 }
 
 // HasEntity 判断特定对象是否在任一房间中，当对象不在任一房间中时将返回 false
 func (rm *RoomManager[EntityID, RoomID, Entity, Room]) HasEntity(entityId EntityID) bool {
 	rm.roomsRWMutex.RLock()
-	rooms := hash.Copy(rm.rooms)
+	rooms := collection.CloneMap(rm.rooms)
 	rm.roomsRWMutex.RUnlock()
 	for _, room := range rooms {
 		if room.HasEntity(entityId) {
@@ -88,7 +88,7 @@ func (rm *RoomManager[EntityID, RoomID, Entity, Room]) HasEntity(entityId Entity
 //   - 由于一个对象可能在多个房间中，因此返回值为 map 类型
 func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetEntityRooms(entityId EntityID) map[RoomID]*RoomController[EntityID, RoomID, Entity, Room] {
 	rm.roomsRWMutex.RLock()
-	rooms := hash.Copy(rm.rooms)
+	rooms := collection.CloneMap(rm.rooms)
 	rm.roomsRWMutex.RUnlock()
 	var result = make(map[RoomID]*RoomController[EntityID, RoomID, Entity, Room])
 	for id, room := range rooms {
@@ -102,7 +102,7 @@ func (rm *RoomManager[EntityID, RoomID, Entity, Room]) GetEntityRooms(entityId E
 // Broadcast 向所有房间对象广播消息，该方法将会遍历所有房间控制器并调用 RoomController.Broadcast 方法
 func (rm *RoomManager[EntityID, RoomID, Entity, Room]) Broadcast(handler func(Entity), conditions ...func(Entity) bool) {
 	rm.roomsRWMutex.RLock()
-	rooms := hash.Copy(rm.rooms)
+	rooms := collection.CloneMap(rm.rooms)
 	rm.roomsRWMutex.RUnlock()
 	for _, room := range rooms {
 		room.Broadcast(handler, conditions...)

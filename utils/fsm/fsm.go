@@ -2,7 +2,7 @@ package fsm
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 )
 
 // NewFSM 创建一个新的状态机
@@ -60,7 +60,7 @@ func (slf *FSM[State, Data]) Unregister(state State) {
 
 // HasState 检查状态机是否存在特定状态
 func (slf *FSM[State, Data]) HasState(state State) bool {
-	return hash.Exist(slf.states, state)
+	return collection.KeyInMap(slf.states, state)
 }
 
 // Change 改变状态机状态到新的状态

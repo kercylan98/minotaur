@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/concurrent"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -125,7 +125,7 @@ type connection struct {
 	gw          func(packet []byte)
 	data        map[any]any
 	closed      bool
-	pool        *concurrent.Pool[*connPacket]
+	pool        *hub.ObjectPool[*connPacket]
 	loop        writeloop.WriteLoop[*connPacket]
 	mu          sync.Mutex
 	openTime    time.Time
@@ -203,7 +203,7 @@ func (slf *Conn) GetData(key any) any {
 
 // ViewData 查看只读的连接数据
 func (slf *Conn) ViewData() map[any]any {
-	return hash.Copy(slf.data)
+	return collection.CloneMap(slf.data)
 }
 
 // SetMessageData 设置消息数据，该数据将在消息处理完成后释放
@@ -286,7 +286,7 @@ func (slf *Conn) init() {
 			}))
 		}
 	}
-	slf.pool = concurrent.NewPool[connPacket](
+	slf.pool = hub.NewObjectPool[connPacket](
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {
@@ -358,11 +358,6 @@ func (slf *Conn) Close(err ...error) {
 	}
 	if slf.ticker != nil {
 		slf.ticker.Release()
-	}
-	if !slf.server.runtime.disableAutomaticReleaseShunt {
-		slf.server.releaseDispatcher(slf)
-	} else {
-
 	}
 	slf.loop.Close()
 	slf.mu.Unlock()

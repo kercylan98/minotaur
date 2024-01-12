@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/collection"
+	"github.com/kercylan98/minotaur/utils/collection/listings"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/runtimes"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"golang.org/x/crypto/ssh/terminal"
 	"net/url"
 	"os"
@@ -42,51 +43,51 @@ type (
 func newEvent(srv *Server) *event {
 	return &event{
 		Server:                                  srv,
-		startBeforeEventHandlers:                slice.NewPriority[StartBeforeEventHandler](),
-		startFinishEventHandlers:                slice.NewPriority[StartFinishEventHandler](),
-		stopEventHandlers:                       slice.NewPriority[StopEventHandler](),
-		connectionReceivePacketEventHandlers:    slice.NewPriority[ConnectionReceivePacketEventHandler](),
-		connectionOpenedEventHandlers:           slice.NewPriority[ConnectionOpenedEventHandler](),
-		connectionClosedEventHandlers:           slice.NewPriority[ConnectionClosedEventHandler](),
-		messageErrorEventHandlers:               slice.NewPriority[MessageErrorEventHandler](),
-		messageLowExecEventHandlers:             slice.NewPriority[MessageLowExecEventHandler](),
-		connectionOpenedAfterEventHandlers:      slice.NewPriority[ConnectionOpenedAfterEventHandler](),
-		connectionWritePacketBeforeHandlers:     slice.NewPriority[ConnectionWritePacketBeforeEventHandler](),
-		shuntChannelCreatedEventHandlers:        slice.NewPriority[ShuntChannelCreatedEventHandler](),
-		shuntChannelClosedEventHandlers:         slice.NewPriority[ShuntChannelClosedEventHandler](),
-		connectionPacketPreprocessEventHandlers: slice.NewPriority[ConnectionPacketPreprocessEventHandler](),
-		messageExecBeforeEventHandlers:          slice.NewPriority[MessageExecBeforeEventHandler](),
-		messageReadyEventHandlers:               slice.NewPriority[MessageReadyEventHandler](),
-		deadlockDetectEventHandlers:             slice.NewPriority[OnDeadlockDetectEventHandler](),
+		startBeforeEventHandlers:                listings.NewPrioritySlice[StartBeforeEventHandler](),
+		startFinishEventHandlers:                listings.NewPrioritySlice[StartFinishEventHandler](),
+		stopEventHandlers:                       listings.NewPrioritySlice[StopEventHandler](),
+		connectionReceivePacketEventHandlers:    listings.NewPrioritySlice[ConnectionReceivePacketEventHandler](),
+		connectionOpenedEventHandlers:           listings.NewPrioritySlice[ConnectionOpenedEventHandler](),
+		connectionClosedEventHandlers:           listings.NewPrioritySlice[ConnectionClosedEventHandler](),
+		messageErrorEventHandlers:               listings.NewPrioritySlice[MessageErrorEventHandler](),
+		messageLowExecEventHandlers:             listings.NewPrioritySlice[MessageLowExecEventHandler](),
+		connectionOpenedAfterEventHandlers:      listings.NewPrioritySlice[ConnectionOpenedAfterEventHandler](),
+		connectionWritePacketBeforeHandlers:     listings.NewPrioritySlice[ConnectionWritePacketBeforeEventHandler](),
+		shuntChannelCreatedEventHandlers:        listings.NewPrioritySlice[ShuntChannelCreatedEventHandler](),
+		shuntChannelClosedEventHandlers:         listings.NewPrioritySlice[ShuntChannelClosedEventHandler](),
+		connectionPacketPreprocessEventHandlers: listings.NewPrioritySlice[ConnectionPacketPreprocessEventHandler](),
+		messageExecBeforeEventHandlers:          listings.NewPrioritySlice[MessageExecBeforeEventHandler](),
+		messageReadyEventHandlers:               listings.NewPrioritySlice[MessageReadyEventHandler](),
+		deadlockDetectEventHandlers:             listings.NewPrioritySlice[OnDeadlockDetectEventHandler](),
 	}
 }
 
 type event struct {
 	*Server
-	startBeforeEventHandlers                *slice.Priority[StartBeforeEventHandler]
-	startFinishEventHandlers                *slice.Priority[StartFinishEventHandler]
-	stopEventHandlers                       *slice.Priority[StopEventHandler]
-	connectionReceivePacketEventHandlers    *slice.Priority[ConnectionReceivePacketEventHandler]
-	connectionOpenedEventHandlers           *slice.Priority[ConnectionOpenedEventHandler]
-	connectionClosedEventHandlers           *slice.Priority[ConnectionClosedEventHandler]
-	messageErrorEventHandlers               *slice.Priority[MessageErrorEventHandler]
-	messageLowExecEventHandlers             *slice.Priority[MessageLowExecEventHandler]
-	connectionOpenedAfterEventHandlers      *slice.Priority[ConnectionOpenedAfterEventHandler]
-	connectionWritePacketBeforeHandlers     *slice.Priority[ConnectionWritePacketBeforeEventHandler]
-	shuntChannelCreatedEventHandlers        *slice.Priority[ShuntChannelCreatedEventHandler]
-	shuntChannelClosedEventHandlers         *slice.Priority[ShuntChannelClosedEventHandler]
-	connectionPacketPreprocessEventHandlers *slice.Priority[ConnectionPacketPreprocessEventHandler]
-	messageExecBeforeEventHandlers          *slice.Priority[MessageExecBeforeEventHandler]
-	messageReadyEventHandlers               *slice.Priority[MessageReadyEventHandler]
-	deadlockDetectEventHandlers             *slice.Priority[OnDeadlockDetectEventHandler]
+	startBeforeEventHandlers                *listings.PrioritySlice[StartBeforeEventHandler]
+	startFinishEventHandlers                *listings.PrioritySlice[StartFinishEventHandler]
+	stopEventHandlers                       *listings.PrioritySlice[StopEventHandler]
+	connectionReceivePacketEventHandlers    *listings.PrioritySlice[ConnectionReceivePacketEventHandler]
+	connectionOpenedEventHandlers           *listings.PrioritySlice[ConnectionOpenedEventHandler]
+	connectionClosedEventHandlers           *listings.PrioritySlice[ConnectionClosedEventHandler]
+	messageErrorEventHandlers               *listings.PrioritySlice[MessageErrorEventHandler]
+	messageLowExecEventHandlers             *listings.PrioritySlice[MessageLowExecEventHandler]
+	connectionOpenedAfterEventHandlers      *listings.PrioritySlice[ConnectionOpenedAfterEventHandler]
+	connectionWritePacketBeforeHandlers     *listings.PrioritySlice[ConnectionWritePacketBeforeEventHandler]
+	shuntChannelCreatedEventHandlers        *listings.PrioritySlice[ShuntChannelCreatedEventHandler]
+	shuntChannelClosedEventHandlers         *listings.PrioritySlice[ShuntChannelClosedEventHandler]
+	connectionPacketPreprocessEventHandlers *listings.PrioritySlice[ConnectionPacketPreprocessEventHandler]
+	messageExecBeforeEventHandlers          *listings.PrioritySlice[MessageExecBeforeEventHandler]
+	messageReadyEventHandlers               *listings.PrioritySlice[MessageReadyEventHandler]
+	deadlockDetectEventHandlers             *listings.PrioritySlice[OnDeadlockDetectEventHandler]
 
-	consoleCommandEventHandlers        map[string]*slice.Priority[ConsoleCommandEventHandler]
+	consoleCommandEventHandlers        map[string]*listings.PrioritySlice[ConsoleCommandEventHandler]
 	consoleCommandEventHandlerInitOnce sync.Once
 }
 
 // RegStopEvent 服务器停止时将立即执行被注册的事件处理函数
 func (slf *event) RegStopEvent(handler StopEventHandler, priority ...int) {
-	slf.stopEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.stopEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -108,7 +109,7 @@ func (slf *event) RegConsoleCommandEvent(command string, handler ConsoleCommandE
 	}
 
 	slf.consoleCommandEventHandlerInitOnce.Do(func() {
-		slf.consoleCommandEventHandlers = map[string]*slice.Priority[ConsoleCommandEventHandler]{}
+		slf.consoleCommandEventHandlers = map[string]*listings.PrioritySlice[ConsoleCommandEventHandler]{}
 		go func() {
 			for {
 				var input string
@@ -123,10 +124,10 @@ func (slf *event) RegConsoleCommandEvent(command string, handler ConsoleCommandE
 	})
 	list, exist := slf.consoleCommandEventHandlers[command]
 	if !exist {
-		list = slice.NewPriority[ConsoleCommandEventHandler]()
+		list = listings.NewPrioritySlice[ConsoleCommandEventHandler]()
 		slf.consoleCommandEventHandlers[command] = list
 	}
-	list.Append(handler, slice.GetValue(priority, 0))
+	list.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -161,7 +162,7 @@ func (slf *event) OnConsoleCommandEvent(command string, paramsStr string) {
 
 // RegStartBeforeEvent 在服务器初始化完成启动前立刻执行被注册的事件处理函数
 func (slf *event) RegStartBeforeEvent(handler StartBeforeEventHandler, priority ...int) {
-	slf.startBeforeEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.startBeforeEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -181,7 +182,7 @@ func (slf *event) OnStartBeforeEvent() {
 // RegStartFinishEvent 在服务器启动完成时将立刻执行被注册的事件处理函数
 //   - 需要注意该时刻服务器已经启动完成，但是还有可能未开始处理消息，客户端有可能无法连接，如果需要在消息处理器准备就绪后执行，请使用 RegMessageReadyEvent 函数
 func (slf *event) RegStartFinishEvent(handler StartFinishEventHandler, priority ...int) {
-	slf.startFinishEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.startFinishEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -205,7 +206,7 @@ func (slf *event) RegConnectionClosedEvent(handler ConnectionClosedEventHandler,
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionClosedEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionClosedEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -216,6 +217,7 @@ func (slf *event) OnConnectionClosedEvent(conn *Conn, err any) {
 			value(slf.Server, conn, err)
 			return true
 		})
+		slf.Server.dispatcherMgr.UnBindProducer(conn.GetID())
 	}, log.String("Event", "OnConnectionClosedEvent"))
 }
 
@@ -225,7 +227,7 @@ func (slf *event) RegConnectionOpenedEvent(handler ConnectionOpenedEventHandler,
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionOpenedEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionOpenedEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -245,7 +247,7 @@ func (slf *event) RegConnectionReceivePacketEvent(handler ConnectionReceivePacke
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionReceivePacketEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionReceivePacketEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -261,7 +263,7 @@ func (slf *event) OnConnectionReceivePacketEvent(conn *Conn, packet []byte) {
 
 // RegMessageErrorEvent 在处理消息发生错误时将立即执行被注册的事件处理函数
 func (slf *event) RegMessageErrorEvent(handler MessageErrorEventHandler, priority ...int) {
-	slf.messageErrorEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.messageErrorEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -283,7 +285,7 @@ func (slf *event) OnMessageErrorEvent(message *Message, err error) {
 
 // RegMessageLowExecEvent 在处理消息缓慢时将立即执行被注册的事件处理函数
 func (slf *event) RegMessageLowExecEvent(handler MessageLowExecEventHandler, priority ...int) {
-	slf.messageLowExecEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.messageLowExecEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -304,7 +306,7 @@ func (slf *event) RegConnectionOpenedAfterEvent(handler ConnectionOpenedAfterEve
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionOpenedAfterEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionOpenedAfterEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -322,7 +324,7 @@ func (slf *event) RegConnectionWritePacketBeforeEvent(handler ConnectionWritePac
 	if slf.network == NetworkHttp {
 		panic(ErrNetworkIncompatibleHttp)
 	}
-	slf.connectionWritePacketBeforeHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionWritePacketBeforeHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -340,7 +342,7 @@ func (slf *event) OnConnectionWritePacketBeforeEvent(conn *Conn, packet []byte) 
 
 // RegShuntChannelCreatedEvent 在分流通道创建时将立刻执行被注册的事件处理函数
 func (slf *event) RegShuntChannelCreatedEvent(handler ShuntChannelCreatedEventHandler, priority ...int) {
-	slf.shuntChannelCreatedEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.shuntChannelCreatedEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -355,7 +357,7 @@ func (slf *event) OnShuntChannelCreatedEvent(name string) {
 
 // RegShuntChannelCloseEvent 在分流通道关闭时将立刻执行被注册的事件处理函数
 func (slf *event) RegShuntChannelCloseEvent(handler ShuntChannelClosedEventHandler, priority ...int) {
-	slf.shuntChannelClosedEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.shuntChannelClosedEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -377,7 +379,7 @@ func (slf *event) OnShuntChannelClosedEvent(name string) {
 //   - 数据包格式校验
 //   - 数据包分包等情况处理
 func (slf *event) RegConnectionPacketPreprocessEvent(handler ConnectionPacketPreprocessEventHandler, priority ...int) {
-	slf.connectionPacketPreprocessEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.connectionPacketPreprocessEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -401,7 +403,7 @@ func (slf *event) OnConnectionPacketPreprocessEvent(conn *Conn, packet []byte, u
 //
 // 适用于限流等场景
 func (slf *event) RegMessageExecBeforeEvent(handler MessageExecBeforeEventHandler, priority ...int) {
-	slf.messageExecBeforeEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.messageExecBeforeEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 	log.Info("Server", log.String("RegEvent", runtimes.CurrentRunningFuncName()), log.String("handler", reflect.TypeOf(handler).String()))
 }
 
@@ -425,7 +427,7 @@ func (slf *event) OnMessageExecBeforeEvent(message *Message) bool {
 
 // RegMessageReadyEvent 在服务器消息处理器准备就绪时立即执行被注册的事件处理函数
 func (slf *event) RegMessageReadyEvent(handler MessageReadyEventHandler, priority ...int) {
-	slf.messageReadyEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.messageReadyEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *event) OnMessageReadyEvent() {
@@ -446,7 +448,7 @@ func (slf *event) OnMessageReadyEvent() {
 
 // RegDeadlockDetectEvent 在死锁检测触发时立即执行被注册的事件处理函数
 func (slf *event) RegDeadlockDetectEvent(handler OnDeadlockDetectEventHandler, priority ...int) {
-	slf.deadlockDetectEventHandlers.Append(handler, slice.GetValue(priority, 0))
+	slf.deadlockDetectEventHandlers.Append(handler, collection.FindFirstOrDefaultInSlice(priority, 0))
 }
 
 func (slf *event) OnDeadlockDetectEvent(message *Message) {

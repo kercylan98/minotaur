@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/kercylan98/minotaur/server/internal/logger"
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
@@ -42,6 +41,17 @@ var (
 	networks       = []Network{
 		NetworkNone, NetworkTcp, NetworkTcp4, NetworkTcp6, NetworkUdp, NetworkUdp4, NetworkUdp6, NetworkUnix, NetworkHttp, NetworkWebsocket, NetworkKcp, NetworkGRPC,
 	}
+	socketNetworks = map[Network]struct{}{
+		NetworkTcp:       {},
+		NetworkTcp4:      {},
+		NetworkTcp6:      {},
+		NetworkUdp:       {},
+		NetworkUdp4:      {},
+		NetworkUdp6:      {},
+		NetworkUnix:      {},
+		NetworkKcp:       {},
+		NetworkWebsocket: {},
+	}
 )
 
 func init() {
@@ -53,12 +63,12 @@ func init() {
 
 // GetNetworks 获取所有支持的网络模式
 func GetNetworks() []Network {
-	return slice.Copy(networks)
+	return collection.CloneSlice(networks)
 }
 
 // check 检查网络模式是否支持
 func (n Network) check() {
-	if !hash.Exist(networkNameMap, string(n)) {
+	if !collection.KeyInMap(networkNameMap, string(n)) {
 		panic(fmt.Errorf("unsupported network mode: %s", n))
 	}
 }
@@ -305,4 +315,9 @@ func (n Network) websocketMode(state chan<- error, srv *Server) {
 			super.TryWriteChannel(lis.state, err)
 		}
 	}((&listener{srv: srv, Listener: l, state: state}).init())
+}
+
+// IsSocket 返回当前服务器的网络模式是否为 Socket 模式
+func (n Network) IsSocket() bool {
+	return collection.KeyInMap(socketNetworks, n)
 }

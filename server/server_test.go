@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 		fmt.Println("启动完成")
 	})
 	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
-		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
+		fmt.Println("关闭", conn.GetID(), err, "IncrCount", srv.GetOnlineCount())
 	})
 
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
@@ -38,7 +38,7 @@ func TestNew2(t *testing.T) {
 		fmt.Println("启动完成")
 	})
 	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
-		fmt.Println("关闭", conn.GetID(), err, "Count", srv.GetOnlineCount())
+		fmt.Println("关闭", conn.GetID(), err, "IncrCount", srv.GetOnlineCount())
 	})
 
 	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {

@@ -1,7 +1,7 @@
 package pce
 
 import (
-	"github.com/kercylan98/minotaur/utils/hash"
+	"github.com/kercylan98/minotaur/utils/collection"
 )
 
 // TmplStruct 模板结构
@@ -19,7 +19,7 @@ func (slf *TmplStruct) addField(parent, name, desc, fieldType string, fields map
 		Desc: desc,
 		Type: fieldType,
 	}
-	if !hash.Exist(fields, fieldType) {
+	if !collection.KeyInMap(fields, fieldType) {
 		field.setStruct(parent, name, desc, fieldType, fields)
 	} else {
 		field.Type = GetFieldGolangType(fields[fieldType])

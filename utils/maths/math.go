@@ -140,7 +140,7 @@ func UnMergeInt64[V generic.SignedNumber](n int64) (V, V) {
 
 // ToContinuous 将一组非连续的数字转换为从1开始的连续数字
 //   - 返回值是一个 map，key 是从 1 开始的连续数字，value 是原始数字
-func ToContinuous[V generic.Integer](nums []V) map[V]V {
+func ToContinuous[S ~[]V, V generic.Integer](nums S) map[V]V {
 	if len(nums) == 0 {
 		return nil
 	}

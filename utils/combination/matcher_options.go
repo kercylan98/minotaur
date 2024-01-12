@@ -1,8 +1,8 @@
 package combination
 
 import (
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"reflect"
 	"sort"
 )
@@ -24,7 +24,7 @@ func WithMatcherEvaluation[T Item](evaluate func(items []T) float64) MatcherOpti
 func WithMatcherLeastLength[T Item](length int) MatcherOption[T] {
 	return func(m *Matcher[T]) {
 		m.AddFilter(func(items []T) [][]T {
-			return slice.LimitedCombinations(items, length, len(items))
+			return collection.FindCombinationsInSliceByRange(items, length, len(items))
 		})
 	}
 }
@@ -34,7 +34,7 @@ func WithMatcherLeastLength[T Item](length int) MatcherOption[T] {
 func WithMatcherLength[T Item](length int) MatcherOption[T] {
 	return func(m *Matcher[T]) {
 		m.AddFilter(func(items []T) [][]T {
-			return slice.LimitedCombinations(items, length, length)
+			return collection.FindCombinationsInSliceByRange(items, length, length)
 		})
 	}
 }
@@ -44,7 +44,7 @@ func WithMatcherLength[T Item](length int) MatcherOption[T] {
 func WithMatcherMostLength[T Item](length int) MatcherOption[T] {
 	return func(m *Matcher[T]) {
 		m.AddFilter(func(items []T) [][]T {
-			return slice.LimitedCombinations(items, 1, length)
+			return collection.FindCombinationsInSliceByRange(items, 1, length)
 		})
 	}
 }
@@ -55,7 +55,7 @@ func WithMatcherMostLength[T Item](length int) MatcherOption[T] {
 func WithMatcherIntervalLength[T Item](min, max int) MatcherOption[T] {
 	return func(m *Matcher[T]) {
 		m.AddFilter(func(items []T) [][]T {
-			return slice.LimitedCombinations(items, min, max)
+			return collection.FindCombinationsInSliceByRange(items, min, max)
 		})
 	}
 }
@@ -102,7 +102,7 @@ func WithMatcherSame[T Item, E generic.Ordered](count int, getType func(item T) 
 	return func(m *Matcher[T]) {
 		m.AddFilter(func(items []T) [][]T {
 			var combinations [][]T
-			groups := slice.LimitedCombinations(items, count, count)
+			groups := collection.FindCombinationsInSliceByRange(items, count, count)
 			for _, items := range groups {
 				if count > 0 && len(items) != count {
 					continue
@@ -147,8 +147,12 @@ func WithMatcherNCarryM[T Item, E generic.Ordered](n, m int, getType func(item T
 				if len(group) != n {
 					continue
 				}
-				other := slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) })
-				ms := slice.LimitedCombinations(other, m, m)
+
+				other := collection.CloneSlice(items)
+				collection.DropSliceOverlappingElements(&other, group, func(source, target T) bool {
+					return reflect.DeepEqual(source, target)
+				})
+				ms := collection.FindCombinationsInSliceByRange(other, m, m)
 				for _, otherGroup := range ms {
 					var t E
 					var init = true
@@ -163,7 +167,7 @@ func WithMatcherNCarryM[T Item, E generic.Ordered](n, m int, getType func(item T
 						}
 					}
 					if same {
-						combinations = append(combinations, slice.Merge(group, otherGroup))
+						combinations = append(combinations, collection.MergeSlices(group, otherGroup))
 					}
 				}
 			}
@@ -191,9 +195,14 @@ func WithMatcherNCarryIndependentM[T Item, E generic.Ordered](n, m int, getType 
 				if len(group) != n {
 					continue
 				}
-				ms := slice.LimitedCombinations(slice.SubWithCheck(items, group, func(a, b T) bool { return reflect.DeepEqual(a, b) }), m, m)
+
+				other := collection.CloneSlice(items)
+				collection.DropSliceOverlappingElements(&other, group, func(source, target T) bool {
+					return reflect.DeepEqual(source, target)
+				})
+				ms := collection.FindCombinationsInSliceByRange(other, m, m)
 				for _, otherGroup := range ms {
-					combinations = append(combinations, slice.Merge(group, otherGroup))
+					combinations = append(combinations, collection.MergeSlices(group, otherGroup))
 				}
 			}
 			return combinations

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"sync"
 )
 
@@ -30,7 +30,7 @@ type Client struct {
 	core           Core
 	mutex          sync.Mutex
 	closed         bool                        // 是否已关闭
-	pool           *concurrent.Pool[*Packet]   // 数据包缓冲池
+	pool           *hub.ObjectPool[*Packet]    // 数据包缓冲池
 	loop           *writeloop.Channel[*Packet] // 写入循环
 	loopBufferSize int                         // 写入循环缓冲区大小
 	block          chan struct{}               // 以阻塞方式运行
@@ -73,7 +73,7 @@ func (slf *Client) RunByBufferSize(size int, block ...bool) error {
 		return err
 	}
 	slf.closed = false
-	slf.pool = concurrent.NewPool[Packet](func() *Packet {
+	slf.pool = hub.NewObjectPool[Packet](func() *Packet {
 		return new(Packet)
 	}, func(data *Packet) {
 		data.wst = 0

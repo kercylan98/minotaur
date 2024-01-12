@@ -3,8 +3,8 @@ package geometry
 import (
 	"bytes"
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/slice"
 	"math"
 	"sort"
 	"strings"
@@ -317,7 +317,7 @@ func (slf Shape[V]) getAllGraphicComposition(opt *shapeSearchOptions) (result []
 			for i, directions := range [][]Direction{DirectionUDLR, DirectionLRUD} {
 				var direction Direction
 				for {
-					next, direction = slice.NextLoop(directions, next)
+					next, direction = collection.FindLoopedNextInSlice(directions, next)
 					for {
 						directionPoint = GetDirectionNextWithPoint(direction, directionPoint)
 						if px, py := directionPoint.GetXY(); px < 0 || px >= areaWidth || py < 0 || py >= areaHeight {

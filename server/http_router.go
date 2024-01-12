@@ -27,7 +27,7 @@ func (slf *HttpRouter[Context]) handlesConvert(handlers []HandlerFunc[Context]) 
 			hc := slf.packer(ctx)
 			var now = time.Now()
 			handler(hc)
-			slf.srv.low(nil, now, time.Second, "HTTP ["+ctx.Request.Method+"] "+ctx.Request.RequestURI)
+			slf.srv.low(nil, now, slf.srv.asyncLowMessageDuration, true, "HTTP ["+ctx.Request.Method+"] "+ctx.Request.RequestURI)
 		})
 	}
 	return handles
@@ -145,4 +145,10 @@ func (slf *HttpRouter[Context]) Group(relativePath string, handlers ...HandlerFu
 		group:  group,
 		packer: slf.packer,
 	}
+}
+
+// Use 将中间件附加到路由组。
+func (slf *HttpRouter[Context]) Use(middleware ...HandlerFunc[Context]) *HttpRouter[Context] {
+	slf.group.Use(slf.handlesConvert(middleware)...)
+	return slf
 }

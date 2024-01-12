@@ -1,7 +1,7 @@
 package writeloop
 
 import (
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/kercylan98/minotaur/utils/log"
 )
 
@@ -12,7 +12,7 @@ import (
 //   - errorHandler 错误处理函数
 //
 // 传入 writeHandler 的消息对象是从 Channel 中获取的，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
-func NewChannel[Message any](pool *concurrent.Pool[Message], channelSize int, writeHandler func(message Message) error, errorHandler func(err any)) *Channel[Message] {
+func NewChannel[Message any](pool *hub.ObjectPool[Message], channelSize int, writeHandler func(message Message) error, errorHandler func(err any)) *Channel[Message] {
 	wl := &Channel[Message]{
 		c: make(chan Message, channelSize),
 	}
@@ -45,7 +45,7 @@ type Channel[T any] struct {
 	c chan T
 }
 
-// Put 将数据放入写循环，message 应该来源于 concurrent.Pool
+// Put 将数据放入写循环，message 应该来源于 hub.ObjectPool
 func (slf *Channel[T]) Put(message T) {
 	slf.c <- message
 }
