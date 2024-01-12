@@ -12,10 +12,13 @@ func NewManager[P Producer, M Message[P]](bufferSize int, handler Handler[P, M])
 		handler:     handler,
 		dispatchers: make(map[string]*Dispatcher[P, M]),
 		member:      make(map[string]map[P]struct{}),
-		sys:         NewDispatcher(bufferSize, SystemName, handler).Start(),
+		sys:         NewDispatcher(bufferSize, SystemName, handler),
 		curr:        make(map[P]*Dispatcher[P, M]),
 		size:        bufferSize,
 	}
+	mgr.sys.SetClosedHandler(func(dispatcher *Action[P, M]) {
+		mgr.w.Done()
+	}).Start()
 
 	return mgr
 }
@@ -33,6 +36,14 @@ type Manager[P Producer, M Message[P]] struct {
 
 	closedHandler  func(name string)
 	createdHandler func(name string)
+}
+
+// Wait 等待所有消息分发器关闭
+func (m *Manager[P, M]) Wait() {
+	m.w.Wait()
+	m.w.Add(1)
+	m.sys.Expel()
+	m.w.Wait()
 }
 
 // SetDispatcherClosedHandler 设置消息分发器关闭时的回调函数
@@ -111,15 +122,17 @@ func (m *Manager[P, M]) BindProducer(p P, name string) {
 
 	dispatcher, exist := m.dispatchers[name]
 	if !exist {
-		dispatcher = NewDispatcher(m.size, name, m.handler).SetClosedHandler(func(dispatcher *Dispatcher[P, M]) {
+		m.w.Add(1)
+		dispatcher = NewDispatcher(m.size, name, m.handler).SetClosedHandler(func(dispatcher *Action[P, M]) {
 			// 消息分发器关闭时，将会将其从管理器中移除
 			m.lock.Lock()
-			delete(m.dispatchers, dispatcher.name)
-			delete(m.member, dispatcher.name)
+			delete(m.dispatchers, dispatcher.Name())
+			delete(m.member, dispatcher.Name())
 			m.lock.Unlock()
 			if m.closedHandler != nil {
-				m.closedHandler(dispatcher.name)
+				m.closedHandler(dispatcher.Name())
 			}
+			m.w.Done()
 		}).Start()
 		m.dispatchers[name] = dispatcher
 		defer func(m *Manager[P, M], name string) {
@@ -135,18 +148,18 @@ func (m *Manager[P, M]) BindProducer(p P, name string) {
 // UnBindProducer 解绑生产者使用特定的消息分发器
 func (m *Manager[P, M]) UnBindProducer(p P) {
 	m.lock.Lock()
-	defer m.lock.Unlock()
 	curr, exist := m.curr[p]
+	m.lock.Unlock()
 	if !exist {
 		return
 	}
 
-	curr.SetProducerDoneHandler(p, func(p P, dispatcher *Dispatcher[P, M]) {
+	curr.SetProducerDoneHandler(p, func(p P, dispatcher *Action[P, M]) {
 		m.lock.Lock()
 		defer m.lock.Unlock()
-		delete(m.member[dispatcher.name], p)
+		delete(m.member[dispatcher.Name()], p)
 		delete(m.curr, p)
-		if len(m.member[dispatcher.name]) == 0 {
+		if len(m.member[dispatcher.Name()]) == 0 {
 			dispatcher.Expel()
 		}
 	})

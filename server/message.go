@@ -102,6 +102,7 @@ func (slf *Message) reset() {
 	slf.name = ""
 	slf.t = 0
 	slf.marks = nil
+	slf.producer = ""
 }
 
 // MessageType 返回消息类型

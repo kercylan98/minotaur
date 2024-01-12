@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/utils/buffer"
+	"github.com/kercylan98/minotaur/utils/log"
+	"github.com/kercylan98/minotaur/utils/super"
 	"sync"
 	"sync/atomic"
 )
@@ -24,7 +26,7 @@ func NewDispatcher[P Producer, M Message[P]](bufferSize int, name string, handle
 		handler: handler,
 		uniques: haxmap.New[string, struct{}](),
 		pmc:     make(map[P]int64),
-		pmcF:    make(map[P]func(p P, dispatcher *Dispatcher[P, M])),
+		pmcF:    make(map[P]func(p P, dispatcher *Action[P, M])),
 		abort:   make(chan struct{}),
 	}
 	return d
@@ -50,28 +52,40 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	expel         bool
 	mc            int64
 	pmc           map[P]int64
-	pmcF          map[P]func(p P, dispatcher *Dispatcher[P, M])
+	pmcF          map[P]func(p P, dispatcher *Action[P, M])
 	lock          sync.RWMutex
 	name          string
-	closedHandler atomic.Pointer[func(dispatcher *Dispatcher[P, M])]
+	closedHandler atomic.Pointer[func(dispatcher *Action[P, M])]
 	abort         chan struct{}
 }
 
 // SetProducerDoneHandler 设置特定生产者所有消息处理完成时的回调函数
 //   - 如果 handler 为 nil，则会删除该生产者的回调函数
-func (d *Dispatcher[P, M]) SetProducerDoneHandler(p P, handler func(p P, dispatcher *Dispatcher[P, M])) *Dispatcher[P, M] {
+//
+// 需要注意的是，该 handler 中
+func (d *Dispatcher[P, M]) SetProducerDoneHandler(p P, handler func(p P, dispatcher *Action[P, M])) *Dispatcher[P, M] {
 	d.lock.Lock()
 	if handler == nil {
 		delete(d.pmcF, p)
 	} else {
 		d.pmcF[p] = handler
+		if pmc := d.pmc[p]; pmc <= 0 {
+			func(producer P, handler func(p P, dispatcher *Action[P, M])) {
+				defer func(producer P) {
+					if err := super.RecoverTransform(recover()); err != nil {
+						log.Error("Dispatcher.ProducerDoneHandler", log.Any("producer", producer), log.Err(err))
+					}
+				}(p)
+				handler(p, &Action[P, M]{d: d, unlock: true})
+			}(p, handler)
+		}
 	}
 	d.lock.Unlock()
 	return d
 }
 
 // SetClosedHandler 设置消息分发器关闭时的回调函数
-func (d *Dispatcher[P, M]) SetClosedHandler(handler func(dispatcher *Dispatcher[P, M])) *Dispatcher[P, M] {
+func (d *Dispatcher[P, M]) SetClosedHandler(handler func(dispatcher *Action[P, M])) *Dispatcher[P, M] {
 	d.closedHandler.Store(&handler)
 	return d
 }
@@ -95,29 +109,38 @@ func (d *Dispatcher[P, M]) AntiUnique(name string) {
 // Expel 设置该消息分发器即将被驱逐，当消息分发器中没有任何消息时，会自动关闭
 func (d *Dispatcher[P, M]) Expel() {
 	d.lock.Lock()
+	d.noLockExpel()
+	d.lock.Unlock()
+}
+
+func (d *Dispatcher[P, M]) noLockExpel() {
 	d.expel = true
 	if d.mc <= 0 {
 		d.abort <- struct{}{}
 	}
-	d.lock.Unlock()
 }
 
 // UnExpel 取消特定生产者的驱逐计划
 func (d *Dispatcher[P, M]) UnExpel() {
 	d.lock.Lock()
-	d.expel = false
+	d.noLockUnExpel()
 	d.lock.Unlock()
 }
 
+func (d *Dispatcher[P, M]) noLockUnExpel() {
+	d.expel = false
+}
+
 // IncrCount 主动增量设置特定生产者的消息计数，这在等待异步消息完成后再关闭消息分发器时非常有用
+//   - 如果 i 为负数，则会减少消息计数
 func (d *Dispatcher[P, M]) IncrCount(producer P, i int64) {
 	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.mc += i
 	d.pmc[producer] += i
 	if d.expel && d.mc <= 0 {
 		d.abort <- struct{}{}
 	}
-	d.lock.Unlock()
 }
 
 // Put 将消息放入分发器
@@ -129,7 +152,7 @@ func (d *Dispatcher[P, M]) Put(message M) {
 	d.buf.Write(message)
 }
 
-// Start 以阻塞的方式开始进行消息分发，当消息分发器中没有任何消息时，会自动关闭
+// Start 以非阻塞的方式开始进行消息分发，当消息分发器中没有任何消息并且处于驱逐计划 Expel 时，将会自动关闭
 func (d *Dispatcher[P, M]) Start() *Dispatcher[P, M] {
 	go func(d *Dispatcher[P, M]) {
 	process:
@@ -139,25 +162,33 @@ func (d *Dispatcher[P, M]) Start() *Dispatcher[P, M] {
 				d.buf.Close()
 				break process
 			case message := <-d.buf.Read():
+				// 先取出生产者信息，避免处理函数中将消息释放
+				p := message.GetProducer()
 				d.handler(d, message)
 				d.lock.Lock()
 				d.mc--
-				p := message.GetProducer()
 				pmc := d.pmc[p] - 1
 				d.pmc[p] = pmc
 				if f := d.pmcF[p]; f != nil && pmc <= 0 {
-					go f(p, d)
+					func(producer P) {
+						defer func(producer P) {
+							if err := super.RecoverTransform(recover()); err != nil {
+								log.Error("Dispatcher.ProducerDoneHandler", log.Any("producer", producer), log.Err(err))
+							}
+						}(p)
+						f(p, &Action[P, M]{d: d, unlock: true})
+					}(p)
 				}
 				if d.mc <= 0 && d.expel {
 					d.buf.Close()
+					d.lock.Unlock()
 					break process
 				}
 				d.lock.Unlock()
 			}
 		}
-		closedHandler := *(d.closedHandler.Load())
-		if closedHandler != nil {
-			closedHandler(d)
+		if ch := d.closedHandler.Load(); ch != nil {
+			(*ch)(&Action[P, M]{d: d, unlock: true})
 		}
 		close(d.abort)
 	}(d)
