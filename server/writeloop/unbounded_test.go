@@ -2,7 +2,7 @@ package writeloop_test
 
 import (
 	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,7 +11,7 @@ type Message struct {
 	ID int
 }
 
-var wp = concurrent.NewPool(func() *Message {
+var wp = hub.NewObjectPool(func() *Message {
 	return &Message{}
 }, func(data *Message) {
 	data.ID = 0

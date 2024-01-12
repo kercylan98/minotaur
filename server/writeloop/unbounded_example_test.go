@@ -3,12 +3,12 @@ package writeloop_test
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"sync"
 )
 
 func ExampleNewUnbounded() {
-	pool := concurrent.NewPool[Message](func() *Message {
+	pool := hub.NewObjectPool[Message](func() *Message {
 		return &Message{}
 	}, func(data *Message) {
 		data.ID = 0

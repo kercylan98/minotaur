@@ -8,7 +8,7 @@ import (
 	"github.com/kercylan98/minotaur/server/internal/dispatcher"
 	"github.com/kercylan98/minotaur/server/internal/logger"
 	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/network"
 	"github.com/kercylan98/minotaur/utils/str"
@@ -76,7 +76,7 @@ type Server struct {
 	gServer                  *gNet                                 // TCP或UDP模式下的服务器
 	multiple                 *MultipleServer                       // 多服务器模式下的服务器
 	ants                     *ants.Pool                            // 协程池
-	messagePool              *concurrent.Pool[*Message]            // 消息池
+	messagePool              *hub.Pool[*Message]                   // 消息池
 	ctx                      context.Context                       // 上下文
 	cancel                   context.CancelFunc                    // 停止上下文
 	systemSignal             chan os.Signal                        // 系统信号
@@ -676,7 +676,7 @@ func onServicesInit(srv *Server) {
 
 // onMessageSystemInit 消息系统初始化
 func onMessageSystemInit(srv *Server) {
-	srv.messagePool = concurrent.NewPool[Message](
+	srv.messagePool = hub.NewObjectPool[Message](
 		func() *Message {
 			return &Message{}
 		},

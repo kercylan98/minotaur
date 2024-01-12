@@ -1,12 +1,12 @@
-package concurrent_test
+package hub_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"testing"
 )
 
 func BenchmarkPool_Get2Put(b *testing.B) {
-	var pool = concurrent.NewPool[map[string]int](func() *map[string]int {
+	var pool = hub.NewObjectPool[map[string]int](func() *map[string]int {
 		return &map[string]int{}
 	}, func(data *map[string]int) {
 		for k := range *data {

@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/kercylan98/minotaur/server/writeloop"
 	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/concurrent"
+	"github.com/kercylan98/minotaur/utils/hub"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/timer"
@@ -125,7 +125,7 @@ type connection struct {
 	gw          func(packet []byte)
 	data        map[any]any
 	closed      bool
-	pool        *concurrent.Pool[*connPacket]
+	pool        *hub.Pool[*connPacket]
 	loop        writeloop.WriteLoop[*connPacket]
 	mu          sync.Mutex
 	openTime    time.Time
@@ -286,7 +286,7 @@ func (slf *Conn) init() {
 			}))
 		}
 	}
-	slf.pool = concurrent.NewPool[connPacket](
+	slf.pool = hub.NewObjectPool[connPacket](
 		func() *connPacket {
 			return &connPacket{}
 		}, func(data *connPacket) {
