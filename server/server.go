@@ -191,7 +191,7 @@ func (srv *Server) shutdown(err error) {
 
 	var infoCount int
 	for srv.messageCounter.Load() > 0 {
-		if infoCount%10 == 0 {
+		if infoCount%10 == 0 || infoCount == 0 {
 			log.Info("Server",
 				log.Any("network", srv.network),
 				log.String("listen", srv.addr),
@@ -202,7 +202,28 @@ func (srv *Server) shutdown(err error) {
 		time.Sleep(time.Second)
 		infoCount++
 	}
+	dispatcherMgrStopSignal := make(chan struct{})
+	go func(srv *Server, c <-chan struct{}) {
+		var infoCount int
+		for {
+			select {
+			case <-c:
+				return
+			case <-time.After(time.Second):
+				if infoCount%10 == 0 || infoCount == 0 {
+					log.Info("Server",
+						log.Any("network", srv.network),
+						log.String("listen", srv.addr),
+						log.String("action", "shutdown"),
+						log.String("state", "waiting"),
+						log.Int64("dispatcher", srv.dispatcherMgr.GetDispatcherNum()))
+				}
+				infoCount++
+			}
+		}
+	}(srv, dispatcherMgrStopSignal)
 	srv.dispatcherMgr.Wait()
+	close(dispatcherMgrStopSignal)
 	if srv.multiple == nil {
 		srv.OnStopEvent()
 	}
