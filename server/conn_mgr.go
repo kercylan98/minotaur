@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type hub struct {
+type connMgr struct {
 	connections map[string]*Conn // 所有连接
 
 	register   chan *Conn        // 注册连接
@@ -26,12 +26,12 @@ type hubBroadcast struct {
 	filter func(conn *Conn) bool // 过滤掉返回 false 的连接
 }
 
-func (h *hub) run(ctx context.Context) {
+func (h *connMgr) run(ctx context.Context) {
 	h.connections = make(map[string]*Conn)
 	h.register = make(chan *Conn, DefaultConnHubBufferSize)
 	h.unregister = make(chan string, DefaultConnHubBufferSize)
 	h.broadcast = make(chan hubBroadcast, DefaultConnHubBufferSize)
-	go func(ctx context.Context, h *hub) {
+	go func(ctx context.Context, h *connMgr) {
 		for {
 			select {
 			case conn := <-h.register:
@@ -54,7 +54,7 @@ func (h *hub) run(ctx context.Context) {
 }
 
 // registerConn 注册连接
-func (h *hub) registerConn(conn *Conn) {
+func (h *connMgr) registerConn(conn *Conn) {
 	select {
 	case h.register <- conn:
 	default:
@@ -63,7 +63,7 @@ func (h *hub) registerConn(conn *Conn) {
 }
 
 // unregisterConn 注销连接
-func (h *hub) unregisterConn(id string) {
+func (h *connMgr) unregisterConn(id string) {
 	select {
 	case h.unregister <- id:
 	default:
@@ -72,21 +72,21 @@ func (h *hub) unregisterConn(id string) {
 }
 
 // GetOnlineCount 获取在线人数
-func (h *hub) GetOnlineCount() int {
+func (h *connMgr) GetOnlineCount() int {
 	h.chanMutex.RLock()
 	defer h.chanMutex.RUnlock()
 	return h.onlineCount
 }
 
 // GetOnlineBotCount 获取在线机器人数量
-func (h *hub) GetOnlineBotCount() int {
+func (h *connMgr) GetOnlineBotCount() int {
 	h.chanMutex.RLock()
 	defer h.chanMutex.RUnlock()
 	return h.botCount
 }
 
 // IsOnline 是否在线
-func (h *hub) IsOnline(id string) bool {
+func (h *connMgr) IsOnline(id string) bool {
 	h.chanMutex.RLock()
 	_, exist := h.connections[id]
 	h.chanMutex.RUnlock()
@@ -94,7 +94,7 @@ func (h *hub) IsOnline(id string) bool {
 }
 
 // GetOnlineAll 获取所有在线连接
-func (h *hub) GetOnlineAll() map[string]*Conn {
+func (h *connMgr) GetOnlineAll() map[string]*Conn {
 	h.chanMutex.RLock()
 	cop := collection.CloneMap(h.connections)
 	h.chanMutex.RUnlock()
@@ -102,7 +102,7 @@ func (h *hub) GetOnlineAll() map[string]*Conn {
 }
 
 // GetOnline 获取在线连接
-func (h *hub) GetOnline(id string) *Conn {
+func (h *connMgr) GetOnline(id string) *Conn {
 	h.chanMutex.RLock()
 	conn := h.connections[id]
 	h.chanMutex.RUnlock()
@@ -110,7 +110,7 @@ func (h *hub) GetOnline(id string) *Conn {
 }
 
 // CloseConn 关闭连接
-func (h *hub) CloseConn(id string) {
+func (h *connMgr) CloseConn(id string) {
 	h.chanMutex.RLock()
 	conn := h.connections[id]
 	h.chanMutex.RUnlock()
@@ -120,7 +120,7 @@ func (h *hub) CloseConn(id string) {
 }
 
 // Broadcast 广播消息
-func (h *hub) Broadcast(packet []byte, filter ...func(conn *Conn) bool) {
+func (h *connMgr) Broadcast(packet []byte, filter ...func(conn *Conn) bool) {
 	m := hubBroadcast{
 		packet: packet,
 	}
@@ -134,7 +134,7 @@ func (h *hub) Broadcast(packet []byte, filter ...func(conn *Conn) bool) {
 	}
 }
 
-func (h *hub) onRegister(conn *Conn) {
+func (h *connMgr) onRegister(conn *Conn) {
 	h.chanMutex.Lock()
 	if h.closed {
 		conn.Close()
@@ -148,7 +148,7 @@ func (h *hub) onRegister(conn *Conn) {
 	h.chanMutex.Unlock()
 }
 
-func (h *hub) onUnregister(id string) {
+func (h *connMgr) onUnregister(id string) {
 	h.chanMutex.Lock()
 	if conn, ok := h.connections[id]; ok {
 		h.onlineCount--
@@ -160,7 +160,7 @@ func (h *hub) onUnregister(id string) {
 	h.chanMutex.Unlock()
 }
 
-func (h *hub) onBroadcast(packet hubBroadcast) {
+func (h *connMgr) onBroadcast(packet hubBroadcast) {
 	h.chanMutex.RLock()
 	defer h.chanMutex.RUnlock()
 	for _, conn := range h.connections {

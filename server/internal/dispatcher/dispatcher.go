@@ -1,6 +1,7 @@
 package dispatcher
 
 import (
+	"fmt"
 	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/utils/buffer"
 	"sync"
@@ -12,8 +13,11 @@ var unique = struct{}{}
 // Handler 消息处理器
 type Handler[P Producer, M Message[P]] func(dispatcher *Dispatcher[P, M], message M)
 
-// NewDispatcher 生成消息分发器
+// NewDispatcher 创建一个新的消息分发器 Dispatcher 实例
 func NewDispatcher[P Producer, M Message[P]](bufferSize int, name string, handler Handler[P, M]) *Dispatcher[P, M] {
+	if bufferSize <= 0 || handler == nil {
+		panic(fmt.Errorf("bufferSize must be greater than 0 and handler must not be nil, but got bufferSize: %d, handler is nil: %v", bufferSize, handler == nil))
+	}
 	d := &Dispatcher[P, M]{
 		name:    name,
 		buf:     buffer.NewRingUnbounded[M](bufferSize),
@@ -26,7 +30,19 @@ func NewDispatcher[P Producer, M Message[P]](bufferSize int, name string, handle
 	return d
 }
 
-// Dispatcher 消息分发器
+// Dispatcher 用于服务器消息处理的消息分发器
+//
+// 这个消息分发器为并发安全的生产者和消费者模型，生产者可以是任意类型，消费者必须是 Message 接口的实现。
+// 生产者可以通过 Put 方法并发安全地将消息放入消息分发器，消息执行过程不会阻塞到 Put 方法，同时允许在 Start 方法之前调用 Put 方法。
+// 在执行 Start 方法后，消息分发器会阻塞地从消息缓冲区中读取消息，然后执行消息处理器，消息处理器的执行过程不会阻塞到消息的生产。
+//
+// 为了保证消息不丢失，内部采用了 buffer.RingUnbounded 作为缓冲区实现，并且消息分发器不提供 Close 方法。
+// 如果需要关闭消息分发器，可以通过 Expel 方法设置驱逐计划，当消息分发器中没有任何消息时，将会被释放。
+// 同时，也可以使用 UnExpel 方法取消驱逐计划。
+//
+// 为什么提供 Expel 和 UnExpel 方法：
+//   - 在连接断开时，当需要执行一系列消息处理时，如果直接关闭消息分发器，可能会导致消息丢失。所以提供了 Expel 方法，可以在消息处理完成后再关闭消息分发器。
+//   - 当消息还未处理完成时连接重连，如果没有取消驱逐计划，可能会导致消息分发器被关闭。所以提供了 UnExpel 方法，可以在连接重连后取消驱逐计划。
 type Dispatcher[P Producer, M Message[P]] struct {
 	buf           *buffer.RingUnbounded[M]
 	uniques       *haxmap.Map[string, struct{}]
@@ -42,6 +58,7 @@ type Dispatcher[P Producer, M Message[P]] struct {
 }
 
 // SetProducerDoneHandler 设置特定生产者所有消息处理完成时的回调函数
+//   - 如果 handler 为 nil，则会删除该生产者的回调函数
 func (d *Dispatcher[P, M]) SetProducerDoneHandler(p P, handler func(p P, dispatcher *Dispatcher[P, M])) *Dispatcher[P, M] {
 	d.lock.Lock()
 	if handler == nil {

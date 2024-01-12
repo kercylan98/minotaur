@@ -36,7 +36,7 @@ func New(network Network, options ...Option) *Server {
 			connWriteBufferSize:  DefaultConnWriteBufferSize,
 			dispatcherBufferSize: DefaultDispatcherBufferSize,
 		},
-		hub:          &hub{},
+		connMgr:      &connMgr{},
 		option:       &option{},
 		network:      network,
 		closeChannel: make(chan struct{}, 1),
@@ -68,7 +68,7 @@ type Server struct {
 	*event                                                         // 事件
 	*runtime                                                       // 运行时
 	*option                                                        // 可选项
-	*hub                                                           // 连接集合
+	*connMgr                                                       // 连接集合
 	dispatcherMgr            *dispatcher.Manager[string, *Message] // 消息分发器管理器
 	ginServer                *gin.Engine                           // HTTP模式下的路由器
 	httpServer               *http.Server                          // HTTP模式下的服务器
@@ -76,7 +76,7 @@ type Server struct {
 	gServer                  *gNet                                 // TCP或UDP模式下的服务器
 	multiple                 *MultipleServer                       // 多服务器模式下的服务器
 	ants                     *ants.Pool                            // 协程池
-	messagePool              *hub.Pool[*Message]                   // 消息池
+	messagePool              *hub.ObjectPool[*Message]             // 消息池
 	ctx                      context.Context                       // 上下文
 	cancel                   context.CancelFunc                    // 停止上下文
 	systemSignal             chan os.Signal                        // 系统信号
@@ -100,7 +100,7 @@ func (srv *Server) preCheckAndAdaptation(addr string) (startState <-chan error, 
 		kcp.SystemTimedSched.Close()
 	}
 
-	srv.hub.run(srv.ctx)
+	srv.connMgr.run(srv.ctx)
 	return srv.network.adaptation(srv), nil
 }
 

@@ -125,7 +125,7 @@ type connection struct {
 	gw          func(packet []byte)
 	data        map[any]any
 	closed      bool
-	pool        *hub.Pool[*connPacket]
+	pool        *hub.ObjectPool[*connPacket]
 	loop        writeloop.WriteLoop[*connPacket]
 	mu          sync.Mutex
 	openTime    time.Time
