@@ -1,9 +1,12 @@
-package collection
+package collection_test
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/collection"
+)
 
 func ExampleMappingFromSlice() {
-	result := MappingFromSlice[[]int, []int]([]int{1, 2, 3}, func(value int) int {
+	result := collection.MappingFromSlice([]int{1, 2, 3}, func(value int) int {
 		return value + 1
 	})
 	fmt.Println(result)
@@ -12,7 +15,7 @@ func ExampleMappingFromSlice() {
 }
 
 func ExampleMappingFromMap() {
-	result := MappingFromMap[map[int]int, map[int]int](map[int]int{1: 1, 2: 2, 3: 3}, func(value int) int {
+	result := collection.MappingFromMap(map[int]int{1: 1, 2: 2, 3: 3}, func(value int) int {
 		return value + 1
 	})
 	fmt.Println(result)

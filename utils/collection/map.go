@@ -1,7 +1,7 @@
 package collection
 
 // MappingFromSlice 将切片中的元素进行转换
-func MappingFromSlice[S ~[]V, NS ~[]N, V, N any](slice S, handler func(value V) N) NS {
+func MappingFromSlice[S ~[]V, NS []N, V, N any](slice S, handler func(value V) N) NS {
 	if slice == nil {
 		return nil
 	}
@@ -13,7 +13,7 @@ func MappingFromSlice[S ~[]V, NS ~[]N, V, N any](slice S, handler func(value V) 
 }
 
 // MappingFromMap 将 map 中的元素进行转换
-func MappingFromMap[M ~map[K]V, NM ~map[K]N, K comparable, V, N any](m M, handler func(value V) N) NM {
+func MappingFromMap[M ~map[K]V, NM map[K]N, K comparable, V, N any](m M, handler func(value V) N) NM {
 	if m == nil {
 		return nil
 	}

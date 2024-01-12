@@ -101,7 +101,7 @@ func ChooseRandomMapKeyRepeatN[M ~map[K]V, K comparable, V any](m M, n int) (res
 	return
 }
 
-// ChooseRandomMapValueRepeatN 获取 map 中的 n 个随机 inputV，允许重复
+// ChooseRandomMapValueRepeatN 获取 map 中的 n 个随机 n，允许重复
 //   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 func ChooseRandomMapValueRepeatN[M ~map[K]V, K comparable, V any](m M, n int) (result []V) {
 	if m == nil {
@@ -150,7 +150,7 @@ func ChooseRandomMapKey[M ~map[K]V, K comparable, V any](m M) (k K) {
 	return
 }
 
-// ChooseRandomMapValue 获取 map 中的随机 inputV
+// ChooseRandomMapValue 获取 map 中的随机 value
 func ChooseRandomMapValue[M ~map[K]V, K comparable, V any](m M) (v V) {
 	if m == nil {
 		return
@@ -182,8 +182,8 @@ func ChooseRandomMapKeyN[M ~map[K]V, K comparable, V any](m M, n int) (result []
 	return
 }
 
-// ChooseRandomMapValueN 获取 map 中的 inputN 个随机 inputV
-//   - 如果 inputN 大于 map 长度或小于 0 时将会发生 panic
+// ChooseRandomMapValueN 获取 map 中的 n 个随机 value
+//   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 func ChooseRandomMapValueN[M ~map[K]V, K comparable, V any](m M, n int) (result []V) {
 	if m == nil {
 		return
