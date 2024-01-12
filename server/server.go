@@ -191,11 +191,20 @@ func (srv *Server) shutdown(err error) {
 		log.Error("Server", log.String("state", "shutdown"), log.Err(err))
 	}
 
+	var infoCount int
 	for srv.messageCounter.Load() > 0 {
-		log.Info("Server", log.Any("network", srv.network), log.String("listen", srv.addr),
-			log.String("action", "shutdown"), log.String("state", "waiting"), log.Int64("message", srv.messageCounter.Load()))
+		if infoCount%10 == 0 {
+			log.Info("Server",
+				log.Any("network", srv.network),
+				log.String("listen", srv.addr),
+				log.String("action", "shutdown"),
+				log.String("state", "waiting"),
+				log.Int64("message", srv.messageCounter.Load()))
+		}
 		time.Sleep(time.Second)
+		infoCount++
 	}
+	srv.dispatcherMgr.Wait()
 	if srv.multiple == nil {
 		srv.OnStopEvent()
 	}

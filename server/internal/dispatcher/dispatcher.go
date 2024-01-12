@@ -116,7 +116,7 @@ func (d *Dispatcher[P, M]) Expel() {
 func (d *Dispatcher[P, M]) noLockExpel() {
 	d.expel = true
 	if d.mc <= 0 {
-		d.abort <- struct{}{}
+		close(d.abort)
 	}
 }
 
@@ -139,7 +139,7 @@ func (d *Dispatcher[P, M]) IncrCount(producer P, i int64) {
 	d.mc += i
 	d.pmc[producer] += i
 	if d.expel && d.mc <= 0 {
-		d.abort <- struct{}{}
+		close(d.abort)
 	}
 }
 
@@ -190,7 +190,6 @@ func (d *Dispatcher[P, M]) Start() *Dispatcher[P, M] {
 		if ch := d.closedHandler.Load(); ch != nil {
 			(*ch)(&Action[P, M]{d: d, unlock: true})
 		}
-		close(d.abort)
 	}(d)
 	return d
 }
