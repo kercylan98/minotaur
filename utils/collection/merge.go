@@ -21,7 +21,7 @@ func MergeSlices[S ~[]V, V any](slices ...S) (result S) {
 // MergeMaps 合并 map，当多个 map 中存在相同的 key 时，后面的 map 中的 key 将会覆盖前面的 map 中的 key
 func MergeMaps[M ~map[K]V, K comparable, V any](maps ...M) (result M) {
 	if len(maps) == 0 {
-		return nil
+		return make(M)
 	}
 
 	var length int

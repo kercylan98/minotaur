@@ -2,7 +2,7 @@ package collection
 
 // ConvertSliceToAny 将切片转换为任意类型的切片
 func ConvertSliceToAny[S ~[]V, V any](s S) []any {
-	if s == nil {
+	if len(s) == 0 {
 		return nil
 	}
 	var r = make([]any, len(s))
@@ -14,8 +14,8 @@ func ConvertSliceToAny[S ~[]V, V any](s S) []any {
 
 // ConvertSliceToIndexMap 将切片转换为索引为键的映射
 func ConvertSliceToIndexMap[S ~[]V, V any](s S) map[int]V {
-	if s == nil {
-		return nil
+	if len(s) == 0 {
+		return make(map[int]V)
 	}
 	var r = make(map[int]V, len(s))
 	for i, v := range s {
@@ -24,9 +24,21 @@ func ConvertSliceToIndexMap[S ~[]V, V any](s S) map[int]V {
 	return r
 }
 
+// ConvertSliceToIndexOnlyMap 将切片转换为索引为键的映射
+func ConvertSliceToIndexOnlyMap[S ~[]V, V any](s S) map[int]struct{} {
+	if len(s) == 0 {
+		return nil
+	}
+	var r = make(map[int]struct{}, len(s))
+	for i := range s {
+		r[i] = struct{}{}
+	}
+	return r
+}
+
 // ConvertSliceToMap 将切片转换为值为键的映射
 func ConvertSliceToMap[S ~[]V, V comparable](s S) map[V]struct{} {
-	if s == nil {
+	if len(s) == 0 {
 		return nil
 	}
 	var r = make(map[V]struct{}, len(s))
@@ -38,8 +50,8 @@ func ConvertSliceToMap[S ~[]V, V comparable](s S) map[V]struct{} {
 
 // ConvertSliceToBoolMap 将切片转换为值为键的映射
 func ConvertSliceToBoolMap[S ~[]V, V comparable](s S) map[V]bool {
-	if s == nil {
-		return nil
+	if len(s) == 0 {
+		return make(map[V]bool)
 	}
 	var r = make(map[V]bool, len(s))
 	for _, v := range s {
@@ -50,7 +62,7 @@ func ConvertSliceToBoolMap[S ~[]V, V comparable](s S) map[V]bool {
 
 // ConvertMapKeysToSlice 将映射的键转换为切片
 func ConvertMapKeysToSlice[M ~map[K]V, K comparable, V any](m M) []K {
-	if m == nil {
+	if len(m) == 0 {
 		return nil
 	}
 	var r = make([]K, 0, len(m))
@@ -62,7 +74,7 @@ func ConvertMapKeysToSlice[M ~map[K]V, K comparable, V any](m M) []K {
 
 // ConvertMapValuesToSlice 将映射的值转换为切片
 func ConvertMapValuesToSlice[M ~map[K]V, K comparable, V any](m M) []V {
-	if m == nil {
+	if len(m) == 0 {
 		return nil
 	}
 	var r = make([]V, 0, len(m))
@@ -73,7 +85,7 @@ func ConvertMapValuesToSlice[M ~map[K]V, K comparable, V any](m M) []V {
 }
 
 // InvertMap 将映射的键和值互换
-func InvertMap[M ~map[K]V, N ~map[V]K, K, V comparable](m M) N {
+func InvertMap[M ~map[K]V, N map[V]K, K, V comparable](m M) N {
 	if m == nil {
 		return nil
 	}
@@ -85,7 +97,7 @@ func InvertMap[M ~map[K]V, N ~map[V]K, K, V comparable](m M) N {
 }
 
 // ConvertMapValuesToBool 将映射的值转换为布尔值
-func ConvertMapValuesToBool[M ~map[K]V, N ~map[K]bool, K comparable, V any](m M) N {
+func ConvertMapValuesToBool[M ~map[K]V, N map[K]bool, K comparable, V any](m M) N {
 	if m == nil {
 		return nil
 	}

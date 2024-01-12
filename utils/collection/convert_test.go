@@ -62,6 +62,35 @@ func TestConvertSliceToIndexMap(t *testing.T) {
 	}
 }
 
+func TestConvertSliceToIndexOnlyMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		expected map[int]struct{}
+	}{
+		{name: "TestConvertSliceToIndexOnlyMap_NonEmpty", input: []int{1, 2, 3}, expected: map[int]struct{}{0: {}, 1: {}, 2: {}}},
+		{name: "TestConvertSliceToIndexOnlyMap_Empty", input: []int{}, expected: map[int]struct{}{}},
+		{name: "TestConvertSliceToIndexOnlyMap_Nil", input: nil, expected: nil},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertSliceToIndexOnlyMap(c.input)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+			for k, v := range actual {
+				if _, ok := c.expected[k]; !ok {
+					t.Errorf("expected: %v, actual: %v", c.expected, actual)
+				}
+				if v != struct{}{} {
+					t.Errorf("expected: %v, actual: %v", c.expected, actual)
+				}
+			}
+		})
+	}
+}
+
 func TestConvertSliceToMap(t *testing.T) {
 	var cases = []struct {
 		name     string
