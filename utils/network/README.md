@@ -1,8 +1,8 @@
-# Game
+# Network
 
-game 目录下包含了各类通用的游戏玩法性内容，其中该目录主要为基础性内容，具体目录将对应不同的游戏功能性内容。
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/game)
+
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/network)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 ## 目录
@@ -15,6 +15,7 @@ game 目录下包含了各类通用的游戏玩法性内容，其中该目录主
 
 |函数|描述
 |:--|:--
+|[IP](#IP)|返回本机出站地址
 
 
 > 结构体定义
@@ -25,3 +26,7 @@ game 目录下包含了各类通用的游戏玩法性内容，其中该目录主
 </details>
 
 
+#### func IP() (ip net.IP, err error)
+<span id="IP"></span>
+> 返回本机出站地址
+***
