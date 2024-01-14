@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func BenchmarkRingWrite(b *testing.B) {
+func BenchmarkRing_Write(b *testing.B) {
 	ring := buffer.NewRing[int](1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -13,7 +13,7 @@ func BenchmarkRingWrite(b *testing.B) {
 	}
 }
 
-func BenchmarkRingRead(b *testing.B) {
+func BenchmarkRing_Read(b *testing.B) {
 	ring := buffer.NewRing[int](1024)
 	for i := 0; i < b.N; i++ {
 		ring.Write(i)

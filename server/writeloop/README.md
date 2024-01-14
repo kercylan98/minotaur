@@ -1,41 +1,63 @@
-# WriteLoop
+# Writeloop
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-该包提供了一个并发安全的写循环实现。开发者可以使用它来快速构建和管理写入操作。
+暂无介绍...
 
-写循环是一种特殊的循环，它可以并发安全地将数据写入到底层连接。写循环在 `Minotaur` 中是一个泛型类型，可以处理任意类型的消息。
 
-## Unbounded [`基于无界缓冲区的写循环`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Unbounded)
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
+<details>
+<summary>展开 / 折叠目录导航</summary>
 
-基于无界缓冲区的写循环实现，它可以处理任意数量的消息。它使用 [`Pool`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/concurrent#Pool) 来管理消息对象，使用 [`Unbounded`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/buffer#Unbounded) 来管理消息队列。
 
-> [`Unbounded`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Unbounded) 使用了 [`Pool`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/concurrent#Pool) 和 [`Unbounded`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/buffer#Unbounded) 进行实现。
-> 通过 [`Pool`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/concurrent#Pool) 创建的消息对象无需手动释放，它会在写循环处理完消息后自动回收。
+> 包级函数定义
 
-## Channel [`基于 chan 的写循环`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Channel)
+|函数名称|描述
+|:--|:--
+|[NewChannel](#NewChannel)|创建基于 Channel 的写循环
+|[NewUnbounded](#NewUnbounded)|创建写循环
 
-基于 [`chan`](https://pkg.go.dev/builtin#chan) 的写循环实现，拥有极高的吞吐量。它使用 [`Pool`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/concurrent#Pool) 来管理消息对象，使用 [`Channel`](https://pkg.go.dev/builtin#chan) 来管理消息队列。
 
-## 如何选择
-- [`Unbounded`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Unbounded) 适用于消息体较小、消息量庞大、消息处理时间较慢的场景，由于没有消息数量限制，所以它可以处理任意数量的消息，但是它的吞吐量较低，并且会占用大量的内存。
-- [`Channel`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Channel) 适用于消息体较大、消息量较小、消息处理时间较快的场景，由于使用了 [`Channel`](https://pkg.go.dev/builtin#chan) 来管理消息队列，所以它的吞吐量较高，但是它的消息数量是有限制的，如果消息数量超过了限制，那么写循环会阻塞，造成无法及时响应消息（例如心跳中断等）。
+> 类型定义
 
-> 通常来说，建议使用 [`Channel`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Channel) 来实现写循环，因为它的吞吐量更高，并且绝大多数情况是很难达到阻塞的。
-### 使用示例
-> 该示例由 [`Unbounded`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Unbounded) 实现，[`Channel`](https://pkg.go.dev/github.com/kercylan98/minotaur/server/writeloop#Channel) 的使用方法与之类似。
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Channel](#channel)|基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
+|`STRUCT`|[Unbounded](#unbounded)|写循环
+|`INTERFACE`|[WriteLoop](#writeloop)|暂无描述...
 
+</details>
+
+
+***
+## 详情信息
+#### func NewChannel(pool *hub.ObjectPool[Message], channelSize int, writeHandler func (message Message)  error, errorHandler func (err any))  *Channel[Message]
+<span id="NewChannel"></span>
+> 创建基于 Channel 的写循环
+>   - pool 用于管理 Message 对象的缓冲池，在创建 Message 对象时也应该使用该缓冲池，以便复用 Message 对象。 Channel 会在写入完成后将 Message 对象放回缓冲池
+>   - channelSize Channel 的大小
+>   - writeHandler 写入处理函数
+>   - errorHandler 错误处理函数
+> 
+> 传入 writeHandler 的消息对象是从 Channel 中获取的，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
+
+***
+#### func NewUnbounded(pool *hub.ObjectPool[Message], writeHandler func (message Message)  error, errorHandler func (err any))  *Unbounded[Message]
+<span id="NewUnbounded"></span>
+> 创建写循环
+>   - pool 用于管理 Message 对象的缓冲池，在创建 Message 对象时也应该使用该缓冲池，以便复用 Message 对象。 Unbounded 会在写入完成后将 Message 对象放回缓冲池
+>   - writeHandler 写入处理函数
+>   - errorHandler 错误处理函数
+> 
+> 传入 writeHandler 的消息对象是从 pool 中获取的，并且在 writeHandler 执行完成后会被放回 pool 中，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
+
+示例代码：
 ```go
-package main
 
-import (
-	"fmt"
-	"github.com/kercylan98/minotaur/server/writeloop"
-	"github.com/kercylan98/minotaur/utils/hub"
-)
-
-func main() {
-	pool := concurrent.NewPool[Message](func() *Message {
+func ExampleNewUnbounded() {
+	pool := hub.NewObjectPool[Message](func() *Message {
 		return &Message{}
 	}, func(data *Message) {
 		data.ID = 0
@@ -49,16 +71,157 @@ func main() {
 	}, func(err any) {
 		fmt.Println(err)
 	})
-
 	for i := 0; i < 10; i++ {
 		m := pool.Get()
 		m.ID = i
 		wl.Put(m)
 	}
-
 	wait.Wait()
 	wl.Close()
 }
+
 ```
 
-在这个示例中，我们创建了一个写循环，然后将一些消息放入写循环。每个消息都会被 `writeHandle` 函数处理，如果在处理过程中发生错误，`errorHandle` 函数会被调用。在使用完写循环后，我们需要关闭它。
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewUnbounded(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
+		t.Log(message.ID)
+		return nil
+	}, func(err any) {
+		t.Log(err)
+	})
+	assert.NotNil(t, wl)
+	wl.Close()
+}
+
+```
+
+
+</details>
+
+
+***
+### Channel `STRUCT`
+基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
+```go
+type Channel[T any] struct {
+	c chan T
+}
+```
+#### func (*Channel) Put(message T)
+> 将数据放入写循环，message 应该来源于 hub.ObjectPool
+***
+#### func (*Channel) Close()
+> 关闭写循环
+***
+### Unbounded `STRUCT`
+写循环
+  - 用于将数据并发安全的写入到底层连接
+```go
+type Unbounded[Message any] struct {
+	buf *buffer.Unbounded[Message]
+}
+```
+#### func (*Unbounded) Put(message Message)
+> 将数据放入写循环，message 应该来源于 hub.ObjectPool
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestUnbounded_Put(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
+		t.Log(message.ID)
+		return nil
+	}, func(err any) {
+		t.Log(err)
+	})
+	assert.NotNil(t, wl)
+	for i := 0; i < 100; i++ {
+		m := wp.Get()
+		m.ID = i
+		wl.Put(m)
+	}
+	wl.Close()
+}
+
+```
+
+
+</details>
+
+
+<details>
+<summary>查看 / 收起基准测试</summary>
+
+
+```go
+
+func BenchmarkUnbounded_Put(b *testing.B) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
+		return nil
+	}, nil)
+	defer func() {
+		wl.Close()
+	}()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			wl.Put(wp.Get())
+		}
+	})
+	b.StopTimer()
+}
+
+```
+
+
+</details>
+
+
+***
+#### func (*Unbounded) Close()
+> 关闭写循环
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestUnbounded_Close(t *testing.T) {
+	wl := writeloop.NewUnbounded(wp, func(message *Message) error {
+		t.Log(message.ID)
+		return nil
+	}, func(err any) {
+		t.Log(err)
+	})
+	assert.NotNil(t, wl)
+	for i := 0; i < 100; i++ {
+		m := wp.Get()
+		m.ID = i
+		wl.Put(m)
+	}
+	wl.Close()
+}
+
+```
+
+
+</details>
+
+
+***
+### WriteLoop `INTERFACE`
+
+```go
+type WriteLoop[Message any] interface {
+	Put(message Message)
+	Close()
+}
+```

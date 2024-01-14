@@ -1,54 +1,95 @@
 # Space
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-计划提供游戏中常见的空间设计，例如房间、地图等。开发者可以使用它来快速构建游戏中的常见空间，例如多人房间、地图等。
+space 游戏中常见的空间设计，例如房间、地图等
 
-## Room [`房间`]((https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomManager))
-房间在 `Minotaur` 中仅仅只是一个可以为任意可比较类型的 `ID`，当需要将现有或新设计的房间纳入 [`RoomManager`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomManager) 管理时，需要实现 [`Room`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomManager) 管理时，仅需要实现 [`generic.IdR`](https://pkg.go.dev/github.com/kercylan98/minotaur/utils/generic#IdR) 接口即可。
 
-该功能由 
-[`RoomManager`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomManager)、
-[`RoomController`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomController)
-组成。
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
+<details>
+<summary>展开 / 折叠目录导航</summary>
 
-当创建一个新的房间并纳入 [`RoomManager`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomManager) 管理后，将会得到一个 [`RoomController`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomController)。通过 [`RoomController`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/space#RoomController) 可以对房间进行管理，例如：获取房间信息、加入房间、退出房间等。
 
-### 使用示例
+> 包级函数定义
+
+|函数名称|描述
+|:--|:--
+|[NewRoomManager](#NewRoomManager)|创建房间管理器 RoomManager 的实例
+|[NewRoomControllerOptions](#NewRoomControllerOptions)|创建房间控制器选项
+
+
+> 类型定义
+
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[RoomController](#roomcontroller)|对房间进行操作的控制器，由 RoomManager 接管后返回
+|`STRUCT`|[RoomManager](#roommanager)|房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
+|`STRUCT`|[RoomAssumeControlEventHandle](#roomassumecontroleventhandle)|暂无描述...
+|`STRUCT`|[RoomControllerOptions](#roomcontrolleroptions)|暂无描述...
+
+</details>
+
+
+***
+## 详情信息
+#### func NewRoomManager()  *RoomManager[EntityID, RoomID, Entity, Room]
+<span id="NewRoomManager"></span>
+> 创建房间管理器 RoomManager 的实例
+
+示例代码：
 ```go
-package main
 
-import (
-    "fmt"
-    "github.com/kercylan98/minotaur/game/space"
-)
-
-type Room struct {
-	Id int64
-}
-
-func (r *Room) GetId() int64 {
-	return r.Id
-}
-
-type Player struct {
-	Id string
-}
-
-func (p *Player) GetId() string {
-	return p.Id
-}
-
-func main() {
+func ExampleNewRoomManager() {
 	var rm = space.NewRoomManager[string, int64, *Player, *Room]()
-	var room = &Room{Id: 1}
-	var controller = rm.AssumeControl(room)
+	fmt.Println(rm == nil)
+}
 
-	if err := controller.AddEntity(&Player{Id: "1"}); err != nil {
-		// 房间密码不匹配或者房间已满
-		panic(err)
-	}
+```
 
-	fmt.Println(controller.GetEntityCount()) // 1
+***
+#### func NewRoomControllerOptions()  *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+<span id="NewRoomControllerOptions"></span>
+> 创建房间控制器选项
+
+***
+### RoomController `STRUCT`
+对房间进行操作的控制器，由 RoomManager 接管后返回
+```go
+type RoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] struct {
+	manager         *RoomManager[EntityID, RoomID, Entity, Room]
+	options         *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+	room            Room
+	entities        map[EntityID]Entity
+	entitiesRWMutex sync.RWMutex
+	vacancy         []int
+	seat            []*EntityID
+	owner           *EntityID
+}
+```
+### RoomManager `STRUCT`
+房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
+  - 该实例是线程安全的
+```go
+type RoomManager[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] struct {
+	*roomManagerEvents[EntityID, RoomID, Entity, Room]
+	roomsRWMutex sync.RWMutex
+	rooms        map[RoomID]*RoomController[EntityID, RoomID, Entity, Room]
+}
+```
+### RoomAssumeControlEventHandle `STRUCT`
+
+```go
+type RoomAssumeControlEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] func(controller *RoomController[EntityID, RoomID, Entity, Room])
+```
+### RoomControllerOptions `STRUCT`
+
+```go
+type RoomControllerOptions[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] struct {
+	maxEntityCount      *int
+	password            *string
+	ownerInherit        bool
+	ownerInheritHandler func(controller *RoomController[EntityID, RoomID, Entity, Room]) *EntityID
 }
 ```

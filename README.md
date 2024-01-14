@@ -187,46 +187,6 @@ func main() {
 ```
 在分布式环境中，如果存在类似于多服务器需要同时间刷新配置时，可使用`Cron`表达式设置定时任务。
 
-### 流操作
-可以通过 `stream` 包快速开启对`切片`和`map`的流式操作，例如：
-```go
-package main
-
-import (
-	"fmt"
-	"github.com/kercylan98/minotaur/utils/stream"
-	"github.com/kercylan98/minotaur/utils/streams"
-)
-
-func main() {
-	s := stream.WithSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).
-		Copy().
-		Shuffle().
-		Filter(true, func(index int, item int) bool {
-			return item%2 == 0
-		}).
-		Zoom(20).
-		Each(true, func(index int, item int) bool {
-			t.Log(index, item)
-			return false
-		}).
-		Chunk(3).
-		EachT(func(index int, item stream.Slice[int]) bool {
-			t.Log(item)
-			return false
-		}).
-		Merge().
-		FillBy(func(index int, value int) int {
-			if value == 0 {
-				return 999
-			}
-			return value
-		})
-	
-	fmt.Println(s)
-}
-```
-
 ### 基于`xlsx`文件的配置导出工具
 该导出器的`xlsx`文件配置使用`JSON`语法进行复杂类型配置，具体可参考图例
 - **[`planner/pce/exporter`](planner/pce/exporter)** 是实现了基于`xlsx`文件的配置导出工具，可直接编译成可执行文件使用；
