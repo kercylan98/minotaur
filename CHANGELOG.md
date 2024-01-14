@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.1](https://github.com/kercylan98/minotaur/compare/v0.5.0...v0.5.1) (2024-01-14)
+
+
+### Other | 其他更改
+
+* 版本管理调整 ([8c80c4b](https://github.com/kercylan98/minotaur/commit/8c80c4b00c09c69a3e77ffe102a547a98f165c88))
+
+
+### Features | 新特性
+
+* 优化项目文档 ([7001e3d](https://github.com/kercylan98/minotaur/commit/7001e3dbab84555f6d3ff35e6a1b95bd51efd801))
+
+
+### Docs | 文档优化
+
+* 优化文档展示，适配部分无目录文档，适配非结构体的类型定义，增加测试用例文档 ([b2fdaa2](https://github.com/kercylan98/minotaur/commit/b2fdaa2ae6bdff893e04c7a322a33913b9b0604f))
+* 优化文档详情部分，优化文档导航包含详情部分的问题 ([f9d3188](https://github.com/kercylan98/minotaur/commit/f9d31888ee98449c2bd6d3239d1039e324f57d0e))
+* 优化泛型约束类型文档显示 ([65c10f2](https://github.com/kercylan98/minotaur/commit/65c10f2ad02107393f68c01e58ae424926c88592))
+* 优化项目文档 ([83beeb4](https://github.com/kercylan98/minotaur/commit/83beeb43ce4fbc158a99bb2abf7357ed729e5b11))
+
 ## [0.5.0](https://github.com/kercylan98/minotaur/compare/v0.4.4...v0.5.0) (2024-01-12)
 
 
