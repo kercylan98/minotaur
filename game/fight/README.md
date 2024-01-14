@@ -1,18 +1,84 @@
 # Fight
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight)
 
-## TurnBased [`回合制`]((https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight#TurnBased))
 
-### 设计思路
-- 在每个回合中计算下一次行动时间间隔。然后，会根据当前行动时间间隔选择下一个行动实体。
-- 当选择到下一个行动实体后，进入行动阶段。在行动阶段中，会先触发 [`TurnBasedEntitySwitchEvent`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight#TurnBased.RegTurnBasedEntitySwitchEvent) 事件，然后开始计时。
-- 当计时结束时，如果实体还未完成行动，则会触发 [`TurnBasedEntityActionTimeoutEvent`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight#TurnBased.RegTurnBasedEntityActionTimeoutEvent) 事件。如果实体已经完成行动，则会触发 [`TurnBasedEntityActionFinishEvent`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight#TurnBased.RegTurnBasedEntityActionFinishEvent) 事件。
-- 当实体完成行动后，会触发 [`TurnBasedEntityActionSubmitEvent`](https://pkg.go.dev/github.com/kercylan98/minotaur/game/fight#TurnBased.RegTurnBasedEntityActionSubmitEvent) 事件。
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/fight)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-回合制功能的设计思路主要考虑了以下几个方面：
+## 目录
+列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+<details>
+<summary>展开 / 折叠目录</summary
 
-* 灵活性：`TurnBased` 类型提供了丰富的属性和方法，可以满足不同游戏的需要。
-* 可扩展性：`TurnBased` 类型还提供了 `AddCamp`、`GetCamp`、`SetActionTimeout` 等方法，可以根据需要扩展回合制功能。
-* 事件驱动：回合制功能使用事件驱动的方式来通知回合制状态变化。
 
+> 包级函数定义
+
+|函数|描述
+|:--|:--
+|[NewTurnBased](#NewTurnBased)|创建一个新的回合制
+
+
+> 结构体定义
+
+|结构体|描述
+|:--|:--
+|[TurnBased](#turnbased)|回合制
+|[TurnBasedControllerInfo](#turnbasedcontrollerinfo)|暂无描述...
+|[TurnBasedControllerAction](#turnbasedcontrolleraction)|暂无描述...
+|[TurnBasedController](#turnbasedcontroller)|回合制控制器
+|[TurnBasedEntitySwitchEventHandler](#turnbasedentityswitcheventhandler)|暂无描述...
+
+</details>
+
+
+#### func NewTurnBased(calcNextTurnDuration func ( Camp,  Entity)  time.Duration)  *TurnBased[CampID, EntityID, Camp, Entity]
+<span id="NewTurnBased"></span>
+> 创建一个新的回合制
+>   - calcNextTurnDuration 将返回下一次行动时间间隔，适用于按照速度计算下一次行动时间间隔的情况。当返回 0 时，将使用默认的行动超时时间
+***
+### TurnBased
+回合制
+```go
+type TurnBased[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct {
+	*turnBasedEvents[CampID, EntityID, Camp, Entity]
+	controller           *TurnBasedController[CampID, EntityID, Camp, Entity]
+	ticker               *time.Ticker
+	actionWaitTicker     *time.Ticker
+	actioning            bool
+	actionMutex          sync.RWMutex
+	entities             []Entity
+	campRel              map[EntityID]Camp
+	calcNextTurnDuration func(Camp, Entity) time.Duration
+	actionTimeoutHandler func(Camp, Entity) time.Duration
+	signal               chan signal
+	round                int
+	currCamp             Camp
+	currEntity           Entity
+	currActionTimeout    time.Duration
+	currStart            time.Time
+	closeMutex           sync.RWMutex
+	closed               bool
+}
+```
+### TurnBasedControllerInfo
+
+```go
+type TurnBasedControllerInfo[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct{}
+```
+### TurnBasedControllerAction
+
+```go
+type TurnBasedControllerAction[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct{}
+```
+### TurnBasedController
+回合制控制器
+```go
+type TurnBasedController[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct {
+	tb *TurnBased[CampID, EntityID, Camp, Entity]
+}
+```
+### TurnBasedEntitySwitchEventHandler
+
+```go
+type TurnBasedEntitySwitchEventHandler[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]] struct{}
+```
