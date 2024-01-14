@@ -1,5 +1,8 @@
 # Astar
 
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/astar)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
+
 astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种常用的路径搜索算法，用于在图形或网络中找到最短路径。该包旨在简化 A* 算法的实现过程，并提供一致的接口和易于使用的功能。
 主要特性：
   - 图形表示：astar 包支持使用图形或网络来表示路径搜索的环境。您可以定义节点和边，以构建图形，并在其中执行路径搜索。
@@ -7,31 +10,31 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
   - 自定义启发式函数：您可以根据具体问题定义自己的启发式函数，以指导 A* 算法的搜索过程。启发式函数用于估计从当前节点到目标节点的代价，以帮助算法选择最佳路径。
   - 可定制性：astar 包提供了一些可定制的选项，以满足不同场景下的需求。您可以设置节点的代价、边的权重等参数，以调整算法的行为。
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/astar)
-![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[Find](#Find)|使用 A* 算法在导航网格上查找从起点到终点的最短路径，并返回路径上的节点序列。
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Graph](#graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
+|类型|名称|描述
+|:--|:--|:--
+|`INTERFACE`|[Graph](#graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 
 </details>
 
 
+***
+## 详情信息
 #### func Find(graph Graph[Node], start Node, end Node, cost func (a Node)  V, heuristic func (a Node)  V)  []Node
 <span id="Find"></span>
 > 使用 A* 算法在导航网格上查找从起点到终点的最短路径，并返回路径上的节点序列。
@@ -54,11 +57,32 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
 >   - 函数使用了 A* 算法来搜索最短路径。
 >   - 函数内部使用了堆数据结构来管理待处理的节点。
 >   - 函数返回一个节点序列，表示从起点到终点的最短路径。如果找不到路径，则返回空序列。
+
+示例代码：
+```go
+
+func ExampleFind() {
+	graph := Graph{FloorPlan: geometry.FloorPlan{"===========", "X XX  X   X", "X  X   XX X", "X XX      X", "X     XXX X", "X XX  X   X", "X XX  X   X", "==========="}}
+	paths := astar.Find[geometry.Point[int], int](graph, geometry.NewPoint(1, 1), geometry.NewPoint(8, 6), func(a, b geometry.Point[int]) int {
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a, b))
+	}, func(a, b geometry.Point[int]) int {
+		return geometry.CalcDistanceWithCoordinate(geometry.DoublePointToCoordinate(a, b))
+	})
+	for _, path := range paths {
+		graph.Put(path, '.')
+	}
+	fmt.Println(graph)
+}
+
+```
+
 ***
-### Graph
+### Graph `INTERFACE`
 适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 ```go
-type Graph[Node comparable] struct{}
+type Graph[Node comparable] interface {
+	Neighbours(node Node) []Node
+}
 ```
 #### func (Graph) Neighbours(point geometry.Point[int])  []geometry.Point[int]
 ***

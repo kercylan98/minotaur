@@ -1,6 +1,7 @@
 package astgo
 
 import (
+	"fmt"
 	"go/ast"
 )
 
@@ -14,6 +15,9 @@ func newField(field *ast.Field) []*Field {
 	} else {
 		var fs []*Field
 		for _, name := range field.Names {
+			if name.String() == "Format" {
+				fmt.Println()
+			}
 			fs = append(fs, &Field{
 				Anonymous: false,
 				Name:      name.String(),

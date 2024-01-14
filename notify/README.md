@@ -1,39 +1,43 @@
 # Notify
 
-notify 包含了对外部第三方通知的实现，如机器人消息等
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/notify)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+notify 包含了对外部第三方通知的实现，如机器人消息等
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewManager](#NewManager)|通过指定的 Sender 创建一个通知管理器， senders 包中提供了一些内置的 Sender
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Manager](#manager)|通知管理器，可用于将通知同时发送至多个渠道
-|[Notify](#notify)|通用通知接口定义
-|[Sender](#sender)|通知发送器接口声明
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Manager](#manager)|通知管理器，可用于将通知同时发送至多个渠道
+|`INTERFACE`|[Notify](#notify)|通用通知接口定义
+|`INTERFACE`|[Sender](#sender)|通知发送器接口声明
 
 </details>
 
 
+***
+## 详情信息
 #### func NewManager(senders ...Sender)  *Manager
 <span id="NewManager"></span>
 > 通过指定的 Sender 创建一个通知管理器， senders 包中提供了一些内置的 Sender
+
 ***
-### Manager
+### Manager `STRUCT`
 通知管理器，可用于将通知同时发送至多个渠道
 ```go
 type Manager struct {
@@ -48,13 +52,17 @@ type Manager struct {
 #### func (*Manager) Release()
 > 释放通知管理器
 ***
-### Notify
+### Notify `INTERFACE`
 通用通知接口定义
 ```go
-type Notify struct{}
+type Notify interface {
+	Format() (string, error)
+}
 ```
-### Sender
+### Sender `INTERFACE`
 通知发送器接口声明
 ```go
-type Sender struct{}
+type Sender interface {
+	Push(notify Notify) error
+}
 ```

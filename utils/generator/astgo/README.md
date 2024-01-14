@@ -1,42 +1,66 @@
 # Astgo
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/astgo)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewPackage](#NewPackage)|暂无描述...
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Comment](#comment)|暂无描述...
-|[Field](#field)|暂无描述...
-|[File](#file)|暂无描述...
-|[Function](#function)|暂无描述...
-|[Package](#package)|暂无描述...
-|[Struct](#struct)|暂无描述...
-|[Type](#type)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Comment](#comment)|暂无描述...
+|`STRUCT`|[Field](#field)|暂无描述...
+|`STRUCT`|[File](#file)|暂无描述...
+|`STRUCT`|[Function](#function)|暂无描述...
+|`STRUCT`|[Package](#package)|暂无描述...
+|`STRUCT`|[Struct](#struct)|暂无描述...
+|`STRUCT`|[Type](#type)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewPackage(dir string)  *Package,  error
 <span id="NewPackage"></span>
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewPackage(t *testing.T) {
+	p, err := astgo.NewPackage(`/Users/kercylan/Coding.localized/Go/minotaur/server`)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(super.MarshalIndentJSON(p, "", "  ")))
+}
+
+```
+
+
+</details>
+
+
 ***
-### Comment
+### Comment `STRUCT`
 
 ```go
 type Comment struct {
@@ -44,7 +68,7 @@ type Comment struct {
 	Clear    []string
 }
 ```
-### Field
+### Field `STRUCT`
 
 ```go
 type Field struct {
@@ -54,7 +78,7 @@ type Field struct {
 	Comments  *Comment
 }
 ```
-### File
+### File `STRUCT`
 
 ```go
 type File struct {
@@ -68,10 +92,11 @@ type File struct {
 ```
 #### func (*File) Package()  string
 ***
-### Function
+### Function `STRUCT`
 
 ```go
 type Function struct {
+	decl        *ast.FuncDecl
 	Name        string
 	Internal    bool
 	Generic     []*Field
@@ -85,14 +110,17 @@ type Function struct {
 	Test        bool
 }
 ```
-### Package
+#### func (*Function) Code()  string
+***
+### Package `STRUCT`
 
 ```go
 type Package struct {
-	Dir   string
-	Name  string
-	Dirs  []string
-	Files []*File
+	Dir       string
+	Name      string
+	Dirs      []string
+	Files     []*File
+	Functions map[string]*Function
 }
 ```
 #### func (*Package) StructFunc(name string)  []*Function
@@ -103,19 +131,27 @@ type Package struct {
 ***
 #### func (*Package) FileComments()  *Comment
 ***
-### Struct
+#### func (*Package) GetUnitTest(f *Function)  *Function
+***
+#### func (*Package) GetExampleTest(f *Function)  *Function
+***
+#### func (*Package) GetBenchmarkTest(f *Function)  *Function
+***
+### Struct `STRUCT`
 
 ```go
 type Struct struct {
-	Name     string
-	Internal bool
-	Comments *Comment
-	Generic  []*Field
-	Fields   []*Field
-	Test     bool
+	Name      string
+	Internal  bool
+	Interface bool
+	Comments  *Comment
+	Generic   []*Field
+	Fields    []*Field
+	Type      *Type
+	Test      bool
 }
 ```
-### Type
+### Type `STRUCT`
 
 ```go
 type Type struct {

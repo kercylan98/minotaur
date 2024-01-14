@@ -1,19 +1,20 @@
 # Server
 
-server 提供了包含多种网络类型的服务器实现
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/server)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+server 提供了包含多种网络类型的服务器实现
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewBot](#NewBot)|创建一个机器人，目前仅支持 Socket 服务器
 |[WithBotNetworkDelay](#WithBotNetworkDelay)|设置机器人网络延迟及波动范围
@@ -49,157 +50,221 @@ server 提供了包含多种网络类型的服务器实现
 |[BindService](#BindService)|绑定服务到特定 Server，被绑定的服务将会在 Server 初始化时执行 Service.OnInit 方法
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Bot](#bot)|暂无描述...
-|[BotOption](#botoption)|暂无描述...
-|[Conn](#conn)|服务器连接单次消息的包装
-|[ConsoleParams](#consoleparams)|控制台参数
-|[MessageReadyEventHandler](#messagereadyeventhandler)|暂无描述...
-|[Http](#http)|基于 gin.Engine 包装的 http 服务器
-|[HttpContext](#httpcontext)|基于 gin.Context 的 http 请求上下文
-|[HandlerFunc](#handlerfunc)|暂无描述...
-|[ContextPacker](#contextpacker)|暂无描述...
-|[HttpRouter](#httprouter)|暂无描述...
-|[HttpWrapperHandleFunc](#httpwrapperhandlefunc)|暂无描述...
-|[HttpWrapper](#httpwrapper)|http 包装器
-|[HttpWrapperGroup](#httpwrappergroup)|http 包装器
-|[MessageType](#messagetype)|暂无描述...
-|[Message](#message)|服务器消息
-|[MultipleServer](#multipleserver)|暂无描述...
-|[Network](#network)|暂无描述...
-|[Option](#option)|暂无描述...
-|[Server](#server)|网络服务器
-|[Service](#service)|兼容传统 service 设计模式的接口
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Bot](#bot)|暂无描述...
+|`STRUCT`|[BotOption](#botoption)|暂无描述...
+|`STRUCT`|[Conn](#conn)|服务器连接单次消息的包装
+|`STRUCT`|[ConsoleParams](#consoleparams)|控制台参数
+|`STRUCT`|[MessageReadyEventHandler](#messagereadyeventhandler)|暂无描述...
+|`STRUCT`|[Http](#http)|基于 gin.Engine 包装的 http 服务器
+|`STRUCT`|[HttpContext](#httpcontext)|基于 gin.Context 的 http 请求上下文
+|`STRUCT`|[HandlerFunc](#handlerfunc)|暂无描述...
+|`STRUCT`|[ContextPacker](#contextpacker)|暂无描述...
+|`STRUCT`|[HttpRouter](#httprouter)|暂无描述...
+|`STRUCT`|[HttpWrapperHandleFunc](#httpwrapperhandlefunc)|暂无描述...
+|`STRUCT`|[HttpWrapper](#httpwrapper)|http 包装器
+|`STRUCT`|[HttpWrapperGroup](#httpwrappergroup)|http 包装器
+|`STRUCT`|[MessageType](#messagetype)|暂无描述...
+|`STRUCT`|[Message](#message)|服务器消息
+|`STRUCT`|[MultipleServer](#multipleserver)|暂无描述...
+|`STRUCT`|[Network](#network)|暂无描述...
+|`STRUCT`|[Option](#option)|暂无描述...
+|`STRUCT`|[Server](#server)|网络服务器
+|`INTERFACE`|[Service](#service)|兼容传统 service 设计模式的接口
 
 </details>
 
 
+***
+## 详情信息
 #### func NewBot(srv *Server, options ...BotOption)  *Bot
 <span id="NewBot"></span>
 > 创建一个机器人，目前仅支持 Socket 服务器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewBot(t *testing.T) {
+	srv := server.New(server.NetworkWebsocket)
+	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
+		t.Logf("connection opened: %s", conn.GetID())
+		conn.Close()
+		conn.Write([]byte("hello"))
+	})
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
+		t.Logf("connection closed: %s", conn.GetID())
+	})
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		t.Logf("connection %s receive packet: %s", conn.GetID(), string(packet))
+		conn.Write([]byte("world"))
+	})
+	srv.RegStartFinishEvent(func(srv *server.Server) {
+		bot := server.NewBot(srv, server.WithBotNetworkDelay(100, 20), server.WithBotWriter(func(bot *server.Bot) io.Writer {
+			return &Writer{t: t, bot: bot}
+		}))
+		bot.JoinServer()
+		time.Sleep(time.Second)
+		bot.SendPacket([]byte("hello"))
+	})
+	_ = srv.Run(":9600")
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func WithBotNetworkDelay(delay time.Duration, fluctuation time.Duration)  BotOption
 <span id="WithBotNetworkDelay"></span>
 > 设置机器人网络延迟及波动范围
 >   - delay 延迟
 >   - fluctuation 波动范围
+
 ***
 #### func WithBotWriter(construction func (bot *Bot)  io.Writer)  BotOption
 <span id="WithBotWriter"></span>
 > 设置机器人写入器，默认为 os.Stdout
+
 ***
 #### func DefaultWebsocketUpgrader()  *websocket.Upgrader
 <span id="DefaultWebsocketUpgrader"></span>
+
 ***
 #### func NewHttpHandleWrapper(srv *Server, packer ContextPacker[Context])  *Http[Context]
 <span id="NewHttpHandleWrapper"></span>
 > 创建一个新的 http 处理程序包装器
 >   - 默认使用 server.HttpContext 作为上下文，如果需要依赖其作为新的上下文，可以通过 NewHttpContext 创建
+
 ***
 #### func NewHttpContext(ctx *gin.Context)  *HttpContext
 <span id="NewHttpContext"></span>
 > 基于 gin.Context 创建一个新的 HttpContext
+
 ***
 #### func NewGinWrapper(server *gin.Engine, pack func (ctx *gin.Context)  CTX)  *HttpWrapper[CTX]
 <span id="NewGinWrapper"></span>
 > 创建 gin 包装器，用于对 NewHttpWrapper 函数的替代
+
 ***
 #### func HasMessageType(mt MessageType)  bool
 <span id="HasMessageType"></span>
 > 检查是否存在指定的消息类型
+
 ***
-#### func NewMultipleServer(serverHandle ...func () (addr string, srv *Server))  *MultipleServer
+#### func NewMultipleServer(serverHandle ...func () ((addr string, srv *Server)))  *MultipleServer
 <span id="NewMultipleServer"></span>
+
 ***
 #### func GetNetworks()  []Network
 <span id="GetNetworks"></span>
 > 获取所有支持的网络模式
+
 ***
 #### func WithLowMessageDuration(duration time.Duration)  Option
 <span id="WithLowMessageDuration"></span>
 > 通过指定慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultLowMessageDuration
 >   - 当 duration <= 0 时，表示关闭慢消息检测
+
 ***
 #### func WithAsyncLowMessageDuration(duration time.Duration)  Option
 <span id="WithAsyncLowMessageDuration"></span>
 > 通过指定异步消息的慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultAsyncLowMessageDuration
 >   - 当 duration <= 0 时，表示关闭慢消息检测
+
 ***
 #### func WithWebsocketConnInitializer(initializer func (writer http.ResponseWriter, request *http.Request, conn *websocket.Conn)  error)  Option
 <span id="WithWebsocketConnInitializer"></span>
 > 通过 websocket 连接初始化的方式创建服务器，当 initializer 返回错误时，服务器将不会处理该连接的后续逻辑
 >   - 该选项仅在创建 NetworkWebsocket 服务器时有效
+
 ***
 #### func WithWebsocketUpgrade(upgrader *websocket.Upgrader)  Option
 <span id="WithWebsocketUpgrade"></span>
 > 通过指定 websocket.Upgrader 的方式创建服务器
 >   - 默认值为 DefaultWebsocketUpgrader
 >   - 该选项仅在创建 NetworkWebsocket 服务器时有效
+
 ***
 #### func WithConnWriteBufferSize(size int)  Option
 <span id="WithConnWriteBufferSize"></span>
 > 通过连接写入缓冲区大小的方式创建服务器
 >   - 默认值为 DefaultConnWriteBufferSize
 >   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
+
 ***
 #### func WithDispatcherBufferSize(size int)  Option
 <span id="WithDispatcherBufferSize"></span>
 > 通过消息分发器缓冲区大小的方式创建服务器
 >   - 默认值为 DefaultDispatcherBufferSize
 >   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
+
 ***
 #### func WithMessageStatistics(duration time.Duration, limit int)  Option
 <span id="WithMessageStatistics"></span>
 > 通过消息统计的方式创建服务器
 >   - 默认不开启，当 duration 和 limit 均大于 0 的时候，服务器将记录每 duration 期间的消息数量，并保留最多 limit 条
+
 ***
 #### func WithPacketWarnSize(size int)  Option
 <span id="WithPacketWarnSize"></span>
 > 通过数据包大小警告的方式创建服务器，当数据包大小超过指定大小时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultPacketWarnSize
 >   - 当 size <= 0 时，表示不设置警告
+
 ***
 #### func WithLimitLife(t time.Duration)  Option
 <span id="WithLimitLife"></span>
 > 通过限制最大生命周期的方式创建服务器
 >   - 通常用于测试服务器，服务器将在到达最大生命周期时自动关闭
+
 ***
 #### func WithWebsocketWriteCompression()  Option
 <span id="WithWebsocketWriteCompression"></span>
 > 通过数据写入压缩的方式创建Websocket服务器
 >   - 默认不开启数据压缩
+
 ***
 #### func WithWebsocketCompression(level int)  Option
 <span id="WithWebsocketCompression"></span>
 > 通过数据压缩的方式创建Websocket服务器
 >   - 默认不开启数据压缩
+
 ***
 #### func WithDeadlockDetect(t time.Duration)  Option
 <span id="WithDeadlockDetect"></span>
 > 通过死锁、死循环、永久阻塞检测的方式创建服务器
 >   - 当检测到死锁、死循环、永久阻塞时，服务器将会生成 WARN 类型的日志，关键字为 "SuspectedDeadlock"
 >   - 默认不开启死锁检测
+
 ***
 #### func WithDisableAsyncMessage()  Option
 <span id="WithDisableAsyncMessage"></span>
 > 通过禁用异步消息的方式创建服务器
+
 ***
 #### func WithAsyncPoolSize(size int)  Option
 <span id="WithAsyncPoolSize"></span>
 > 通过指定异步消息池大小的方式创建服务器
 >   - 当通过 WithDisableAsyncMessage 禁用异步消息时，此选项无效
 >   - 默认值为 DefaultAsyncPoolSize
+
 ***
 #### func WithWebsocketReadDeadline(t time.Duration)  Option
 <span id="WithWebsocketReadDeadline"></span>
 > 设置 Websocket 读取超时时间
 >   - 默认： DefaultWebsocketReadDeadline
 >   - 当 t <= 0 时，表示不设置超时时间
+
 ***
 #### func WithTicker(poolSize int, size int, connSize int, autonomy bool)  Option
 <span id="WithTicker"></span>
@@ -208,33 +273,119 @@ server 提供了包含多种网络类型的服务器实现
 >   - size：服务器定时器时间轮大小
 >   - connSize：服务器连接定时器时间轮大小，当该值小于等于 0 的时候，在新连接建立时将不再为其创建定时器
 >   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
+
 ***
 #### func WithTLS(certFile string, keyFile string)  Option
 <span id="WithTLS"></span>
 > 通过安全传输层协议TLS创建服务器
 >   - 支持：Http、Websocket
+
 ***
 #### func WithGRPCServerOptions(options ...grpc.ServerOption)  Option
 <span id="WithGRPCServerOptions"></span>
 > 通过GRPC的可选项创建GRPC服务器
+
 ***
 #### func WithWebsocketMessageType(messageTypes ...int)  Option
 <span id="WithWebsocketMessageType"></span>
 > 设置仅支持特定类型的Websocket消息
+
 ***
 #### func WithPProf(pattern ...string)  Option
 <span id="WithPProf"></span>
 > 通过性能分析工具PProf创建服务器
+
 ***
 #### func New(network Network, options ...Option)  *Server
 <span id="New"></span>
 > 根据特定网络类型创建一个服务器
+
+示例代码：
+```go
+
+func ExampleNew() {
+	srv := server.New(server.NetworkWebsocket, server.WithLimitLife(time.Millisecond))
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNew(t *testing.T) {
+	srv := server.New(server.NetworkWebsocket, server.WithPProf())
+	srv.RegStartBeforeEvent(func(srv *server.Server) {
+		fmt.Println("启动前")
+	})
+	srv.RegStartFinishEvent(func(srv *server.Server) {
+		fmt.Println("启动完成")
+	})
+	srv.RegConnectionClosedEvent(func(srv *server.Server, conn *server.Conn, err any) {
+		fmt.Println("关闭", conn.GetID(), err, "IncrCount", srv.GetOnlineCount())
+	})
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func BindService(srv *Server, services ...Service)
 <span id="BindService"></span>
 > 绑定服务到特定 Server，被绑定的服务将会在 Server 初始化时执行 Service.OnInit 方法
+
+示例代码：
+```go
+
+func ExampleBindService() {
+	srv := server.New(server.NetworkNone, server.WithLimitLife(time.Second))
+	server.BindService(srv, new(TestService))
+	if err := srv.RunNone(); err != nil {
+		panic(err)
+	}
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestBindService(t *testing.T) {
+	srv := server.New(server.NetworkNone, server.WithLimitLife(time.Second))
+	server.BindService(srv, new(TestService))
+	if err := srv.RunNone(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
-### Bot
+### Bot `STRUCT`
 
 ```go
 type Bot struct {
@@ -262,12 +413,12 @@ type Bot struct {
 #### func (*Bot) SendWSPacket(wst int, packet []byte)
 > 发送 WebSocket 数据包到服务器
 ***
-### BotOption
+### BotOption `STRUCT`
 
 ```go
-type BotOption struct{}
+type BotOption func(bot *Bot)
 ```
-### Conn
+### Conn `STRUCT`
 服务器连接单次消息的包装
 ```go
 type Conn struct {
@@ -350,10 +501,10 @@ type Conn struct {
 #### func (*Conn) Close(err ...error)
 > 关闭连接
 ***
-### ConsoleParams
+### ConsoleParams `STRUCT`
 控制台参数
 ```go
-type ConsoleParams struct{}
+type ConsoleParams map[string][]string
 ```
 #### func (ConsoleParams) Get(key string)  string
 > 获取参数值
@@ -376,12 +527,12 @@ type ConsoleParams struct{}
 #### func (ConsoleParams) Clear()
 > 清空参数
 ***
-### MessageReadyEventHandler
+### MessageReadyEventHandler `STRUCT`
 
 ```go
-type MessageReadyEventHandler struct{}
+type MessageReadyEventHandler func(srv *Server)
 ```
-### Http
+### Http `STRUCT`
 基于 gin.Engine 包装的 http 服务器
 ```go
 type Http[Context any] struct {
@@ -392,7 +543,7 @@ type Http[Context any] struct {
 ```
 #### func (*Http) Gin()  *gin.Engine
 ***
-### HttpContext
+### HttpContext `STRUCT`
 基于 gin.Context 的 http 请求上下文
 ```go
 type HttpContext struct {
@@ -405,17 +556,17 @@ type HttpContext struct {
 #### func (*HttpContext) ReadTo(dest any)  error
 > 读取请求数据到指定结构体，如果失败则返回错误
 ***
-### HandlerFunc
+### HandlerFunc `STRUCT`
 
 ```go
-type HandlerFunc[Context any] struct{}
+type HandlerFunc[Context any] func(ctx Context)
 ```
-### ContextPacker
+### ContextPacker `STRUCT`
 
 ```go
-type ContextPacker[Context any] struct{}
+type ContextPacker[Context any] func(ctx *gin.Context) Context
 ```
-### HttpRouter
+### HttpRouter `STRUCT`
 
 ```go
 type HttpRouter[Context any] struct {
@@ -488,12 +639,12 @@ type HttpRouter[Context any] struct {
 #### func (*HttpRouter) Use(middleware ...HandlerFunc[Context])  *HttpRouter[Context]
 > 将中间件附加到路由组。
 ***
-### HttpWrapperHandleFunc
+### HttpWrapperHandleFunc `STRUCT`
 
 ```go
-type HttpWrapperHandleFunc[CTX any] struct{}
+type HttpWrapperHandleFunc[CTX any] func(ctx CTX)
 ```
-### HttpWrapper
+### HttpWrapper `STRUCT`
 http 包装器
 ```go
 type HttpWrapper[CTX any] struct {
@@ -552,7 +703,7 @@ type HttpWrapper[CTX any] struct {
 #### func (*HttpWrapper) Group(relativePath string, handlers ...HttpWrapperHandleFunc[CTX])  *HttpWrapperGroup[CTX]
 > 创建一个新的路由组。您应该添加所有具有共同中间件的路由。
 ***
-### HttpWrapperGroup
+### HttpWrapperGroup `STRUCT`
 http 包装器
 ```go
 type HttpWrapperGroup[CTX any] struct {
@@ -587,15 +738,15 @@ type HttpWrapperGroup[CTX any] struct {
 #### func (*HttpWrapperGroup) Group(relativePath string, handlers ...HttpWrapperHandleFunc[CTX])  *HttpWrapperGroup[CTX]
 > 创建分组
 ***
-### MessageType
+### MessageType `STRUCT`
 
 ```go
-type MessageType struct{}
+type MessageType byte
 ```
 #### func (MessageType) String()  string
 > 返回消息类型的字符串表示
 ***
-### Message
+### Message `STRUCT`
 服务器消息
 ```go
 type Message struct {
@@ -620,7 +771,7 @@ type Message struct {
 #### func (*Message) String()  string
 > 返回消息的字符串表示
 ***
-### MultipleServer
+### MultipleServer `STRUCT`
 
 ```go
 type MultipleServer struct {
@@ -636,20 +787,20 @@ type MultipleServer struct {
 ***
 #### func (*MultipleServer) OnExitEvent()
 ***
-### Network
+### Network `STRUCT`
 
 ```go
-type Network struct{}
+type Network string
 ```
 #### func (Network) IsSocket()  bool
 > 返回当前服务器的网络模式是否为 Socket 模式
 ***
-### Option
+### Option `STRUCT`
 
 ```go
-type Option struct{}
+type Option func(srv *Server)
 ```
-### Server
+### Server `STRUCT`
 网络服务器
 ```go
 type Server struct {
@@ -690,6 +841,21 @@ type Server struct {
 >   - server.NetworkWebsocket (addr:":8888/ws")
 >   - server.NetworkKcp (addr:":8888")
 >   - server.NetworkNone (addr:"")
+示例代码：
+```go
+
+func ExampleServer_Run() {
+	srv := server.New(server.NetworkWebsocket, server.WithLimitLife(time.Millisecond))
+	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
+		conn.Write(packet)
+	})
+	if err := srv.Run(":9999"); err != nil {
+		panic(err)
+	}
+}
+
+```
+
 ***
 #### func (*Server) IsSocket()  bool
 > 是否是 Socket 模式
@@ -800,8 +966,10 @@ type Server struct {
 #### func (*Server) HasMessageStatistics()  bool
 > 是否了开启消息统计
 ***
-### Service
+### Service `INTERFACE`
 兼容传统 service 设计模式的接口
 ```go
-type Service struct{}
+type Service interface {
+	OnInit(srv *Server)
+}
 ```

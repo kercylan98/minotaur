@@ -1,19 +1,20 @@
 # Moving
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/moving)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewTwoDimensional](#NewTwoDimensional)|创建一个用于2D对象移动的实例(TwoDimensional)
 |[WithTwoDimensionalTimeUnit](#WithTwoDimensionalTimeUnit)|通过特定时间单位创建
@@ -22,40 +23,79 @@
 |[NewEntity](#NewEntity)|暂无描述...
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[TwoDimensional](#twodimensional)|用于2D对象移动的数据结构
-|[TwoDimensionalEntity](#twodimensionalentity)|2D移动对象接口定义
-|[Position2DChangeEventHandle](#position2dchangeeventhandle)|暂无描述...
-|[TwoDimensionalOption](#twodimensionaloption)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[TwoDimensional](#twodimensional)|用于2D对象移动的数据结构
+|`INTERFACE`|[TwoDimensionalEntity](#twodimensionalentity)|2D移动对象接口定义
+|`STRUCT`|[Position2DChangeEventHandle](#position2dchangeeventhandle)|暂无描述...
+|`STRUCT`|[TwoDimensionalOption](#twodimensionaloption)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewTwoDimensional(options ...TwoDimensionalOption[EID, PosType])  *TwoDimensional[EID, PosType]
 <span id="NewTwoDimensional"></span>
 > 创建一个用于2D对象移动的实例(TwoDimensional)
+
+示例代码：
+```go
+
+func ExampleNewTwoDimensional() {
+	m := moving2.NewTwoDimensional[int64, float64]()
+	defer func() {
+		m.Release()
+	}()
+	fmt.Println(m != nil)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewTwoDimensional(t *testing.T) {
+	m := moving2.NewTwoDimensional[int64, float64]()
+	defer func() {
+		m.Release()
+	}()
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func WithTwoDimensionalTimeUnit(duration time.Duration)  TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalTimeUnit"></span>
 > 通过特定时间单位创建
 >   - 默认单位为1毫秒，最小单位也为1毫秒
+
 ***
 #### func WithTwoDimensionalIdleWaitTime(duration time.Duration)  TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalIdleWaitTime"></span>
 > 通过特定的空闲等待时间创建
 >   - 默认情况下在没有新的移动计划时将限制 100毫秒 + 移动间隔事件(默认100毫秒)
+
 ***
 #### func WithTwoDimensionalInterval(duration time.Duration)  TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalInterval"></span>
 > 通过特定的移动间隔时间创建
+
 ***
 #### func NewEntity(guid int64, speed float64)  *MoveEntity
 <span id="NewEntity"></span>
+
 ***
-### TwoDimensional
+### TwoDimensional `STRUCT`
 用于2D对象移动的数据结构
   - 通过对象调用 MoveTo 方法后将开始执行该对象的移动
   - 移动将在根据设置的每次移动间隔时间(WithTwoDimensionalInterval)进行移动，当无对象移动需要移动时将会进入短暂的休眠
@@ -73,18 +113,23 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber] struct {
 	position2DStopMoveEventHandles    []Position2DStopMoveEventHandle[EID, PosType]
 }
 ```
-### TwoDimensionalEntity
+### TwoDimensionalEntity `INTERFACE`
 2D移动对象接口定义
 ```go
-type TwoDimensionalEntity[EID generic.Basic, PosType generic.SignedNumber] struct{}
+type TwoDimensionalEntity[EID generic.Basic, PosType generic.SignedNumber] interface {
+	GetTwoDimensionalEntityID() EID
+	GetSpeed() float64
+	GetPosition() geometry.Point[PosType]
+	SetPosition(geometry.Point[PosType])
+}
 ```
-### Position2DChangeEventHandle
+### Position2DChangeEventHandle `STRUCT`
 
 ```go
-type Position2DChangeEventHandle[EID generic.Basic, PosType generic.SignedNumber] struct{}
+type Position2DChangeEventHandle[EID generic.Basic, PosType generic.SignedNumber] func(moving *TwoDimensional[EID, PosType], entity TwoDimensionalEntity[EID, PosType], oldX PosType)
 ```
-### TwoDimensionalOption
+### TwoDimensionalOption `STRUCT`
 
 ```go
-type TwoDimensionalOption[EID generic.Basic, PosType generic.SignedNumber] struct{}
+type TwoDimensionalOption[EID generic.Basic, PosType generic.SignedNumber] func(moving *TwoDimensional[EID, PosType])
 ```

@@ -1,35 +1,38 @@
 # Navmesh
 
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/navmesh)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
+
 navmesh 提供了用于导航网格处理的函数和数据结构。导航网格是一种常用的数据结构，用于在游戏开发和虚拟环境中进行路径规划和导航。该包旨在简化导航网格的创建、查询和操作过程，并提供高效的导航功能。
 主要特性：
   - 导航网格表示：navmesh 包支持使用导航网格来表示虚拟环境中的可行走区域和障碍物。您可以定义多边形区域和连接关系，以构建导航网格，并在其中执行路径规划和导航。
   - 导航算法：采用了 A* 算法作为导航算法，用于在导航网格中找到最短路径或最优路径。这些算法使用启发式函数和代价评估来指导路径搜索，并提供高效的路径规划能力。
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/navmesh)
-![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewNavMesh](#NewNavMesh)|创建一个新的导航网格，并返回一个指向该导航网格的指针。
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[NavMesh](#navmesh)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[NavMesh](#navmesh)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewNavMesh(shapes []geometry.Shape[V], meshShrinkAmount V)  *NavMesh[V]
 <span id="NewNavMesh"></span>
 > 创建一个新的导航网格，并返回一个指向该导航网格的指针。
@@ -49,8 +52,9 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 > 
 > 使用建议：
 >   - 确保 NavMesh 计算精度的情况下，V 建议使用 float64 类型
+
 ***
-### NavMesh
+### NavMesh `STRUCT`
 
 ```go
 type NavMesh[V generic.SignedNumber] struct {
@@ -94,4 +98,32 @@ type NavMesh[V generic.SignedNumber] struct {
 >   - 如果起点或终点不在任何形状内部，且 NavMesh 的 meshShrinkAmount 大于0，则会考虑缩小的形状。
 >   - 使用 A* 算法在 NavMesh 上搜索从起点形状到终点形状的最短路径。
 >   - 使用漏斗算法对路径进行优化，以得到最终的路径点序列。
+示例代码：
+```go
+
+func ExampleNavMesh_FindPath() {
+	fp := geometry.FloorPlan{"=================================", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "X                               X", "================================="}
+	var walkable []geometry.Shape[int]
+	walkable = append(walkable, geometry.NewShape(geometry.NewPoint(5, 5), geometry.NewPoint(15, 5), geometry.NewPoint(15, 15), geometry.NewPoint(5, 15)), geometry.NewShape(geometry.NewPoint(15, 5), geometry.NewPoint(25, 5), geometry.NewPoint(25, 15), geometry.NewPoint(15, 15)), geometry.NewShape(geometry.NewPoint(15, 15), geometry.NewPoint(25, 15), geometry.NewPoint(25, 25), geometry.NewPoint(15, 25)))
+	for _, shape := range walkable {
+		for _, edge := range shape.Edges() {
+			sx, bx := maths.MinMax(edge.GetStart().GetX(), edge.GetEnd().GetX())
+			sy, by := maths.MinMax(edge.GetStart().GetY(), edge.GetEnd().GetY())
+			for x := sx; x <= bx; x++ {
+				for y := sy; y <= by; y++ {
+					fp.Put(geometry.NewPoint[int](x, y), '+')
+				}
+			}
+		}
+	}
+	nm := navmesh.NewNavMesh(walkable, 0)
+	path := nm.FindPath(geometry.NewPoint(6, 6), geometry.NewPoint(18, 24))
+	for _, point := range path {
+		fp.Put(geometry.NewPoint(point.GetX(), point.GetY()), 'G')
+	}
+	fmt.Println(fp)
+}
+
+```
+
 ***

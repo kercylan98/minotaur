@@ -1,19 +1,20 @@
 # Survey
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/survey)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewFileFlusher](#NewFileFlusher)|创建一个文件刷新器
 |[WithFlushInterval](#WithFlushInterval)|设置日志文件刷新间隔
@@ -27,67 +28,132 @@
 |[IncrementAnalyze](#IncrementAnalyze)|增量分析，返回一个函数，每次调用该函数都会分析文件中新增的内容
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Analyzer](#analyzer)|分析器
-|[Flusher](#flusher)|用于刷新缓冲区的接口
-|[FileFlusher](#fileflusher)|暂无描述...
-|[Option](#option)|选项
-|[Result](#result)|暂无描述...
-|[R](#r)|记录器所记录的一条数据
-|[Report](#report)|分析报告
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Analyzer](#analyzer)|分析器
+|`INTERFACE`|[Flusher](#flusher)|用于刷新缓冲区的接口
+|`STRUCT`|[FileFlusher](#fileflusher)|暂无描述...
+|`STRUCT`|[Option](#option)|选项
+|`STRUCT`|[Result](#result)|暂无描述...
+|`STRUCT`|[R](#r)|记录器所记录的一条数据
+|`STRUCT`|[Report](#report)|分析报告
 
 </details>
 
 
+***
+## 详情信息
 #### func NewFileFlusher(filePath string, layout ...string)  *FileFlusher
 <span id="NewFileFlusher"></span>
 > 创建一个文件刷新器
 >   - layout 为日志文件名的时间戳格式 (默认为 time.DateOnly)
+
 ***
 #### func WithFlushInterval(interval time.Duration)  Option
 <span id="WithFlushInterval"></span>
 > 设置日志文件刷新间隔
 >   - 默认为 3s，当日志文件刷新间隔 <= 0 时，将会在每次写入日志时刷新日志文件
+
 ***
 #### func Reg(name string, flusher Flusher, options ...Option)
 <span id="Reg"></span>
 > 注册一个运营日志记录器
+
 ***
 #### func Record(name string, data map[string]any)
 <span id="Record"></span>
 > 记录一条运营日志
+
 ***
 #### func RecordBytes(name string, data []byte)
 <span id="RecordBytes"></span>
 > 记录一条运营日志
+
 ***
 #### func Flush(names ...string)
 <span id="Flush"></span>
 > 将运营日志记录器的缓冲区数据写入到文件
 >   - name 为空时，将所有记录器的缓冲区数据写入到文件
+
 ***
 #### func Close(names ...string)
 <span id="Close"></span>
 > 关闭运营日志记录器
+
 ***
 #### func Analyze(filePath string, handle func (analyzer *Analyzer, record R))  *Report
 <span id="Analyze"></span>
 > 分析特定文件的记录，当发生错误时，会发生 panic
 >   - handle 为并行执行的，需要自行处理并发安全
 >   - 适用于外部进程对于日志文件的读取，但是需要注意的是，此时日志文件可能正在被写入，所以可能会读取到错误的数据
+
 ***
 #### func AnalyzeMulti(filePaths []string, handle func (analyzer *Analyzer, record R))  *Report
 <span id="AnalyzeMulti"></span>
 > 与 Analyze 类似，但是可以分析多个文件
+
 ***
-#### func IncrementAnalyze(filePath string, handle func (analyzer *Analyzer, record R))  func ()  *Report,  error
+#### func IncrementAnalyze(filePath string, handle func (analyzer *Analyzer, record R))  func () ( *Report,  error)
 <span id="IncrementAnalyze"></span>
 > 增量分析，返回一个函数，每次调用该函数都会分析文件中新增的内容
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestIncrementAnalyze(t *testing.T) {
+	path := `./test/day.2023-09-06.log`
+	reader := survey.IncrementAnalyze(path, func(analyzer *survey.Analyzer, record survey.R) {
+		switch record.GetString("type") {
+		case "open_conn":
+			analyzer.IncreaseValueNonRepeat("开播人数", record, 1, "live_id")
+		case "report_rank":
+			analyzer.IncreaseValue("开始游戏次数", 1)
+			analyzer.Increase("开播时长", record, "game_time")
+			analyzer.Sub(record.GetString("live_id")).IncreaseValue("开始游戏次数", 1)
+			analyzer.Sub(record.GetString("live_id")).Increase("开播时长", record, "game_time")
+		case "statistics":
+			analyzer.IncreaseValueNonRepeat("活跃人数", record, 1, "active_player")
+			analyzer.IncreaseValueNonRepeat("评论人数", record, 1, "comment_player")
+			analyzer.IncreaseValueNonRepeat("点赞人数", record, 1, "like_player")
+			analyzer.Sub(record.GetString("live_id")).IncreaseValueNonRepeat("活跃人数", record, 1, "active_player")
+			analyzer.Sub(record.GetString("live_id")).IncreaseValueNonRepeat("评论人数", record, 1, "comment_player")
+			analyzer.Sub(record.GetString("live_id")).IncreaseValueNonRepeat("点赞人数", record, 1, "like_player")
+			giftId := record.GetString("gift.gift_id")
+			if len(giftId) > 0 {
+				giftPrice := record.GetFloat64("gift.price")
+				giftCount := record.GetFloat64("gift.count")
+				giftSender := record.GetString("gift.gift_senders")
+				analyzer.IncreaseValue("礼物总价值", giftPrice*giftCount)
+				analyzer.IncreaseValueNonRepeat(fmt.Sprintf("送礼人数_%s", giftId), record, 1, giftSender)
+				analyzer.IncreaseValue(fmt.Sprintf("礼物总数_%s", giftId), giftCount)
+				analyzer.Sub(record.GetString("live_id")).IncreaseValue("礼物总价值", giftPrice*giftCount)
+				analyzer.Sub(record.GetString("live_id")).IncreaseValueNonRepeat(fmt.Sprintf("送礼人数_%s", giftId), record, 1, giftSender)
+				analyzer.Sub(record.GetString("live_id")).IncreaseValue(fmt.Sprintf("礼物总数_%s", giftId), giftCount)
+			}
+		}
+	})
+	for i := 0; i < 10; i++ {
+		report, err := reader()
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println(report.FilterSub("warzone0009"))
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
-### Analyzer
+### Analyzer `STRUCT`
 分析器
 ```go
 type Analyzer struct {
@@ -148,12 +214,15 @@ type Analyzer struct {
 #### func (*Analyzer) GetValueString(key string)  string
 > 获取当前记录的值
 ***
-### Flusher
+### Flusher `INTERFACE`
 用于刷新缓冲区的接口
 ```go
-type Flusher struct{}
+type Flusher interface {
+	Flush(records []string)
+	Info() string
+}
 ```
-### FileFlusher
+### FileFlusher `STRUCT`
 
 ```go
 type FileFlusher struct {
@@ -168,20 +237,20 @@ type FileFlusher struct {
 ***
 #### func (*FileFlusher) Info()  string
 ***
-### Option
+### Option `STRUCT`
 选项
 ```go
-type Option struct{}
+type Option func(logger *logger)
 ```
-### Result
+### Result `STRUCT`
 
 ```go
-type Result struct{}
+type Result gjson.Result
 ```
-### R
+### R `STRUCT`
 记录器所记录的一条数据
 ```go
-type R struct{}
+type R string
 ```
 #### func (R) GetTime(layout string)  time.Time
 > 获取该记录的时间
@@ -211,7 +280,7 @@ type R struct{}
 ***
 #### func (R) String()  string
 ***
-### Report
+### Report `STRUCT`
 分析报告
 ```go
 type Report struct {

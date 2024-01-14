@@ -1,42 +1,47 @@
 # Tmpls
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/tmpls)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewGolang](#NewGolang)|创建一个 Golang 配置导出模板
 |[NewJSON](#NewJSON)|暂无描述...
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Golang](#golang)|配置导出模板
-|[JSON](#json)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Golang](#golang)|配置导出模板
+|`STRUCT`|[JSON](#json)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewGolang(packageName string)  *Golang
 <span id="NewGolang"></span>
 > 创建一个 Golang 配置导出模板
+
 ***
 #### func NewJSON()  *JSON
 <span id="NewJSON"></span>
+
 ***
-### Golang
+### Golang `STRUCT`
 配置导出模板
 ```go
 type Golang struct {
@@ -52,7 +57,7 @@ type Golang struct {
 ***
 #### func (*Golang) HasIndex(config *pce.TmplStruct)  bool
 ***
-### JSON
+### JSON `STRUCT`
 
 ```go
 type JSON struct {

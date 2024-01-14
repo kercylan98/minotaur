@@ -1,42 +1,75 @@
 # Dp
 
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/dp)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
+
 dp (DistributionPattern) 提供用于在二维数组中根据不同的特征标记为数组成员建立分布链接的函数和数据结构。该包的目标是实现快速查找与给定位置成员具有相同特征且位置紧邻的其他成员。
 主要特性：
   - 分布链接机制：dp 包提供了一种分布链接的机制，可以根据成员的特征将它们链接在一起。这样，可以快速查找与给定成员具有相同特征且位置紧邻的其他成员。
   - 二维数组支持：该包支持在二维数组中建立分布链接。可以将二维数组中的成员视为节点，并根据其特征进行链接。
   - 快速查找功能：使用 dp 包提供的函数，可以快速查找与给定位置成员具有相同特征且位置紧邻的其他成员。这有助于在二维数组中进行相关性分析或查找相邻成员。
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/dp)
-![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewDistributionPattern](#NewDistributionPattern)|构建一个分布图实例
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[DistributionPattern](#distributionpattern)|分布图
-|[Link](#link)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[DistributionPattern](#distributionpattern)|分布图
+|`STRUCT`|[Link](#link)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewDistributionPattern(sameKindVerifyHandle func (itemA Item)  bool)  *DistributionPattern[Item]
 <span id="NewDistributionPattern"></span>
 > 构建一个分布图实例
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewDistributionPattern(t *testing.T) {
+	dp := NewDistributionPattern[int](func(itemA, itemB int) bool {
+		return itemA == itemB
+	})
+	matrix := []int{1, 1, 2, 2, 2, 2, 1, 2, 2}
+	dp.LoadMatrixWithPos(3, matrix)
+	for pos, link := range dp.links {
+		fmt.Println(pos, link, fmt.Sprintf("%p", link))
+	}
+	fmt.Println()
+	matrix[6] = 2
+	dp.Refresh(6)
+	for pos, link := range dp.links {
+		fmt.Println(pos, link, fmt.Sprintf("%p", link))
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
-### DistributionPattern
+### DistributionPattern `STRUCT`
 分布图
 ```go
 type DistributionPattern[Item any] struct {
@@ -71,7 +104,7 @@ type DistributionPattern[Item any] struct {
 > 通过特定的成员刷新特定位置的分布关系
 >   - 如果矩阵通过 LoadMatrixWithPos 加载，将会重定向至 Refresh
 ***
-### Link
+### Link `STRUCT`
 
 ```go
 type Link[V any] struct {

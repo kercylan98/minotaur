@@ -1,39 +1,43 @@
 # Matrix
 
-matrix 提供了一个简单的二维数组的实现
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/matrix)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+matrix 提供了一个简单的二维数组的实现
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewMatrix](#NewMatrix)|生成特定宽高的二维矩阵
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Matrix](#matrix)|二维矩阵
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Matrix](#matrix)|二维矩阵
 
 </details>
 
 
+***
+## 详情信息
 #### func NewMatrix(width int, height int)  *Matrix[T]
 <span id="NewMatrix"></span>
 > 生成特定宽高的二维矩阵
 >   - 虽然提供了通过x、y坐标的操作函数，但是建议无论如何使用pos进行处理
 >   - 该矩阵为XY，而非YX
+
 ***
-### Matrix
+### Matrix `STRUCT`
 二维矩阵
 ```go
 type Matrix[T any] struct {

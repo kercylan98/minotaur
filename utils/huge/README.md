@@ -1,19 +1,20 @@
 # Huge
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/huge)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewFloat](#NewFloat)|创建一个 Float
 |[NewFloatByString](#NewFloatByString)|通过字符串创建一个 Float
@@ -21,38 +22,44 @@
 |[NewIntByString](#NewIntByString)|通过字符串创建一个 Int
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Float](#float)|暂无描述...
-|[Int](#int)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Float](#float)|暂无描述...
+|`STRUCT`|[Int](#int)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewFloat(x T)  *Float
 <span id="NewFloat"></span>
 > 创建一个 Float
+
 ***
 #### func NewFloatByString(i string)  *Float
 <span id="NewFloatByString"></span>
 > 通过字符串创建一个 Float
 >   - 如果字符串不是一个合法的数字，则返回 0
+
 ***
 #### func NewInt(x T)  *Int
 <span id="NewInt"></span>
 > 创建一个 Int
+
 ***
 #### func NewIntByString(i string)  *Int
 <span id="NewIntByString"></span>
 > 通过字符串创建一个 Int
 >   - 如果字符串不是一个合法的数字，则返回 0
+
 ***
-### Float
+### Float `STRUCT`
 
 ```go
-type Float struct{}
+type Float big.Float
 ```
 #### func (*Float) Copy()  *Float
 ***
@@ -110,10 +117,10 @@ type Float struct{}
 #### func (*Float) IsNegative()  bool
 > 是否为负数
 ***
-### Int
+### Int `STRUCT`
 
 ```go
-type Int struct{}
+type Int big.Int
 ```
 #### func (*Int) Copy()  *Int
 ***

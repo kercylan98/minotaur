@@ -42,31 +42,15 @@ func (b *Builder) Generate() error {
 func (b *Builder) genHeader() {
 	b.title(1, str.FirstUpper(b.p.Name))
 	b.newLine()
-	b.newLine(b.p.FileComments().Clear...).newLine()
 	b.newLine(fmt.Sprintf(`[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/%s)`, b.p.Name))
 	b.newLine(fmt.Sprintf(`![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)`))
+	b.newLine().newLine(b.p.FileComments().Clear...).newLine()
 	b.newLine()
 }
 
 func (b *Builder) genMenus() {
-	b.title(2, "目录")
-	b.newLine("列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️")
-	b.detailsStart("展开 / 折叠目录")
-
-	b.quote("包级函数定义").newLine()
-	b.tableCel("函数", "描述")
-	for _, function := range b.p.PackageFunc() {
-		if function.Test || function.Internal {
-			continue
-		}
-		b.tableRow(
-			fmt.Sprintf("[%s](#%s)", function.Name, function.Name),
-			collection.FindFirstOrDefaultInSlice(function.Comments.Clear, "暂无描述..."),
-		)
-	}
-	b.newLine().newLine()
-	b.quote("结构体定义").newLine()
-	b.tableCel("结构体", "描述")
+	packageFunction := b.p.PackageFunc()
+	var structList []*astgo.Struct
 	for _, f := range b.p.Files {
 		if strings.HasSuffix(f.FilePath, "_test.go") {
 			continue
@@ -75,16 +59,53 @@ func (b *Builder) genMenus() {
 			if structInfo.Test || structInfo.Internal {
 				continue
 			}
+			structList = append(structList, structInfo)
+		}
+	}
+
+	if len(packageFunction)+len(structList) > 0 {
+		b.title(2, "目录导航")
+		b.newLine("列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️")
+		b.detailsStart("展开 / 折叠目录导航")
+	}
+
+	if len(packageFunction) > 0 {
+		b.quote("包级函数定义").newLine()
+		b.tableCel("函数名称", "描述")
+		for _, function := range packageFunction {
+			if function.Test || function.Internal {
+				continue
+			}
 			b.tableRow(
+				fmt.Sprintf("[%s](#%s)", function.Name, function.Name),
+				collection.FindFirstOrDefaultInSlice(function.Comments.Clear, "暂无描述..."),
+			)
+		}
+		b.newLine().newLine()
+	}
+
+	if len(structList) > 0 {
+		b.quote("类型定义").newLine()
+		b.tableCel("类型", "名称", "描述")
+		for _, structInfo := range structList {
+			if structInfo.Test || structInfo.Internal {
+				continue
+			}
+			b.tableRow(
+				super.If(structInfo.Interface, "`INTERFACE`", "`STRUCT`"),
 				fmt.Sprintf("[%s](#%s)", structInfo.Name, strings.ToLower(structInfo.Name)),
 				collection.FindFirstOrDefaultInSlice(structInfo.Comments.Clear, "暂无描述..."),
 			)
 		}
+		b.detailsEnd()
 	}
-	b.detailsEnd()
+
+	b.newLine("***")
 }
 
 func (b *Builder) genStructs() {
+	b.title(2, "详情信息")
+
 	var funcHandler = func(params []*astgo.Field) string {
 		var s string
 		var brackets bool
@@ -122,6 +143,20 @@ func (b *Builder) genStructs() {
 		for _, comment := range function.Comments.Clear {
 			b.quote(comment)
 		}
+		b.newLine()
+		if example := b.p.GetExampleTest(function); example != nil {
+			b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+		}
+		if unitTest := b.p.GetUnitTest(function); unitTest != nil {
+			b.detailsStart("查看 / 收起单元测试")
+			b.newLine("```go\n", unitTest.Code(), "```\n")
+			b.detailsEnd()
+		}
+		if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
+			b.detailsStart("查看 / 收起基准测试")
+			b.newLine("```go\n", benchmarkTest.Code(), "```\n")
+			b.detailsEnd()
+		}
 		b.newLine("***")
 	}
 
@@ -130,10 +165,10 @@ func (b *Builder) genStructs() {
 			if structInfo.Internal || structInfo.Test {
 				continue
 			}
-			b.title(3, structInfo.Name)
+			b.title(3, fmt.Sprintf("%s `%s`", structInfo.Name, super.If(structInfo.Interface, "INTERFACE", "STRUCT")))
 			b.newLine(structInfo.Comments.Clear...)
 			b.newLine("```go")
-			structDefine := fmt.Sprintf("type %s struct {%s}",
+			structDefine := fmt.Sprintf("type %s %s",
 				func() string {
 					var sb strings.Builder
 					sb.WriteString(structInfo.Name)
@@ -150,11 +185,27 @@ func (b *Builder) genStructs() {
 				}(),
 				func() string {
 					var sb strings.Builder
-					if len(structInfo.Fields) > 0 {
-						sb.WriteString("\n")
-					}
-					for _, field := range structInfo.Fields {
-						sb.WriteString(fmt.Sprintf("\t%s %s\n", field.Name, field.Type.Sign))
+					if structInfo.Type == nil {
+						var head = "struct"
+						if structInfo.Interface {
+							head = "interface"
+						}
+						sb.WriteString(head + " {")
+						if len(structInfo.Fields) > 0 {
+							sb.WriteString("\n")
+						}
+						if structInfo.Interface {
+							for _, field := range structInfo.Fields {
+								sb.WriteString(fmt.Sprintf("\t%s %s\n", field.Name, strings.TrimPrefix(field.Type.Sign, "func")))
+							}
+						} else {
+							for _, field := range structInfo.Fields {
+								sb.WriteString(fmt.Sprintf("\t%s %s\n", field.Name, field.Type.Sign))
+							}
+						}
+						sb.WriteString("}")
+					} else {
+						sb.WriteString(structInfo.Type.Sign)
 					}
 					return sb.String()
 				}())
@@ -183,10 +234,25 @@ func (b *Builder) genStructs() {
 					}(),
 					funcHandler(function.Results),
 				)))
-				//b.newLine(fmt.Sprintf(`<span id="%s"></span>`, function.Name))
 				b.quote()
 				for _, comment := range function.Comments.Clear {
 					b.quote(comment)
+				}
+				if function.Name == "Write" {
+					fmt.Println()
+				}
+				if example := b.p.GetExampleTest(function); example != nil {
+					b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+				}
+				if unitTest := b.p.GetUnitTest(function); unitTest != nil {
+					b.detailsStart("查看 / 收起单元测试")
+					b.newLine("```go\n", unitTest.Code(), "```\n")
+					b.detailsEnd()
+				}
+				if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
+					b.detailsStart("查看 / 收起基准测试")
+					b.newLine("```go\n", benchmarkTest.Code(), "```\n")
+					b.detailsEnd()
 				}
 				b.newLine("***")
 			}
@@ -243,7 +309,7 @@ func (b *Builder) tableRow(str ...string) *Builder {
 }
 
 func (b *Builder) detailsStart(title string) *Builder {
-	return b.newLine("<details>", "<summary>"+title+"</summary").newLine().newLine()
+	return b.newLine("<details>", "<summary>"+title+"</summary>").newLine().newLine()
 }
 
 func (b *Builder) detailsEnd() *Builder {

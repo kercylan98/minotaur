@@ -1,19 +1,20 @@
 # Pce
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/pce)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewExporter](#NewExporter)|创建导出器
 |[GetFieldGolangType](#GetFieldGolangType)|获取字段的 Golang 类型
@@ -21,81 +22,112 @@
 |[NewLoader](#NewLoader)|创建加载器
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Config](#config)|配置解析接口
-|[DataTmpl](#datatmpl)|数据导出模板
-|[Exporter](#exporter)|导出器
-|[Field](#field)|基本字段类型接口
-|[Int](#int)|暂无描述...
-|[Int8](#int8)|暂无描述...
-|[Int16](#int16)|暂无描述...
-|[Int32](#int32)|暂无描述...
-|[Int64](#int64)|暂无描述...
-|[Uint](#uint)|暂无描述...
-|[Uint8](#uint8)|暂无描述...
-|[Uint16](#uint16)|暂无描述...
-|[Uint32](#uint32)|暂无描述...
-|[Uint64](#uint64)|暂无描述...
-|[Float32](#float32)|暂无描述...
-|[Float64](#float64)|暂无描述...
-|[String](#string)|暂无描述...
-|[Bool](#bool)|暂无描述...
-|[Byte](#byte)|暂无描述...
-|[Rune](#rune)|暂无描述...
-|[Complex64](#complex64)|暂无描述...
-|[Complex128](#complex128)|暂无描述...
-|[Uintptr](#uintptr)|暂无描述...
-|[Double](#double)|暂无描述...
-|[Float](#float)|暂无描述...
-|[Long](#long)|暂无描述...
-|[Short](#short)|暂无描述...
-|[Char](#char)|暂无描述...
-|[Number](#number)|暂无描述...
-|[Integer](#integer)|暂无描述...
-|[Boolean](#boolean)|暂无描述...
-|[Loader](#loader)|配置加载器
-|[DataInfo](#datainfo)|配置数据
-|[DataField](#datafield)|配置数据字段
-|[Tmpl](#tmpl)|配置结构模板接口
-|[TmplField](#tmplfield)|模板字段
-|[TmplStruct](#tmplstruct)|模板结构
+|类型|名称|描述
+|:--|:--|:--
+|`INTERFACE`|[Config](#config)|配置解析接口
+|`INTERFACE`|[DataTmpl](#datatmpl)|数据导出模板
+|`STRUCT`|[Exporter](#exporter)|导出器
+|`INTERFACE`|[Field](#field)|基本字段类型接口
+|`STRUCT`|[Int](#int)|暂无描述...
+|`STRUCT`|[Int8](#int8)|暂无描述...
+|`STRUCT`|[Int16](#int16)|暂无描述...
+|`STRUCT`|[Int32](#int32)|暂无描述...
+|`STRUCT`|[Int64](#int64)|暂无描述...
+|`STRUCT`|[Uint](#uint)|暂无描述...
+|`STRUCT`|[Uint8](#uint8)|暂无描述...
+|`STRUCT`|[Uint16](#uint16)|暂无描述...
+|`STRUCT`|[Uint32](#uint32)|暂无描述...
+|`STRUCT`|[Uint64](#uint64)|暂无描述...
+|`STRUCT`|[Float32](#float32)|暂无描述...
+|`STRUCT`|[Float64](#float64)|暂无描述...
+|`STRUCT`|[String](#string)|暂无描述...
+|`STRUCT`|[Bool](#bool)|暂无描述...
+|`STRUCT`|[Byte](#byte)|暂无描述...
+|`STRUCT`|[Rune](#rune)|暂无描述...
+|`STRUCT`|[Complex64](#complex64)|暂无描述...
+|`STRUCT`|[Complex128](#complex128)|暂无描述...
+|`STRUCT`|[Uintptr](#uintptr)|暂无描述...
+|`STRUCT`|[Double](#double)|暂无描述...
+|`STRUCT`|[Float](#float)|暂无描述...
+|`STRUCT`|[Long](#long)|暂无描述...
+|`STRUCT`|[Short](#short)|暂无描述...
+|`STRUCT`|[Char](#char)|暂无描述...
+|`STRUCT`|[Number](#number)|暂无描述...
+|`STRUCT`|[Integer](#integer)|暂无描述...
+|`STRUCT`|[Boolean](#boolean)|暂无描述...
+|`STRUCT`|[Loader](#loader)|配置加载器
+|`STRUCT`|[DataInfo](#datainfo)|配置数据
+|`STRUCT`|[DataField](#datafield)|配置数据字段
+|`INTERFACE`|[Tmpl](#tmpl)|配置结构模板接口
+|`STRUCT`|[TmplField](#tmplfield)|模板字段
+|`STRUCT`|[TmplStruct](#tmplstruct)|模板结构
 
 </details>
 
 
+***
+## 详情信息
 #### func NewExporter()  *Exporter
 <span id="NewExporter"></span>
 > 创建导出器
+
 ***
 #### func GetFieldGolangType(field Field)  string
 <span id="GetFieldGolangType"></span>
 > 获取字段的 Golang 类型
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestGetFieldGolangType(t *testing.T) {
+	fmt.Println(pce.GetFieldGolangType(new(pce.String)))
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func GetFields()  []Field
 <span id="GetFields"></span>
 > 获取所有内置支持的字段
+
 ***
 #### func NewLoader(fields []Field)  *Loader
 <span id="NewLoader"></span>
 > 创建加载器
 >   - 加载器被用于加载配置表的数据和结构信息
+
 ***
-### Config
+### Config `INTERFACE`
 配置解析接口
   - 用于将配置文件解析为可供分析的数据结构
   - 可以在 cs 包中找到内置提供的实现及其模板，例如 cs.XlsxIndexConfig
 ```go
-type Config struct{}
+type Config interface {
+	GetConfigName() string
+	GetDisplayName() string
+	GetDescription() string
+	GetIndexCount() int
+	GetFields() []DataField
+	GetData() [][]DataInfo
+}
 ```
-### DataTmpl
+### DataTmpl `INTERFACE`
 数据导出模板
 ```go
-type DataTmpl struct{}
+type DataTmpl interface {
+	Render(data map[any]any) (string, error)
+}
 ```
-### Exporter
+### Exporter `STRUCT`
 导出器
 ```go
 type Exporter struct{}
@@ -106,15 +138,19 @@ type Exporter struct{}
 #### func (*Exporter) ExportData(tmpl DataTmpl, data map[any]any)  []byte,  error
 > 导出数据
 ***
-### Field
+### Field `INTERFACE`
 基本字段类型接口
 ```go
-type Field struct{}
+type Field interface {
+	TypeName() string
+	Zero() any
+	Parse(value string) any
+}
 ```
-### Int
+### Int `STRUCT`
 
 ```go
-type Int struct{}
+type Int int
 ```
 #### func (Int) TypeName()  string
 ***
@@ -122,10 +158,10 @@ type Int struct{}
 ***
 #### func (Int) Parse(value string)  any
 ***
-### Int8
+### Int8 `STRUCT`
 
 ```go
-type Int8 struct{}
+type Int8 int8
 ```
 #### func (Int8) TypeName()  string
 ***
@@ -133,10 +169,10 @@ type Int8 struct{}
 ***
 #### func (Int8) Parse(value string)  any
 ***
-### Int16
+### Int16 `STRUCT`
 
 ```go
-type Int16 struct{}
+type Int16 int16
 ```
 #### func (Int16) TypeName()  string
 ***
@@ -144,10 +180,10 @@ type Int16 struct{}
 ***
 #### func (Int16) Parse(value string)  any
 ***
-### Int32
+### Int32 `STRUCT`
 
 ```go
-type Int32 struct{}
+type Int32 int32
 ```
 #### func (Int32) TypeName()  string
 ***
@@ -155,10 +191,10 @@ type Int32 struct{}
 ***
 #### func (Int32) Parse(value string)  any
 ***
-### Int64
+### Int64 `STRUCT`
 
 ```go
-type Int64 struct{}
+type Int64 int64
 ```
 #### func (Int64) TypeName()  string
 ***
@@ -166,10 +202,10 @@ type Int64 struct{}
 ***
 #### func (Int64) Parse(value string)  any
 ***
-### Uint
+### Uint `STRUCT`
 
 ```go
-type Uint struct{}
+type Uint uint
 ```
 #### func (Uint) TypeName()  string
 ***
@@ -177,10 +213,10 @@ type Uint struct{}
 ***
 #### func (Uint) Parse(value string)  any
 ***
-### Uint8
+### Uint8 `STRUCT`
 
 ```go
-type Uint8 struct{}
+type Uint8 uint8
 ```
 #### func (Uint8) TypeName()  string
 ***
@@ -188,10 +224,10 @@ type Uint8 struct{}
 ***
 #### func (Uint8) Parse(value string)  any
 ***
-### Uint16
+### Uint16 `STRUCT`
 
 ```go
-type Uint16 struct{}
+type Uint16 uint16
 ```
 #### func (Uint16) TypeName()  string
 ***
@@ -199,10 +235,10 @@ type Uint16 struct{}
 ***
 #### func (Uint16) Parse(value string)  any
 ***
-### Uint32
+### Uint32 `STRUCT`
 
 ```go
-type Uint32 struct{}
+type Uint32 uint32
 ```
 #### func (Uint32) TypeName()  string
 ***
@@ -210,10 +246,10 @@ type Uint32 struct{}
 ***
 #### func (Uint32) Parse(value string)  any
 ***
-### Uint64
+### Uint64 `STRUCT`
 
 ```go
-type Uint64 struct{}
+type Uint64 uint64
 ```
 #### func (Uint64) TypeName()  string
 ***
@@ -221,10 +257,10 @@ type Uint64 struct{}
 ***
 #### func (Uint64) Parse(value string)  any
 ***
-### Float32
+### Float32 `STRUCT`
 
 ```go
-type Float32 struct{}
+type Float32 float32
 ```
 #### func (Float32) TypeName()  string
 ***
@@ -232,10 +268,10 @@ type Float32 struct{}
 ***
 #### func (Float32) Parse(value string)  any
 ***
-### Float64
+### Float64 `STRUCT`
 
 ```go
-type Float64 struct{}
+type Float64 float64
 ```
 #### func (Float64) TypeName()  string
 ***
@@ -243,10 +279,10 @@ type Float64 struct{}
 ***
 #### func (Float64) Parse(value string)  any
 ***
-### String
+### String `STRUCT`
 
 ```go
-type String struct{}
+type String string
 ```
 #### func (String) TypeName()  string
 ***
@@ -254,10 +290,10 @@ type String struct{}
 ***
 #### func (String) Parse(value string)  any
 ***
-### Bool
+### Bool `STRUCT`
 
 ```go
-type Bool struct{}
+type Bool bool
 ```
 #### func (Bool) TypeName()  string
 ***
@@ -265,10 +301,10 @@ type Bool struct{}
 ***
 #### func (Bool) Parse(value string)  any
 ***
-### Byte
+### Byte `STRUCT`
 
 ```go
-type Byte struct{}
+type Byte byte
 ```
 #### func (Byte) TypeName()  string
 ***
@@ -276,10 +312,10 @@ type Byte struct{}
 ***
 #### func (Byte) Parse(value string)  any
 ***
-### Rune
+### Rune `STRUCT`
 
 ```go
-type Rune struct{}
+type Rune rune
 ```
 #### func (Rune) TypeName()  string
 ***
@@ -287,10 +323,10 @@ type Rune struct{}
 ***
 #### func (Rune) Parse(value string)  any
 ***
-### Complex64
+### Complex64 `STRUCT`
 
 ```go
-type Complex64 struct{}
+type Complex64 complex64
 ```
 #### func (Complex64) TypeName()  string
 ***
@@ -298,10 +334,10 @@ type Complex64 struct{}
 ***
 #### func (Complex64) Parse(value string)  any
 ***
-### Complex128
+### Complex128 `STRUCT`
 
 ```go
-type Complex128 struct{}
+type Complex128 complex128
 ```
 #### func (Complex128) TypeName()  string
 ***
@@ -309,10 +345,10 @@ type Complex128 struct{}
 ***
 #### func (Complex128) Parse(value string)  any
 ***
-### Uintptr
+### Uintptr `STRUCT`
 
 ```go
-type Uintptr struct{}
+type Uintptr uintptr
 ```
 #### func (Uintptr) TypeName()  string
 ***
@@ -320,10 +356,10 @@ type Uintptr struct{}
 ***
 #### func (Uintptr) Parse(value string)  any
 ***
-### Double
+### Double `STRUCT`
 
 ```go
-type Double struct{}
+type Double float64
 ```
 #### func (Double) TypeName()  string
 ***
@@ -331,10 +367,10 @@ type Double struct{}
 ***
 #### func (Double) Parse(value string)  any
 ***
-### Float
+### Float `STRUCT`
 
 ```go
-type Float struct{}
+type Float float32
 ```
 #### func (Float) TypeName()  string
 ***
@@ -342,10 +378,10 @@ type Float struct{}
 ***
 #### func (Float) Parse(value string)  any
 ***
-### Long
+### Long `STRUCT`
 
 ```go
-type Long struct{}
+type Long int64
 ```
 #### func (Long) TypeName()  string
 ***
@@ -353,10 +389,10 @@ type Long struct{}
 ***
 #### func (Long) Parse(value string)  any
 ***
-### Short
+### Short `STRUCT`
 
 ```go
-type Short struct{}
+type Short int16
 ```
 #### func (Short) TypeName()  string
 ***
@@ -364,10 +400,10 @@ type Short struct{}
 ***
 #### func (Short) Parse(value string)  any
 ***
-### Char
+### Char `STRUCT`
 
 ```go
-type Char struct{}
+type Char int8
 ```
 #### func (Char) TypeName()  string
 ***
@@ -375,10 +411,10 @@ type Char struct{}
 ***
 #### func (Char) Parse(value string)  any
 ***
-### Number
+### Number `STRUCT`
 
 ```go
-type Number struct{}
+type Number float64
 ```
 #### func (Number) TypeName()  string
 ***
@@ -386,10 +422,10 @@ type Number struct{}
 ***
 #### func (Number) Parse(value string)  any
 ***
-### Integer
+### Integer `STRUCT`
 
 ```go
-type Integer struct{}
+type Integer int64
 ```
 #### func (Integer) TypeName()  string
 ***
@@ -397,10 +433,10 @@ type Integer struct{}
 ***
 #### func (Integer) Parse(value string)  any
 ***
-### Boolean
+### Boolean `STRUCT`
 
 ```go
-type Boolean struct{}
+type Boolean bool
 ```
 #### func (Boolean) TypeName()  string
 ***
@@ -408,7 +444,7 @@ type Boolean struct{}
 ***
 #### func (Boolean) Parse(value string)  any
 ***
-### Loader
+### Loader `STRUCT`
 配置加载器
 ```go
 type Loader struct {
@@ -421,7 +457,7 @@ type Loader struct {
 #### func (*Loader) LoadData(config Config)  map[any]any
 > 加载配置并得到配置数据
 ***
-### DataInfo
+### DataInfo `STRUCT`
 配置数据
 ```go
 type DataInfo struct {
@@ -429,7 +465,7 @@ type DataInfo struct {
 	Value string
 }
 ```
-### DataField
+### DataField `STRUCT`
 配置数据字段
 ```go
 type DataField struct {
@@ -440,12 +476,14 @@ type DataField struct {
 	ExportType string
 }
 ```
-### Tmpl
+### Tmpl `INTERFACE`
 配置结构模板接口
 ```go
-type Tmpl struct{}
+type Tmpl interface {
+	Render(templates ...*TmplStruct) (string, error)
+}
 ```
-### TmplField
+### TmplField `STRUCT`
 模板字段
 ```go
 type TmplField struct {
@@ -467,7 +505,7 @@ type TmplField struct {
 #### func (*TmplField) IsSlice()  bool
 > 是否是切片类型
 ***
-### TmplStruct
+### TmplStruct `STRUCT`
 模板结构
 ```go
 type TmplStruct struct {

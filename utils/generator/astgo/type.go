@@ -65,7 +65,13 @@ func newType(expr ast.Expr) *Type {
 				return "(" + f + ")"
 			}
 			return f
-		}(), handler(e.Results))))
+		}(), func() string {
+			f := handler(e.Results)
+			if e.Results != nil && len(e.Results.List) >= 2 && !strings.HasSuffix(f, "(") {
+				return "(" + f + ")"
+			}
+			return f
+		}())))
 	case *ast.InterfaceType:
 		str.WriteString("interface {")
 		if e.Methods != nil && len(e.Methods.List) > 0 {

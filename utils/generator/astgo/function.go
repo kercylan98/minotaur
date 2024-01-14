@@ -1,12 +1,16 @@
 package astgo
 
 import (
+	"bytes"
 	"go/ast"
+	"go/format"
+	"go/token"
 	"strings"
 )
 
 func newFunction(astFunc *ast.FuncDecl) *Function {
 	f := &Function{
+		decl:     astFunc,
 		Name:     astFunc.Name.String(),
 		Comments: newComment(astFunc.Doc),
 	}
@@ -37,6 +41,7 @@ func newFunction(astFunc *ast.FuncDecl) *Function {
 }
 
 type Function struct {
+	decl        *ast.FuncDecl
 	Name        string   // 函数名
 	Internal    bool     // 内部函数
 	Generic     []*Field // 泛型定义
@@ -48,4 +53,12 @@ type Function struct {
 	IsTest      bool     // 是否为单元测试
 	IsBenchmark bool     // 是否为基准测试
 	Test        bool     // 是否为测试函数
+}
+
+func (f *Function) Code() string {
+	var bb bytes.Buffer
+	if err := format.Node(&bb, token.NewFileSet(), f.decl); err != nil {
+		panic(err)
+	}
+	return bb.String() + "\n"
 }

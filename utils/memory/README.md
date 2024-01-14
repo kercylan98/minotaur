@@ -1,19 +1,20 @@
 # Memory
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/memory)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[Run](#Run)|运行持久化缓存程序
 |[BindPersistCacheProgram](#BindPersistCacheProgram)|绑定持久化缓存程序
@@ -21,18 +22,21 @@
 |[NewOption](#NewOption)|暂无描述...
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Option](#option)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Option](#option)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func Run()
 <span id="Run"></span>
 > 运行持久化缓存程序
+
 ***
 #### func BindPersistCacheProgram(name string, handler OutputParamHandlerFunc, option ...*Option)  func ()
 <span id="BindPersistCacheProgram"></span>
@@ -46,6 +50,7 @@
 >   - 持久化程序处理函数参数类型必须与绑定的缓存程序输出参数类型一致，并且相同 name 的持久化程序必须在 BindAction 之后进行绑定
 >   - 默认情况下只有执行该函数返回的函数才会进行持久化，如果需要持久化策略，可以设置 option 参数或者自行实现策略调用返回的函数
 >   - 所有持久化程序绑定完成后，应该主动调用 Run 函数运行
+
 ***
 #### func BindAction(name string, handler Func)  Func
 <span id="BindAction"></span>
@@ -60,11 +65,38 @@
 > 
 > 使用场景：
 >   - 例如在游戏中，需要根据玩家 ID 查询玩家信息，可以使用该函数进行绑定，当查询玩家信息时，如果缓存中存在该玩家信息，将直接返回缓存中的数据，否则将执行 handler 函数进行查询并缓存
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestBindAction(t *testing.T) {
+	var player *Player
+	player = QueryPlayer(1)
+	fmt.Println(player.ID)
+	player.ID = 666
+	player = QueryPlayer(1)
+	fmt.Println(player.ID)
+	player = QueryPlayer(2)
+	fmt.Println(player.ID)
+	QueryPlayerPersist()
+	time.Sleep(times.Week)
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func NewOption()  *Option
 <span id="NewOption"></span>
+
 ***
-### Option
+### Option `STRUCT`
 
 ```go
 type Option struct {

@@ -1,5 +1,8 @@
 # Buffer
 
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/buffer)
+![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
+
 buffer 提供了缓冲区相关的实用程序。
 
 包括创建、读取和写入缓冲区的函数。
@@ -8,45 +11,67 @@ buffer 提供了缓冲区相关的实用程序。
 
 无界缓冲区的所有方法都是线程安全的，除了用于同步的互斥锁外，不会阻塞任何东西。
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/buffer)
-![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewRing](#NewRing)|创建一个并发不安全的环形缓冲区
 |[NewRingUnbounded](#NewRingUnbounded)|创建一个并发安全的基于环形缓冲区实现的无界缓冲区
 |[NewUnbounded](#NewUnbounded)|创建一个无界缓冲区
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Ring](#ring)|环形缓冲区
-|[RingUnbounded](#ringunbounded)|基于环形缓冲区实现的无界缓冲区
-|[Unbounded](#unbounded)|是无界缓冲区的实现
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Ring](#ring)|环形缓冲区
+|`STRUCT`|[RingUnbounded](#ringunbounded)|基于环形缓冲区实现的无界缓冲区
+|`STRUCT`|[Unbounded](#unbounded)|是无界缓冲区的实现
 
 </details>
 
 
+***
+## 详情信息
 #### func NewRing(initSize ...int)  *Ring[T]
 <span id="NewRing"></span>
 > 创建一个并发不安全的环形缓冲区
 >   - initSize: 初始容量
 > 
 > 当初始容量小于 2 或未设置时，将会使用默认容量 2
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewRing(t *testing.T) {
+	ring := buffer.NewRing[int]()
+	for i := 0; i < 100; i++ {
+		ring.Write(i)
+		t.Log(ring.Read())
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func NewRingUnbounded(bufferSize int)  *RingUnbounded[T]
 <span id="NewRingUnbounded"></span>
 > 创建一个并发安全的基于环形缓冲区实现的无界缓冲区
+
 ***
 #### func NewUnbounded()  *Unbounded[V]
 <span id="NewUnbounded"></span>
@@ -55,8 +80,9 @@ buffer 提供了缓冲区相关的实用程序。
 > 
 > 该缓冲区来源于 gRPC 的实现，用于在不使用额外 goroutine 的情况下实现无界缓冲区
 >   - 该缓冲区的所有方法都是线程安全的，除了用于同步的互斥锁外，不会阻塞任何东西
+
 ***
-### Ring
+### Ring `STRUCT`
 环形缓冲区
 ```go
 type Ring[T any] struct {
@@ -69,6 +95,29 @@ type Ring[T any] struct {
 ```
 #### func (*Ring) Read()  T,  error
 > 读取数据
+<details>
+<summary>查看 / 收起基准测试</summary>
+
+
+```go
+
+func BenchmarkRing_Read(b *testing.B) {
+	ring := buffer.NewRing[int](1024)
+	for i := 0; i < b.N; i++ {
+		ring.Write(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ring.Read()
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*Ring) ReadAll()  []T
 > 读取所有数据
@@ -78,6 +127,26 @@ type Ring[T any] struct {
 ***
 #### func (*Ring) Write(v T)
 > 写入数据
+<details>
+<summary>查看 / 收起基准测试</summary>
+
+
+```go
+
+func BenchmarkRing_Write(b *testing.B) {
+	ring := buffer.NewRing[int](1024)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ring.Write(i)
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*Ring) IsEmpty()  bool
 > 是否为空
@@ -91,7 +160,7 @@ type Ring[T any] struct {
 #### func (*Ring) Reset()
 > 重置缓冲区
 ***
-### RingUnbounded
+### RingUnbounded `STRUCT`
 基于环形缓冲区实现的无界缓冲区
 ```go
 type RingUnbounded[T any] struct {
@@ -106,17 +175,87 @@ type RingUnbounded[T any] struct {
 ```
 #### func (*RingUnbounded) Write(v T)
 > 写入数据
+<details>
+<summary>查看 / 收起基准测试</summary>
+
+
+```go
+
+func BenchmarkRingUnbounded_Write(b *testing.B) {
+	ring := buffer.NewRingUnbounded[int](1024 * 16)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ring.Write(i)
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*RingUnbounded) Read()  chan T
 > 读取数据
+<details>
+<summary>查看 / 收起基准测试</summary>
+
+
+```go
+
+func BenchmarkRingUnbounded_Read(b *testing.B) {
+	ring := buffer.NewRingUnbounded[int](1024 * 16)
+	for i := 0; i < b.N; i++ {
+		ring.Write(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		<-ring.Read()
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*RingUnbounded) Closed()  bool
 > 判断缓冲区是否已关闭
 ***
 #### func (*RingUnbounded) Close()  chan struct {}
 > 关闭缓冲区，关闭后将不再接收新数据，但是已有数据仍然可以读取
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestRingUnbounded_Close(t *testing.T) {
+	ring := buffer.NewRingUnbounded[int](1024 * 16)
+	for i := 0; i < 100; i++ {
+		ring.Write(i)
+	}
+	t.Log("write done")
+	ring.Close()
+	t.Log("close done")
+	for v := range ring.Read() {
+		ring.Write(v)
+		t.Log(v)
+	}
+	t.Log("read done")
+}
+
+```
+
+
+</details>
+
+
 ***
-### Unbounded
+### Unbounded `STRUCT`
 是无界缓冲区的实现
 ```go
 type Unbounded[V any] struct {
@@ -135,6 +274,27 @@ type Unbounded[V any] struct {
 ***
 #### func (*Unbounded) Get()  chan V
 > 获取读取通道
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestUnbounded_Get(t *testing.T) {
+	ub := buffer.NewUnbounded[int]()
+	for i := 0; i < 100; i++ {
+		ub.Put(i + 1)
+		fmt.Println(<-ub.Get())
+		ub.Load()
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*Unbounded) Close()
 > 关闭

@@ -1,27 +1,10 @@
 # Game
 
-game 目录下包含了各类通用的游戏玩法性内容，其中该目录主要为基础性内容，具体目录将对应不同的游戏功能性内容。
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/game)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
-<details>
-<summary>展开 / 折叠目录</summary
+game 目录下包含了各类通用的游戏玩法性内容，其中该目录主要为基础性内容，具体目录将对应不同的游戏功能性内容。
 
 
-> 包级函数定义
-
-|函数|描述
-|:--|:--
-
-
-> 结构体定义
-
-|结构体|描述
-|:--|:--
-
-</details>
-
-
+***
+## 详情信息

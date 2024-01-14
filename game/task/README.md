@@ -1,19 +1,20 @@
 # Task
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/task)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[Cond](#Cond)|创建任务条件
 |[RegisterRefreshTaskCounterEvent](#RegisterRefreshTaskCounterEvent)|注册特定任务类型的刷新任务计数器事件处理函数
@@ -29,48 +30,95 @@
 |[NewTask](#NewTask)|生成任务
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Condition](#condition)|任务条件
-|[RefreshTaskCounterEventHandler](#refreshtaskcountereventhandler)|暂无描述...
-|[Option](#option)|任务选项
-|[Status](#status)|暂无描述...
-|[Task](#task)|是对任务信息进行描述和处理的结构体
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Condition](#condition)|任务条件
+|`STRUCT`|[RefreshTaskCounterEventHandler](#refreshtaskcountereventhandler)|暂无描述...
+|`STRUCT`|[Option](#option)|任务选项
+|`STRUCT`|[Status](#status)|暂无描述...
+|`STRUCT`|[Task](#task)|是对任务信息进行描述和处理的结构体
 
 </details>
 
 
+***
+## 详情信息
 #### func Cond(k any, v any)  Condition
 <span id="Cond"></span>
 > 创建任务条件
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestCond(t *testing.T) {
+	task := NewTask(WithType("T"), WithCounter(5), WithCondition(Cond("N", 5).Cond("M", 10)))
+	task.AssignConditionValueAndRefresh("N", 5)
+	task.AssignConditionValueAndRefresh("M", 10)
+	RegisterRefreshTaskCounterEvent[*Player](task.Type, func(taskType string, trigger *Player, count int64) {
+		fmt.Println("Player", count)
+		for _, t := range trigger.tasks[taskType] {
+			fmt.Println(t.CurrCount, t.IncrementCounter(count).Status)
+		}
+	})
+	RegisterRefreshTaskConditionEvent[*Player](task.Type, func(taskType string, trigger *Player, condition Condition) {
+		fmt.Println("Player", condition)
+		for _, t := range trigger.tasks[taskType] {
+			fmt.Println(t.CurrCount, t.AssignConditionValueAndRefresh("N", 5).Status)
+		}
+	})
+	RegisterRefreshTaskCounterEvent[*Monster](task.Type, func(taskType string, trigger *Monster, count int64) {
+		fmt.Println("Monster", count)
+	})
+	player := &Player{tasks: map[string][]*Task{task.Type: {task}}}
+	OnRefreshTaskCounterEvent(task.Type, player, 1)
+	OnRefreshTaskCounterEvent(task.Type, player, 2)
+	OnRefreshTaskCounterEvent(task.Type, player, 3)
+	OnRefreshTaskCounterEvent(task.Type, new(Monster), 3)
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func RegisterRefreshTaskCounterEvent(taskType string, handler RefreshTaskCounterEventHandler[Trigger])
 <span id="RegisterRefreshTaskCounterEvent"></span>
 > 注册特定任务类型的刷新任务计数器事件处理函数
+
 ***
 #### func OnRefreshTaskCounterEvent(taskType string, trigger any, count int64)
 <span id="OnRefreshTaskCounterEvent"></span>
 > 触发特定任务类型的刷新任务计数器事件
+
 ***
 #### func RegisterRefreshTaskConditionEvent(taskType string, handler RefreshTaskConditionEventHandler[Trigger])
 <span id="RegisterRefreshTaskConditionEvent"></span>
 > 注册特定任务类型的刷新任务条件事件处理函数
+
 ***
 #### func OnRefreshTaskConditionEvent(taskType string, trigger any, condition Condition)
 <span id="OnRefreshTaskConditionEvent"></span>
 > 触发特定任务类型的刷新任务条件事件
+
 ***
 #### func WithType(taskType string)  Option
 <span id="WithType"></span>
 > 设置任务类型
+
 ***
 #### func WithCondition(condition Condition)  Option
 <span id="WithCondition"></span>
 > 设置任务完成条件，当满足条件时，任务状态为完成
 >   - 任务条件值需要变更时可通过 Task.AssignConditionValueAndRefresh 方法变更
 >   - 当多次设置该选项时，后面的设置会覆盖之前的设置
+
 ***
 #### func WithCounter(counter int64, initCount ...int64)  Option
 <span id="WithCounter"></span>
@@ -78,29 +126,34 @@
 >   - 一些场景下，任务计数器可能会溢出，此时可通过 WithOverflowCounter 设置可溢出的任务计数器
 >   - 当多次设置该选项时，后面的设置会覆盖之前的设置
 >   - 如果需要初始化计数器的值，可通过 initCount 参数设置
+
 ***
 #### func WithOverflowCounter(counter int64, initCount ...int64)  Option
 <span id="WithOverflowCounter"></span>
 > 设置可溢出的任务计数器，当计数器达到要求时，任务状态为完成
 >   - 当多次设置该选项时，后面的设置会覆盖之前的设置
 >   - 如果需要初始化计数器的值，可通过 initCount 参数设置
+
 ***
 #### func WithDeadline(deadline time.Time)  Option
 <span id="WithDeadline"></span>
 > 设置任务截止时间，超过截至时间并且任务未完成时，任务状态为失败
+
 ***
 #### func WithLimitedDuration(start time.Time, duration time.Duration)  Option
 <span id="WithLimitedDuration"></span>
 > 设置任务限时，超过限时时间并且任务未完成时，任务状态为失败
+
 ***
 #### func NewTask(options ...Option)  *Task
 <span id="NewTask"></span>
 > 生成任务
+
 ***
-### Condition
+### Condition `STRUCT`
 任务条件
 ```go
-type Condition struct{}
+type Condition map[any]any
 ```
 #### func (Condition) Cond(k any, v any)  Condition
 > 创建任务条件
@@ -168,24 +221,24 @@ type Condition struct{}
 #### func (Condition) GetAny(key any)  any
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
 ***
-### RefreshTaskCounterEventHandler
+### RefreshTaskCounterEventHandler `STRUCT`
 
 ```go
-type RefreshTaskCounterEventHandler[Trigger any] struct{}
+type RefreshTaskCounterEventHandler[Trigger any] func(taskType string, trigger Trigger, count int64)
 ```
-### Option
+### Option `STRUCT`
 任务选项
 ```go
-type Option struct{}
+type Option func(task *Task)
 ```
-### Status
+### Status `STRUCT`
 
 ```go
-type Status struct{}
+type Status byte
 ```
 #### func (Status) String()  string
 ***
-### Task
+### Task `STRUCT`
 是对任务信息进行描述和处理的结构体
 ```go
 type Task struct {

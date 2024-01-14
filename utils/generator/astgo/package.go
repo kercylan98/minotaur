@@ -2,12 +2,14 @@ package astgo
 
 import (
 	"errors"
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/str"
 	"os"
 	"path/filepath"
 )
 
 func NewPackage(dir string) (*Package, error) {
-	pkg := &Package{Dir: dir}
+	pkg := &Package{Dir: dir, Functions: map[string]*Function{}}
 	fs, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -26,7 +28,14 @@ func NewPackage(dir string) (*Package, error) {
 			continue
 		}
 		pkg.Files = append(pkg.Files, f)
-
+		for _, function := range f.Functions {
+			function := function
+			key := function.Name
+			if function.Struct != nil {
+				key = fmt.Sprintf("%s.%s", function.Struct.Name, key)
+			}
+			pkg.Functions[key] = function
+		}
 	}
 	if len(pkg.Files) == 0 {
 		return nil, errors.New("not found go ext file")
@@ -37,10 +46,11 @@ func NewPackage(dir string) (*Package, error) {
 }
 
 type Package struct {
-	Dir   string
-	Name  string
-	Dirs  []string
-	Files []*File
+	Dir       string
+	Name      string
+	Dirs      []string
+	Files     []*File
+	Functions map[string]*Function
 }
 
 func (p *Package) StructFunc(name string) []*Function {
@@ -91,4 +101,25 @@ func (p *Package) FileComments() *Comment {
 		}
 	}
 	return comment
+}
+
+func (p *Package) GetUnitTest(f *Function) *Function {
+	if f.Struct == nil {
+		return p.Functions[fmt.Sprintf("Test%s", str.FirstUpper(f.Name))]
+	}
+	return p.Functions[fmt.Sprintf("Test%s_%s", f.Struct.Type.Name, f.Name)]
+}
+
+func (p *Package) GetExampleTest(f *Function) *Function {
+	if f.Struct == nil {
+		return p.Functions[fmt.Sprintf("Example%s", str.FirstUpper(f.Name))]
+	}
+	return p.Functions[fmt.Sprintf("Example%s_%s", f.Struct.Type.Name, f.Name)]
+}
+
+func (p *Package) GetBenchmarkTest(f *Function) *Function {
+	if f.Struct == nil {
+		return p.Functions[fmt.Sprintf("Benchmark%s", str.FirstUpper(f.Name))]
+	}
+	return p.Functions[fmt.Sprintf("Benchmark%s_%s", f.Struct.Type.Name, f.Name)]
 }

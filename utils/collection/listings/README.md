@@ -1,19 +1,20 @@
 # Listings
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/listings)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewMatrix](#NewMatrix)|创建一个新的 Matrix 实例。
 |[NewPagedSlice](#NewPagedSlice)|创建一个新的 PagedSlice 实例。
@@ -21,35 +22,41 @@
 |[NewSyncSlice](#NewSyncSlice)|创建一个 SyncSlice
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Matrix](#matrix)|暂无描述...
-|[PagedSlice](#pagedslice)|是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
-|[PrioritySlice](#priorityslice)|是一个优先级切片
-|[SyncSlice](#syncslice)|是基于 sync.RWMutex 实现的线程安全的 slice
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Matrix](#matrix)|暂无描述...
+|`STRUCT`|[PagedSlice](#pagedslice)|是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
+|`STRUCT`|[PrioritySlice](#priorityslice)|是一个优先级切片
+|`STRUCT`|[SyncSlice](#syncslice)|是基于 sync.RWMutex 实现的线程安全的 slice
 
 </details>
 
 
+***
+## 详情信息
 #### func NewMatrix(dimensions ...int)  *Matrix[V]
 <span id="NewMatrix"></span>
 > 创建一个新的 Matrix 实例。
+
 ***
 #### func NewPagedSlice(pageSize int)  *PagedSlice[T]
 <span id="NewPagedSlice"></span>
 > 创建一个新的 PagedSlice 实例。
+
 ***
 #### func NewPrioritySlice(lengthAndCap ...int)  *PrioritySlice[V]
 <span id="NewPrioritySlice"></span>
 > 创建一个优先级切片
+
 ***
 #### func NewSyncSlice(length int, cap int)  *SyncSlice[V]
 <span id="NewSyncSlice"></span>
 > 创建一个 SyncSlice
+
 ***
-### Matrix
+### Matrix `STRUCT`
 
 ```go
 type Matrix[V any] struct {
@@ -69,7 +76,7 @@ type Matrix[V any] struct {
 #### func (*Matrix) Clear()
 > 清空矩阵。
 ***
-### PagedSlice
+### PagedSlice `STRUCT`
 是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
 ```go
 type PagedSlice[T any] struct {
@@ -97,7 +104,7 @@ type PagedSlice[T any] struct {
 #### func (*PagedSlice) Range(f func (index int, value T)  bool)
 > 迭代 PagedSlice 中的所有元素。
 ***
-### PrioritySlice
+### PrioritySlice `STRUCT`
 是一个优先级切片
 ```go
 type PrioritySlice[V any] struct {
@@ -115,6 +122,25 @@ type PrioritySlice[V any] struct {
 ***
 #### func (*PrioritySlice) Append(v V, p int)
 > 添加元素
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestPrioritySlice_Append(t *testing.T) {
+	var s = listings.NewPrioritySlice[string]()
+	s.Append("name_1", 2)
+	s.Append("name_2", 1)
+	fmt.Println(s)
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func (*PrioritySlice) Appends(priority int, vs ...V)
 > 添加元素
@@ -155,7 +181,7 @@ type PrioritySlice[V any] struct {
 #### func (*PrioritySlice) String()  string
 > 返回切片字符串
 ***
-### SyncSlice
+### SyncSlice `STRUCT`
 是基于 sync.RWMutex 实现的线程安全的 slice
 ```go
 type SyncSlice[V any] struct {

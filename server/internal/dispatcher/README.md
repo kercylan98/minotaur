@@ -1,47 +1,171 @@
 # Dispatcher
 
-
-
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/dispatcher)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-## 目录
-列出了该 `package` 下所有的函数，可通过目录进行快捷跳转 ❤️
+
+
+
+## 目录导航
+列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️
 <details>
-<summary>展开 / 折叠目录</summary
+<summary>展开 / 折叠目录导航</summary>
 
 
 > 包级函数定义
 
-|函数|描述
+|函数名称|描述
 |:--|:--
 |[NewDispatcher](#NewDispatcher)|创建一个新的消息分发器 Dispatcher 实例
 |[NewManager](#NewManager)|生成消息分发器管理器
 
 
-> 结构体定义
+> 类型定义
 
-|结构体|描述
-|:--|:--
-|[Action](#action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
-|[Handler](#handler)|消息处理器
-|[Dispatcher](#dispatcher)|用于服务器消息处理的消息分发器
-|[Manager](#manager)|消息分发器管理器
-|[Message](#message)|暂无描述...
-|[Producer](#producer)|暂无描述...
+|类型|名称|描述
+|:--|:--|:--
+|`STRUCT`|[Action](#action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
+|`STRUCT`|[Handler](#handler)|消息处理器
+|`STRUCT`|[Dispatcher](#dispatcher)|用于服务器消息处理的消息分发器
+|`STRUCT`|[Manager](#manager)|消息分发器管理器
+|`INTERFACE`|[Message](#message)|暂无描述...
+|`INTERFACE`|[Producer](#producer)|暂无描述...
 
 </details>
 
 
+***
+## 详情信息
 #### func NewDispatcher(bufferSize int, name string, handler Handler[P, M])  *Dispatcher[P, M]
 <span id="NewDispatcher"></span>
 > 创建一个新的消息分发器 Dispatcher 实例
+
+示例代码：
+```go
+
+func ExampleNewDispatcher() {
+	m := new(atomic.Int64)
+	fm := new(atomic.Int64)
+	w := new(sync.WaitGroup)
+	w.Add(1)
+	d := dispatcher.NewDispatcher(1024, "example-dispatcher", func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+		m.Add(1)
+	})
+	d.SetClosedHandler(func(dispatcher *dispatcher.Action[string, *TestMessage]) {
+		w.Done()
+	})
+	var producers = []string{"producer1", "producer2", "producer3"}
+	for i := 0; i < len(producers); i++ {
+		p := producers[i]
+		for i := 0; i < 10; i++ {
+			d.Put(&TestMessage{producer: p})
+		}
+		d.SetProducerDoneHandler(p, func(p string, dispatcher *dispatcher.Action[string, *TestMessage]) {
+			fm.Add(1)
+		})
+	}
+	d.Start()
+	d.Expel()
+	w.Wait()
+	fmt.Println(fmt.Sprintf("producer num: %d, producer done: %d, finished: %d", len(producers), fm.Load(), m.Load()))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewDispatcher(t *testing.T) {
+	var cases = []struct {
+		name        string
+		bufferSize  int
+		handler     dispatcher.Handler[string, *TestMessage]
+		shouldPanic bool
+	}{{name: "TestNewDispatcher_BufferSize0AndHandlerNil", bufferSize: 0, handler: nil, shouldPanic: true}, {name: "TestNewDispatcher_BufferSize0AndHandlerNotNil", bufferSize: 0, handler: func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+	}, shouldPanic: true}, {name: "TestNewDispatcher_BufferSize1AndHandlerNil", bufferSize: 1, handler: nil, shouldPanic: true}, {name: "TestNewDispatcher_BufferSize1AndHandlerNotNil", bufferSize: 1, handler: func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+	}, shouldPanic: false}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !c.shouldPanic {
+					t.Errorf("NewDispatcher() should not panic, but panic: %v", r)
+				}
+			}()
+			dispatcher.NewDispatcher(c.bufferSize, c.name, c.handler)
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
 #### func NewManager(bufferSize int, handler Handler[P, M])  *Manager[P, M]
 <span id="NewManager"></span>
 > 生成消息分发器管理器
+
+示例代码：
+```go
+
+func ExampleNewManager() {
+	mgr := dispatcher.NewManager[string, *TestMessage](10124*16, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+	})
+	mgr.BindProducer("player_001", "shunt-001")
+	mgr.BindProducer("player_002", "shunt-002")
+	mgr.BindProducer("player_003", "shunt-sys")
+	mgr.BindProducer("player_004", "shunt-sys")
+	mgr.UnBindProducer("player_001")
+	mgr.UnBindProducer("player_002")
+	mgr.UnBindProducer("player_003")
+	mgr.UnBindProducer("player_004")
+	mgr.Wait()
+	fmt.Println("done")
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewManager(t *testing.T) {
+	var cases = []struct {
+		name        string
+		bufferSize  int
+		handler     dispatcher.Handler[string, *TestMessage]
+		shouldPanic bool
+	}{{name: "TestNewManager_BufferSize0AndHandlerNil", bufferSize: 0, handler: nil, shouldPanic: true}, {name: "TestNewManager_BufferSize0AndHandlerNotNil", bufferSize: 0, handler: func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+	}, shouldPanic: true}, {name: "TestNewManager_BufferSize1AndHandlerNil", bufferSize: 1, handler: nil, shouldPanic: true}, {name: "TestNewManager_BufferSize1AndHandlerNotNil", bufferSize: 1, handler: func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+	}, shouldPanic: false}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !c.shouldPanic {
+					t.Errorf("NewManager() should not panic, but panic: %v", r)
+				}
+			}()
+			dispatcher.NewManager[string, *TestMessage](c.bufferSize, c.handler)
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
 ***
-### Action
+### Action `STRUCT`
 消息分发器操作器，用于暴露外部可操作的消息分发器函数
 ```go
 type Action[P Producer, M Message[P]] struct {
@@ -49,12 +173,12 @@ type Action[P Producer, M Message[P]] struct {
 	d      *Dispatcher[P, M]
 }
 ```
-### Handler
+### Handler `STRUCT`
 消息处理器
 ```go
-type Handler[P Producer, M Message[P]] struct{}
+type Handler[P Producer, M Message[P]] func(dispatcher *Dispatcher[P, M], message M)
 ```
-### Dispatcher
+### Dispatcher `STRUCT`
 用于服务器消息处理的消息分发器
 
 这个消息分发器为并发安全的生产者和消费者模型，生产者可以是任意类型，消费者必须是 Message 接口的实现。
@@ -83,7 +207,7 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	abort         chan struct{}
 }
 ```
-### Manager
+### Manager `STRUCT`
 消息分发器管理器
 ```go
 type Manager[P Producer, M Message[P]] struct {
@@ -99,13 +223,17 @@ type Manager[P Producer, M Message[P]] struct {
 	createdHandler func(name string)
 }
 ```
-### Message
+### Message `INTERFACE`
 
 ```go
-type Message[P comparable] struct{}
+type Message[P comparable] interface {
+	GetProducer() P
+}
 ```
-### Producer
+### Producer `INTERFACE`
 
 ```go
-type Producer struct{}
+type Producer interface {
+	comparable
+}
 ```
