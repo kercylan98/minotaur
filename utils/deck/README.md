@@ -1,6 +1,6 @@
 # Deck
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/deck)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 deck 包中的内容用于针对一堆内容的管理，适用但不限于牌堆、麻将牌堆等情况。

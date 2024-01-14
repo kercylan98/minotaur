@@ -1,6 +1,6 @@
 # Compress
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/compress)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 compress 提供了一些用于压缩和解压缩数据的函数。

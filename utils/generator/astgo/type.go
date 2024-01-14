@@ -121,7 +121,11 @@ func newType(expr ast.Expr) *Type {
 		t := newType(e.X)
 		str.WriteString(fmt.Sprintf("*%s", t.Sign))
 	case *ast.UnaryExpr:
+		str.WriteString(fmt.Sprintf("%s%s", e.Op.String(), newType(e.X).Sign))
 	case *ast.BinaryExpr:
+		str.WriteString(newType(e.X).Sign)
+		str.WriteString(fmt.Sprintf(" %s ", e.Op.String()))
+		str.WriteString(newType(e.Y).Sign)
 	}
 	typ.Sign = str.String()
 	return typ

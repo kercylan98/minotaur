@@ -43,13 +43,26 @@ func (b *Builder) Generate() error {
 func (b *Builder) genHeader() {
 	b.title(1, str.FirstUpper(b.p.Name))
 	b.newLine()
-	b.newLine(fmt.Sprintf(`[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/%s)`, b.p.Name))
+	b.newLine(fmt.Sprintf(`[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)`))
 	b.newLine(fmt.Sprintf(`![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)`))
-	b.newLine().newLine(b.p.FileComments().Clear...).newLine()
+	if len(b.p.FileComments().Clear) != 0 {
+		b.newLine().newLine(b.p.FileComments().Clear...).newLine()
+	} else {
+		b.newLine().newLine("暂无介绍...").newLine()
+	}
 	b.newLine()
 }
 
 func (b *Builder) genMenus() {
+	var genTitleOnce sync.Once
+	var genTitle = func() {
+		genTitleOnce.Do(func() {
+			b.title(2, "目录导航")
+			b.newLine("列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️")
+			b.detailsStart("展开 / 折叠目录导航")
+		})
+	}
+
 	packageFunction := b.p.PackageFunc()
 	var structList []*astgo.Struct
 	for _, f := range b.p.Files {
@@ -64,19 +77,20 @@ func (b *Builder) genMenus() {
 		}
 	}
 
-	if len(packageFunction)+len(structList) > 0 {
-		b.title(2, "目录导航")
-		b.newLine("列出了该 `package` 下所有的函数及类型定义，可通过目录导航进行快捷跳转 ❤️")
-		b.detailsStart("展开 / 折叠目录导航")
-	}
-
 	if len(packageFunction) > 0 {
-		b.quote("包级函数定义").newLine()
-		b.tableCel("函数名称", "描述")
+		var pfGenOnce sync.Once
+		var pfGen = func() {
+			pfGenOnce.Do(func() {
+				genTitle()
+				b.quote("包级函数定义").newLine()
+				b.tableCel("函数名称", "描述")
+			})
+		}
 		for _, function := range packageFunction {
 			if function.Test || function.Internal {
 				continue
 			}
+			pfGen()
 			b.tableRow(
 				fmt.Sprintf("[%s](#%s)", function.Name, function.Name),
 				collection.FindFirstOrDefaultInSlice(function.Comments.Clear, "暂无描述..."),
@@ -86,12 +100,19 @@ func (b *Builder) genMenus() {
 	}
 
 	if len(structList) > 0 {
-		b.quote("类型定义").newLine()
-		b.tableCel("类型", "名称", "描述")
+		var structGenOnce sync.Once
+		var structGen = func() {
+			structGenOnce.Do(func() {
+				genTitle()
+				b.quote("类型定义").newLine()
+				b.tableCel("类型", "名称", "描述")
+			})
+		}
 		for _, structInfo := range structList {
 			if structInfo.Test || structInfo.Internal {
 				continue
 			}
+			structGen()
 			b.tableRow(
 				super.If(structInfo.Interface, "`INTERFACE`", "`STRUCT`"),
 				fmt.Sprintf("[%s](#%s)", structInfo.Name, strings.ToLower(structInfo.Name)),

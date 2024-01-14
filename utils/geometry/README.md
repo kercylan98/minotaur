@@ -1,6 +1,6 @@
 # Geometry
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/geometry)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 geometry 旨在提供一组用于处理几何形状和计算几何属性的函数和数据结构。该包旨在简化几何计算的过程，并提供一致的接口和易于使用的功能。

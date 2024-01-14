@@ -1,6 +1,6 @@
 # Astar
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/astar)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种常用的路径搜索算法，用于在图形或网络中找到最短路径。该包旨在简化 A* 算法的实现过程，并提供一致的接口和易于使用的功能。

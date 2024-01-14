@@ -1,6 +1,6 @@
 # Navmesh
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/navmesh)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 navmesh 提供了用于导航网格处理的函数和数据结构。导航网格是一种常用的数据结构，用于在游戏开发和虚拟环境中进行路径规划和导航。该包旨在简化导航网格的创建、查询和操作过程，并提供高效的导航功能。

@@ -1,6 +1,6 @@
 # Dp
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/dp)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 dp (DistributionPattern) 提供用于在二维数组中根据不同的特征标记为数组成员建立分布链接的函数和数据结构。该包的目标是实现快速查找与给定位置成员具有相同特征且位置紧邻的其他成员。

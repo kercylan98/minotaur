@@ -1,6 +1,6 @@
 # Generic
 
-[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur/generic)
+[![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
 generic 目的在于提供一组基于泛型的用于处理通用功能的函数和数据结构。该包旨在简化通用功能的实现，并提供一致的接口和易于使用的功能。
@@ -111,53 +111,62 @@ type IDR2W[ID comparable] interface {
 可排序类型
 ```go
 type Ordered interface {
+	Integer | Float | ~string
 }
 ```
 ### Number `INTERFACE`
 数字类型
 ```go
 type Number interface {
+	Integer | Float
 }
 ```
 ### SignedNumber `INTERFACE`
 有符号数字类型
 ```go
 type SignedNumber interface {
+	Signed | Float
 }
 ```
 ### Integer `INTERFACE`
 整数类型
 ```go
 type Integer interface {
+	Signed | Unsigned
 }
 ```
 ### Signed `INTERFACE`
 有符号整数类型
 ```go
 type Signed interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64
 }
 ```
 ### Unsigned `INTERFACE`
 无符号整数类型
 ```go
 type Unsigned interface {
+	UnsignedNumber | ~uintptr
 }
 ```
 ### UnsignedNumber `INTERFACE`
 无符号数字类型
 ```go
 type UnsignedNumber interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 ```
 ### Float `INTERFACE`
 浮点类型
 ```go
 type Float interface {
+	~float32 | ~float64
 }
 ```
 ### Basic `INTERFACE`
 基本类型
 ```go
 type Basic interface {
+	Signed | Unsigned | Float | ~string | ~bool | ~byte
 }
 ```
