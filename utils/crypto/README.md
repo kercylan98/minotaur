@@ -28,6 +28,10 @@
 |[DecodedSHA256](#DecodedSHA256)|对字节数组进行SHA256加密并返回其结果。
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func EncryptBase64(data []byte)  string

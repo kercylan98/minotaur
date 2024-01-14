@@ -19,6 +19,10 @@
 |[GetSheetMatrix](#GetSheetMatrix)|将sheet转换为二维矩阵
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func GetSheetMatrix(sheet *xlsx.Sheet)  *matrix.Matrix[*xlsx.Cell]

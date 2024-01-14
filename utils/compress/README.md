@@ -24,6 +24,10 @@ compress 提供了一些用于压缩和解压缩数据的函数。
 |[ZIPUnCompress](#ZIPUnCompress)|对已进行ZIP压缩的数据进行解压缩，返回字节数组及错误信息
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func GZipCompress(data []byte)  bytes.Buffer,  error

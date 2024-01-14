@@ -19,6 +19,10 @@
 |[Execute](#Execute)|将所有子命令添加到根命令并适当设置标志。这是由 main.main() 调用的。 rootCmd 只需要发生一次
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func Execute()

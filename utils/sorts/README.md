@@ -19,6 +19,10 @@
 |[Topological](#Topological)|拓扑排序是一种对有向图进行排序的算法，它可以用来解决一些依赖关系的问题，比如计算字段的依赖关系。拓扑排序会将存在依赖关系的元素进行排序，使得依赖关系的元素总是排在被依赖的元素之前。
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func Topological(slice S, queryIndexHandler func (item V)  Index, queryDependsHandler func (item V)  []Index)  S,  error

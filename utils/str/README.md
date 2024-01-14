@@ -40,6 +40,10 @@
 |[FormatSpeedyFloat64](#FormatSpeedyFloat64)|返回numberStr经过格式化后去除空格和“,”分隔符的结果
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func RangeLine(eachString string, eachFunc func (index int, line string)  error)  error

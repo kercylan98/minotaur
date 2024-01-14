@@ -29,6 +29,10 @@
 |[FindLineChunksByOffset](#FindLineChunksByOffset)|该函数与 FindLineChunks 类似，不同的是该函数可以指定 offset 从指定位置开始读取文件
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func PathExist(path string)  bool,  error

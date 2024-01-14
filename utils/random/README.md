@@ -46,6 +46,10 @@
 |[WeightMapKey](#WeightMapKey)|按权重随机从map中产生一个数据并返回数据和对应 key
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func Dice()  int

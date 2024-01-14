@@ -23,6 +23,10 @@
 |[CurrentRunningFuncName](#CurrentRunningFuncName)|获取正在运行的函数名
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func GetWorkingDir()  string

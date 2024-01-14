@@ -9,6 +9,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/super"
 	"go/format"
 	"strings"
+	"sync"
 )
 
 func New(pkgDirPath string, output string) (*Builder, error) {
@@ -97,14 +98,18 @@ func (b *Builder) genMenus() {
 				collection.FindFirstOrDefaultInSlice(structInfo.Comments.Clear, "暂无描述..."),
 			)
 		}
-		b.detailsEnd()
 	}
-
+	b.detailsEnd()
 	b.newLine("***")
 }
 
 func (b *Builder) genStructs() {
-	b.title(2, "详情信息")
+	var titleOnce sync.Once
+	var titleBuild = func() {
+		titleOnce.Do(func() {
+			b.title(2, "详情信息")
+		})
+	}
 
 	var funcHandler = func(params []*astgo.Field) string {
 		var s string
@@ -127,6 +132,7 @@ func (b *Builder) genStructs() {
 		if function.Internal || function.Test {
 			continue
 		}
+		titleBuild()
 		b.title(4, strings.TrimSpace(fmt.Sprintf("func %s%s %s",
 			function.Name,
 			func() string {
@@ -165,6 +171,7 @@ func (b *Builder) genStructs() {
 			if structInfo.Internal || structInfo.Test {
 				continue
 			}
+			titleBuild()
 			b.title(3, fmt.Sprintf("%s `%s`", structInfo.Name, super.If(structInfo.Interface, "INTERFACE", "STRUCT")))
 			b.newLine(structInfo.Comments.Clear...)
 			b.newLine("```go")

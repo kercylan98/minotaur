@@ -26,6 +26,10 @@
 |[GetPointer](#GetPointer)|获取指针
 
 
+
+</details>
+
+
 ***
 ## 详情信息
 #### func WrapperFunc(f any, wrapper func (call func ( []reflect.Value)  []reflect.Value)  func (args []reflect.Value)  []reflect.Value) (wf Func, err error)
