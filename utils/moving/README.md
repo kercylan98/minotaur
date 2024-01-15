@@ -41,7 +41,8 @@
 <span id="NewTwoDimensional"></span>
 > 创建一个用于2D对象移动的实例(TwoDimensional)
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewTwoDimensional() {

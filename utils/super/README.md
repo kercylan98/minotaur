@@ -159,7 +159,8 @@ func TestGetError(t *testing.T) {
 <span id="RecoverTransform"></span>
 > recover 错误转换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleRecoverTransform() {
@@ -595,7 +596,8 @@ func TestConvert(t *testing.T) {
 <span id="Verify"></span>
 > 对特定表达式进行校验，当表达式不成立时，将执行 handle
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleVerify() {
@@ -622,7 +624,8 @@ func ExampleVerify() {
 <span id="OldVersion"></span>
 > 检查 version2 对于 version1 来说是不是旧版本
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleOldVersion() {
@@ -684,7 +687,8 @@ func BenchmarkOldVersion(b *testing.B) {
 >   - 如果 version1 小于 version2，它将返回 -1
 >   - 如果 version1 和 version2 相等，它将返回 0
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCompareVersion() {

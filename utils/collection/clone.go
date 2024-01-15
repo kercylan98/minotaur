@@ -23,7 +23,8 @@ func CloneMap[M ~map[K]V, K comparable, V any](m M) M {
 	return result
 }
 
-// CloneSliceN 克隆 slice 为 n 个切片进行返回
+// CloneSliceN 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
+//   - 当 slice 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 func CloneSliceN[S ~[]V, V any](slice S, n int) []S {
 	if slice == nil {
 		return nil

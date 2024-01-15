@@ -56,6 +56,9 @@ type Function struct {
 }
 
 func (f *Function) Code() string {
+	if f.Test {
+		f.decl.Doc = nil
+	}
 	var bb bytes.Buffer
 	if err := format.Node(&bb, token.NewFileSet(), f.decl); err != nil {
 		panic(err)

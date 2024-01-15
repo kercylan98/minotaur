@@ -34,7 +34,8 @@
 <span id="NewObjectPool"></span>
 > 创建一个 ObjectPool
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewObjectPool() {

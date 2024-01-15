@@ -136,7 +136,8 @@ geometry 旨在提供一组用于处理几何形状和计算几何属性的函�
 <span id="NewCircle"></span>
 > 通过传入圆的半径和需要的点数量，生成一个圆
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewCircle() {
@@ -480,7 +481,8 @@ func TestNewPoint(t *testing.T) {
 <span id="GetShapeCoverageAreaWithPoint"></span>
 > 通过传入的一组坐标 points 计算一个图形覆盖的矩形范围
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleGetShapeCoverageAreaWithPoint() {
@@ -525,7 +527,8 @@ func TestGetShapeCoverageAreaWithPoint(t *testing.T) {
 <span id="GetShapeCoverageAreaWithPos"></span>
 > 通过传入的一组坐标 positions 计算一个图形覆盖的矩形范围
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleGetShapeCoverageAreaWithPos() {
@@ -563,7 +566,8 @@ func TestGetShapeCoverageAreaWithPos(t *testing.T) {
 > 将一个图形覆盖矩形范围设置为无边的
 >   - 无边化表示会将多余的部分进行裁剪，例如图形左边从 2 开始的时候，那么左边将会被裁剪到从 0 开始
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCoverageAreaBoundless() {
@@ -695,7 +699,8 @@ func TestGenerateShapeOnRectangle(t *testing.T) {
 <span id="NewShape"></span>
 > 通过多个点生成一个形状进行返回
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewShape() {
@@ -738,7 +743,8 @@ func TestNewShape(t *testing.T) {
 > 通过字符串将指定 rune 转换为点位置生成形状进行返回
 >   - 每个点的顺序从上到下，从左到右
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewShapeWithString() {
@@ -1012,7 +1018,8 @@ type Shape[V generic.SignedNumber] []Point[V]
 ```
 #### func (Shape) Points()  []Point[V]
 > 获取这个形状的所有点
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShape_Points() {
@@ -1049,7 +1056,8 @@ func TestShape_Points(t *testing.T) {
 ***
 #### func (Shape) PointCount()  int
 > 获取这个形状的点数量
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShape_PointCount() {
@@ -1088,7 +1096,8 @@ func TestShape_PointCount(t *testing.T) {
 ***
 #### func (Shape) String()  string
 > 将该形状转换为可视化的字符串进行返回
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShape_String() {
@@ -1126,7 +1135,8 @@ func TestShape_String(t *testing.T) {
 >   - 返回的坐标为原始形状的坐标
 > 
 > 可通过可选项对搜索结果进行过滤
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShape_ShapeSearch() {

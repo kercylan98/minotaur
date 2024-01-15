@@ -38,7 +38,8 @@
 <span id="NewBinarySearch"></span>
 > 创建一个基于内存的二分查找排行榜
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewBinarySearch() {

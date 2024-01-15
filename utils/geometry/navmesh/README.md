@@ -99,7 +99,8 @@ type NavMesh[V generic.SignedNumber] struct {
 >   - 如果起点或终点不在任何形状内部，且 NavMesh 的 meshShrinkAmount 大于0，则会考虑缩小的形状。
 >   - 使用 A* 算法在 NavMesh 上搜索从起点形状到终点形状的最短路径。
 >   - 使用漏斗算法对路径进行优化，以得到最终的路径点序列。
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNavMesh_FindPath() {

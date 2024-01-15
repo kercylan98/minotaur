@@ -53,7 +53,8 @@
 > 
 > 传入 writeHandler 的消息对象是从 pool 中获取的，并且在 writeHandler 执行完成后会被放回 pool 中，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewUnbounded() {

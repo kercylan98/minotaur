@@ -191,15 +191,34 @@ func (b *Builder) genStructs() {
 		}
 		b.newLine()
 		if example := b.p.GetExampleTest(function); example != nil {
-			b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+			b.newLine("**示例代码：**").newLine()
+			if len(example.Comments.Clear) > 0 {
+				for _, s := range example.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
+			b.newLine("```go\n", example.Code(), "```\n")
 		}
 		if unitTest := b.p.GetUnitTest(function); unitTest != nil {
 			b.detailsStart("查看 / 收起单元测试")
+			if len(unitTest.Comments.Clear) > 0 {
+				for _, s := range unitTest.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
 			b.newLine("```go\n", unitTest.Code(), "```\n")
 			b.detailsEnd()
 		}
 		if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
 			b.detailsStart("查看 / 收起基准测试")
+			if len(benchmarkTest.Comments.Clear) > 0 {
+				for _, s := range benchmarkTest.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
 			b.newLine("```go\n", benchmarkTest.Code(), "```\n")
 			b.detailsEnd()
 		}
@@ -293,15 +312,34 @@ func (b *Builder) genStructs() {
 					b.quote(comment)
 				}
 				if example := b.p.GetExampleTest(function); example != nil {
-					b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+					b.newLine("**示例代码：**").newLine()
+					if len(example.Comments.Clear) > 0 {
+						for _, s := range example.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
+					b.newLine("```go\n", example.Code(), "```\n")
 				}
 				if unitTest := b.p.GetUnitTest(function); unitTest != nil {
 					b.detailsStart("查看 / 收起单元测试")
+					if len(unitTest.Comments.Clear) > 0 {
+						for _, s := range unitTest.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
 					b.newLine("```go\n", unitTest.Code(), "```\n")
 					b.detailsEnd()
 				}
 				if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
 					b.detailsStart("查看 / 收起基准测试")
+					if len(benchmarkTest.Comments.Clear) > 0 {
+						for _, s := range benchmarkTest.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
 					b.newLine("```go\n", benchmarkTest.Code(), "```\n")
 					b.detailsEnd()
 				}

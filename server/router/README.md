@@ -37,7 +37,8 @@
 <span id="NewMultistage"></span>
 > 创建一个支持多级分类的路由器
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewMultistage() {
@@ -76,7 +77,8 @@ type Multistage[HandleFunc any] struct {
 #### func (*Multistage) Register(routes ...any)  MultistageBind[HandleFunc]
 > 注册路由是结合 Sub 和 Route 的快捷方式，用于一次性注册多级路由
 >   - 该函数将返回一个注册函数，可通过调用其将路由绑定到特定处理函数，例如：router.Register("a", "b").Bind(onExec())
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Register() {
@@ -90,7 +92,8 @@ func ExampleMultistage_Register() {
 ***
 #### func (*Multistage) Route(route any, handleFunc HandleFunc)
 > 为特定路由绑定处理函数，被绑定的处理函数将可以通过 Match 函数进行匹配
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Route() {
@@ -105,7 +108,8 @@ func ExampleMultistage_Route() {
 #### func (*Multistage) Match(routes ...any)  HandleFunc
 > 匹配已绑定处理函数的路由，返回处理函数
 >   - 如果未找到将会返回空指针
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Match() {
@@ -154,7 +158,8 @@ func TestMultistage_Match(t *testing.T) {
 ***
 #### func (*Multistage) Sub(route any)  *Multistage[HandleFunc]
 > 获取子路由器
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Sub() {

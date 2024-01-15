@@ -38,7 +38,8 @@ space 游戏中常见的空间设计，例如房间、地图等
 <span id="NewRoomManager"></span>
 > 创建房间管理器 RoomManager 的实例
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewRoomManager() {

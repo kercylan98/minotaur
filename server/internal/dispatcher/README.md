@@ -40,7 +40,8 @@
 <span id="NewDispatcher"></span>
 > 创建一个新的消息分发器 Dispatcher 实例
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewDispatcher() {
@@ -111,7 +112,8 @@ func TestNewDispatcher(t *testing.T) {
 <span id="NewManager"></span>
 > 生成消息分发器管理器
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewManager() {

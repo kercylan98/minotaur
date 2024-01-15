@@ -34,7 +34,8 @@
 > 
 > 该函数在存在循环依赖的情况下将会返回 ErrCircularDependencyDetected 错误
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleTopological() {

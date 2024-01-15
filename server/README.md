@@ -300,7 +300,8 @@ func TestNewBot(t *testing.T) {
 <span id="New"></span>
 > 根据特定网络类型创建一个服务器
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNew() {
@@ -351,7 +352,8 @@ func TestNew(t *testing.T) {
 <span id="BindService"></span>
 > 绑定服务到特定 Server，被绑定的服务将会在 Server 初始化时执行 Service.OnInit 方法
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleBindService() {
@@ -860,7 +862,8 @@ type Server struct {
 >   - server.NetworkWebsocket (addr:":8888/ws")
 >   - server.NetworkKcp (addr:":8888")
 >   - server.NetworkNone (addr:"")
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleServer_Run() {

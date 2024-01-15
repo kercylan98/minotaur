@@ -61,7 +61,8 @@
 <span id="IsContinuity"></span>
 > 检查一组值是否连续
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleIsContinuity() {
@@ -147,7 +148,8 @@ func ExampleIsContinuity() {
 > 将一组非连续的数字转换为从1开始的连续数字
 >   - 返回值是一个 map，key 是从 1 开始的连续数字，value 是原始数字
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleToContinuous() {

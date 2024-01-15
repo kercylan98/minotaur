@@ -18,7 +18,7 @@ collection 定义了各种对于集合操作有用的各种函数
 |:--|:--
 |[CloneSlice](#CloneSlice)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
 |[CloneMap](#CloneMap)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
-|[CloneSliceN](#CloneSliceN)|克隆 slice 为 n 个切片进行返回
+|[CloneSliceN](#CloneSliceN)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
 |[CloneMapN](#CloneMapN)|克隆 map 为 n 个 map 进行返回
 |[CloneSlices](#CloneSlices)|克隆多个切片
 |[CloneMaps](#CloneMaps)|克隆多个 map
@@ -145,7 +145,12 @@ collection 定义了各种对于集合操作有用的各种函数
 <span id="CloneSlice"></span>
 > 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
 
-示例代码：
+**示例代码：**
+
+slice 克隆后将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址
+  - 示例中的结果将会输出 [1 2 3]
+
+
 ```go
 
 func ExampleCloneSlice() {
@@ -195,7 +200,8 @@ func TestCloneSlice(t *testing.T) {
 > 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
 >   - 当 m 为空时，将会返回 nil
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCloneMap() {
@@ -242,9 +248,11 @@ func TestCloneMap(t *testing.T) {
 ***
 #### func CloneSliceN\[S ~[]V, V any\](slice S, n int) []S
 <span id="CloneSliceN"></span>
-> 克隆 slice 为 n 个切片进行返回
+> 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
+>   - 当 slice 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCloneSliceN() {
@@ -299,7 +307,8 @@ func TestCloneSliceN(t *testing.T) {
 <span id="CloneMapN"></span>
 > 克隆 map 为 n 个 map 进行返回
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCloneMapN() {
@@ -354,7 +363,8 @@ func TestCloneMapN(t *testing.T) {
 <span id="CloneSlices"></span>
 > 克隆多个切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCloneSlices() {
@@ -406,7 +416,8 @@ func TestCloneSlices(t *testing.T) {
 <span id="CloneMaps"></span>
 > 克隆多个 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleCloneMaps() {
@@ -458,7 +469,8 @@ func TestCloneMaps(t *testing.T) {
 <span id="InSlice"></span>
 > 检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInSlice() {
@@ -506,7 +518,8 @@ func TestInSlice(t *testing.T) {
 <span id="InComparableSlice"></span>
 > 检查 v 是否被包含在 slice 中
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInComparableSlice() {
@@ -552,7 +565,8 @@ func TestInComparableSlice(t *testing.T) {
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
 >   - 当 values 长度为 0 或为 nil 时，将返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInSlice() {
@@ -602,7 +616,8 @@ func TestAllInSlice(t *testing.T) {
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
 >   - 当 values 长度为 0 或为 nil 时，将返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInComparableSlice() {
@@ -647,7 +662,8 @@ func TestAllInComparableSlice(t *testing.T) {
 > 检查 values 中的任意一个元素是否被包含在 slice 中，当 handler 返回 true 时，表示 value 中的某个元素和 slice 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInSlice() {
@@ -696,7 +712,8 @@ func TestAnyInSlice(t *testing.T) {
 > 检查 values 中的任意一个元素是否被包含在 slice 中
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInComparableSlice() {
@@ -741,7 +758,8 @@ func TestAnyInComparableSlice(t *testing.T) {
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInSlices() {
@@ -790,7 +808,8 @@ func TestInSlices(t *testing.T) {
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInComparableSlices() {
@@ -835,7 +854,8 @@ func TestInComparableSlices(t *testing.T) {
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInSlices() {
@@ -884,7 +904,8 @@ func TestAllInSlices(t *testing.T) {
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInComparableSlices() {
@@ -929,7 +950,8 @@ func TestAllInComparableSlices(t *testing.T) {
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInSlices() {
@@ -978,7 +1000,8 @@ func TestAnyInSlices(t *testing.T) {
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInComparableSlices() {
@@ -1023,7 +1046,8 @@ func TestAnyInComparableSlices(t *testing.T) {
 > 检查 v 是否被包含在 slices 的每一项元素中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInAllSlices() {
@@ -1072,7 +1096,8 @@ func TestInAllSlices(t *testing.T) {
 > 检查 v 是否被包含在 slices 的每一项元素中
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInAllComparableSlices() {
@@ -1117,7 +1142,8 @@ func TestInAllComparableSlices(t *testing.T) {
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素，当 handler 返回 true 时，表示 value 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInAllSlices() {
@@ -1166,7 +1192,8 @@ func TestAnyInAllSlices(t *testing.T) {
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInAllComparableSlices() {
@@ -1210,7 +1237,8 @@ func TestAnyInAllComparableSlices(t *testing.T) {
 <span id="KeyInMap"></span>
 > 检查 m 中是否包含特定 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleKeyInMap() {
@@ -1254,7 +1282,8 @@ func TestKeyInMap(t *testing.T) {
 <span id="ValueInMap"></span>
 > 检查 m 中是否包含特定 value，当 handler 返回 true 时，表示 value 和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleValueInMap() {
@@ -1301,7 +1330,8 @@ func TestValueInMap(t *testing.T) {
 <span id="AllKeyInMap"></span>
 > 检查 m 中是否包含 keys 中所有的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllKeyInMap() {
@@ -1345,7 +1375,8 @@ func TestAllKeyInMap(t *testing.T) {
 <span id="AllValueInMap"></span>
 > 检查 m 中是否包含 values 中所有的元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllValueInMap() {
@@ -1391,7 +1422,8 @@ func TestAllValueInMap(t *testing.T) {
 <span id="AnyKeyInMap"></span>
 > 检查 m 中是否包含 keys 中任意一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInMap() {
@@ -1435,7 +1467,8 @@ func TestAnyKeyInMap(t *testing.T) {
 <span id="AnyValueInMap"></span>
 > 检查 m 中是否包含 values 中任意一个元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyValueInMap() {
@@ -1481,7 +1514,8 @@ func TestAnyValueInMap(t *testing.T) {
 <span id="AllKeyInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 keys 中所有的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllKeyInMaps() {
@@ -1525,7 +1559,8 @@ func TestAllKeyInMaps(t *testing.T) {
 <span id="AllValueInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 value 中所有的元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllValueInMaps() {
@@ -1572,7 +1607,8 @@ func TestAllValueInMaps(t *testing.T) {
 > 检查 keys 中的任意一个元素是否被包含在 maps 中的任意一个元素中
 >   - 当 keys 中的任意一个元素被包含在 maps 中的任意一个元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInMaps() {
@@ -1617,7 +1653,8 @@ func TestAnyKeyInMaps(t *testing.T) {
 > 检查 maps 中的任意一个元素是否包含 value 中的任意一个元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 >   - 当 maps 中的任意一个元素包含 value 中的任意一个元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyValueInMaps() {
@@ -1663,7 +1700,8 @@ func TestAnyValueInMaps(t *testing.T) {
 <span id="KeyInAllMaps"></span>
 > 检查 key 是否被包含在 maps 的每一个元素中
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleKeyInAllMaps() {
@@ -1708,7 +1746,8 @@ func TestKeyInAllMaps(t *testing.T) {
 > 检查 maps 中的每一个元素是否均包含 keys 中任意一个元素
 >   - 当 maps 中的每一个元素均包含 keys 中任意一个元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInAllMaps() {
@@ -1752,7 +1791,8 @@ func TestAnyKeyInAllMaps(t *testing.T) {
 <span id="ConvertSliceToAny"></span>
 > 将切片转换为任意类型的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToAny() {
@@ -1804,7 +1844,8 @@ func TestConvertSliceToAny(t *testing.T) {
 <span id="ConvertSliceToIndexMap"></span>
 > 将切片转换为索引为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToIndexMap() {
@@ -1855,7 +1896,8 @@ func TestConvertSliceToIndexMap(t *testing.T) {
 <span id="ConvertSliceToIndexOnlyMap"></span>
 > 将切片转换为索引为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToIndexOnlyMap() {
@@ -1910,7 +1952,8 @@ func TestConvertSliceToIndexOnlyMap(t *testing.T) {
 <span id="ConvertSliceToMap"></span>
 > 将切片转换为值为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToMap() {
@@ -1962,7 +2005,8 @@ func TestConvertSliceToMap(t *testing.T) {
 <span id="ConvertSliceToBoolMap"></span>
 > 将切片转换为值为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToBoolMap() {
@@ -2013,7 +2057,8 @@ func TestConvertSliceToBoolMap(t *testing.T) {
 <span id="ConvertMapKeysToSlice"></span>
 > 将映射的键转换为切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapKeysToSlice() {
@@ -2069,7 +2114,8 @@ func TestConvertMapKeysToSlice(t *testing.T) {
 <span id="ConvertMapValuesToSlice"></span>
 > 将映射的值转换为切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapValuesToSlice() {
@@ -2126,7 +2172,8 @@ func TestConvertMapValuesToSlice(t *testing.T) {
 <span id="InvertMap"></span>
 > 将映射的键和值互换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInvertMap() {
@@ -2174,7 +2221,8 @@ func TestInvertMap(t *testing.T) {
 <span id="ConvertMapValuesToBool"></span>
 > 将映射的值转换为布尔值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapValuesToBool() {
@@ -2222,7 +2270,8 @@ func TestConvertMapValuesToBool(t *testing.T) {
 <span id="ReverseSlice"></span>
 > 将切片反转
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleReverseSlice() {
@@ -2275,7 +2324,8 @@ func TestReverseSlice(t *testing.T) {
 <span id="ClearSlice"></span>
 > 清空切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleClearSlice() {
@@ -2324,7 +2374,8 @@ func TestClearSlice(t *testing.T) {
 <span id="ClearMap"></span>
 > 清空 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleClearMap() {
@@ -2373,7 +2424,8 @@ func TestClearMap(t *testing.T) {
 <span id="DropSliceByIndices"></span>
 > 删除切片中特定索引的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceByIndices() {
@@ -2424,7 +2476,8 @@ func TestDropSliceByIndices(t *testing.T) {
 > 删除切片中符合条件的元素
 >   - condition 的返回值为 true 时，将会删除该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceByCondition() {
@@ -2484,7 +2537,8 @@ func TestDropSliceByCondition(t *testing.T) {
 <span id="DropSliceOverlappingElements"></span>
 > 删除切片中与另一个切片重叠的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceOverlappingElements() {
@@ -2547,7 +2601,8 @@ func TestDropSliceOverlappingElements(t *testing.T) {
 <span id="DeduplicateSliceInPlace"></span>
 > 去除切片中的重复元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceInPlace() {
@@ -2597,7 +2652,8 @@ func TestDeduplicateSliceInPlace(t *testing.T) {
 <span id="DeduplicateSlice"></span>
 > 去除切片中的重复元素，返回新切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSlice() {
@@ -2646,7 +2702,8 @@ func TestDeduplicateSlice(t *testing.T) {
 <span id="DeduplicateSliceInPlaceWithCompare"></span>
 > 去除切片中的重复元素，使用自定义的比较函数
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceInPlaceWithCompare() {
@@ -2700,7 +2757,8 @@ func TestDeduplicateSliceInPlaceWithCompare(t *testing.T) {
 <span id="DeduplicateSliceWithCompare"></span>
 > 去除切片中的重复元素，使用自定义的比较函数，返回新的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceWithCompare() {
@@ -2753,7 +2811,8 @@ func TestDeduplicateSliceWithCompare(t *testing.T) {
 <span id="FilterOutByIndices"></span>
 > 过滤切片中特定索引的元素，返回过滤后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByIndices() {
@@ -2804,7 +2863,8 @@ func TestFilterOutByIndices(t *testing.T) {
 > 过滤切片中符合条件的元素，返回过滤后的切片
 >   - condition 的返回值为 true 时，将会过滤掉该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByCondition() {
@@ -2862,7 +2922,8 @@ func TestFilterOutByCondition(t *testing.T) {
 <span id="FilterOutByKey"></span>
 > 过滤 map 中特定的 key，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByKey() {
@@ -2912,7 +2973,8 @@ func TestFilterOutByKey(t *testing.T) {
 <span id="FilterOutByValue"></span>
 > 过滤 map 中特定的 value，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByValue() {
@@ -2966,7 +3028,8 @@ func TestFilterOutByValue(t *testing.T) {
 <span id="FilterOutByKeys"></span>
 > 过滤 map 中多个 key，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByKeys() {
@@ -3016,7 +3079,8 @@ func TestFilterOutByKeys(t *testing.T) {
 <span id="FilterOutByValues"></span>
 > 过滤 map 中多个 values，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByValues() {
@@ -3073,7 +3137,8 @@ func TestFilterOutByValues(t *testing.T) {
 > 过滤 map 中符合条件的元素，返回过滤后的 map
 >   - condition 的返回值为 true 时，将会过滤掉该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByMap() {
@@ -3128,7 +3193,8 @@ func TestFilterOutByMap(t *testing.T) {
 > 返回 i 的下一个数组成员，当 i 达到数组长度时从 0 开始
 >   - 当 i 为负数时将返回第一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindLoopedNextInSlice() {
@@ -3173,7 +3239,8 @@ func TestFindLoopedNextInSlice(t *testing.T) {
 > 返回 i 的上一个数组成员，当 i 为 0 时从数组末尾开始
 >   - 当 i 为负数时将返回最后一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindLoopedPrevInSlice() {
@@ -3217,7 +3284,8 @@ func TestFindLoopedPrevInSlice(t *testing.T) {
 <span id="FindCombinationsInSliceByRange"></span>
 > 获取给定数组的所有组合，且每个组合的成员数量限制在指定范围内
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindCombinationsInSliceByRange() {
@@ -3262,7 +3330,8 @@ func TestFindCombinationsInSliceByRange(t *testing.T) {
 <span id="FindFirstOrDefaultInSlice"></span>
 > 判断切片中是否存在元素，返回第一个元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindFirstOrDefaultInSlice() {
@@ -3305,7 +3374,8 @@ func TestFindFirstOrDefaultInSlice(t *testing.T) {
 <span id="FindOrDefaultInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindOrDefaultInSlice() {
@@ -3352,7 +3422,8 @@ func TestFindOrDefaultInSlice(t *testing.T) {
 <span id="FindOrDefaultInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindOrDefaultInComparableSlice() {
@@ -3395,7 +3466,8 @@ func TestFindOrDefaultInComparableSlice(t *testing.T) {
 <span id="FindInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindInSlice() {
@@ -3442,7 +3514,8 @@ func TestFindInSlice(t *testing.T) {
 <span id="FindIndexInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindIndexInSlice() {
@@ -3489,7 +3562,8 @@ func TestFindIndexInSlice(t *testing.T) {
 <span id="FindInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindInComparableSlice() {
@@ -3532,7 +3606,8 @@ func TestFindInComparableSlice(t *testing.T) {
 <span id="FindIndexInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindIndexInComparableSlice() {
@@ -3575,7 +3650,8 @@ func TestFindIndexInComparableSlice(t *testing.T) {
 <span id="FindMinimumInComparableSlice"></span>
 > 获取切片中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinimumInComparableSlice() {
@@ -3618,7 +3694,8 @@ func TestFindMinimumInComparableSlice(t *testing.T) {
 <span id="FindMinimumInSlice"></span>
 > 获取切片中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinimumInSlice() {
@@ -3665,7 +3742,8 @@ func TestFindMinimumInSlice(t *testing.T) {
 <span id="FindMaximumInComparableSlice"></span>
 > 获取切片中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaximumInComparableSlice() {
@@ -3708,7 +3786,8 @@ func TestFindMaximumInComparableSlice(t *testing.T) {
 <span id="FindMaximumInSlice"></span>
 > 获取切片中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaximumInSlice() {
@@ -3755,7 +3834,8 @@ func TestFindMaximumInSlice(t *testing.T) {
 <span id="FindMin2MaxInComparableSlice"></span>
 > 获取切片中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxInComparableSlice() {
@@ -3799,7 +3879,8 @@ func TestFindMin2MaxInComparableSlice(t *testing.T) {
 <span id="FindMin2MaxInSlice"></span>
 > 获取切片中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxInSlice() {
@@ -3847,7 +3928,8 @@ func TestFindMin2MaxInSlice(t *testing.T) {
 <span id="FindMinFromComparableMap"></span>
 > 获取 map 中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinFromComparableMap() {
@@ -3890,7 +3972,8 @@ func TestFindMinFromComparableMap(t *testing.T) {
 <span id="FindMinFromMap"></span>
 > 获取 map 中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinFromMap() {
@@ -3937,7 +4020,8 @@ func TestFindMinFromMap(t *testing.T) {
 <span id="FindMaxFromComparableMap"></span>
 > 获取 map 中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaxFromComparableMap() {
@@ -3980,7 +4064,8 @@ func TestFindMaxFromComparableMap(t *testing.T) {
 <span id="FindMaxFromMap"></span>
 > 获取 map 中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaxFromMap() {
@@ -4027,7 +4112,8 @@ func TestFindMaxFromMap(t *testing.T) {
 <span id="FindMin2MaxFromComparableMap"></span>
 > 获取 map 中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxFromComparableMap() {
@@ -4071,7 +4157,8 @@ func TestFindMin2MaxFromComparableMap(t *testing.T) {
 <span id="FindMin2MaxFromMap"></span>
 > 获取 map 中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxFromMap() {
@@ -4115,7 +4202,8 @@ func TestFindMin2MaxFromMap(t *testing.T) {
 <span id="SwapSlice"></span>
 > 将切片中的两个元素进行交换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleSwapSlice() {
@@ -4163,7 +4251,8 @@ func TestSwapSlice(t *testing.T) {
 <span id="MappingFromSlice"></span>
 > 将切片中的元素进行转换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMappingFromSlice() {
@@ -4215,7 +4304,8 @@ func TestMappingFromSlice(t *testing.T) {
 <span id="MappingFromMap"></span>
 > 将 map 中的元素进行转换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMappingFromMap() {
@@ -4267,7 +4357,8 @@ func TestMappingFromMap(t *testing.T) {
 <span id="MergeSlices"></span>
 > 合并切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeSlices() {
@@ -4314,7 +4405,8 @@ func TestMergeSlices(t *testing.T) {
 <span id="MergeMaps"></span>
 > 合并 map，当多个 map 中存在相同的 key 时，后面的 map 中的 key 将会覆盖前面的 map 中的 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeMaps() {
@@ -4357,7 +4449,8 @@ func TestMergeMaps(t *testing.T) {
 <span id="MergeMapsWithSkip"></span>
 > 合并 map，当多个 map 中存在相同的 key 时，后面的 map 中的 key 将会被跳过
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeMapsWithSkip() {
@@ -4401,7 +4494,8 @@ func TestMergeMapsWithSkip(t *testing.T) {
 > 返回 slice 中的 n 个可重复随机元素
 >   - 当 slice 长度为 0 或 n 小于等于 0 时将会返回 nil
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElementRepeatN() {
@@ -4445,7 +4539,8 @@ func TestChooseRandomSliceElementRepeatN(t *testing.T) {
 > 返回 slice 中的 n 个可重复随机元素的索引
 >   - 当 slice 长度为 0 或 n 小于等于 0 时将会返回 nil
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndexRepeatN() {
@@ -4488,7 +4583,8 @@ func TestChooseRandomIndexRepeatN(t *testing.T) {
 <span id="ChooseRandomSliceElement"></span>
 > 返回 slice 中随机一个元素，当 slice 长度为 0 时将会得到 V 的零值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElement() {
@@ -4531,7 +4627,8 @@ func TestChooseRandomSliceElement(t *testing.T) {
 <span id="ChooseRandomIndex"></span>
 > 返回 slice 中随机一个元素的索引，当 slice 长度为 0 时将会得到 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndex() {
@@ -4575,7 +4672,8 @@ func TestChooseRandomIndex(t *testing.T) {
 > 返回 slice 中的 n 个不可重复的随机元素
 >   - 当 slice 长度为 0 或 n 大于 slice 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElementN() {
@@ -4618,7 +4716,8 @@ func TestChooseRandomSliceElementN(t *testing.T) {
 > 获取切片中的 n 个随机元素的索引
 >   - 如果 n 大于切片长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndexN() {
@@ -4662,7 +4761,8 @@ func TestChooseRandomIndexN(t *testing.T) {
 > 获取 map 中的 n 个随机 key，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyRepeatN() {
@@ -4706,7 +4806,8 @@ func TestChooseRandomMapKeyRepeatN(t *testing.T) {
 > 获取 map 中的 n 个随机 n，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValueRepeatN() {
@@ -4750,7 +4851,8 @@ func TestChooseRandomMapValueRepeatN(t *testing.T) {
 > 获取 map 中的 n 个随机 key 和 v，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValueRepeatN() {
@@ -4793,7 +4895,8 @@ func TestChooseRandomMapKeyAndValueRepeatN(t *testing.T) {
 <span id="ChooseRandomMapKey"></span>
 > 获取 map 中的随机 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKey() {
@@ -4836,7 +4939,8 @@ func TestChooseRandomMapKey(t *testing.T) {
 <span id="ChooseRandomMapValue"></span>
 > 获取 map 中的随机 value
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValue() {
@@ -4880,7 +4984,8 @@ func TestChooseRandomMapValue(t *testing.T) {
 > 获取 map 中的 inputN 个随机 key
 >   - 如果 inputN 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyN() {
@@ -4896,7 +5001,8 @@ func ExampleChooseRandomMapKeyN() {
 > 获取 map 中的 n 个随机 value
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValueN() {
@@ -4939,7 +5045,8 @@ func TestChooseRandomMapValueN(t *testing.T) {
 <span id="ChooseRandomMapKeyAndValue"></span>
 > 获取 map 中的随机 key 和 v
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValue() {
@@ -4983,7 +5090,8 @@ func TestChooseRandomMapKeyAndValue(t *testing.T) {
 > 获取 map 中的 inputN 个随机 key 和 v
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValueN() {
@@ -5028,7 +5136,8 @@ func TestChooseRandomMapKeyAndValueN(t *testing.T) {
 <span id="DescBy"></span>
 > 返回降序比较结果
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDescBy() {
@@ -5078,7 +5187,8 @@ func TestDescBy(t *testing.T) {
 <span id="AscBy"></span>
 > 返回升序比较结果
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAscBy() {
@@ -5128,7 +5238,8 @@ func TestAscBy(t *testing.T) {
 <span id="Desc"></span>
 > 对切片进行降序排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDesc() {
@@ -5178,7 +5289,8 @@ func TestDesc(t *testing.T) {
 <span id="DescByClone"></span>
 > 对切片进行降序排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDescByClone() {
@@ -5228,7 +5340,8 @@ func TestDescByClone(t *testing.T) {
 <span id="Asc"></span>
 > 对切片进行升序排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAsc() {
@@ -5278,7 +5391,8 @@ func TestAsc(t *testing.T) {
 <span id="AscByClone"></span>
 > 对切片进行升序排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAscByClone() {
@@ -5328,7 +5442,8 @@ func TestAscByClone(t *testing.T) {
 <span id="Shuffle"></span>
 > 对切片进行随机排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShuffle() {
@@ -5372,7 +5487,8 @@ func TestShuffle(t *testing.T) {
 <span id="ShuffleByClone"></span>
 > 对切片进行随机排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShuffleByClone() {
