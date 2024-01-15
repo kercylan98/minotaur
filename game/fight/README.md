@@ -65,18 +65,30 @@ type TurnBased[CampID comparable, EntityID comparable, Camp generic.IdR[CampID],
 	closed               bool
 }
 ```
+<span id="struct_TurnBased_Close"></span>
+
 #### func (*TurnBased) Close()
 > 关闭回合制
+
 ***
+<span id="struct_TurnBased_AddCamp"></span>
+
 #### func (*TurnBased) AddCamp(camp Camp, entity Entity, entities ...Entity)
 > 添加阵营
+
 ***
+<span id="struct_TurnBased_SetActionTimeout"></span>
+
 #### func (*TurnBased) SetActionTimeout(actionTimeoutHandler func ( Camp,  Entity)  time.Duration)
 > 设置行动超时时间处理函数
 >   - 默认情况下行动超时时间函数将始终返回 0
+
 ***
+<span id="struct_TurnBased_Run"></span>
+
 #### func (*TurnBased) Run()
 > 运行
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -154,33 +166,60 @@ type TurnBasedController[CampID comparable, EntityID comparable, Camp generic.Id
 	tb *TurnBased[CampID, EntityID, Camp, Entity]
 }
 ```
+<span id="struct_TurnBasedController_GetRound"></span>
+
 #### func (*TurnBasedController) GetRound()  int
 > 获取当前回合数
+
 ***
+<span id="struct_TurnBasedController_GetCamp"></span>
+
 #### func (*TurnBasedController) GetCamp()  Camp
 > 获取当前操作阵营
+
 ***
+<span id="struct_TurnBasedController_GetEntity"></span>
+
 #### func (*TurnBasedController) GetEntity()  Entity
 > 获取当前操作实体
+
 ***
+<span id="struct_TurnBasedController_GetActionTimeoutDuration"></span>
+
 #### func (*TurnBasedController) GetActionTimeoutDuration()  time.Duration
 > 获取当前行动超时时长
+
 ***
+<span id="struct_TurnBasedController_GetActionStartTime"></span>
+
 #### func (*TurnBasedController) GetActionStartTime()  time.Time
 > 获取当前行动开始时间
+
 ***
+<span id="struct_TurnBasedController_GetActionEndTime"></span>
+
 #### func (*TurnBasedController) GetActionEndTime()  time.Time
 > 获取当前行动结束时间
+
 ***
+<span id="struct_TurnBasedController_Finish"></span>
+
 #### func (*TurnBasedController) Finish()
 > 结束当前操作，将立即切换到下一个操作实体
+
 ***
+<span id="struct_TurnBasedController_Stop"></span>
+
 #### func (*TurnBasedController) Stop()
 > 在当前回合执行完毕后停止回合进程
+
 ***
+<span id="struct_TurnBasedController_Refresh"></span>
+
 #### func (*TurnBasedController) Refresh(duration time.Duration)  time.Time
 > 刷新当前操作实体的行动超时时间
 >   - 当不在行动阶段时，将返回 time.Time 零值
+
 ***
 <span id="struct_TurnBasedEntitySwitchEventHandler"></span>
 ### TurnBasedEntitySwitchEventHandler `STRUCT`

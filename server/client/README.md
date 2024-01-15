@@ -78,23 +78,38 @@ type Client struct {
 	block          chan struct{}
 }
 ```
+<span id="struct_Client_Run"></span>
+
 #### func (*Client) Run(block ...bool)  error
 > 运行客户端，当客户端已运行时，会先关闭客户端再重新运行
 >   - block 以阻塞方式运行
+
 ***
+<span id="struct_Client_RunByBufferSize"></span>
+
 #### func (*Client) RunByBufferSize(size int, block ...bool)  error
 > 指定写入循环缓冲区大小运行客户端，当客户端已运行时，会先关闭客户端再重新运行
 >   - block 以阻塞方式运行
+
 ***
+<span id="struct_Client_IsConnected"></span>
+
 #### func (*Client) IsConnected()  bool
 > 是否已连接
+
 ***
+<span id="struct_Client_Close"></span>
+
 #### func (*Client) Close(err ...error)
 > 关闭
+
 ***
+<span id="struct_Client_WriteWS"></span>
+
 #### func (*Client) WriteWS(wst int, packet []byte, callback ...func (err error))
 > 向连接中写入指定 websocket 数据类型
 >   - wst: websocket模式中指定消息类型
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -133,11 +148,17 @@ func TestClient_WriteWS(t *testing.T) {
 
 
 ***
+<span id="struct_Client_Write"></span>
+
 #### func (*Client) Write(packet []byte, callback ...func (err error))
 > 向连接中写入数据
+
 ***
+<span id="struct_Client_GetServerAddr"></span>
+
 #### func (*Client) GetServerAddr()  string
 > 获取服务器地址
+
 ***
 <span id="struct_Core"></span>
 ### Core `INTERFACE`
@@ -177,15 +198,30 @@ type TCP struct {
 	closed bool
 }
 ```
+<span id="struct_TCP_Run"></span>
+
 #### func (*TCP) Run(runState chan error, receive func (wst int, packet []byte))
+
 ***
+<span id="struct_TCP_Write"></span>
+
 #### func (*TCP) Write(packet *Packet)  error
+
 ***
+<span id="struct_TCP_Close"></span>
+
 #### func (*TCP) Close()
+
 ***
+<span id="struct_TCP_GetServerAddr"></span>
+
 #### func (*TCP) GetServerAddr()  string
+
 ***
+<span id="struct_TCP_Clone"></span>
+
 #### func (*TCP) Clone()  Core
+
 ***
 <span id="struct_UnixDomainSocket"></span>
 ### UnixDomainSocket `STRUCT`
@@ -197,9 +233,15 @@ type UnixDomainSocket struct {
 	closed bool
 }
 ```
+<span id="struct_UnixDomainSocket_Run"></span>
+
 #### func (*UnixDomainSocket) Run(runState chan error, receive func (wst int, packet []byte))
+
 ***
+<span id="struct_UnixDomainSocket_Write"></span>
+
 #### func (*UnixDomainSocket) Write(packet *Packet)  error
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -243,11 +285,20 @@ func TestUnixDomainSocket_Write(t *testing.T) {
 
 
 ***
+<span id="struct_UnixDomainSocket_Close"></span>
+
 #### func (*UnixDomainSocket) Close()
+
 ***
+<span id="struct_UnixDomainSocket_GetServerAddr"></span>
+
 #### func (*UnixDomainSocket) GetServerAddr()  string
+
 ***
+<span id="struct_UnixDomainSocket_Clone"></span>
+
 #### func (*UnixDomainSocket) Clone()  Core
+
 ***
 <span id="struct_Websocket"></span>
 ### Websocket `STRUCT`
@@ -260,13 +311,28 @@ type Websocket struct {
 	mu     sync.Mutex
 }
 ```
+<span id="struct_Websocket_Run"></span>
+
 #### func (*Websocket) Run(runState chan error, receive func (wst int, packet []byte))
+
 ***
+<span id="struct_Websocket_Write"></span>
+
 #### func (*Websocket) Write(packet *Packet)  error
+
 ***
+<span id="struct_Websocket_Close"></span>
+
 #### func (*Websocket) Close()
+
 ***
+<span id="struct_Websocket_GetServerAddr"></span>
+
 #### func (*Websocket) GetServerAddr()  string
+
 ***
+<span id="struct_Websocket_Clone"></span>
+
 #### func (*Websocket) Clone()  Core
+
 ***

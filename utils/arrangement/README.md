@@ -127,24 +127,42 @@ type Area[ID comparable, AreaInfo any] struct {
 	evaluate    AreaEvaluateHandle[ID, AreaInfo]
 }
 ```
+<span id="struct_Area_GetAreaInfo"></span>
+
 #### func (*Area) GetAreaInfo()  AreaInfo
 > 获取编排区域的信息
+
 ***
+<span id="struct_Area_GetItems"></span>
+
 #### func (*Area) GetItems()  map[ID]Item[ID]
 > 获取编排区域中的所有成员
+
 ***
+<span id="struct_Area_IsAllow"></span>
+
 #### func (*Area) IsAllow(item Item[ID]) (constraintErr error, conflictItems map[ID]Item[ID], allow bool)
 > 检测一个成员是否可以被添加到该编排区域中
+
 ***
+<span id="struct_Area_IsConflict"></span>
+
 #### func (*Area) IsConflict(item Item[ID])  bool
 > 检测一个成员是否会造成冲突
+
 ***
+<span id="struct_Area_GetConflictItems"></span>
+
 #### func (*Area) GetConflictItems(item Item[ID])  map[ID]Item[ID]
 > 获取与一个成员产生冲突的所有其他成员
+
 ***
+<span id="struct_Area_GetScore"></span>
+
 #### func (*Area) GetScore(extra ...Item[ID])  float64
 > 获取该编排区域的评估分数
 >   - 当 extra 不为空时，将会将 extra 中的内容添加到 items 中进行评估
+
 ***
 <span id="struct_AreaOption"></span>
 ### AreaOption `STRUCT`
@@ -176,14 +194,23 @@ type Arrangement[ID comparable, AreaInfo any] struct {
 	conflictHandles   []ConflictHandle[ID, AreaInfo]
 }
 ```
+<span id="struct_Arrangement_AddArea"></span>
+
 #### func (*Arrangement) AddArea(areaInfo AreaInfo, options ...AreaOption[ID, AreaInfo])
 > 添加一个编排区域
+
 ***
+<span id="struct_Arrangement_AddItem"></span>
+
 #### func (*Arrangement) AddItem(item Item[ID])
 > 添加一个成员
+
 ***
+<span id="struct_Arrangement_Arrange"></span>
+
 #### func (*Arrangement) Arrange() (areas []*Area[ID, AreaInfo], noSolution map[ID]Item[ID])
 > 编排
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -247,47 +274,89 @@ type Editor[ID comparable, AreaInfo any] struct {
 	retryCount int
 }
 ```
+<span id="struct_Editor_GetPendingCount"></span>
+
 #### func (*Editor) GetPendingCount()  int
 > 获取待编排的成员数量
+
 ***
+<span id="struct_Editor_RemoveAreaItem"></span>
+
 #### func (*Editor) RemoveAreaItem(area *Area[ID, AreaInfo], item Item[ID])
 > 从编排区域中移除一个成员到待编排队列中，如果该成员不存在于编排区域中，则不进行任何操作
+
 ***
+<span id="struct_Editor_AddAreaItem"></span>
+
 #### func (*Editor) AddAreaItem(area *Area[ID, AreaInfo], item Item[ID])
 > 将一个成员添加到编排区域中，如果该成员已经存在于编排区域中，则不进行任何操作
+
 ***
+<span id="struct_Editor_GetAreas"></span>
+
 #### func (*Editor) GetAreas()  []*Area[ID, AreaInfo]
 > 获取所有的编排区域
+
 ***
+<span id="struct_Editor_GetAreasWithScoreAsc"></span>
+
 #### func (*Editor) GetAreasWithScoreAsc(extra ...Item[ID])  []*Area[ID, AreaInfo]
 > 获取所有的编排区域，并按照分数升序排序
+
 ***
+<span id="struct_Editor_GetAreasWithScoreDesc"></span>
+
 #### func (*Editor) GetAreasWithScoreDesc(extra ...Item[ID])  []*Area[ID, AreaInfo]
 > 获取所有的编排区域，并按照分数降序排序
+
 ***
+<span id="struct_Editor_GetRetryCount"></span>
+
 #### func (*Editor) GetRetryCount()  int
 > 获取重试次数
+
 ***
+<span id="struct_Editor_GetThresholdProgressRate"></span>
+
 #### func (*Editor) GetThresholdProgressRate()  float64
 > 获取重试次数阈值进度
+
 ***
+<span id="struct_Editor_GetAllowAreas"></span>
+
 #### func (*Editor) GetAllowAreas(item Item[ID])  []*Area[ID, AreaInfo]
 > 获取允许的编排区域
+
 ***
+<span id="struct_Editor_GetNoAllowAreas"></span>
+
 #### func (*Editor) GetNoAllowAreas(item Item[ID])  []*Area[ID, AreaInfo]
 > 获取不允许的编排区域
+
 ***
+<span id="struct_Editor_GetBestAllowArea"></span>
+
 #### func (*Editor) GetBestAllowArea(item Item[ID])  *Area[ID, AreaInfo]
 > 获取最佳的允许的编排区域，如果不存在，则返回 nil
+
 ***
+<span id="struct_Editor_GetBestNoAllowArea"></span>
+
 #### func (*Editor) GetBestNoAllowArea(item Item[ID])  *Area[ID, AreaInfo]
 > 获取最佳的不允许的编排区域，如果不存在，则返回 nil
+
 ***
+<span id="struct_Editor_GetWorstAllowArea"></span>
+
 #### func (*Editor) GetWorstAllowArea(item Item[ID])  *Area[ID, AreaInfo]
 > 获取最差的允许的编排区域，如果不存在，则返回 nil
+
 ***
+<span id="struct_Editor_GetWorstNoAllowArea"></span>
+
 #### func (*Editor) GetWorstNoAllowArea(item Item[ID])  *Area[ID, AreaInfo]
 > 获取最差的不允许的编排区域，如果不存在，则返回 nil
+
 ***
 <span id="struct_Item"></span>
 ### Item `INTERFACE`

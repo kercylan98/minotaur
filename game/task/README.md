@@ -156,71 +156,137 @@ func TestCond(t *testing.T) {
 ```go
 type Condition map[any]any
 ```
+<span id="struct_Condition_Cond"></span>
+
 #### func (Condition) Cond(k any, v any)  Condition
 > 创建任务条件
+
 ***
+<span id="struct_Condition_GetString"></span>
+
 #### func (Condition) GetString(key any)  string
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetInt"></span>
+
 #### func (Condition) GetInt(key any)  int
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetInt8"></span>
+
 #### func (Condition) GetInt8(key any)  int8
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetInt16"></span>
+
 #### func (Condition) GetInt16(key any)  int16
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetInt32"></span>
+
 #### func (Condition) GetInt32(key any)  int32
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetInt64"></span>
+
 #### func (Condition) GetInt64(key any)  int64
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetUint"></span>
+
 #### func (Condition) GetUint(key any)  uint
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetUint8"></span>
+
 #### func (Condition) GetUint8(key any)  uint8
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetUint16"></span>
+
 #### func (Condition) GetUint16(key any)  uint16
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetUint32"></span>
+
 #### func (Condition) GetUint32(key any)  uint32
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetUint64"></span>
+
 #### func (Condition) GetUint64(key any)  uint64
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetFloat32"></span>
+
 #### func (Condition) GetFloat32(key any)  float32
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetFloat64"></span>
+
 #### func (Condition) GetFloat64(key any)  float64
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetBool"></span>
+
 #### func (Condition) GetBool(key any)  bool
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetTime"></span>
+
 #### func (Condition) GetTime(key any)  time.Time
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetDuration"></span>
+
 #### func (Condition) GetDuration(key any)  time.Duration
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetByte"></span>
+
 #### func (Condition) GetByte(key any)  byte
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetBytes"></span>
+
 #### func (Condition) GetBytes(key any)  []byte
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetRune"></span>
+
 #### func (Condition) GetRune(key any)  rune
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetRunes"></span>
+
 #### func (Condition) GetRunes(key any)  []rune
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
+<span id="struct_Condition_GetAny"></span>
+
 #### func (Condition) GetAny(key any)  any
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
+
 ***
 <span id="struct_RefreshTaskCounterEventHandler"></span>
 ### RefreshTaskCounterEventHandler `STRUCT`
@@ -240,7 +306,10 @@ type Option func(task *Task)
 ```go
 type Status byte
 ```
+<span id="struct_Status_String"></span>
+
 #### func (Status) String()  string
+
 ***
 <span id="struct_Task"></span>
 ### Task `STRUCT`
@@ -259,33 +328,60 @@ type Task struct {
 	LimitedDuration time.Duration
 }
 ```
+<span id="struct_Task_IsComplete"></span>
+
 #### func (*Task) IsComplete()  bool
 > 判断任务是否已完成
+
 ***
+<span id="struct_Task_IsFailed"></span>
+
 #### func (*Task) IsFailed()  bool
 > 判断任务是否已失败
+
 ***
+<span id="struct_Task_IsReward"></span>
+
 #### func (*Task) IsReward()  bool
 > 判断任务是否已领取奖励
+
 ***
+<span id="struct_Task_ReceiveReward"></span>
+
 #### func (*Task) ReceiveReward()  bool
 > 领取任务奖励，当任务状态为已完成时，才能领取奖励，此时返回 true，并且任务状态变更为已领取奖励
+
 ***
+<span id="struct_Task_IncrementCounter"></span>
+
 #### func (*Task) IncrementCounter(incr int64)  *Task
 > 增加计数器的值，当 incr 为负数时，计数器的值不会发生变化
 >   - 如果需要溢出计数器，可通过 WithOverflowCounter 设置可溢出的任务计数器
+
 ***
+<span id="struct_Task_DecrementCounter"></span>
+
 #### func (*Task) DecrementCounter(decr int64)  *Task
 > 减少计数器的值，当 decr 为负数时，计数器的值不会发生变化
+
 ***
+<span id="struct_Task_AssignConditionValueAndRefresh"></span>
+
 #### func (*Task) AssignConditionValueAndRefresh(key any, value any)  *Task
 > 分配条件值并刷新任务状态
+
 ***
+<span id="struct_Task_AssignConditionValueAndRefreshByCondition"></span>
+
 #### func (*Task) AssignConditionValueAndRefreshByCondition(condition Condition)  *Task
 > 分配条件值并刷新任务状态
+
 ***
+<span id="struct_Task_ResetStatus"></span>
+
 #### func (*Task) ResetStatus()  *Task
 > 重置任务状态
 >   - 该函数会将任务状态重置为已接受状态后，再刷新任务状态
 >   - 当任务条件变更，例如任务计数要求为 10，已经完成的情况下，将任务计数要求变更为 5 或 20，此时任务状态由于是已完成或已领取状态，不会自动刷新，需要调用该函数刷新任务状态
+
 ***

@@ -86,5 +86,8 @@ type Graph[Node comparable] interface {
 	Neighbours(node Node) []Node
 }
 ```
+<span id="struct_Graph_Neighbours"></span>
+
 #### func (Graph) Neighbours(point geometry.Point[int])  []geometry.Point[int]
+
 ***

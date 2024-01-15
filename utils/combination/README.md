@@ -44,7 +44,7 @@ combination 包提供了一些实用的组合函数。
 |[WithValidatorHandleContinuousNot](#WithValidatorHandleContinuousNot)|校验组合成员是否不连续
 |[WithValidatorHandleGroupContinuous](#WithValidatorHandleGroupContinuous)|校验组合成员是否能够按类型分组并且连续
 |[WithValidatorHandleGroupContinuousN](#WithValidatorHandleGroupContinuousN)|校验组合成员是否能够按分组为 n 组类型并且连续
-|[WithValidatorHandleNCarryM](#WithValidatorHandleNCarryM)| 校验组合成员是否匹配 N 携带相同的 M 的组合
+|[WithValidatorHandleNCarryM](#WithValidatorHandleNCarryM)|校验组合成员是否匹配 N 携带相同的 M 的组合
 |[WithValidatorHandleNCarryIndependentM](#WithValidatorHandleNCarryIndependentM)|校验组合成员是否匹配 N 携带独立的 M 的组合
 
 
@@ -227,7 +227,7 @@ combination 包提供了一些实用的组合函数。
 ***
 #### func WithValidatorHandleNCarryM\[T Item, E generic.Ordered\](n int, m int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleNCarryM"></span>
->  校验组合成员是否匹配 N 携带相同的 M 的组合
+> 校验组合成员是否匹配 N 携带相同的 M 的组合
 >   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
 >   - m: 组合中元素的数量，表示需要匹配的组合数量，m 的类型需要全部相同
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
@@ -251,23 +251,41 @@ type Combination[T Item] struct {
 	priority []string
 }
 ```
+<span id="struct_Combination_NewMatcher"></span>
+
 #### func (*Combination) NewMatcher(name string, options ...MatcherOption[T])  *Combination[T]
 > 添加一个新的匹配器
+
 ***
+<span id="struct_Combination_AddMatcher"></span>
+
 #### func (*Combination) AddMatcher(name string, matcher *Matcher[T])  *Combination[T]
 > 添加一个匹配器
+
 ***
+<span id="struct_Combination_RemoveMatcher"></span>
+
 #### func (*Combination) RemoveMatcher(name string)  *Combination[T]
 > 移除一个匹配器
+
 ***
+<span id="struct_Combination_Combinations"></span>
+
 #### func (*Combination) Combinations(items []T) (result [][]T)
 > 从一组数据中提取所有符合匹配器规则的组合
+
 ***
+<span id="struct_Combination_CombinationsToName"></span>
+
 #### func (*Combination) CombinationsToName(items []T) (result map[string][][]T)
 > 从一组数据中提取所有符合匹配器规则的组合，并返回匹配器名称
+
 ***
+<span id="struct_Combination_Best"></span>
+
 #### func (*Combination) Best(items []T) (name string, result []T)
 > 从一组数据中提取符合匹配器规则的最佳组合
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -302,8 +320,11 @@ func TestCombination_Best(t *testing.T) {
 
 
 ***
+<span id="struct_Combination_Worst"></span>
+
 #### func (*Combination) Worst(items []T) (name string, result []T)
 > 从一组数据中提取符合匹配器规则的最差组合
+
 ***
 <span id="struct_Option"></span>
 ### Option `STRUCT`
@@ -326,18 +347,30 @@ type Matcher[T Item] struct {
 	filter   []func(items []T) [][]T
 }
 ```
+<span id="struct_Matcher_AddFilter"></span>
+
 #### func (*Matcher) AddFilter(filter func (items []T)  [][]T)
 > 添加一个筛选器
 >   - 筛选器用于对组合进行筛选，返回一个二维数组，每个数组内的元素都是一个组合
+
 ***
+<span id="struct_Matcher_Combinations"></span>
+
 #### func (*Matcher) Combinations(items []T)  [][]T
 > 从一组数据中提取所有符合筛选器规则的组合
+
 ***
+<span id="struct_Matcher_Best"></span>
+
 #### func (*Matcher) Best(items []T)  []T
 > 从一组数据中提取符筛选器规则的最佳组合
+
 ***
+<span id="struct_Matcher_Worst"></span>
+
 #### func (*Matcher) Worst(items []T)  []T
 > 从一组数据中提取符筛选器规则的最差组合
+
 ***
 <span id="struct_MatcherOption"></span>
 ### MatcherOption `STRUCT`
@@ -353,8 +386,11 @@ type Validator[T Item] struct {
 	vh []func(items []T) bool
 }
 ```
+<span id="struct_Validator_Validate"></span>
+
 #### func (*Validator) Validate(items []T)  bool
 > 校验组合是否符合要求
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

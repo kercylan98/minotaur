@@ -878,23 +878,41 @@ type Circle[V generic.SignedNumber] struct {
 	Shape[V]
 }
 ```
+<span id="struct_Circle_Radius"></span>
+
 #### func (Circle) Radius()  V
 > 获取圆形半径
+
 ***
+<span id="struct_Circle_Centroid"></span>
+
 #### func (Circle) Centroid()  Point[V]
 > 获取圆形质心位置
+
 ***
+<span id="struct_Circle_Overlap"></span>
+
 #### func (Circle) Overlap(circle Circle[V])  bool
 > 与另一个圆是否发生重叠
+
 ***
+<span id="struct_Circle_Area"></span>
+
 #### func (Circle) Area()  V
 > 获取圆形面积
+
 ***
+<span id="struct_Circle_Length"></span>
+
 #### func (Circle) Length()  V
 > 获取圆的周长
+
 ***
+<span id="struct_Circle_CentroidDistance"></span>
+
 #### func (Circle) CentroidDistance(circle Circle[V])  V
 > 计算与另一个圆的质心距离
+
 ***
 <span id="struct_FloorPlan"></span>
 ### FloorPlan `STRUCT`
@@ -902,17 +920,29 @@ type Circle[V generic.SignedNumber] struct {
 ```go
 type FloorPlan []string
 ```
+<span id="struct_FloorPlan_IsFree"></span>
+
 #### func (FloorPlan) IsFree(point Point[int])  bool
 > 检查位置是否为空格
+
 ***
+<span id="struct_FloorPlan_IsInBounds"></span>
+
 #### func (FloorPlan) IsInBounds(point Point[int])  bool
 > 检查位置是否在边界内
+
 ***
+<span id="struct_FloorPlan_Put"></span>
+
 #### func (FloorPlan) Put(point Point[int], c rune)
 > 设置平面图特定位置的字符
+
 ***
+<span id="struct_FloorPlan_String"></span>
+
 #### func (FloorPlan) String()  string
 > 获取平面图结果
+
 ***
 <span id="struct_Direction"></span>
 ### Direction `STRUCT`
@@ -926,17 +956,29 @@ type Direction uint8
 ```go
 type LineSegment[V generic.SignedNumber] [2]Point[V]
 ```
+<span id="struct_LineSegment_GetPoints"></span>
+
 #### func (LineSegment) GetPoints()  [2]Point[V]
 > 获取该线段的两个点
+
 ***
+<span id="struct_LineSegment_GetStart"></span>
+
 #### func (LineSegment) GetStart()  Point[V]
 > 获取该线段的开始位置
+
 ***
+<span id="struct_LineSegment_GetEnd"></span>
+
 #### func (LineSegment) GetEnd()  Point[V]
 > 获取该线段的结束位置
+
 ***
+<span id="struct_LineSegment_GetLength"></span>
+
 #### func (LineSegment) GetLength()  V
 > 获取该线段的长度
+
 ***
 <span id="struct_LineSegmentCap"></span>
 ### LineSegmentCap `STRUCT`
@@ -947,7 +989,10 @@ type LineSegmentCap[V generic.SignedNumber, Data any] struct {
 	Data Data
 }
 ```
+<span id="struct_LineSegmentCap_GetData"></span>
+
 #### func (*LineSegmentCap) GetData()  Data
+
 ***
 <span id="struct_Point"></span>
 ### Point `STRUCT`
@@ -955,53 +1000,101 @@ type LineSegmentCap[V generic.SignedNumber, Data any] struct {
 ```go
 type Point[V generic.SignedNumber] [2]V
 ```
+<span id="struct_Point_GetX"></span>
+
 #### func (Point) GetX()  V
 > 返回该点的 x 坐标
+
 ***
+<span id="struct_Point_GetY"></span>
+
 #### func (Point) GetY()  V
 > 返回该点的 y 坐标
+
 ***
+<span id="struct_Point_GetXY"></span>
+
 #### func (Point) GetXY() (x V, y V)
 > 返回该点的 x、y 坐标
+
 ***
+<span id="struct_Point_GetPos"></span>
+
 #### func (Point) GetPos(width V)  V
 > 返回该点位于特定宽度的二维数组的顺序位置
+
 ***
+<span id="struct_Point_GetOffset"></span>
+
 #### func (Point) GetOffset(x V, y V)  Point[V]
 > 获取偏移后的新坐标
+
 ***
+<span id="struct_Point_Negative"></span>
+
 #### func (Point) Negative()  bool
 > 返回该点是否是一个负数坐标
+
 ***
+<span id="struct_Point_OutOf"></span>
+
 #### func (Point) OutOf(minWidth V, minHeight V, maxWidth V, maxHeight V)  bool
 > 返回该点在特定宽高下是否越界f
+
 ***
+<span id="struct_Point_Equal"></span>
+
 #### func (Point) Equal(point Point[V])  bool
 > 返回两个点是否相等
+
 ***
+<span id="struct_Point_Copy"></span>
+
 #### func (Point) Copy()  Point[V]
 > 复制一个点位置
+
 ***
+<span id="struct_Point_Add"></span>
+
 #### func (Point) Add(point Point[V])  Point[V]
 > 得到加上 point 后的点
+
 ***
+<span id="struct_Point_Sub"></span>
+
 #### func (Point) Sub(point Point[V])  Point[V]
 > 得到减去 point 后的点
+
 ***
+<span id="struct_Point_Mul"></span>
+
 #### func (Point) Mul(point Point[V])  Point[V]
 > 得到乘以 point 后的点
+
 ***
+<span id="struct_Point_Div"></span>
+
 #### func (Point) Div(point Point[V])  Point[V]
 > 得到除以 point 后的点
+
 ***
+<span id="struct_Point_Abs"></span>
+
 #### func (Point) Abs()  Point[V]
 > 返回位置的绝对值
+
 ***
+<span id="struct_Point_Max"></span>
+
 #### func (Point) Max(point Point[V])  Point[V]
 > 返回两个位置中每个维度的最大值组成的新的位置
+
 ***
+<span id="struct_Point_Min"></span>
+
 #### func (Point) Min(point Point[V])  Point[V]
 > 返回两个位置中每个维度的最小值组成的新的位置
+
 ***
 <span id="struct_PointCap"></span>
 ### PointCap `STRUCT`
@@ -1012,8 +1105,11 @@ type PointCap[V generic.SignedNumber, D any] struct {
 	Data D
 }
 ```
+<span id="struct_PointCap_GetData"></span>
+
 #### func (PointCap) GetData()  D
 > 获取数据
+
 ***
 <span id="struct_Shape"></span>
 ### Shape `STRUCT`
@@ -1021,8 +1117,11 @@ type PointCap[V generic.SignedNumber, D any] struct {
 ```go
 type Shape[V generic.SignedNumber] []Point[V]
 ```
+<span id="struct_Shape_Points"></span>
+
 #### func (Shape) Points()  []Point[V]
 > 获取这个形状的所有点
+
 **示例代码：**
 
 ```go
@@ -1059,8 +1158,11 @@ func TestShape_Points(t *testing.T) {
 
 
 ***
+<span id="struct_Shape_PointCount"></span>
+
 #### func (Shape) PointCount()  int
 > 获取这个形状的点数量
+
 **示例代码：**
 
 ```go
@@ -1092,15 +1194,24 @@ func TestShape_PointCount(t *testing.T) {
 
 
 ***
+<span id="struct_Shape_Contains"></span>
+
 #### func (Shape) Contains(point Point[V])  bool
 > 返回该形状中是否包含点
+
 ***
+<span id="struct_Shape_ToCircle"></span>
+
 #### func (Shape) ToCircle()  Circle[V]
 > 将形状转换为圆形进行处理
 >   - 当形状非圆形时将会产生意外情况
+
 ***
+<span id="struct_Shape_String"></span>
+
 #### func (Shape) String()  string
 > 将该形状转换为可视化的字符串进行返回
+
 **示例代码：**
 
 ```go
@@ -1133,6 +1244,8 @@ func TestShape_String(t *testing.T) {
 
 
 ***
+<span id="struct_Shape_ShapeSearch"></span>
+
 #### func (Shape) ShapeSearch(options ...ShapeSearchOption) (result []Shape[V])
 > 获取该形状中包含的所有图形组合及其位置
 >   - 需要注意的是，即便图形最终表示为相同的，但是只要位置组合顺序不同，那么也将被认定为一种图形组合
@@ -1140,6 +1253,7 @@ func TestShape_String(t *testing.T) {
 >   - 返回的坐标为原始形状的坐标
 > 
 > 可通过可选项对搜索结果进行过滤
+
 **示例代码：**
 
 ```go
@@ -1155,12 +1269,18 @@ func ExampleShape_ShapeSearch() {
 ```
 
 ***
+<span id="struct_Shape_Edges"></span>
+
 #### func (Shape) Edges() (edges []LineSegment[V])
 > 获取该形状每一条边
 >   - 该形状需要最少由3个点组成，否则将不会返回任意一边
+
 ***
+<span id="struct_Shape_IsPointOnEdge"></span>
+
 #### func (Shape) IsPointOnEdge(point Point[V])  bool
 > 检查点是否在该形状的一条边上
+
 ***
 <span id="struct_ShapeSearchOption"></span>
 ### ShapeSearchOption `STRUCT`

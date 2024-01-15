@@ -30,7 +30,10 @@
 ```go
 type Ants struct{}
 ```
+<span id="struct_Ants_Printf"></span>
+
 #### func (*Ants) Printf(format string, args ...interface {})
+
 ***
 <span id="struct_GNet"></span>
 ### GNet `STRUCT`
@@ -38,13 +41,28 @@ type Ants struct{}
 ```go
 type GNet struct{}
 ```
+<span id="struct_GNet_Debugf"></span>
+
 #### func (*GNet) Debugf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Infof"></span>
+
 #### func (*GNet) Infof(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Warnf"></span>
+
 #### func (*GNet) Warnf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Errorf"></span>
+
 #### func (*GNet) Errorf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Fatalf"></span>
+
 #### func (*GNet) Fatalf(format string, args ...interface {})
+
 ***

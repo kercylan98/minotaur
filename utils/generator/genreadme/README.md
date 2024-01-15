@@ -44,7 +44,10 @@ type Builder struct {
 	o string
 }
 ```
+<span id="struct_Builder_Generate"></span>
+
 #### func (*Builder) Generate()  error
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

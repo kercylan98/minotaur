@@ -65,17 +65,29 @@ type Matrix[V any] struct {
 	data       []V
 }
 ```
+<span id="struct_Matrix_Get"></span>
+
 #### func (*Matrix) Get(index ...int)  *V
 > 获取矩阵中给定索引的元素。
+
 ***
+<span id="struct_Matrix_Set"></span>
+
 #### func (*Matrix) Set(index []int, value V)
 > 设置矩阵中给定索引的元素。
+
 ***
+<span id="struct_Matrix_Dimensions"></span>
+
 #### func (*Matrix) Dimensions()  []int
 > 返回矩阵的维度大小。
+
 ***
+<span id="struct_Matrix_Clear"></span>
+
 #### func (*Matrix) Clear()
 > 清空矩阵。
+
 ***
 <span id="struct_PagedSlice"></span>
 ### PagedSlice `STRUCT`
@@ -88,23 +100,41 @@ type PagedSlice[T any] struct {
 	lenLast  int
 }
 ```
+<span id="struct_PagedSlice_Add"></span>
+
 #### func (*PagedSlice) Add(value T)
 > 添加一个元素到 PagedSlice 中。
+
 ***
+<span id="struct_PagedSlice_Get"></span>
+
 #### func (*PagedSlice) Get(index int)  *T
 > 获取 PagedSlice 中给定索引的元素。
+
 ***
+<span id="struct_PagedSlice_Set"></span>
+
 #### func (*PagedSlice) Set(index int, value T)
 > 设置 PagedSlice 中给定索引的元素。
+
 ***
+<span id="struct_PagedSlice_Len"></span>
+
 #### func (*PagedSlice) Len()  int
 > 返回 PagedSlice 中元素的数量。
+
 ***
+<span id="struct_PagedSlice_Clear"></span>
+
 #### func (*PagedSlice) Clear()
 > 清空 PagedSlice。
+
 ***
+<span id="struct_PagedSlice_Range"></span>
+
 #### func (*PagedSlice) Range(f func (index int, value T)  bool)
 > 迭代 PagedSlice 中的所有元素。
+
 ***
 <span id="struct_PrioritySlice"></span>
 ### PrioritySlice `STRUCT`
@@ -114,17 +144,29 @@ type PrioritySlice[V any] struct {
 	items []*priorityItem[V]
 }
 ```
+<span id="struct_PrioritySlice_Len"></span>
+
 #### func (*PrioritySlice) Len()  int
 > 返回切片长度
+
 ***
+<span id="struct_PrioritySlice_Cap"></span>
+
 #### func (*PrioritySlice) Cap()  int
 > 返回切片容量
+
 ***
+<span id="struct_PrioritySlice_Clear"></span>
+
 #### func (*PrioritySlice) Clear()
 > 清空切片
+
 ***
+<span id="struct_PrioritySlice_Append"></span>
+
 #### func (*PrioritySlice) Append(v V, p int)
 > 添加元素
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -145,44 +187,83 @@ func TestPrioritySlice_Append(t *testing.T) {
 
 
 ***
+<span id="struct_PrioritySlice_Appends"></span>
+
 #### func (*PrioritySlice) Appends(priority int, vs ...V)
 > 添加元素
+
 ***
+<span id="struct_PrioritySlice_Get"></span>
+
 #### func (*PrioritySlice) Get(index int) ( V,  int)
 > 获取元素
+
 ***
+<span id="struct_PrioritySlice_GetValue"></span>
+
 #### func (*PrioritySlice) GetValue(index int)  V
 > 获取元素值
+
 ***
+<span id="struct_PrioritySlice_GetPriority"></span>
+
 #### func (*PrioritySlice) GetPriority(index int)  int
 > 获取元素优先级
+
 ***
+<span id="struct_PrioritySlice_Set"></span>
+
 #### func (*PrioritySlice) Set(index int, value V, priority int)
 > 设置元素
+
 ***
+<span id="struct_PrioritySlice_SetValue"></span>
+
 #### func (*PrioritySlice) SetValue(index int, value V)
 > 设置元素值
+
 ***
+<span id="struct_PrioritySlice_SetPriority"></span>
+
 #### func (*PrioritySlice) SetPriority(index int, priority int)
 > 设置元素优先级
+
 ***
+<span id="struct_PrioritySlice_Action"></span>
+
 #### func (*PrioritySlice) Action(action func (items []*priorityItem[V])  []*priorityItem[V])
 > 直接操作切片，如果返回值不为 nil，则替换切片
+
 ***
+<span id="struct_PrioritySlice_Range"></span>
+
 #### func (*PrioritySlice) Range(action func (index int, item *priorityItem[V])  bool)
 > 遍历切片，如果返回值为 false，则停止遍历
+
 ***
+<span id="struct_PrioritySlice_RangeValue"></span>
+
 #### func (*PrioritySlice) RangeValue(action func (index int, value V)  bool)
 > 遍历切片值，如果返回值为 false，则停止遍历
+
 ***
+<span id="struct_PrioritySlice_RangePriority"></span>
+
 #### func (*PrioritySlice) RangePriority(action func (index int, priority int)  bool)
 > 遍历切片优先级，如果返回值为 false，则停止遍历
+
 ***
+<span id="struct_PrioritySlice_Slice"></span>
+
 #### func (*PrioritySlice) Slice()  []V
-> 返回切片
+> SyncSlice 返回切片
+
 ***
+<span id="struct_PrioritySlice_String"></span>
+
 #### func (*PrioritySlice) String()  string
 > 返回切片字符串
+
 ***
 <span id="struct_SyncSlice"></span>
 ### SyncSlice `STRUCT`
@@ -193,17 +274,38 @@ type SyncSlice[V any] struct {
 	data []V
 }
 ```
+<span id="struct_SyncSlice_Get"></span>
+
 #### func (*SyncSlice) Get(index int)  V
+
 ***
+<span id="struct_SyncSlice_GetWithRange"></span>
+
 #### func (*SyncSlice) GetWithRange(start int, end int)  []V
+
 ***
+<span id="struct_SyncSlice_Set"></span>
+
 #### func (*SyncSlice) Set(index int, value V)
+
 ***
+<span id="struct_SyncSlice_Append"></span>
+
 #### func (*SyncSlice) Append(values ...V)
+
 ***
+<span id="struct_SyncSlice_Release"></span>
+
 #### func (*SyncSlice) Release()
+
 ***
+<span id="struct_SyncSlice_Clear"></span>
+
 #### func (*SyncSlice) Clear()
+
 ***
+<span id="struct_SyncSlice_GetData"></span>
+
 #### func (*SyncSlice) GetData()  []V
+
 ***

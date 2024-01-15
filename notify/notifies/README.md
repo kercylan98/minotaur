@@ -156,8 +156,11 @@ type FeiShu struct {
 	MsgType string
 }
 ```
+<span id="struct_FeiShu_Format"></span>
+
 #### func (*FeiShu) Format() ( string,  error)
 > 格式化通知内容
+
 ***
 <span id="struct_FeiShuMessage"></span>
 ### FeiShuMessage `STRUCT`
@@ -173,8 +176,11 @@ type FeiShuRichText struct {
 	content map[string]*FeiShuRichTextContent
 }
 ```
+<span id="struct_FeiShuRichText_Create"></span>
+
 #### func (*FeiShuRichText) Create(lang string, title string)  *FeiShuRichTextContent
 > 创建一个特定语言和标题的富文本内容
+
 ***
 <span id="struct_FeiShuRichTextContent"></span>
 ### FeiShuRichTextContent `STRUCT`
@@ -186,45 +192,75 @@ type FeiShuRichTextContent struct {
 	Content  [][]map[string]any
 }
 ```
+<span id="struct_FeiShuRichTextContent_AddText"></span>
+
 #### func (*FeiShuRichTextContent) AddText(text string, styles ...string)  *FeiShuRichTextContent
 > 添加文本
+
 ***
+<span id="struct_FeiShuRichTextContent_AddUnescapeText"></span>
+
 #### func (*FeiShuRichTextContent) AddUnescapeText(text string, styles ...string)  *FeiShuRichTextContent
 > 添加 unescape 解码的文本
+
 ***
+<span id="struct_FeiShuRichTextContent_AddLink"></span>
+
 #### func (*FeiShuRichTextContent) AddLink(text string, href string, styles ...string)  *FeiShuRichTextContent
 > 添加超链接文本
 >   - 请确保链接地址的合法性，否则消息会发送失败
+
 ***
+<span id="struct_FeiShuRichTextContent_AddAt"></span>
+
 #### func (*FeiShuRichTextContent) AddAt(userId string, styles ...string)  *FeiShuRichTextContent
 > 添加@的用户
 >   - @单个用户时，userId 字段必须是有效值
 >   - @所有人填"all"。
+
 ***
+<span id="struct_FeiShuRichTextContent_AddAtWithUsername"></span>
+
 #### func (*FeiShuRichTextContent) AddAtWithUsername(userId string, username string, styles ...string)  *FeiShuRichTextContent
 > 添加包含用户名的@用户
 >   - @单个用户时，userId 字段必须是有效值
 >   - @所有人填"all"。
+
 ***
+<span id="struct_FeiShuRichTextContent_AddImg"></span>
+
 #### func (*FeiShuRichTextContent) AddImg(imageKey string)  *FeiShuRichTextContent
 > 添加图片
 >   - imageKey 表示图片的唯一标识，可通过上传图片接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddMedia"></span>
+
 #### func (*FeiShuRichTextContent) AddMedia(fileKey string)  *FeiShuRichTextContent
 > 添加视频
 >   - fileKey 表示视频文件的唯一标识，可通过上传文件接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddMediaWithCover"></span>
+
 #### func (*FeiShuRichTextContent) AddMediaWithCover(fileKey string, imageKey string)  *FeiShuRichTextContent
 > 添加包含封面的视频
 >   - fileKey 表示视频文件的唯一标识，可通过上传文件接口获取
 >   - imageKey 表示图片的唯一标识，可通过上传图片接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddEmotion"></span>
+
 #### func (*FeiShuRichTextContent) AddEmotion(emojiType string)  *FeiShuRichTextContent
 > 添加表情
 >   - emojiType 表示表情类型，部分可选值请参见表情文案。
 > 
 > 表情文案：https://open.feishu.cn/document/server-docs/im-v1/message-reaction/emojis-introduce
+
 ***
+<span id="struct_FeiShuRichTextContent_Ok"></span>
+
 #### func (*FeiShuRichTextContent) Ok()  *FeiShuRichText
 > 确认完成，将返回 FeiShuRichText 可继续创建多语言富文本
+
 ***

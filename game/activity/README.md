@@ -201,31 +201,61 @@ type Controller[Type generic.Basic, ID generic.Basic, Data any, EntityID generic
 	mutex      sync.RWMutex
 }
 ```
+<span id="struct_Controller_GetGlobalData"></span>
+
 #### func (*Controller) GetGlobalData(activityId ID)  Data
 > 获取特定活动全局数据
+
 ***
+<span id="struct_Controller_GetEntityData"></span>
+
 #### func (*Controller) GetEntityData(activityId ID, entityId EntityID)  EntityData
 > 获取特定活动实体数据
+
 ***
+<span id="struct_Controller_IsOpen"></span>
+
 #### func (*Controller) IsOpen(activityId ID)  bool
 > 活动是否开启
+
 ***
+<span id="struct_Controller_IsShow"></span>
+
 #### func (*Controller) IsShow(activityId ID)  bool
 > 活动是否展示
+
 ***
+<span id="struct_Controller_IsOpenOrShow"></span>
+
 #### func (*Controller) IsOpenOrShow(activityId ID)  bool
 > 活动是否开启或展示
+
 ***
+<span id="struct_Controller_Refresh"></span>
+
 #### func (*Controller) Refresh(activityId ID)
 > 刷新活动
+
 ***
+<span id="struct_Controller_InitializeNoneData"></span>
+
 #### func (*Controller) InitializeNoneData(handler func (activityId ID, data *DataMeta[Data]))  NoneDataActivityController[Type, ID, Data, EntityID, EntityData]
+
 ***
+<span id="struct_Controller_InitializeGlobalData"></span>
+
 #### func (*Controller) InitializeGlobalData(handler func (activityId ID, data *DataMeta[Data]))  GlobalDataActivityController[Type, ID, Data, EntityID, EntityData]
+
 ***
+<span id="struct_Controller_InitializeEntityData"></span>
+
 #### func (*Controller) InitializeEntityData(handler func (activityId ID, entityId EntityID, data *EntityDataMeta[EntityData]))  EntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+
 ***
+<span id="struct_Controller_InitializeGlobalAndEntityData"></span>
+
 #### func (*Controller) InitializeGlobalAndEntityData(handler func (activityId ID, data *DataMeta[Data]), entityHandler func (activityId ID, entityId EntityID, data *EntityDataMeta[EntityData]))  GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+
 ***
 <span id="struct_BasicActivityController"></span>
 ### BasicActivityController `INTERFACE`
@@ -313,19 +343,34 @@ type Options struct {
 	Loop time.Duration
 }
 ```
+<span id="struct_Options_WithUpcomingTime"></span>
+
 #### func (*Options) WithUpcomingTime(t time.Time)  *Options
 > 设置活动预告时间
+
 ***
+<span id="struct_Options_WithStartTime"></span>
+
 #### func (*Options) WithStartTime(t time.Time)  *Options
 > 设置活动开始时间
+
 ***
+<span id="struct_Options_WithEndTime"></span>
+
 #### func (*Options) WithEndTime(t time.Time)  *Options
 > 设置活动结束时间
+
 ***
+<span id="struct_Options_WithExtendedShowTime"></span>
+
 #### func (*Options) WithExtendedShowTime(t time.Time)  *Options
 > 设置延长展示时间
+
 ***
+<span id="struct_Options_WithLoop"></span>
+
 #### func (*Options) WithLoop(interval time.Duration)  *Options
 > 设置活动循环，时间间隔小于等于 0 表示不循环
 >   - 当活动状态展示结束后，会根据该选项设置的时间间隔重新开始
+
 ***

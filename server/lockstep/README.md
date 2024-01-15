@@ -152,58 +152,106 @@ type Lockstep[ClientID comparable, Command any] struct {
 	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
 ```
+<span id="struct_Lockstep_JoinClient"></span>
+
 #### func (*Lockstep) JoinClient(client Client[ClientID])
 > 将客户端加入到广播队列中，通常在开始广播前使用
 >   - 如果客户端在开始广播后加入，将丢失之前的帧数据，如要从特定帧开始追帧请使用 JoinClientWithFrame
+
 ***
+<span id="struct_Lockstep_JoinClientWithFrame"></span>
+
 #### func (*Lockstep) JoinClientWithFrame(client Client[ClientID], frameIndex int64)
 > 加入客户端到广播队列中，并从特定帧开始追帧
 >   - 可用于重连及状态同步、帧同步混用的情况
 >   - 混用：服务端记录指令时同时做一次状态计算，新客户端加入时直接同步当前状态，之后从特定帧开始广播
+
 ***
+<span id="struct_Lockstep_GetClientCount"></span>
+
 #### func (*Lockstep) GetClientCount()  int
 > 获取客户端数量
+
 ***
+<span id="struct_Lockstep_DropCache"></span>
+
 #### func (*Lockstep) DropCache(handler func (frame int64)  bool)
 > 丢弃特定帧的缓存，当 handler 返回 true 时将丢弃缓存
+
 ***
+<span id="struct_Lockstep_LeaveClient"></span>
+
 #### func (*Lockstep) LeaveClient(clientId ClientID)
 > 将客户端从广播队列中移除
+
 ***
+<span id="struct_Lockstep_StartBroadcast"></span>
+
 #### func (*Lockstep) StartBroadcast()
 > 开始广播
 >   - 在开始广播后将持续按照设定的帧率进行帧数推进，并在每一帧推进时向客户端进行同步，需提前将客户端加入广播队列 JoinClient
 >   - 广播过程中使用 AddCommand 将该帧数据追加到当前帧中
+
 ***
+<span id="struct_Lockstep_StopBroadcast"></span>
+
 #### func (*Lockstep) StopBroadcast()
 > 停止广播
+
 ***
+<span id="struct_Lockstep_IsRunning"></span>
+
 #### func (*Lockstep) IsRunning()  bool
 > 是否正在广播
+
 ***
+<span id="struct_Lockstep_AddCommand"></span>
+
 #### func (*Lockstep) AddCommand(command Command)
 > 添加命令到当前帧
+
 ***
+<span id="struct_Lockstep_AddCommands"></span>
+
 #### func (*Lockstep) AddCommands(commands []Command)
 > 添加命令到当前帧
+
 ***
+<span id="struct_Lockstep_GetCurrentFrame"></span>
+
 #### func (*Lockstep) GetCurrentFrame()  int64
 > 获取当前帧
+
 ***
+<span id="struct_Lockstep_GetClientCurrentFrame"></span>
+
 #### func (*Lockstep) GetClientCurrentFrame(clientId ClientID)  int64
 > 获取客户端当前帧
+
 ***
+<span id="struct_Lockstep_GetFrameLimit"></span>
+
 #### func (*Lockstep) GetFrameLimit()  int64
 > 获取帧上限
 >   - 未设置时将返回0
+
 ***
+<span id="struct_Lockstep_GetCurrentCommands"></span>
+
 #### func (*Lockstep) GetCurrentCommands()  []Command
 > 获取当前帧还未结束时的所有指令
+
 ***
+<span id="struct_Lockstep_RegLockstepStoppedEvent"></span>
+
 #### func (*Lockstep) RegLockstepStoppedEvent(handle StoppedEventHandle[ClientID, Command])
 > 当广播停止时将触发被注册的事件处理函数
+
 ***
+<span id="struct_Lockstep_OnLockstepStoppedEvent"></span>
+
 #### func (*Lockstep) OnLockstepStoppedEvent()
+
 ***
 <span id="struct_Option"></span>
 ### Option `STRUCT`

@@ -93,7 +93,10 @@ type File struct {
 	Comment   *Comment
 }
 ```
+<span id="struct_File_Package"></span>
+
 #### func (*File) Package()  string
+
 ***
 <span id="struct_Function"></span>
 ### Function `STRUCT`
@@ -114,7 +117,10 @@ type Function struct {
 	Test        bool
 }
 ```
+<span id="struct_Function_Code"></span>
+
 #### func (*Function) Code()  string
+
 ***
 <span id="struct_Package"></span>
 ### Package `STRUCT`
@@ -128,19 +134,40 @@ type Package struct {
 	Functions map[string]*Function
 }
 ```
+<span id="struct_Package_StructFunc"></span>
+
 #### func (*Package) StructFunc(name string)  []*Function
+
 ***
+<span id="struct_Package_PackageFunc"></span>
+
 #### func (*Package) PackageFunc()  []*Function
+
 ***
+<span id="struct_Package_Structs"></span>
+
 #### func (*Package) Structs()  []*Struct
+
 ***
+<span id="struct_Package_FileComments"></span>
+
 #### func (*Package) FileComments()  *Comment
+
 ***
+<span id="struct_Package_GetUnitTest"></span>
+
 #### func (*Package) GetUnitTest(f *Function)  *Function
+
 ***
+<span id="struct_Package_GetExampleTest"></span>
+
 #### func (*Package) GetExampleTest(f *Function)  *Function
+
 ***
+<span id="struct_Package_GetBenchmarkTest"></span>
+
 #### func (*Package) GetBenchmarkTest(f *Function)  *Function
+
 ***
 <span id="struct_Struct"></span>
 ### Struct `STRUCT`

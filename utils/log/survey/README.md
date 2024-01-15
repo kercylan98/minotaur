@@ -166,32 +166,58 @@ type Analyzer struct {
 	m      sync.Mutex
 }
 ```
+<span id="struct_Analyzer_Sub"></span>
+
 #### func (*Analyzer) Sub(key string)  *Analyzer
 > 获取子分析器
+
 ***
+<span id="struct_Analyzer_SetFormat"></span>
+
 #### func (*Analyzer) SetFormat(key string, format func (v any)  any)
 > 设置格式化函数
+
 ***
+<span id="struct_Analyzer_SetValueIfGreaterThan"></span>
+
 #### func (*Analyzer) SetValueIfGreaterThan(key string, value float64)
 > 设置指定 key 的值，当新值大于旧值时
 >   - 当已有值不为 float64 时，将会被忽略
+
 ***
+<span id="struct_Analyzer_SetValueIfLessThan"></span>
+
 #### func (*Analyzer) SetValueIfLessThan(key string, value float64)
 > 设置指定 key 的值，当新值小于旧值时
 >   - 当已有值不为 float64 时，将会被忽略
+
 ***
+<span id="struct_Analyzer_SetValueIf"></span>
+
 #### func (*Analyzer) SetValueIf(key string, expression bool, value float64)
 > 当表达式满足的时候将设置指定 key 的值为 value
+
 ***
+<span id="struct_Analyzer_SetValueStringIf"></span>
+
 #### func (*Analyzer) SetValueStringIf(key string, expression bool, value string)
 > 当表达式满足的时候将设置指定 key 的值为 value
+
 ***
+<span id="struct_Analyzer_SetValue"></span>
+
 #### func (*Analyzer) SetValue(key string, value float64)
 > 设置指定 key 的值
+
 ***
+<span id="struct_Analyzer_SetValueString"></span>
+
 #### func (*Analyzer) SetValueString(key string, value string)
 > 设置指定 key 的值
+
 ***
+<span id="struct_Analyzer_Increase"></span>
+
 #### func (*Analyzer) Increase(key string, record R, recordKey string)
 > 在指定 key 现有值的基础上增加 recordKey 的值
 >   - 当分析器已经记录过相同 key 的值时，会根据已有的值类型进行不同处理
@@ -199,21 +225,37 @@ type Analyzer struct {
 > 处理方式：
 >   - 当已有值类型为 string 时，将会使用新的值的 string 类型进行覆盖
 >   - 当已有值类型为 float64 时，当新的值类型不为 float64 时，将会被忽略
+
 ***
+<span id="struct_Analyzer_IncreaseValue"></span>
+
 #### func (*Analyzer) IncreaseValue(key string, value float64)
 > 在指定 key 现有值的基础上增加 value
+
 ***
+<span id="struct_Analyzer_IncreaseNonRepeat"></span>
+
 #### func (*Analyzer) IncreaseNonRepeat(key string, record R, recordKey string, dimension ...string)
 > 在指定 key 现有值的基础上增加 recordKey 的值，但是当去重维度 dimension 相同时，不会增加
+
 ***
+<span id="struct_Analyzer_IncreaseValueNonRepeat"></span>
+
 #### func (*Analyzer) IncreaseValueNonRepeat(key string, record R, value float64, dimension ...string)
 > 在指定 key 现有值的基础上增加 value，但是当去重维度 dimension 相同时，不会增加
+
 ***
+<span id="struct_Analyzer_GetValue"></span>
+
 #### func (*Analyzer) GetValue(key string)  float64
 > 获取当前记录的值
+
 ***
+<span id="struct_Analyzer_GetValueString"></span>
+
 #### func (*Analyzer) GetValueString(key string)  string
 > 获取当前记录的值
+
 ***
 <span id="struct_Flusher"></span>
 ### Flusher `INTERFACE`
@@ -236,9 +278,15 @@ type FileFlusher struct {
 	layoutLen int
 }
 ```
+<span id="struct_FileFlusher_Flush"></span>
+
 #### func (*FileFlusher) Flush(records []string)
+
 ***
+<span id="struct_FileFlusher_Info"></span>
+
 #### func (*FileFlusher) Info()  string
+
 ***
 <span id="struct_Option"></span>
 ### Option `STRUCT`
@@ -258,33 +306,60 @@ type Result gjson.Result
 ```go
 type R string
 ```
+<span id="struct_R_GetTime"></span>
+
 #### func (R) GetTime(layout string)  time.Time
 > 获取该记录的时间
+
 ***
+<span id="struct_R_Get"></span>
+
 #### func (R) Get(key string)  Result
 > 获取指定 key 的值
 >   - 当 key 为嵌套 key 时，使用 . 进行分割，例如：a.b.c
 >   - 更多用法参考：https://github.com/tidwall/gjson
+
 ***
+<span id="struct_R_Exist"></span>
+
 #### func (R) Exist(key string)  bool
 > 判断指定 key 是否存在
+
 ***
+<span id="struct_R_GetString"></span>
+
 #### func (R) GetString(key string)  string
 > 该函数为 Get(key).String() 的简写
+
 ***
+<span id="struct_R_GetInt64"></span>
+
 #### func (R) GetInt64(key string)  int64
 > 该函数为 Get(key).Int() 的简写
+
 ***
+<span id="struct_R_GetInt"></span>
+
 #### func (R) GetInt(key string)  int
 > 该函数为 Get(key).Int() 的简写，但是返回值为 int 类型
+
 ***
+<span id="struct_R_GetFloat64"></span>
+
 #### func (R) GetFloat64(key string)  float64
 > 该函数为 Get(key).Float() 的简写
+
 ***
+<span id="struct_R_GetBool"></span>
+
 #### func (R) GetBool(key string)  bool
 > 该函数为 Get(key).Bool() 的简写
+
 ***
+<span id="struct_R_String"></span>
+
 #### func (R) String()  string
+
 ***
 <span id="struct_Report"></span>
 ### Report `STRUCT`
@@ -298,26 +373,50 @@ type Report struct {
 	Subs     []*Report
 }
 ```
+<span id="struct_Report_Avg"></span>
+
 #### func (*Report) Avg(key string)  float64
 > 计算平均值
+
 ***
+<span id="struct_Report_Count"></span>
+
 #### func (*Report) Count(key string)  int64
 > 获取特定 key 的计数次数
+
 ***
+<span id="struct_Report_Sum"></span>
+
 #### func (*Report) Sum(keys ...string)  float64
 > 获取特定 key 的总和
+
 ***
+<span id="struct_Report_Sub"></span>
+
 #### func (*Report) Sub(name string)  *Report
 > 获取特定名称的子报告
+
 ***
+<span id="struct_Report_ReserveSubByPrefix"></span>
+
 #### func (*Report) ReserveSubByPrefix(prefix string)  *Report
 > 仅保留特定前缀的子报告
+
 ***
+<span id="struct_Report_ReserveSub"></span>
+
 #### func (*Report) ReserveSub(names ...string)  *Report
 > 仅保留特定名称子报告
+
 ***
+<span id="struct_Report_FilterSub"></span>
+
 #### func (*Report) FilterSub(names ...string)  *Report
 > 将特定名称的子报告过滤掉
+
 ***
+<span id="struct_Report_String"></span>
+
 #### func (*Report) String()  string
+
 ***

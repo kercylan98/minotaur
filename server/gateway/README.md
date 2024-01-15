@@ -129,18 +129,30 @@ type Endpoint struct {
 	cps         int
 }
 ```
+<span id="struct_Endpoint_GetName"></span>
+
 #### func (*Endpoint) GetName()  string
 > 获取端点名称
+
 ***
+<span id="struct_Endpoint_GetAddress"></span>
+
 #### func (*Endpoint) GetAddress()  string
 > 获取端点地址
+
 ***
+<span id="struct_Endpoint_GetState"></span>
+
 #### func (*Endpoint) GetState()  float64
 > 获取端点健康值
+
 ***
+<span id="struct_Endpoint_Forward"></span>
+
 #### func (*Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func (err error))
 > 转发数据包到该端点
 >   - 端点在处理数据包时，应区分数据包为普通直连数据包还是网关数据包。可通过 UnmarshalGatewayOutPacket 进行数据包解析，当解析失败且无其他数据包协议时，可认为该数据包为普通直连数据包。
+
 ***
 <span id="struct_EndpointOption"></span>
 ### EndpointOption `STRUCT`
@@ -186,8 +198,11 @@ type Gateway struct {
 	cceLock sync.RWMutex
 }
 ```
+<span id="struct_Gateway_Run"></span>
+
 #### func (*Gateway) Run(addr string)  error
 > 运行网关
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -217,23 +232,38 @@ func TestGateway_Run(t *testing.T) {
 
 
 ***
+<span id="struct_Gateway_Shutdown"></span>
+
 #### func (*Gateway) Shutdown()
 > 关闭网关
+
 ***
+<span id="struct_Gateway_Server"></span>
+
 #### func (*Gateway) Server()  *server.Server
 > 获取网关服务器核心
+
 ***
+<span id="struct_Gateway_GetEndpoint"></span>
+
 #### func (*Gateway) GetEndpoint(name string) ( *Endpoint,  error)
 > 获取一个可用的端点
 >   - name: 端点名称
+
 ***
+<span id="struct_Gateway_GetConnEndpoint"></span>
+
 #### func (*Gateway) GetConnEndpoint(name string, conn *server.Conn) ( *Endpoint,  error)
 > 获取一个可用的端点，如果客户端已经连接到了某个端点，将优先返回该端点
 >   - 当连接到的端点不可用或没有连接记录时，效果同 GetEndpoint 相同
 >   - 当连接行为为有状态时，推荐使用该方法
+
 ***
+<span id="struct_Gateway_SwitchEndpoint"></span>
+
 #### func (*Gateway) SwitchEndpoint(source *Endpoint, dest *Endpoint)
 > 将端点端点的所有连接切换到另一个端点
+
 ***
 <span id="struct_Option"></span>
 ### Option `STRUCT`
@@ -250,7 +280,13 @@ type Scanner interface {
 	GetInterval() time.Duration
 }
 ```
+<span id="struct_Scanner_GetEndpoints"></span>
+
 #### func (*Scanner) GetEndpoints() ( []*gateway.Endpoint,  error)
+
 ***
+<span id="struct_Scanner_GetInterval"></span>
+
 #### func (*Scanner) GetInterval()  time.Duration
+
 ***

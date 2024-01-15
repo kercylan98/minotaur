@@ -752,8 +752,11 @@ type BitSet[Bit generic.Integer] struct {
 	set []uint64
 }
 ```
+<span id="struct_BitSet_Set"></span>
+
 #### func (*BitSet) Set(bit Bit)  *BitSet[Bit]
 > 将指定的位 bit 设置为 1
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -775,8 +778,11 @@ func TestBitSet_Set(t *testing.T) {
 
 
 ***
+<span id="struct_BitSet_Del"></span>
+
 #### func (*BitSet) Del(bit Bit)  *BitSet[Bit]
 > 将指定的位 bit 设置为 0
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -799,9 +805,12 @@ func TestBitSet_Del(t *testing.T) {
 
 
 ***
+<span id="struct_BitSet_Shrink"></span>
+
 #### func (*BitSet) Shrink()  *BitSet[Bit]
 > 将 BitSet 中的比特位集合缩小到最小
 >   - 正常情况下当 BitSet 中的比特位超出 64 位时，将自动增长，当 BitSet 中的比特位数量减少时，可以使用该方法将 BitSet 中的比特位集合缩小到最小
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -825,92 +834,179 @@ func TestBitSet_Shrink(t *testing.T) {
 
 
 ***
+<span id="struct_BitSet_Cap"></span>
+
 #### func (*BitSet) Cap()  int
 > 返回当前 BitSet 中可以表示的最大比特位数量
+
 ***
+<span id="struct_BitSet_Has"></span>
+
 #### func (*BitSet) Has(bit Bit)  bool
 > 检查指定的位 bit 是否被设置为 1
+
 ***
+<span id="struct_BitSet_Clear"></span>
+
 #### func (*BitSet) Clear()  *BitSet[Bit]
 > 清空所有的比特位
+
 ***
+<span id="struct_BitSet_Len"></span>
+
 #### func (*BitSet) Len()  int
 > 返回当前 BitSet 中被设置的比特位数量
+
 ***
+<span id="struct_BitSet_Bits"></span>
+
 #### func (*BitSet) Bits()  []Bit
 > 返回当前 BitSet 中被设置的比特位
+
 ***
+<span id="struct_BitSet_Reverse"></span>
+
 #### func (*BitSet) Reverse()  *BitSet[Bit]
 > 反转当前 BitSet 中的所有比特位
+
 ***
+<span id="struct_BitSet_Not"></span>
+
 #### func (*BitSet) Not()  *BitSet[Bit]
 > 返回当前 BitSet 中所有比特位的反转
+
 ***
+<span id="struct_BitSet_And"></span>
+
 #### func (*BitSet) And(other *BitSet[Bit])  *BitSet[Bit]
 > 将当前 BitSet 与另一个 BitSet 进行按位与运算
+
 ***
+<span id="struct_BitSet_Or"></span>
+
 #### func (*BitSet) Or(other *BitSet[Bit])  *BitSet[Bit]
 > 将当前 BitSet 与另一个 BitSet 进行按位或运算
+
 ***
+<span id="struct_BitSet_Xor"></span>
+
 #### func (*BitSet) Xor(other *BitSet[Bit])  *BitSet[Bit]
 > 将当前 BitSet 与另一个 BitSet 进行按位异或运算
+
 ***
+<span id="struct_BitSet_Sub"></span>
+
 #### func (*BitSet) Sub(other *BitSet[Bit])  *BitSet[Bit]
 > 将当前 BitSet 与另一个 BitSet 进行按位减运算
+
 ***
+<span id="struct_BitSet_IsZero"></span>
+
 #### func (*BitSet) IsZero()  bool
 > 检查当前 BitSet 是否为空
+
 ***
+<span id="struct_BitSet_Clone"></span>
+
 #### func (*BitSet) Clone()  *BitSet[Bit]
 > 返回当前 BitSet 的副本
+
 ***
+<span id="struct_BitSet_Equal"></span>
+
 #### func (*BitSet) Equal(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否与另一个 BitSet 相等
+
 ***
+<span id="struct_BitSet_Contains"></span>
+
 #### func (*BitSet) Contains(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否包含另一个 BitSet
+
 ***
+<span id="struct_BitSet_ContainsAny"></span>
+
 #### func (*BitSet) ContainsAny(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否包含另一个 BitSet 中的任意比特位
+
 ***
+<span id="struct_BitSet_ContainsAll"></span>
+
 #### func (*BitSet) ContainsAll(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否包含另一个 BitSet 中的所有比特位
+
 ***
+<span id="struct_BitSet_Intersect"></span>
+
 #### func (*BitSet) Intersect(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否与另一个 BitSet 有交集
+
 ***
+<span id="struct_BitSet_Union"></span>
+
 #### func (*BitSet) Union(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否与另一个 BitSet 有并集
+
 ***
+<span id="struct_BitSet_Difference"></span>
+
 #### func (*BitSet) Difference(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否与另一个 BitSet 有差集
+
 ***
+<span id="struct_BitSet_SymmetricDifference"></span>
+
 #### func (*BitSet) SymmetricDifference(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否与另一个 BitSet 有对称差集
+
 ***
+<span id="struct_BitSet_Subset"></span>
+
 #### func (*BitSet) Subset(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否为另一个 BitSet 的子集
+
 ***
+<span id="struct_BitSet_Superset"></span>
+
 #### func (*BitSet) Superset(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否为另一个 BitSet 的超集
+
 ***
+<span id="struct_BitSet_Complement"></span>
+
 #### func (*BitSet) Complement(other *BitSet[Bit])  bool
 > 检查当前 BitSet 是否为另一个 BitSet 的补集
+
 ***
+<span id="struct_BitSet_Max"></span>
+
 #### func (*BitSet) Max()  Bit
 > 返回当前 BitSet 中最大的比特位
+
 ***
+<span id="struct_BitSet_Min"></span>
+
 #### func (*BitSet) Min()  Bit
 > 返回当前 BitSet 中最小的比特位
+
 ***
+<span id="struct_BitSet_String"></span>
+
 #### func (*BitSet) String()  string
 > 返回当前 BitSet 的字符串表示
+
 ***
+<span id="struct_BitSet_MarshalJSON"></span>
+
 #### func (*BitSet) MarshalJSON() ( []byte,  error)
 > 实现 json.Marshaler 接口
+
 ***
+<span id="struct_BitSet_UnmarshalJSON"></span>
+
 #### func (*BitSet) UnmarshalJSON(data []byte)  error
 > 实现 json.Unmarshaler 接口
+
 ***
 <span id="struct_LossCounter"></span>
 ### LossCounter `STRUCT`
@@ -922,13 +1018,22 @@ type LossCounter struct {
 	lossKey []string
 }
 ```
+<span id="struct_LossCounter_Record"></span>
+
 #### func (*LossCounter) Record(name string)
 > 记录一次损耗
+
 ***
+<span id="struct_LossCounter_GetLoss"></span>
+
 #### func (*LossCounter) GetLoss(handler func (step int, name string, loss time.Duration))
 > 获取损耗
+
 ***
+<span id="struct_LossCounter_String"></span>
+
 #### func (*LossCounter) String()  string
+
 ***
 <span id="struct_Matcher"></span>
 ### Matcher `STRUCT`
@@ -940,11 +1045,17 @@ type Matcher[Value any, Result any] struct {
 	d     bool
 }
 ```
+<span id="struct_Matcher_Case"></span>
+
 #### func (*Matcher) Case(value Value, result Result)  *Matcher[Value, Result]
 > 匹配
+
 ***
+<span id="struct_Matcher_Default"></span>
+
 #### func (*Matcher) Default(value Result)  Result
 > 默认
+
 ***
 <span id="struct_Permission"></span>
 ### Permission `STRUCT`
@@ -955,17 +1066,29 @@ type Permission[Code generic.Integer, EntityID comparable] struct {
 	l           sync.RWMutex
 }
 ```
+<span id="struct_Permission_HasPermission"></span>
+
 #### func (*Permission) HasPermission(entityId EntityID, permission Code)  bool
 > 是否有权限
+
 ***
+<span id="struct_Permission_AddPermission"></span>
+
 #### func (*Permission) AddPermission(entityId EntityID, permission ...Code)
 > 添加权限
+
 ***
+<span id="struct_Permission_RemovePermission"></span>
+
 #### func (*Permission) RemovePermission(entityId EntityID, permission ...Code)
 > 移除权限
+
 ***
+<span id="struct_Permission_SetPermission"></span>
+
 #### func (*Permission) SetPermission(entityId EntityID, permission ...Code)
 > 设置权限
+
 ***
 <span id="struct_StackGo"></span>
 ### StackGo `STRUCT`
@@ -978,19 +1101,28 @@ type StackGo struct {
 	collect chan []byte
 }
 ```
+<span id="struct_StackGo_Wait"></span>
+
 #### func (*StackGo) Wait()
 > 等待收集消息堆栈
 >   - 在调用 Wait 函数后，当前协程将会被挂起，直到调用 Stack 或 GiveUp 函数
+
 ***
+<span id="struct_StackGo_Stack"></span>
+
 #### func (*StackGo) Stack()  []byte
 > 获取消息堆栈
 >   - 在调用 Wait 函数后调用该函数，将会返回上一个协程的堆栈信息
 >   - 在调用 GiveUp 函数后调用该函数，将会 panic
+
 ***
+<span id="struct_StackGo_GiveUp"></span>
+
 #### func (*StackGo) GiveUp()
 > 放弃收集消息堆栈
 >   - 在调用 Wait 函数后调用该函数，将会放弃收集消息堆栈并且释放资源
 >   - 在调用 GiveUp 函数后调用 Stack 函数，将会 panic
+
 ***
 <span id="struct_VerifyHandle"></span>
 ### VerifyHandle `STRUCT`
@@ -1002,13 +1134,22 @@ type VerifyHandle[V any] struct {
 	hit    bool
 }
 ```
+<span id="struct_VerifyHandle_PreCase"></span>
+
 #### func (*VerifyHandle) PreCase(expression func ()  bool, value V, caseHandle func (verify *VerifyHandle[V])  bool)  bool
 > 先决校验用例，当 expression 成立时，将跳过 caseHandle 的执行，直接执行 handle 并返回 false
 >   - 常用于对前置参数的空指针校验，例如当 a 为 nil 时，不执行 a.B()，而是直接返回 false
+
 ***
+<span id="struct_VerifyHandle_Case"></span>
+
 #### func (*VerifyHandle) Case(expression bool, value V)  *VerifyHandle[V]
 > 校验用例，当 expression 成立时，将忽略后续 Case，并将在 Do 时执行 handle，返回 false
+
 ***
+<span id="struct_VerifyHandle_Do"></span>
+
 #### func (*VerifyHandle) Do()  bool
 > 执行校验，当校验失败时，将执行 handle，并返回 false
+
 ***

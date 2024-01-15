@@ -20,6 +20,7 @@
 |[DiceN](#DiceN)|掷骰子
 |[NetIP](#NetIP)|返回一个随机的IP地址
 |[Port](#Port)|返回一个随机的端口号
+|[UsablePort](#UsablePort)|随机返回一个可用的端口号，如果没有可用端口号则返回 -1
 |[IPv4](#IPv4)|返回一个随机产生的IPv4地址。
 |[IPv4Port](#IPv4Port)|返回一个随机产生的IPv4地址和端口。
 |[Int64](#Int64)|返回一个介于min和max之间的int64类型的随机数。
@@ -72,6 +73,11 @@
 #### func Port() int
 <span id="Port"></span>
 > 返回一个随机的端口号
+
+***
+#### func UsablePort() int
+<span id="UsablePort"></span>
+> 随机返回一个可用的端口号，如果没有可用端口号则返回 -1
 
 ***
 #### func IPv4() string

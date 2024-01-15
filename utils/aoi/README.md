@@ -83,17 +83,35 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber, E TwoDimens
 	repartitionQueue []func()
 }
 ```
+<span id="struct_TwoDimensional_AddEntity"></span>
+
 #### func (*TwoDimensional) AddEntity(entity E)
+
 ***
+<span id="struct_TwoDimensional_DeleteEntity"></span>
+
 #### func (*TwoDimensional) DeleteEntity(entity E)
+
 ***
+<span id="struct_TwoDimensional_Refresh"></span>
+
 #### func (*TwoDimensional) Refresh(entity E)
+
 ***
+<span id="struct_TwoDimensional_GetFocus"></span>
+
 #### func (*TwoDimensional) GetFocus(id EID)  map[EID]E
+
 ***
+<span id="struct_TwoDimensional_SetSize"></span>
+
 #### func (*TwoDimensional) SetSize(width int, height int)
+
 ***
+<span id="struct_TwoDimensional_SetAreaSize"></span>
+
 #### func (*TwoDimensional) SetAreaSize(width int, height int)
+
 ***
 <span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`

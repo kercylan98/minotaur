@@ -50,15 +50,33 @@ type Xlsx struct {
 	exportType XlsxExportType
 }
 ```
+<span id="struct_Xlsx_GetConfigName"></span>
+
 #### func (*Xlsx) GetConfigName()  string
+
 ***
+<span id="struct_Xlsx_GetDisplayName"></span>
+
 #### func (*Xlsx) GetDisplayName()  string
+
 ***
+<span id="struct_Xlsx_GetDescription"></span>
+
 #### func (*Xlsx) GetDescription()  string
+
 ***
+<span id="struct_Xlsx_GetIndexCount"></span>
+
 #### func (*Xlsx) GetIndexCount()  int
+
 ***
+<span id="struct_Xlsx_GetFields"></span>
+
 #### func (*Xlsx) GetFields()  []pce.DataField
+
 ***
+<span id="struct_Xlsx_GetData"></span>
+
 #### func (*Xlsx) GetData()  [][]pce.DataInfo
+
 ***

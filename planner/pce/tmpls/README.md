@@ -50,13 +50,25 @@ type Golang struct {
 	Templates []*pce.TmplStruct
 }
 ```
+<span id="struct_Golang_Render"></span>
+
 #### func (*Golang) Render(templates ...*pce.TmplStruct) ( string,  error)
+
 ***
+<span id="struct_Golang_GetVariable"></span>
+
 #### func (*Golang) GetVariable(config *pce.TmplStruct)  string
+
 ***
+<span id="struct_Golang_GetConfigName"></span>
+
 #### func (*Golang) GetConfigName(config *pce.TmplStruct)  string
+
 ***
+<span id="struct_Golang_HasIndex"></span>
+
 #### func (*Golang) HasIndex(config *pce.TmplStruct)  bool
+
 ***
 <span id="struct_JSON"></span>
 ### JSON `STRUCT`
@@ -66,5 +78,8 @@ type JSON struct {
 	jsonIter.API
 }
 ```
+<span id="struct_JSON_Render"></span>
+
 #### func (*JSON) Render(data map[any]any) ( string,  error)
+
 ***

@@ -47,52 +47,100 @@ type Matrix[T any] struct {
 	m []T
 }
 ```
+<span id="struct_Matrix_GetWidth"></span>
+
 #### func (*Matrix) GetWidth()  int
 > 获取二维矩阵宽度
+
 ***
+<span id="struct_Matrix_GetHeight"></span>
+
 #### func (*Matrix) GetHeight()  int
 > 获取二维矩阵高度
+
 ***
+<span id="struct_Matrix_GetWidth2Height"></span>
+
 #### func (*Matrix) GetWidth2Height() (width int, height int)
 > 获取二维矩阵的宽度和高度
+
 ***
+<span id="struct_Matrix_GetMatrix"></span>
+
 #### func (*Matrix) GetMatrix()  [][]T
 > 获取二维矩阵
 >   - 通常建议使用 GetMatrixWithPos 进行处理这样将拥有更高的效率
+
 ***
+<span id="struct_Matrix_GetMatrixWithPos"></span>
+
 #### func (*Matrix) GetMatrixWithPos()  []T
 > 获取顺序的矩阵
+
 ***
+<span id="struct_Matrix_Get"></span>
+
 #### func (*Matrix) Get(x int, y int) (value T)
 > 获取特定坐标的内容
+
 ***
+<span id="struct_Matrix_GetExist"></span>
+
 #### func (*Matrix) GetExist(x int, y int) (value T, exist bool)
 > 获取特定坐标的内容，如果不存在则返回 false
+
 ***
+<span id="struct_Matrix_GetWithPos"></span>
+
 #### func (*Matrix) GetWithPos(pos int) (value T)
 > 获取特定坐标的内容
+
 ***
+<span id="struct_Matrix_Set"></span>
+
 #### func (*Matrix) Set(x int, y int, data T)
 > 设置特定坐标的内容
+
 ***
+<span id="struct_Matrix_SetWithPos"></span>
+
 #### func (*Matrix) SetWithPos(pos int, data T)
 > 设置特定坐标的内容
+
 ***
+<span id="struct_Matrix_Swap"></span>
+
 #### func (*Matrix) Swap(x1 int, y1 int, x2 int, y2 int)
 > 交换两个位置的内容
+
 ***
+<span id="struct_Matrix_SwapWithPos"></span>
+
 #### func (*Matrix) SwapWithPos(pos1 int, pos2 int)
 > 交换两个位置的内容
+
 ***
+<span id="struct_Matrix_TrySwap"></span>
+
 #### func (*Matrix) TrySwap(x1 int, y1 int, x2 int, y2 int, expressionHandle func (matrix *Matrix[T])  bool)
 > 尝试交换两个位置的内容，交换后不满足表达式时进行撤销
+
 ***
+<span id="struct_Matrix_TrySwapWithPos"></span>
+
 #### func (*Matrix) TrySwapWithPos(pos1 int, pos2 int, expressionHandle func (matrix *Matrix[T])  bool)
 > 尝试交换两个位置的内容，交换后不满足表达式时进行撤销
+
 ***
+<span id="struct_Matrix_FillFull"></span>
+
 #### func (*Matrix) FillFull(generateHandle func (x int)  T)
 > 根据提供的生成器填充整个矩阵
+
 ***
+<span id="struct_Matrix_FillFullWithPos"></span>
+
 #### func (*Matrix) FillFullWithPos(generateHandle func (pos int)  T)
 > 根据提供的生成器填充整个矩阵
+
 ***

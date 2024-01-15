@@ -135,11 +135,17 @@ type DataTmpl interface {
 ```go
 type Exporter struct{}
 ```
+<span id="struct_Exporter_ExportStruct"></span>
+
 #### func (*Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct) ( []byte,  error)
 > 导出结构
+
 ***
+<span id="struct_Exporter_ExportData"></span>
+
 #### func (*Exporter) ExportData(tmpl DataTmpl, data map[any]any) ( []byte,  error)
 > 导出数据
+
 ***
 <span id="struct_Field"></span>
 ### Field `INTERFACE`
@@ -157,11 +163,20 @@ type Field interface {
 ```go
 type Int int
 ```
+<span id="struct_Int_TypeName"></span>
+
 #### func (Int) TypeName()  string
+
 ***
+<span id="struct_Int_Zero"></span>
+
 #### func (Int) Zero()  any
+
 ***
+<span id="struct_Int_Parse"></span>
+
 #### func (Int) Parse(value string)  any
+
 ***
 <span id="struct_Int8"></span>
 ### Int8 `STRUCT`
@@ -169,11 +184,20 @@ type Int int
 ```go
 type Int8 int8
 ```
+<span id="struct_Int8_TypeName"></span>
+
 #### func (Int8) TypeName()  string
+
 ***
+<span id="struct_Int8_Zero"></span>
+
 #### func (Int8) Zero()  any
+
 ***
+<span id="struct_Int8_Parse"></span>
+
 #### func (Int8) Parse(value string)  any
+
 ***
 <span id="struct_Int16"></span>
 ### Int16 `STRUCT`
@@ -181,11 +205,20 @@ type Int8 int8
 ```go
 type Int16 int16
 ```
+<span id="struct_Int16_TypeName"></span>
+
 #### func (Int16) TypeName()  string
+
 ***
+<span id="struct_Int16_Zero"></span>
+
 #### func (Int16) Zero()  any
+
 ***
+<span id="struct_Int16_Parse"></span>
+
 #### func (Int16) Parse(value string)  any
+
 ***
 <span id="struct_Int32"></span>
 ### Int32 `STRUCT`
@@ -193,11 +226,20 @@ type Int16 int16
 ```go
 type Int32 int32
 ```
+<span id="struct_Int32_TypeName"></span>
+
 #### func (Int32) TypeName()  string
+
 ***
+<span id="struct_Int32_Zero"></span>
+
 #### func (Int32) Zero()  any
+
 ***
+<span id="struct_Int32_Parse"></span>
+
 #### func (Int32) Parse(value string)  any
+
 ***
 <span id="struct_Int64"></span>
 ### Int64 `STRUCT`
@@ -205,11 +247,20 @@ type Int32 int32
 ```go
 type Int64 int64
 ```
+<span id="struct_Int64_TypeName"></span>
+
 #### func (Int64) TypeName()  string
+
 ***
+<span id="struct_Int64_Zero"></span>
+
 #### func (Int64) Zero()  any
+
 ***
+<span id="struct_Int64_Parse"></span>
+
 #### func (Int64) Parse(value string)  any
+
 ***
 <span id="struct_Uint"></span>
 ### Uint `STRUCT`
@@ -217,11 +268,20 @@ type Int64 int64
 ```go
 type Uint uint
 ```
+<span id="struct_Uint_TypeName"></span>
+
 #### func (Uint) TypeName()  string
+
 ***
+<span id="struct_Uint_Zero"></span>
+
 #### func (Uint) Zero()  any
+
 ***
+<span id="struct_Uint_Parse"></span>
+
 #### func (Uint) Parse(value string)  any
+
 ***
 <span id="struct_Uint8"></span>
 ### Uint8 `STRUCT`
@@ -229,11 +289,20 @@ type Uint uint
 ```go
 type Uint8 uint8
 ```
+<span id="struct_Uint8_TypeName"></span>
+
 #### func (Uint8) TypeName()  string
+
 ***
+<span id="struct_Uint8_Zero"></span>
+
 #### func (Uint8) Zero()  any
+
 ***
+<span id="struct_Uint8_Parse"></span>
+
 #### func (Uint8) Parse(value string)  any
+
 ***
 <span id="struct_Uint16"></span>
 ### Uint16 `STRUCT`
@@ -241,11 +310,20 @@ type Uint8 uint8
 ```go
 type Uint16 uint16
 ```
+<span id="struct_Uint16_TypeName"></span>
+
 #### func (Uint16) TypeName()  string
+
 ***
+<span id="struct_Uint16_Zero"></span>
+
 #### func (Uint16) Zero()  any
+
 ***
+<span id="struct_Uint16_Parse"></span>
+
 #### func (Uint16) Parse(value string)  any
+
 ***
 <span id="struct_Uint32"></span>
 ### Uint32 `STRUCT`
@@ -253,11 +331,20 @@ type Uint16 uint16
 ```go
 type Uint32 uint32
 ```
+<span id="struct_Uint32_TypeName"></span>
+
 #### func (Uint32) TypeName()  string
+
 ***
+<span id="struct_Uint32_Zero"></span>
+
 #### func (Uint32) Zero()  any
+
 ***
+<span id="struct_Uint32_Parse"></span>
+
 #### func (Uint32) Parse(value string)  any
+
 ***
 <span id="struct_Uint64"></span>
 ### Uint64 `STRUCT`
@@ -265,11 +352,20 @@ type Uint32 uint32
 ```go
 type Uint64 uint64
 ```
+<span id="struct_Uint64_TypeName"></span>
+
 #### func (Uint64) TypeName()  string
+
 ***
+<span id="struct_Uint64_Zero"></span>
+
 #### func (Uint64) Zero()  any
+
 ***
+<span id="struct_Uint64_Parse"></span>
+
 #### func (Uint64) Parse(value string)  any
+
 ***
 <span id="struct_Float32"></span>
 ### Float32 `STRUCT`
@@ -277,11 +373,20 @@ type Uint64 uint64
 ```go
 type Float32 float32
 ```
+<span id="struct_Float32_TypeName"></span>
+
 #### func (Float32) TypeName()  string
+
 ***
+<span id="struct_Float32_Zero"></span>
+
 #### func (Float32) Zero()  any
+
 ***
+<span id="struct_Float32_Parse"></span>
+
 #### func (Float32) Parse(value string)  any
+
 ***
 <span id="struct_Float64"></span>
 ### Float64 `STRUCT`
@@ -289,11 +394,20 @@ type Float32 float32
 ```go
 type Float64 float64
 ```
+<span id="struct_Float64_TypeName"></span>
+
 #### func (Float64) TypeName()  string
+
 ***
+<span id="struct_Float64_Zero"></span>
+
 #### func (Float64) Zero()  any
+
 ***
+<span id="struct_Float64_Parse"></span>
+
 #### func (Float64) Parse(value string)  any
+
 ***
 <span id="struct_String"></span>
 ### String `STRUCT`
@@ -301,11 +415,20 @@ type Float64 float64
 ```go
 type String string
 ```
+<span id="struct_String_TypeName"></span>
+
 #### func (String) TypeName()  string
+
 ***
+<span id="struct_String_Zero"></span>
+
 #### func (String) Zero()  any
+
 ***
+<span id="struct_String_Parse"></span>
+
 #### func (String) Parse(value string)  any
+
 ***
 <span id="struct_Bool"></span>
 ### Bool `STRUCT`
@@ -313,11 +436,20 @@ type String string
 ```go
 type Bool bool
 ```
+<span id="struct_Bool_TypeName"></span>
+
 #### func (Bool) TypeName()  string
+
 ***
+<span id="struct_Bool_Zero"></span>
+
 #### func (Bool) Zero()  any
+
 ***
+<span id="struct_Bool_Parse"></span>
+
 #### func (Bool) Parse(value string)  any
+
 ***
 <span id="struct_Byte"></span>
 ### Byte `STRUCT`
@@ -325,11 +457,20 @@ type Bool bool
 ```go
 type Byte byte
 ```
+<span id="struct_Byte_TypeName"></span>
+
 #### func (Byte) TypeName()  string
+
 ***
+<span id="struct_Byte_Zero"></span>
+
 #### func (Byte) Zero()  any
+
 ***
+<span id="struct_Byte_Parse"></span>
+
 #### func (Byte) Parse(value string)  any
+
 ***
 <span id="struct_Rune"></span>
 ### Rune `STRUCT`
@@ -337,11 +478,20 @@ type Byte byte
 ```go
 type Rune rune
 ```
+<span id="struct_Rune_TypeName"></span>
+
 #### func (Rune) TypeName()  string
+
 ***
+<span id="struct_Rune_Zero"></span>
+
 #### func (Rune) Zero()  any
+
 ***
+<span id="struct_Rune_Parse"></span>
+
 #### func (Rune) Parse(value string)  any
+
 ***
 <span id="struct_Complex64"></span>
 ### Complex64 `STRUCT`
@@ -349,11 +499,20 @@ type Rune rune
 ```go
 type Complex64 complex64
 ```
+<span id="struct_Complex64_TypeName"></span>
+
 #### func (Complex64) TypeName()  string
+
 ***
+<span id="struct_Complex64_Zero"></span>
+
 #### func (Complex64) Zero()  any
+
 ***
+<span id="struct_Complex64_Parse"></span>
+
 #### func (Complex64) Parse(value string)  any
+
 ***
 <span id="struct_Complex128"></span>
 ### Complex128 `STRUCT`
@@ -361,11 +520,20 @@ type Complex64 complex64
 ```go
 type Complex128 complex128
 ```
+<span id="struct_Complex128_TypeName"></span>
+
 #### func (Complex128) TypeName()  string
+
 ***
+<span id="struct_Complex128_Zero"></span>
+
 #### func (Complex128) Zero()  any
+
 ***
+<span id="struct_Complex128_Parse"></span>
+
 #### func (Complex128) Parse(value string)  any
+
 ***
 <span id="struct_Uintptr"></span>
 ### Uintptr `STRUCT`
@@ -373,11 +541,20 @@ type Complex128 complex128
 ```go
 type Uintptr uintptr
 ```
+<span id="struct_Uintptr_TypeName"></span>
+
 #### func (Uintptr) TypeName()  string
+
 ***
+<span id="struct_Uintptr_Zero"></span>
+
 #### func (Uintptr) Zero()  any
+
 ***
+<span id="struct_Uintptr_Parse"></span>
+
 #### func (Uintptr) Parse(value string)  any
+
 ***
 <span id="struct_Double"></span>
 ### Double `STRUCT`
@@ -385,11 +562,20 @@ type Uintptr uintptr
 ```go
 type Double float64
 ```
+<span id="struct_Double_TypeName"></span>
+
 #### func (Double) TypeName()  string
+
 ***
+<span id="struct_Double_Zero"></span>
+
 #### func (Double) Zero()  any
+
 ***
+<span id="struct_Double_Parse"></span>
+
 #### func (Double) Parse(value string)  any
+
 ***
 <span id="struct_Float"></span>
 ### Float `STRUCT`
@@ -397,11 +583,20 @@ type Double float64
 ```go
 type Float float32
 ```
+<span id="struct_Float_TypeName"></span>
+
 #### func (Float) TypeName()  string
+
 ***
+<span id="struct_Float_Zero"></span>
+
 #### func (Float) Zero()  any
+
 ***
+<span id="struct_Float_Parse"></span>
+
 #### func (Float) Parse(value string)  any
+
 ***
 <span id="struct_Long"></span>
 ### Long `STRUCT`
@@ -409,11 +604,20 @@ type Float float32
 ```go
 type Long int64
 ```
+<span id="struct_Long_TypeName"></span>
+
 #### func (Long) TypeName()  string
+
 ***
+<span id="struct_Long_Zero"></span>
+
 #### func (Long) Zero()  any
+
 ***
+<span id="struct_Long_Parse"></span>
+
 #### func (Long) Parse(value string)  any
+
 ***
 <span id="struct_Short"></span>
 ### Short `STRUCT`
@@ -421,11 +625,20 @@ type Long int64
 ```go
 type Short int16
 ```
+<span id="struct_Short_TypeName"></span>
+
 #### func (Short) TypeName()  string
+
 ***
+<span id="struct_Short_Zero"></span>
+
 #### func (Short) Zero()  any
+
 ***
+<span id="struct_Short_Parse"></span>
+
 #### func (Short) Parse(value string)  any
+
 ***
 <span id="struct_Char"></span>
 ### Char `STRUCT`
@@ -433,11 +646,20 @@ type Short int16
 ```go
 type Char int8
 ```
+<span id="struct_Char_TypeName"></span>
+
 #### func (Char) TypeName()  string
+
 ***
+<span id="struct_Char_Zero"></span>
+
 #### func (Char) Zero()  any
+
 ***
+<span id="struct_Char_Parse"></span>
+
 #### func (Char) Parse(value string)  any
+
 ***
 <span id="struct_Number"></span>
 ### Number `STRUCT`
@@ -445,11 +667,20 @@ type Char int8
 ```go
 type Number float64
 ```
+<span id="struct_Number_TypeName"></span>
+
 #### func (Number) TypeName()  string
+
 ***
+<span id="struct_Number_Zero"></span>
+
 #### func (Number) Zero()  any
+
 ***
+<span id="struct_Number_Parse"></span>
+
 #### func (Number) Parse(value string)  any
+
 ***
 <span id="struct_Integer"></span>
 ### Integer `STRUCT`
@@ -457,11 +688,20 @@ type Number float64
 ```go
 type Integer int64
 ```
+<span id="struct_Integer_TypeName"></span>
+
 #### func (Integer) TypeName()  string
+
 ***
+<span id="struct_Integer_Zero"></span>
+
 #### func (Integer) Zero()  any
+
 ***
+<span id="struct_Integer_Parse"></span>
+
 #### func (Integer) Parse(value string)  any
+
 ***
 <span id="struct_Boolean"></span>
 ### Boolean `STRUCT`
@@ -469,11 +709,20 @@ type Integer int64
 ```go
 type Boolean bool
 ```
+<span id="struct_Boolean_TypeName"></span>
+
 #### func (Boolean) TypeName()  string
+
 ***
+<span id="struct_Boolean_Zero"></span>
+
 #### func (Boolean) Zero()  any
+
 ***
+<span id="struct_Boolean_Parse"></span>
+
 #### func (Boolean) Parse(value string)  any
+
 ***
 <span id="struct_Loader"></span>
 ### Loader `STRUCT`
@@ -483,11 +732,17 @@ type Loader struct {
 	fields map[string]Field
 }
 ```
+<span id="struct_Loader_LoadStruct"></span>
+
 #### func (*Loader) LoadStruct(config Config)  *TmplStruct
 > 加载结构
+
 ***
+<span id="struct_Loader_LoadData"></span>
+
 #### func (*Loader) LoadData(config Config)  map[any]any
 > 加载配置并得到配置数据
+
 ***
 <span id="struct_DataInfo"></span>
 ### DataInfo `STRUCT`
@@ -532,14 +787,23 @@ type TmplField struct {
 	isIndex bool
 }
 ```
+<span id="struct_TmplField_IsIndex"></span>
+
 #### func (*TmplField) IsIndex()  bool
 > 是否是索引字段
+
 ***
+<span id="struct_TmplField_IsStruct"></span>
+
 #### func (*TmplField) IsStruct()  bool
 > 是否是结构类型
+
 ***
+<span id="struct_TmplField_IsSlice"></span>
+
 #### func (*TmplField) IsSlice()  bool
 > 是否是切片类型
+
 ***
 <span id="struct_TmplStruct"></span>
 ### TmplStruct `STRUCT`
@@ -552,6 +816,9 @@ type TmplStruct struct {
 	IndexCount int
 }
 ```
+<span id="struct_TmplStruct_AllChildren"></span>
+
 #### func (*TmplStruct) AllChildren()  []*TmplStruct
 > 获取所有子结构
+
 ***

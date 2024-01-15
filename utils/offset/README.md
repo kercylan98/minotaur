@@ -67,12 +67,21 @@ type Time struct {
 	offset time.Duration
 }
 ```
+<span id="struct_Time_SetOffset"></span>
+
 #### func (*Time) SetOffset(offset time.Duration)
 > 设置时间偏移
+
 ***
+<span id="struct_Time_Now"></span>
+
 #### func (*Time) Now()  time.Time
 > 获取当前时间偏移后的时间
+
 ***
+<span id="struct_Time_Since"></span>
+
 #### func (*Time) Since(t time.Time)  time.Duration
 > 获取当前时间偏移后的时间自从 t 以来经过的时间
+
 ***

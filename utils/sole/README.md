@@ -133,9 +133,15 @@ type Once[V any] struct {
 	r map[any]struct{}
 }
 ```
+<span id="struct_Once_Get"></span>
+
 #### func (*Once) Get(key any, value V, defaultValue V)  V
 > 获取一个值，当该值已经被获取过的时候，返回 defaultValue，否则返回 value
+
 ***
+<span id="struct_Once_Reset"></span>
+
 #### func (*Once) Reset(key ...any)
 > 当 key 数量大于 0 时，将会重置对应 key 的记录，否则重置所有记录
+
 ***

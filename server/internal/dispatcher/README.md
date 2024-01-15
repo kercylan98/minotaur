@@ -176,14 +176,23 @@ type Action[P Producer, M Message[P]] struct {
 	d      *Dispatcher[P, M]
 }
 ```
+<span id="struct_Action_Name"></span>
+
 #### func (*Action) Name()  string
 > 获取消息分发器名称
+
 ***
+<span id="struct_Action_UnExpel"></span>
+
 #### func (*Action) UnExpel()
 > 取消特定生产者的驱逐计划
+
 ***
+<span id="struct_Action_Expel"></span>
+
 #### func (*Action) Expel()
 > 设置该消息分发器即将被驱逐，当消息分发器中没有任何消息时，会自动关闭
+
 ***
 <span id="struct_Handler"></span>
 ### Handler `STRUCT`
@@ -221,11 +230,12 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	abort         chan struct{}
 }
 ```
+<span id="struct_Dispatcher_SetProducerDoneHandler"></span>
+
 #### func (*Dispatcher) SetProducerDoneHandler(p P, handler func (p P, dispatcher *Action[P, M]))  *Dispatcher[P, M]
-> 设置特定生产者所有消息处理完成时的回调函数
+> 设置特定生产者的所有消息处理完成时的回调函数
 >   - 如果 handler 为 nil，则会删除该生产者的回调函数
-> 
-> 需要注意的是，该 handler 中
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -271,8 +281,11 @@ func TestDispatcher_SetProducerDoneHandler(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_SetClosedHandler"></span>
+
 #### func (*Dispatcher) SetClosedHandler(handler func (dispatcher *Action[P, M]))  *Dispatcher[P, M]
 > 设置消息分发器关闭时的回调函数
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -319,8 +332,11 @@ func TestDispatcher_SetClosedHandler(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_Name"></span>
+
 #### func (*Dispatcher) Name()  string
 > 获取消息分发器名称
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -348,14 +364,23 @@ func TestDispatcher_Name(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_Unique"></span>
+
 #### func (*Dispatcher) Unique(name string)  bool
 > 设置唯一消息键，返回是否已存在
+
 ***
+<span id="struct_Dispatcher_AntiUnique"></span>
+
 #### func (*Dispatcher) AntiUnique(name string)
 > 取消唯一消息键
+
 ***
+<span id="struct_Dispatcher_Expel"></span>
+
 #### func (*Dispatcher) Expel()
 > 设置该消息分发器即将被驱逐，当消息分发器中没有任何消息时，会自动关闭
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -402,8 +427,11 @@ func TestDispatcher_Expel(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_UnExpel"></span>
+
 #### func (*Dispatcher) UnExpel()
 > 取消特定生产者的驱逐计划
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -452,12 +480,18 @@ func TestDispatcher_UnExpel(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_IncrCount"></span>
+
 #### func (*Dispatcher) IncrCount(producer P, i int64)
 > 主动增量设置特定生产者的消息计数，这在等待异步消息完成后再关闭消息分发器时非常有用
 >   - 如果 i 为负数，则会减少消息计数
+
 ***
+<span id="struct_Dispatcher_Put"></span>
+
 #### func (*Dispatcher) Put(message M)
 > 将消息放入分发器
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -498,8 +532,11 @@ func TestDispatcher_Put(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_Start"></span>
+
 #### func (*Dispatcher) Start()  *Dispatcher[P, M]
 > 以非阻塞的方式开始进行消息分发，当消息分发器中没有任何消息并且处于驱逐计划 Expel 时，将会自动关闭
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -540,8 +577,11 @@ func TestDispatcher_Start(t *testing.T) {
 
 
 ***
+<span id="struct_Dispatcher_Closed"></span>
+
 #### func (*Dispatcher) Closed()  bool
 > 判断消息分发器是否已关闭
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -594,11 +634,17 @@ type Manager[P Producer, M Message[P]] struct {
 	createdHandler func(name string)
 }
 ```
+<span id="struct_Manager_Wait"></span>
+
 #### func (*Manager) Wait()
 > 等待所有消息分发器关闭
+
 ***
+<span id="struct_Manager_SetDispatcherClosedHandler"></span>
+
 #### func (*Manager) SetDispatcherClosedHandler(handler func (name string))  *Manager[P, M]
 > 设置消息分发器关闭时的回调函数
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -637,8 +683,11 @@ func TestManager_SetDispatcherClosedHandler(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_SetDispatcherCreatedHandler"></span>
+
 #### func (*Manager) SetDispatcherCreatedHandler(handler func (name string))  *Manager[P, M]
 > 设置消息分发器创建时的回调函数
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -677,8 +726,11 @@ func TestManager_SetDispatcherCreatedHandler(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_HasDispatcher"></span>
+
 #### func (*Manager) HasDispatcher(name string)  bool
 > 检查是否存在指定名称的消息分发器
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -714,8 +766,11 @@ func TestManager_HasDispatcher(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_GetDispatcherNum"></span>
+
 #### func (*Manager) GetDispatcherNum()  int
 > 获取当前正在工作的消息分发器数量
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -758,8 +813,11 @@ func TestManager_GetDispatcherNum(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_GetSystemDispatcher"></span>
+
 #### func (*Manager) GetSystemDispatcher()  *Dispatcher[P, M]
 > 获取系统消息分发器
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -786,8 +844,11 @@ func TestManager_GetSystemDispatcher(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_GetDispatcher"></span>
+
 #### func (*Manager) GetDispatcher(p P)  *Dispatcher[P, M]
 > 获取生产者正在使用的消息分发器，如果生产者没有绑定消息分发器，则会返回系统消息分发器
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -818,8 +879,11 @@ func TestManager_GetDispatcher(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_BindProducer"></span>
+
 #### func (*Manager) BindProducer(p P, name string)
 > 绑定生产者使用特定的消息分发器，如果生产者已经绑定了消息分发器，则会先解绑
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -850,8 +914,11 @@ func TestManager_BindProducer(t *testing.T) {
 
 
 ***
+<span id="struct_Manager_UnBindProducer"></span>
+
 #### func (*Manager) UnBindProducer(p P)
 > 解绑生产者使用特定的消息分发器
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

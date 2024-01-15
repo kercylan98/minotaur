@@ -415,13 +415,25 @@ type MultiHandler struct {
 	handlers []slog.Handler
 }
 ```
+<span id="struct_MultiHandler_Enabled"></span>
+
 #### func (MultiHandler) Enabled(ctx context.Context, level slog.Level)  bool
+
 ***
+<span id="struct_MultiHandler_Handle"></span>
+
 #### func (MultiHandler) Handle(ctx context.Context, record slog.Record) (err error)
+
 ***
+<span id="struct_MultiHandler_WithAttrs"></span>
+
 #### func (MultiHandler) WithAttrs(attrs []slog.Attr)  slog.Handler
+
 ***
+<span id="struct_MultiHandler_WithGroup"></span>
+
 #### func (MultiHandler) WithGroup(name string)  slog.Handler
+
 ***
 <span id="struct_Option"></span>
 ### Option `STRUCT`

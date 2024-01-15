@@ -100,8 +100,11 @@ type ObjectPool[T any] struct {
 	releaser func(data T)
 }
 ```
+<span id="struct_ObjectPool_Get"></span>
+
 #### func (*ObjectPool) Get()  T
 > 获取一个对象
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -137,8 +140,11 @@ func TestObjectPool_Get(t *testing.T) {
 
 
 ***
+<span id="struct_ObjectPool_Release"></span>
+
 #### func (*ObjectPool) Release(data T)
 > 将使用完成的对象放回缓冲区
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

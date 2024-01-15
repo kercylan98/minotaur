@@ -115,8 +115,11 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber] struct {
 	position2DStopMoveEventHandles    []Position2DStopMoveEventHandle[EID, PosType]
 }
 ```
+<span id="struct_TwoDimensional_MoveTo"></span>
+
 #### func (*TwoDimensional) MoveTo(entity TwoDimensionalEntity[EID, PosType], x PosType, y PosType)
 > 设置对象移动到特定位置
+
 **示例代码：**
 
 ```go
@@ -140,8 +143,11 @@ func ExampleTwoDimensional_MoveTo() {
 ```
 
 ***
+<span id="struct_TwoDimensional_StopMove"></span>
+
 #### func (*TwoDimensional) StopMove(id EID)
 > 停止特定对象的移动
+
 **示例代码：**
 
 ```go
@@ -215,23 +221,44 @@ func TestTwoDimensional_StopMove(t *testing.T) {
 
 
 ***
+<span id="struct_TwoDimensional_RegPosition2DChangeEvent"></span>
+
 #### func (*TwoDimensional) RegPosition2DChangeEvent(handle Position2DChangeEventHandle[EID, PosType])
 > 在对象位置改变时将执行注册的事件处理函数
+
 ***
+<span id="struct_TwoDimensional_OnPosition2DChangeEvent"></span>
+
 #### func (*TwoDimensional) OnPosition2DChangeEvent(entity TwoDimensionalEntity[EID, PosType], oldX PosType, oldY PosType)
+
 ***
+<span id="struct_TwoDimensional_RegPosition2DDestinationEvent"></span>
+
 #### func (*TwoDimensional) RegPosition2DDestinationEvent(handle Position2DDestinationEventHandle[EID, PosType])
 > 在对象到达终点时将执行被注册的事件处理函数
+
 ***
+<span id="struct_TwoDimensional_OnPosition2DDestinationEvent"></span>
+
 #### func (*TwoDimensional) OnPosition2DDestinationEvent(entity TwoDimensionalEntity[EID, PosType])
+
 ***
+<span id="struct_TwoDimensional_RegPosition2DStopMoveEvent"></span>
+
 #### func (*TwoDimensional) RegPosition2DStopMoveEvent(handle Position2DStopMoveEventHandle[EID, PosType])
 > 在对象停止移动时将执行被注册的事件处理函数
+
 ***
+<span id="struct_TwoDimensional_OnPosition2DStopMoveEvent"></span>
+
 #### func (*TwoDimensional) OnPosition2DStopMoveEvent(entity TwoDimensionalEntity[EID, PosType])
+
 ***
+<span id="struct_TwoDimensional_Release"></span>
+
 #### func (*TwoDimensional) Release()
 > 释放对象移动对象所占用的资源
+
 ***
 <span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`

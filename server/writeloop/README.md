@@ -115,11 +115,17 @@ type Channel[T any] struct {
 	c chan T
 }
 ```
+<span id="struct_Channel_Put"></span>
+
 #### func (*Channel) Put(message T)
 > 将数据放入写循环，message 应该来源于 hub.ObjectPool
+
 ***
+<span id="struct_Channel_Close"></span>
+
 #### func (*Channel) Close()
 > 关闭写循环
+
 ***
 <span id="struct_Unbounded"></span>
 ### Unbounded `STRUCT`
@@ -130,8 +136,11 @@ type Unbounded[Message any] struct {
 	buf *buffer.Unbounded[Message]
 }
 ```
+<span id="struct_Unbounded_Put"></span>
+
 #### func (*Unbounded) Put(message Message)
 > 将数据放入写循环，message 应该来源于 hub.ObjectPool
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -189,8 +198,11 @@ func BenchmarkUnbounded_Put(b *testing.B) {
 
 
 ***
+<span id="struct_Unbounded_Close"></span>
+
 #### func (*Unbounded) Close()
 > 关闭写循环
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

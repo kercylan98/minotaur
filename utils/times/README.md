@@ -410,6 +410,8 @@ type StateLine[State generic.Basic] struct {
 	trigger [][]func()
 }
 ```
+<span id="struct_StateLine_Check"></span>
+
 #### func (*StateLine) Check(missingAllowed bool, states ...State)  bool
 > 根据状态顺序检查时间线是否合法
 >   - missingAllowed: 是否允许状态缺失，如果为 true，则状态可以不连续，如果为 false，则状态必须连续
@@ -417,76 +419,146 @@ type StateLine[State generic.Basic] struct {
 > 状态不连续表示时间线中存在状态缺失，例如：
 >   - 状态为 [1, 2, 3, 4, 5] 的时间线，如果 missingAllowed 为 true，则状态为 [1, 3, 5] 也是合法的
 >   - 状态为 [1, 2, 3, 4, 5] 的时间线，如果 missingAllowed 为 false，则状态为 [1, 3, 5] 是不合法的
+
 ***
+<span id="struct_StateLine_GetMissingStates"></span>
+
 #### func (*StateLine) GetMissingStates(states ...State)  []State
 > 获取缺失的状态
+
 ***
+<span id="struct_StateLine_HasState"></span>
+
 #### func (*StateLine) HasState(state State)  bool
 > 检查时间线中是否包含指定状态
+
 ***
+<span id="struct_StateLine_String"></span>
+
 #### func (*StateLine) String()  string
 > 获取时间线的字符串表示
+
 ***
+<span id="struct_StateLine_AddState"></span>
+
 #### func (*StateLine) AddState(state State, t time.Time, onTrigger ...func ())  *StateLine[State]
 > 添加一个状态到时间线中，状态不能与任一时间点重合，否则将被忽略
 >   - onTrigger: 该状态绑定的触发器，该触发器不会被主动执行，需要主动获取触发器执行
+
 ***
+<span id="struct_StateLine_GetTimeByState"></span>
+
 #### func (*StateLine) GetTimeByState(state State)  time.Time
 > 获取指定状态的时间点
+
 ***
+<span id="struct_StateLine_GetNextTimeByState"></span>
+
 #### func (*StateLine) GetNextTimeByState(state State)  time.Time
 > 获取指定状态的下一个时间点
+
 ***
+<span id="struct_StateLine_GetLastState"></span>
+
 #### func (*StateLine) GetLastState()  State
 > 获取最后一个状态
+
 ***
+<span id="struct_StateLine_GetPrevTimeByState"></span>
+
 #### func (*StateLine) GetPrevTimeByState(state State)  time.Time
 > 获取指定状态的上一个时间点
+
 ***
+<span id="struct_StateLine_GetIndexByState"></span>
+
 #### func (*StateLine) GetIndexByState(state State)  int
 > 获取指定状态的索引
+
 ***
+<span id="struct_StateLine_GetStateByTime"></span>
+
 #### func (*StateLine) GetStateByTime(t time.Time)  State
 > 获取指定时间点的状态
+
 ***
+<span id="struct_StateLine_GetTimeByIndex"></span>
+
 #### func (*StateLine) GetTimeByIndex(index int)  time.Time
 > 获取指定索引的时间点
+
 ***
+<span id="struct_StateLine_Move"></span>
+
 #### func (*StateLine) Move(d time.Duration)  *StateLine[State]
 > 时间线整体移动
+
 ***
+<span id="struct_StateLine_GetNextStateTimeByIndex"></span>
+
 #### func (*StateLine) GetNextStateTimeByIndex(index int)  time.Time
 > 获取指定索引的下一个时间点
+
 ***
+<span id="struct_StateLine_GetPrevStateTimeByIndex"></span>
+
 #### func (*StateLine) GetPrevStateTimeByIndex(index int)  time.Time
 > 获取指定索引的上一个时间点
+
 ***
+<span id="struct_StateLine_GetStateIndexByTime"></span>
+
 #### func (*StateLine) GetStateIndexByTime(t time.Time)  int
 > 获取指定时间点的索引
+
 ***
+<span id="struct_StateLine_GetStateCount"></span>
+
 #### func (*StateLine) GetStateCount()  int
 > 获取状态数量
+
 ***
+<span id="struct_StateLine_GetStateByIndex"></span>
+
 #### func (*StateLine) GetStateByIndex(index int)  State
 > 获取指定索引的状态
+
 ***
+<span id="struct_StateLine_GetTriggerByTime"></span>
+
 #### func (*StateLine) GetTriggerByTime(t time.Time)  []func ()
 > 获取指定时间点的触发器
+
 ***
+<span id="struct_StateLine_GetTriggerByIndex"></span>
+
 #### func (*StateLine) GetTriggerByIndex(index int)  []func ()
 > 获取指定索引的触发器
+
 ***
+<span id="struct_StateLine_GetTriggerByState"></span>
+
 #### func (*StateLine) GetTriggerByState(state State)  []func ()
 > 获取指定状态的触发器
+
 ***
+<span id="struct_StateLine_AddTriggerToState"></span>
+
 #### func (*StateLine) AddTriggerToState(state State, onTrigger ...func ())  *StateLine[State]
 > 给指定状态添加触发器
+
 ***
+<span id="struct_StateLine_Range"></span>
+
 #### func (*StateLine) Range(handler func (index int, state State, t time.Time)  bool)
 > 按照时间顺序遍历时间线
+
 ***
+<span id="struct_StateLine_RangeReverse"></span>
+
 #### func (*StateLine) RangeReverse(handler func (index int, state State, t time.Time)  bool)
 > 按照时间逆序遍历时间线
+
 ***
 <span id="struct_Period"></span>
 ### Period `STRUCT`
@@ -494,61 +566,118 @@ type StateLine[State generic.Basic] struct {
 ```go
 type Period [2]time.Time
 ```
+<span id="struct_Period_Start"></span>
+
 #### func (Period) Start()  time.Time
 > 返回时间段的开始时间
+
 ***
+<span id="struct_Period_End"></span>
+
 #### func (Period) End()  time.Time
 > 返回时间段的结束时间
+
 ***
+<span id="struct_Period_Duration"></span>
+
 #### func (Period) Duration()  time.Duration
 > 返回时间段的持续时间
+
 ***
+<span id="struct_Period_Day"></span>
+
 #### func (Period) Day()  int
 > 返回时间段的持续天数
+
 ***
+<span id="struct_Period_Hour"></span>
+
 #### func (Period) Hour()  int
 > 返回时间段的持续小时数
+
 ***
+<span id="struct_Period_Minute"></span>
+
 #### func (Period) Minute()  int
 > 返回时间段的持续分钟数
+
 ***
+<span id="struct_Period_Seconds"></span>
+
 #### func (Period) Seconds()  int
 > 返回时间段的持续秒数
+
 ***
+<span id="struct_Period_Milliseconds"></span>
+
 #### func (Period) Milliseconds()  int
 > 返回时间段的持续毫秒数
+
 ***
+<span id="struct_Period_Microseconds"></span>
+
 #### func (Period) Microseconds()  int
 > 返回时间段的持续微秒数
+
 ***
+<span id="struct_Period_Nanoseconds"></span>
+
 #### func (Period) Nanoseconds()  int
 > 返回时间段的持续纳秒数
+
 ***
+<span id="struct_Period_IsZero"></span>
+
 #### func (Period) IsZero()  bool
 > 判断时间段是否为零值
+
 ***
+<span id="struct_Period_IsInvalid"></span>
+
 #### func (Period) IsInvalid()  bool
 > 判断时间段是否无效
+
 ***
+<span id="struct_Period_IsBefore"></span>
+
 #### func (Period) IsBefore(t time.Time)  bool
 > 判断时间段是否在指定时间之前
+
 ***
+<span id="struct_Period_IsAfter"></span>
+
 #### func (Period) IsAfter(t time.Time)  bool
 > 判断时间段是否在指定时间之后
+
 ***
+<span id="struct_Period_IsBetween"></span>
+
 #### func (Period) IsBetween(t time.Time)  bool
 > 判断指定时间是否在时间段之间
+
 ***
+<span id="struct_Period_IsOngoing"></span>
+
 #### func (Period) IsOngoing(t time.Time)  bool
 > 判断指定时间是否正在进行时
 >   - 如果时间段的开始时间在指定时间之前或者等于指定时间，且时间段的结束时间在指定时间之后，则返回 true
+
 ***
+<span id="struct_Period_IsBetweenOrEqual"></span>
+
 #### func (Period) IsBetweenOrEqual(t time.Time)  bool
 > 判断指定时间是否在时间段之间或者等于时间段的开始或结束时间
+
 ***
+<span id="struct_Period_IsBetweenOrEqualPeriod"></span>
+
 #### func (Period) IsBetweenOrEqualPeriod(t Period)  bool
 > 判断指定时间是否在时间段之间或者等于时间段的开始或结束时间
+
 ***
+<span id="struct_Period_IsOverlap"></span>
+
 #### func (Period) IsOverlap(t Period)  bool
 > 判断时间段是否与指定时间段重叠
+
 ***

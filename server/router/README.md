@@ -60,8 +60,11 @@ func ExampleNewMultistage() {
 ```go
 type MultistageBind[HandleFunc any] func(HandleFunc)
 ```
+<span id="struct_MultistageBind_Bind"></span>
+
 #### func (MultistageBind) Bind(handleFunc HandleFunc)
 > 将处理函数绑定到预设的路由中
+
 ***
 <span id="struct_Multistage"></span>
 ### Multistage `STRUCT`
@@ -74,9 +77,12 @@ type Multistage[HandleFunc any] struct {
 	trim   func(route any) any
 }
 ```
+<span id="struct_Multistage_Register"></span>
+
 #### func (*Multistage) Register(routes ...any)  MultistageBind[HandleFunc]
 > 注册路由是结合 Sub 和 Route 的快捷方式，用于一次性注册多级路由
 >   - 该函数将返回一个注册函数，可通过调用其将路由绑定到特定处理函数，例如：router.Register("a", "b").Bind(onExec())
+
 **示例代码：**
 
 ```go
@@ -90,8 +96,11 @@ func ExampleMultistage_Register() {
 ```
 
 ***
+<span id="struct_Multistage_Route"></span>
+
 #### func (*Multistage) Route(route any, handleFunc HandleFunc)
 > 为特定路由绑定处理函数，被绑定的处理函数将可以通过 Match 函数进行匹配
+
 **示例代码：**
 
 ```go
@@ -105,9 +114,12 @@ func ExampleMultistage_Route() {
 ```
 
 ***
+<span id="struct_Multistage_Match"></span>
+
 #### func (*Multistage) Match(routes ...any)  HandleFunc
 > 匹配已绑定处理函数的路由，返回处理函数
 >   - 如果未找到将会返回空指针
+
 **示例代码：**
 
 ```go
@@ -156,8 +168,11 @@ func TestMultistage_Match(t *testing.T) {
 
 
 ***
+<span id="struct_Multistage_Sub"></span>
+
 #### func (*Multistage) Sub(route any)  *Multistage[HandleFunc]
 > 获取子路由器
+
 **示例代码：**
 
 ```go

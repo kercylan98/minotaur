@@ -46,55 +46,109 @@ type SyncMap[K comparable, V any] struct {
 	atom bool
 }
 ```
+<span id="struct_SyncMap_Set"></span>
+
 #### func (*SyncMap) Set(key K, value V)
 > 设置一个值
+
 ***
+<span id="struct_SyncMap_Get"></span>
+
 #### func (*SyncMap) Get(key K)  V
 > 获取一个值
+
 ***
+<span id="struct_SyncMap_Atom"></span>
+
 #### func (*SyncMap) Atom(handle func (m map[K]V))
 > 原子操作
+
 ***
+<span id="struct_SyncMap_Exist"></span>
+
 #### func (*SyncMap) Exist(key K)  bool
 > 判断是否存在
+
 ***
+<span id="struct_SyncMap_GetExist"></span>
+
 #### func (*SyncMap) GetExist(key K) ( V,  bool)
 > 获取一个值并判断是否存在
+
 ***
+<span id="struct_SyncMap_Delete"></span>
+
 #### func (*SyncMap) Delete(key K)
 > 删除一个值
+
 ***
+<span id="struct_SyncMap_DeleteGet"></span>
+
 #### func (*SyncMap) DeleteGet(key K)  V
 > 删除一个值并返回
+
 ***
+<span id="struct_SyncMap_DeleteGetExist"></span>
+
 #### func (*SyncMap) DeleteGetExist(key K) ( V,  bool)
 > 删除一个值并返回是否存在
+
 ***
+<span id="struct_SyncMap_DeleteExist"></span>
+
 #### func (*SyncMap) DeleteExist(key K)  bool
 > 删除一个值并返回是否存在
+
 ***
+<span id="struct_SyncMap_Clear"></span>
+
 #### func (*SyncMap) Clear()
 > 清空
+
 ***
+<span id="struct_SyncMap_ClearHandle"></span>
+
 #### func (*SyncMap) ClearHandle(handle func (key K, value V))
 > 清空并处理
+
 ***
+<span id="struct_SyncMap_Range"></span>
+
 #### func (*SyncMap) Range(handle func (key K, value V)  bool)
 > 遍历所有值，如果 handle 返回 true 则停止遍历
+
 ***
+<span id="struct_SyncMap_Keys"></span>
+
 #### func (*SyncMap) Keys()  []K
 > 获取所有的键
+
 ***
+<span id="struct_SyncMap_Slice"></span>
+
 #### func (*SyncMap) Slice()  []V
 > 获取所有的值
+
 ***
+<span id="struct_SyncMap_Map"></span>
+
 #### func (*SyncMap) Map()  map[K]V
 > 转换为普通 map
+
 ***
+<span id="struct_SyncMap_Size"></span>
+
 #### func (*SyncMap) Size()  int
 > 获取数量
+
 ***
+<span id="struct_SyncMap_MarshalJSON"></span>
+
 #### func (*SyncMap) MarshalJSON() ( []byte,  error)
+
 ***
+<span id="struct_SyncMap_UnmarshalJSON"></span>
+
 #### func (*SyncMap) UnmarshalJSON(bytes []byte)  error
+
 ***

@@ -47,11 +47,17 @@ type Manager struct {
 	closeChannel  chan struct{}
 }
 ```
+<span id="struct_Manager_PushNotify"></span>
+
 #### func (*Manager) PushNotify(notify Notify)
 > 推送通知
+
 ***
+<span id="struct_Manager_Release"></span>
+
 #### func (*Manager) Release()
 > 释放通知管理器
+
 ***
 <span id="struct_Notify"></span>
 ### Notify `INTERFACE`

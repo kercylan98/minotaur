@@ -94,8 +94,11 @@ type Ring[T any] struct {
 	w        int
 }
 ```
+<span id="struct_Ring_Read"></span>
+
 #### func (*Ring) Read() ( T,  error)
 > 读取数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -120,14 +123,23 @@ func BenchmarkRing_Read(b *testing.B) {
 
 
 ***
+<span id="struct_Ring_ReadAll"></span>
+
 #### func (*Ring) ReadAll()  []T
 > 读取所有数据
+
 ***
+<span id="struct_Ring_Peek"></span>
+
 #### func (*Ring) Peek() (t T, err error)
 > 查看数据
+
 ***
+<span id="struct_Ring_Write"></span>
+
 #### func (*Ring) Write(v T)
 > 写入数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -149,17 +161,29 @@ func BenchmarkRing_Write(b *testing.B) {
 
 
 ***
+<span id="struct_Ring_IsEmpty"></span>
+
 #### func (*Ring) IsEmpty()  bool
 > 是否为空
+
 ***
+<span id="struct_Ring_Cap"></span>
+
 #### func (*Ring) Cap()  int
 > 返回缓冲区容量
+
 ***
+<span id="struct_Ring_Len"></span>
+
 #### func (*Ring) Len()  int
 > 返回缓冲区长度
+
 ***
+<span id="struct_Ring_Reset"></span>
+
 #### func (*Ring) Reset()
 > 重置缓冲区
+
 ***
 <span id="struct_RingUnbounded"></span>
 ### RingUnbounded `STRUCT`
@@ -175,8 +199,11 @@ type RingUnbounded[T any] struct {
 	closedSignal chan struct{}
 }
 ```
+<span id="struct_RingUnbounded_Write"></span>
+
 #### func (*RingUnbounded) Write(v T)
 > 写入数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -198,8 +225,11 @@ func BenchmarkRingUnbounded_Write(b *testing.B) {
 
 
 ***
+<span id="struct_RingUnbounded_Read"></span>
+
 #### func (*RingUnbounded) Read()  chan T
 > 读取数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -224,11 +254,17 @@ func BenchmarkRingUnbounded_Read(b *testing.B) {
 
 
 ***
+<span id="struct_RingUnbounded_Closed"></span>
+
 #### func (*RingUnbounded) Closed()  bool
 > 判断缓冲区是否已关闭
+
 ***
+<span id="struct_RingUnbounded_Close"></span>
+
 #### func (*RingUnbounded) Close()  chan struct {}
 > 关闭缓冲区，关闭后将不再接收新数据，但是已有数据仍然可以读取
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -268,15 +304,24 @@ type Unbounded[V any] struct {
 	backlog []V
 }
 ```
+<span id="struct_Unbounded_Put"></span>
+
 #### func (*Unbounded) Put(t V)
 > 将数据放入缓冲区
+
 ***
+<span id="struct_Unbounded_Load"></span>
+
 #### func (*Unbounded) Load()
 > 将缓冲区中的数据发送到读取通道中，如果缓冲区中没有数据，则不会发送
 >   - 在每次 Get 后都应该执行该函数
+
 ***
+<span id="struct_Unbounded_Get"></span>
+
 #### func (*Unbounded) Get()  chan V
 > 获取读取通道
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -299,9 +344,15 @@ func TestUnbounded_Get(t *testing.T) {
 
 
 ***
+<span id="struct_Unbounded_Close"></span>
+
 #### func (*Unbounded) Close()
 > 关闭
+
 ***
+<span id="struct_Unbounded_IsClosed"></span>
+
 #### func (*Unbounded) IsClosed()  bool
 > 是否已关闭
+
 ***
