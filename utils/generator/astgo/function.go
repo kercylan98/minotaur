@@ -12,7 +12,7 @@ func newFunction(astFunc *ast.FuncDecl) *Function {
 	f := &Function{
 		decl:     astFunc,
 		Name:     astFunc.Name.String(),
-		Comments: newComment(astFunc.Doc),
+		Comments: newComment(astFunc.Name.String(), astFunc.Doc),
 	}
 	f.IsTest = strings.HasPrefix(f.Name, "Test")
 	f.IsBenchmark = strings.HasPrefix(f.Name, "Benchmark")

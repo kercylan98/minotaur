@@ -288,6 +288,7 @@ func (b *Builder) genStructs() {
 				if function.Internal || function.Test {
 					continue
 				}
+				b.newLine(fmt.Sprintf(`<span id="struct_%s_%s"></span>`, structInfo.Name, function.Name)).newLine()
 				b.title(4, strings.TrimSpace(fmt.Sprintf("func (%s%s) %s%s %s",
 					super.If(function.Struct.Type.IsPointer, "*", ""),
 					structInfo.Name,
@@ -311,6 +312,7 @@ func (b *Builder) genStructs() {
 				for _, comment := range function.Comments.Clear {
 					b.quote(comment)
 				}
+				b.newLine()
 				if example := b.p.GetExampleTest(function); example != nil {
 					b.newLine("**示例代码：**").newLine()
 					if len(example.Comments.Clear) > 0 {

@@ -16,7 +16,7 @@ func newFile(owner *Package, filePath string) (*File, error) {
 		af:       af,
 		owner:    owner,
 		FilePath: filePath,
-		Comment:  newComment(af.Doc),
+		Comment:  newComment("Package", af.Doc),
 	}
 	for _, decl := range af.Decls {
 		switch typ := decl.(type) {

@@ -149,7 +149,7 @@ func (srv *Server) Run(addr string) (err error) {
 	return nil
 }
 
-// IsSocket 是否是 Socket 模式
+// IsSocket 通过执行 Network.IsSocket 函数检查该服务器是否是 Socket 模式
 func (srv *Server) IsSocket() bool {
 	return srv.network.IsSocket()
 }

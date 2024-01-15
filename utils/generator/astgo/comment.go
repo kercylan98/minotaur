@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func newComment(cg *ast.CommentGroup) *Comment {
+func newComment(name string, cg *ast.CommentGroup) *Comment {
 	c := &Comment{}
 	if cg == nil {
 		return c
@@ -14,9 +14,10 @@ func newComment(cg *ast.CommentGroup) *Comment {
 		c.Comments = append(c.Comments, comment.Text)
 		cc := strings.TrimPrefix(strings.Replace(comment.Text, "// ", "//", 1), "//")
 		if i == 0 {
-			s := strings.SplitN(cc, " ", 2)
-			if len(s) == 2 {
-				cc = s[1]
+			tsc := strings.TrimSpace(cc)
+			if strings.HasPrefix(tsc, name) {
+				s := strings.TrimSpace(strings.TrimPrefix(tsc, name))
+				cc = s
 			}
 		}
 		c.Clear = append(c.Clear, cc)

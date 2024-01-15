@@ -10,7 +10,7 @@ func newField(field *ast.Field) []*Field {
 		return []*Field{{
 			Anonymous: true,
 			Type:      newType(field.Type),
-			Comments:  newComment(field.Comment),
+			Comments:  newComment("", field.Comment),
 		}}
 	} else {
 		var fs []*Field
@@ -22,7 +22,7 @@ func newField(field *ast.Field) []*Field {
 				Anonymous: false,
 				Name:      name.String(),
 				Type:      newType(field.Type),
-				Comments:  newComment(field.Comment),
+				Comments:  newComment(name.String(), field.Comment),
 			})
 		}
 		return fs

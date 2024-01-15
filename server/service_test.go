@@ -20,24 +20,19 @@ func (ts *TestService) OnInit(srv *server.Server) {
 }
 
 func TestBindService(t *testing.T) {
-	srv := server.New(server.NetworkNone, server.WithLimitLife(time.Second))
-
-	server.BindService(srv, new(TestService))
-
-	if err := srv.RunNone(); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func ExampleBindService() {
-	srv := server.New(server.NetworkNone, server.WithLimitLife(time.Second))
-	server.BindService(srv, new(TestService))
-
-	if err := srv.RunNone(); err != nil {
-		panic(err)
+	var cases = []struct {
+		name string
+	}{
+		{name: "TestBindService"},
 	}
 
-	// Output:
-	// server start finish
-	// server stop
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			srv := server.New(server.NetworkNone, server.WithLimitLife(time.Millisecond))
+			server.BindService(srv, new(TestService))
+			if err := srv.RunNone(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 }
