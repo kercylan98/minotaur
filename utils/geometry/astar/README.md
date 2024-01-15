@@ -35,7 +35,7 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
 
 ***
 ## 详情信息
-#### func Find(graph Graph[Node], start Node, end Node, cost func (a Node)  V, heuristic func (a Node)  V)  []Node
+#### func Find(graph Graph[Node], start Node, end Node, cost func (a Node)  V, heuristic func (a Node)  V) []Node
 <span id="Find"></span>
 > 使用 A* 算法在导航网格上查找从起点到终点的最短路径，并返回路径上的节点序列。
 > 

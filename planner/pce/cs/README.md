@@ -31,7 +31,7 @@
 
 ***
 ## 详情信息
-#### func NewXlsx(sheet *xlsx.Sheet, exportType XlsxExportType)  *Xlsx
+#### func NewXlsx(sheet *xlsx.Sheet, exportType XlsxExportType) *Xlsx
 <span id="NewXlsx"></span>
 
 ***

@@ -80,7 +80,7 @@ server 提供了包含多种网络类型的服务器实现
 
 ***
 ## 详情信息
-#### func NewBot(srv *Server, options ...BotOption)  *Bot
+#### func NewBot(srv *Server, options ...BotOption) *Bot
 <span id="NewBot"></span>
 > 创建一个机器人，目前仅支持 Socket 服务器
 
@@ -122,151 +122,151 @@ func TestNewBot(t *testing.T) {
 
 
 ***
-#### func WithBotNetworkDelay(delay time.Duration, fluctuation time.Duration)  BotOption
+#### func WithBotNetworkDelay(delay time.Duration, fluctuation time.Duration) BotOption
 <span id="WithBotNetworkDelay"></span>
 > 设置机器人网络延迟及波动范围
 >   - delay 延迟
 >   - fluctuation 波动范围
 
 ***
-#### func WithBotWriter(construction func (bot *Bot)  io.Writer)  BotOption
+#### func WithBotWriter(construction func (bot *Bot)  io.Writer) BotOption
 <span id="WithBotWriter"></span>
 > 设置机器人写入器，默认为 os.Stdout
 
 ***
-#### func DefaultWebsocketUpgrader()  *websocket.Upgrader
+#### func DefaultWebsocketUpgrader() *websocket.Upgrader
 <span id="DefaultWebsocketUpgrader"></span>
 
 ***
-#### func NewHttpHandleWrapper(srv *Server, packer ContextPacker[Context])  *Http[Context]
+#### func NewHttpHandleWrapper(srv *Server, packer ContextPacker[Context]) *Http[Context]
 <span id="NewHttpHandleWrapper"></span>
 > 创建一个新的 http 处理程序包装器
 >   - 默认使用 server.HttpContext 作为上下文，如果需要依赖其作为新的上下文，可以通过 NewHttpContext 创建
 
 ***
-#### func NewHttpContext(ctx *gin.Context)  *HttpContext
+#### func NewHttpContext(ctx *gin.Context) *HttpContext
 <span id="NewHttpContext"></span>
 > 基于 gin.Context 创建一个新的 HttpContext
 
 ***
-#### func NewGinWrapper(server *gin.Engine, pack func (ctx *gin.Context)  CTX)  *HttpWrapper[CTX]
+#### func NewGinWrapper(server *gin.Engine, pack func (ctx *gin.Context)  CTX) *HttpWrapper[CTX]
 <span id="NewGinWrapper"></span>
 > 创建 gin 包装器，用于对 NewHttpWrapper 函数的替代
 
 ***
-#### func HasMessageType(mt MessageType)  bool
+#### func HasMessageType(mt MessageType) bool
 <span id="HasMessageType"></span>
 > 检查是否存在指定的消息类型
 
 ***
-#### func NewMultipleServer(serverHandle ...func () ((addr string, srv *Server)))  *MultipleServer
+#### func NewMultipleServer(serverHandle ...func () ((addr string, srv *Server))) *MultipleServer
 <span id="NewMultipleServer"></span>
 
 ***
-#### func GetNetworks()  []Network
+#### func GetNetworks() []Network
 <span id="GetNetworks"></span>
 > 获取所有支持的网络模式
 
 ***
-#### func WithLowMessageDuration(duration time.Duration)  Option
+#### func WithLowMessageDuration(duration time.Duration) Option
 <span id="WithLowMessageDuration"></span>
 > 通过指定慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultLowMessageDuration
 >   - 当 duration <= 0 时，表示关闭慢消息检测
 
 ***
-#### func WithAsyncLowMessageDuration(duration time.Duration)  Option
+#### func WithAsyncLowMessageDuration(duration time.Duration) Option
 <span id="WithAsyncLowMessageDuration"></span>
 > 通过指定异步消息的慢消息时长的方式创建服务器，当消息处理时间超过指定时长时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultAsyncLowMessageDuration
 >   - 当 duration <= 0 时，表示关闭慢消息检测
 
 ***
-#### func WithWebsocketConnInitializer(initializer func (writer http.ResponseWriter, request *http.Request, conn *websocket.Conn)  error)  Option
+#### func WithWebsocketConnInitializer(initializer func (writer http.ResponseWriter, request *http.Request, conn *websocket.Conn)  error) Option
 <span id="WithWebsocketConnInitializer"></span>
 > 通过 websocket 连接初始化的方式创建服务器，当 initializer 返回错误时，服务器将不会处理该连接的后续逻辑
 >   - 该选项仅在创建 NetworkWebsocket 服务器时有效
 
 ***
-#### func WithWebsocketUpgrade(upgrader *websocket.Upgrader)  Option
+#### func WithWebsocketUpgrade(upgrader *websocket.Upgrader) Option
 <span id="WithWebsocketUpgrade"></span>
 > 通过指定 websocket.Upgrader 的方式创建服务器
 >   - 默认值为 DefaultWebsocketUpgrader
 >   - 该选项仅在创建 NetworkWebsocket 服务器时有效
 
 ***
-#### func WithConnWriteBufferSize(size int)  Option
+#### func WithConnWriteBufferSize(size int) Option
 <span id="WithConnWriteBufferSize"></span>
 > 通过连接写入缓冲区大小的方式创建服务器
 >   - 默认值为 DefaultConnWriteBufferSize
 >   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
 
 ***
-#### func WithDispatcherBufferSize(size int)  Option
+#### func WithDispatcherBufferSize(size int) Option
 <span id="WithDispatcherBufferSize"></span>
 > 通过消息分发器缓冲区大小的方式创建服务器
 >   - 默认值为 DefaultDispatcherBufferSize
 >   - 设置合适的缓冲区大小可以提高服务器性能，但是会占用更多的内存
 
 ***
-#### func WithMessageStatistics(duration time.Duration, limit int)  Option
+#### func WithMessageStatistics(duration time.Duration, limit int) Option
 <span id="WithMessageStatistics"></span>
 > 通过消息统计的方式创建服务器
 >   - 默认不开启，当 duration 和 limit 均大于 0 的时候，服务器将记录每 duration 期间的消息数量，并保留最多 limit 条
 
 ***
-#### func WithPacketWarnSize(size int)  Option
+#### func WithPacketWarnSize(size int) Option
 <span id="WithPacketWarnSize"></span>
 > 通过数据包大小警告的方式创建服务器，当数据包大小超过指定大小时，将会输出 WARN 类型的日志
 >   - 默认值为 DefaultPacketWarnSize
 >   - 当 size <= 0 时，表示不设置警告
 
 ***
-#### func WithLimitLife(t time.Duration)  Option
+#### func WithLimitLife(t time.Duration) Option
 <span id="WithLimitLife"></span>
 > 通过限制最大生命周期的方式创建服务器
 >   - 通常用于测试服务器，服务器将在到达最大生命周期时自动关闭
 
 ***
-#### func WithWebsocketWriteCompression()  Option
+#### func WithWebsocketWriteCompression() Option
 <span id="WithWebsocketWriteCompression"></span>
 > 通过数据写入压缩的方式创建Websocket服务器
 >   - 默认不开启数据压缩
 
 ***
-#### func WithWebsocketCompression(level int)  Option
+#### func WithWebsocketCompression(level int) Option
 <span id="WithWebsocketCompression"></span>
 > 通过数据压缩的方式创建Websocket服务器
 >   - 默认不开启数据压缩
 
 ***
-#### func WithDeadlockDetect(t time.Duration)  Option
+#### func WithDeadlockDetect(t time.Duration) Option
 <span id="WithDeadlockDetect"></span>
 > 通过死锁、死循环、永久阻塞检测的方式创建服务器
 >   - 当检测到死锁、死循环、永久阻塞时，服务器将会生成 WARN 类型的日志，关键字为 "SuspectedDeadlock"
 >   - 默认不开启死锁检测
 
 ***
-#### func WithDisableAsyncMessage()  Option
+#### func WithDisableAsyncMessage() Option
 <span id="WithDisableAsyncMessage"></span>
 > 通过禁用异步消息的方式创建服务器
 
 ***
-#### func WithAsyncPoolSize(size int)  Option
+#### func WithAsyncPoolSize(size int) Option
 <span id="WithAsyncPoolSize"></span>
 > 通过指定异步消息池大小的方式创建服务器
 >   - 当通过 WithDisableAsyncMessage 禁用异步消息时，此选项无效
 >   - 默认值为 DefaultAsyncPoolSize
 
 ***
-#### func WithWebsocketReadDeadline(t time.Duration)  Option
+#### func WithWebsocketReadDeadline(t time.Duration) Option
 <span id="WithWebsocketReadDeadline"></span>
 > 设置 Websocket 读取超时时间
 >   - 默认： DefaultWebsocketReadDeadline
 >   - 当 t <= 0 时，表示不设置超时时间
 
 ***
-#### func WithTicker(poolSize int, size int, connSize int, autonomy bool)  Option
+#### func WithTicker(poolSize int, size int, connSize int, autonomy bool) Option
 <span id="WithTicker"></span>
 > 通过定时器创建服务器，为服务器添加定时器功能
 >   - poolSize：指定服务器定时器池大小，当池子内的定时器数量超出该值后，多余的定时器在释放时将被回收，该值小于等于 0 时将使用 timer.DefaultTickerPoolSize
@@ -275,28 +275,28 @@ func TestNewBot(t *testing.T) {
 >   - autonomy：定时器是否独立运行（独立运行的情况下不会作为服务器消息运行，会导致并发问题）
 
 ***
-#### func WithTLS(certFile string, keyFile string)  Option
+#### func WithTLS(certFile string, keyFile string) Option
 <span id="WithTLS"></span>
 > 通过安全传输层协议TLS创建服务器
 >   - 支持：Http、Websocket
 
 ***
-#### func WithGRPCServerOptions(options ...grpc.ServerOption)  Option
+#### func WithGRPCServerOptions(options ...grpc.ServerOption) Option
 <span id="WithGRPCServerOptions"></span>
 > 通过GRPC的可选项创建GRPC服务器
 
 ***
-#### func WithWebsocketMessageType(messageTypes ...int)  Option
+#### func WithWebsocketMessageType(messageTypes ...int) Option
 <span id="WithWebsocketMessageType"></span>
 > 设置仅支持特定类型的Websocket消息
 
 ***
-#### func WithPProf(pattern ...string)  Option
+#### func WithPProf(pattern ...string) Option
 <span id="WithPProf"></span>
 > 通过性能分析工具PProf创建服务器
 
 ***
-#### func New(network Network, options ...Option)  *Server
+#### func New(network Network, options ...Option) *Server
 <span id="New"></span>
 > 根据特定网络类型创建一个服务器
 
@@ -866,7 +866,7 @@ func ExampleServer_Run() {
 #### func (*Server) Context()  context.Context
 > 获取服务器上下文
 ***
-#### func (*Server) TimeoutContext(timeout time.Duration)  context.Context,  context.CancelFunc
+#### func (*Server) TimeoutContext(timeout time.Duration) ( context.Context,  context.CancelFunc)
 > 获取服务器超时上下文，context.WithTimeout 的简写
 ***
 #### func (*Server) Ticker()  *timer.Ticker

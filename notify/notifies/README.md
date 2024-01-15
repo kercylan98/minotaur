@@ -45,12 +45,12 @@ notifies 包含了内置通知内容的实现
 
 ***
 ## 详情信息
-#### func NewFeiShu(message FeiShuMessage)  *FeiShu
+#### func NewFeiShu(message FeiShuMessage) *FeiShu
 <span id="NewFeiShu"></span>
 > 创建飞书通知消息
 
 ***
-#### func FeiShuMessageWithText(text string)  FeiShuMessage
+#### func FeiShuMessageWithText(text string) FeiShuMessage
 <span id="FeiShuMessageWithText"></span>
 > 飞书文本消息
 >   - 支持通过换行符进行消息换行
@@ -68,24 +68,24 @@ notifies 包含了内置通知内容的实现
 >   - 请确保链接是合法的，否则会以原始内容发送消息。
 
 ***
-#### func FeiShuMessageWithRichText(richText *FeiShuRichText)  FeiShuMessage
+#### func FeiShuMessageWithRichText(richText *FeiShuRichText) FeiShuMessage
 <span id="FeiShuMessageWithRichText"></span>
 > 飞书富文本消息
 
 ***
-#### func FeiShuMessageWithImage(imageKey string)  FeiShuMessage
+#### func FeiShuMessageWithImage(imageKey string) FeiShuMessage
 <span id="FeiShuMessageWithImage"></span>
 > 飞书图片消息
 >   - imageKey 可通过上传图片接口获取
 
 ***
-#### func FeiShuMessageWithInteractive(json string)  FeiShuMessage
+#### func FeiShuMessageWithInteractive(json string) FeiShuMessage
 <span id="FeiShuMessageWithInteractive"></span>
 > 飞书卡片消息
 >   - json 表示卡片的 json 数据或者消息模板的 json 数据
 
 ***
-#### func FeiShuMessageWithShareChat(chatId string)  FeiShuMessage
+#### func FeiShuMessageWithShareChat(chatId string) FeiShuMessage
 <span id="FeiShuMessageWithShareChat"></span>
 > 飞书分享群名片
 >   - chatId 群ID获取方式请参见群ID说明
@@ -93,7 +93,7 @@ notifies 包含了内置通知内容的实现
 > 群ID说明：https://open.feishu.cn/document/server-docs/group/chat/chat-id-description
 
 ***
-#### func FeiShuMessageWithShareUser(userId string)  FeiShuMessage
+#### func FeiShuMessageWithShareUser(userId string) FeiShuMessage
 <span id="FeiShuMessageWithShareUser"></span>
 > 飞书分享个人名片
 >   - userId 表示用户的 OpenID 获取方式请参见了解更多：如何获取 Open ID
@@ -101,7 +101,7 @@ notifies 包含了内置通知内容的实现
 > 如何获取 Open ID：https://open.feishu.cn/document/faq/trouble-shooting/how-to-obtain-openid
 
 ***
-#### func FeiShuMessageWithAudio(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithAudio(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithAudio"></span>
 > 飞书语音消息
 >   - fileKey 语音文件Key，可通过上传文件接口获取
@@ -109,7 +109,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithMedia(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithMedia(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithMedia"></span>
 > 飞书视频消息
 >   - fileKey 视频文件Key，可通过上传文件接口获取
@@ -117,7 +117,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithMediaAndCover(fileKey string, imageKey string)  FeiShuMessage
+#### func FeiShuMessageWithMediaAndCover(fileKey string, imageKey string) FeiShuMessage
 <span id="FeiShuMessageWithMediaAndCover"></span>
 > 飞书带封面的视频消息
 >   - fileKey 视频文件Key，可通过上传文件接口获取
@@ -126,7 +126,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithFile(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithFile(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithFile"></span>
 > 飞书文件消息
 >   - fileKey 文件Key，可通过上传文件接口获取
@@ -134,7 +134,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithSticker(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithSticker(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithSticker"></span>
 > 飞书表情包消息
 >   - fileKey 表情包文件Key，目前仅支持发送机器人收到的表情包，可通过接收消息事件的推送获取表情包 file_key。
@@ -142,7 +142,7 @@ notifies 包含了内置通知内容的实现
 > 接收消息事件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
 
 ***
-#### func NewFeiShuRichText()  *FeiShuRichText
+#### func NewFeiShuRichText() *FeiShuRichText
 <span id="NewFeiShuRichText"></span>
 > 创建一个飞书富文本
 
@@ -155,7 +155,7 @@ type FeiShu struct {
 	MsgType string
 }
 ```
-#### func (*FeiShu) Format()  string,  error
+#### func (*FeiShu) Format() ( string,  error)
 > 格式化通知内容
 ***
 ### FeiShuMessage `STRUCT`

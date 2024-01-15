@@ -52,7 +52,7 @@
 > 包装函数，后置函数执行后
 
 ***
-#### func GetPtrUnExportFiled(s reflect.Value, filedIndex int)  reflect.Value
+#### func GetPtrUnExportFiled(s reflect.Value, filedIndex int) reflect.Value
 <span id="GetPtrUnExportFiled"></span>
 > 获取指针类型的未导出字段
 
@@ -62,12 +62,12 @@
 > 设置指针类型的未导出字段
 
 ***
-#### func Copy(s reflect.Value)  reflect.Value
+#### func Copy(s reflect.Value) reflect.Value
 <span id="Copy"></span>
 > 拷贝
 
 ***
-#### func GetPointer(src T)  reflect.Value
+#### func GetPointer(src T) reflect.Value
 <span id="GetPointer"></span>
 > 获取指针
 

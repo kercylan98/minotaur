@@ -45,7 +45,7 @@
 
 ***
 ## 详情信息
-#### func Cond(k any, v any)  Condition
+#### func Cond(k any, v any) Condition
 <span id="Cond"></span>
 > 创建任务条件
 
@@ -108,19 +108,19 @@ func TestCond(t *testing.T) {
 > 触发特定任务类型的刷新任务条件事件
 
 ***
-#### func WithType(taskType string)  Option
+#### func WithType(taskType string) Option
 <span id="WithType"></span>
 > 设置任务类型
 
 ***
-#### func WithCondition(condition Condition)  Option
+#### func WithCondition(condition Condition) Option
 <span id="WithCondition"></span>
 > 设置任务完成条件，当满足条件时，任务状态为完成
 >   - 任务条件值需要变更时可通过 Task.AssignConditionValueAndRefresh 方法变更
 >   - 当多次设置该选项时，后面的设置会覆盖之前的设置
 
 ***
-#### func WithCounter(counter int64, initCount ...int64)  Option
+#### func WithCounter(counter int64, initCount ...int64) Option
 <span id="WithCounter"></span>
 > 设置任务计数器，当计数器达到要求时，任务状态为完成
 >   - 一些场景下，任务计数器可能会溢出，此时可通过 WithOverflowCounter 设置可溢出的任务计数器
@@ -128,24 +128,24 @@ func TestCond(t *testing.T) {
 >   - 如果需要初始化计数器的值，可通过 initCount 参数设置
 
 ***
-#### func WithOverflowCounter(counter int64, initCount ...int64)  Option
+#### func WithOverflowCounter(counter int64, initCount ...int64) Option
 <span id="WithOverflowCounter"></span>
 > 设置可溢出的任务计数器，当计数器达到要求时，任务状态为完成
 >   - 当多次设置该选项时，后面的设置会覆盖之前的设置
 >   - 如果需要初始化计数器的值，可通过 initCount 参数设置
 
 ***
-#### func WithDeadline(deadline time.Time)  Option
+#### func WithDeadline(deadline time.Time) Option
 <span id="WithDeadline"></span>
 > 设置任务截止时间，超过截至时间并且任务未完成时，任务状态为失败
 
 ***
-#### func WithLimitedDuration(start time.Time, duration time.Duration)  Option
+#### func WithLimitedDuration(start time.Time, duration time.Duration) Option
 <span id="WithLimitedDuration"></span>
 > 设置任务限时，超过限时时间并且任务未完成时，任务状态为失败
 
 ***
-#### func NewTask(options ...Option)  *Task
+#### func NewTask(options ...Option) *Task
 <span id="NewTask"></span>
 > 生成任务
 

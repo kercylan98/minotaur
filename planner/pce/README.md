@@ -69,12 +69,12 @@
 
 ***
 ## 详情信息
-#### func NewExporter()  *Exporter
+#### func NewExporter() *Exporter
 <span id="NewExporter"></span>
 > 创建导出器
 
 ***
-#### func GetFieldGolangType(field Field)  string
+#### func GetFieldGolangType(field Field) string
 <span id="GetFieldGolangType"></span>
 > 获取字段的 Golang 类型
 
@@ -95,12 +95,12 @@ func TestGetFieldGolangType(t *testing.T) {
 
 
 ***
-#### func GetFields()  []Field
+#### func GetFields() []Field
 <span id="GetFields"></span>
 > 获取所有内置支持的字段
 
 ***
-#### func NewLoader(fields []Field)  *Loader
+#### func NewLoader(fields []Field) *Loader
 <span id="NewLoader"></span>
 > 创建加载器
 >   - 加载器被用于加载配置表的数据和结构信息
@@ -132,10 +132,10 @@ type DataTmpl interface {
 ```go
 type Exporter struct{}
 ```
-#### func (*Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct)  []byte,  error
+#### func (*Exporter) ExportStruct(tmpl Tmpl, tmplStruct ...*TmplStruct) ( []byte,  error)
 > 导出结构
 ***
-#### func (*Exporter) ExportData(tmpl DataTmpl, data map[any]any)  []byte,  error
+#### func (*Exporter) ExportData(tmpl DataTmpl, data map[any]any) ( []byte,  error)
 > 导出数据
 ***
 ### Field `INTERFACE`

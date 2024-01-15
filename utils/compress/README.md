@@ -30,32 +30,32 @@ compress 提供了一些用于压缩和解压缩数据的函数。
 
 ***
 ## 详情信息
-#### func GZipCompress(data []byte)  bytes.Buffer,  error
+#### func GZipCompress(data []byte) (bytes.Buffer,  error)
 <span id="GZipCompress"></span>
 > 对数据进行GZip压缩，返回bytes.Buffer和错误信息
 
 ***
-#### func GZipUnCompress(dataByte []byte)  []byte,  error
+#### func GZipUnCompress(dataByte []byte) ([]byte,  error)
 <span id="GZipUnCompress"></span>
 > 对已进行GZip压缩的数据进行解压缩，返回字节数组及错误信息
 
 ***
-#### func TARCompress(data []byte)  bytes.Buffer,  error
+#### func TARCompress(data []byte) (bytes.Buffer,  error)
 <span id="TARCompress"></span>
 > 对数据进行TAR压缩，返回bytes.Buffer和错误信息
 
 ***
-#### func TARUnCompress(dataByte []byte)  []byte,  error
+#### func TARUnCompress(dataByte []byte) ([]byte,  error)
 <span id="TARUnCompress"></span>
 > 对已进行TAR压缩的数据进行解压缩，返回字节数组及错误信息
 
 ***
-#### func ZIPCompress(data []byte)  bytes.Buffer,  error
+#### func ZIPCompress(data []byte) (bytes.Buffer,  error)
 <span id="ZIPCompress"></span>
 > 对数据进行ZIP压缩，返回bytes.Buffer和错误信息
 
 ***
-#### func ZIPUnCompress(dataByte []byte)  []byte,  error
+#### func ZIPUnCompress(dataByte []byte) ([]byte,  error)
 <span id="ZIPUnCompress"></span>
 > 对已进行ZIP压缩的数据进行解压缩，返回字节数组及错误信息
 

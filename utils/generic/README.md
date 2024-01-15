@@ -48,17 +48,17 @@ generic 目的在于提供一组基于泛型的用于处理通用功能的函数
 
 ***
 ## 详情信息
-#### func IsNil(v V)  bool
+#### func IsNil(v V) bool
 <span id="IsNil"></span>
 > 检查指定的值是否为 nil
 
 ***
-#### func IsAllNil(v ...V)  bool
+#### func IsAllNil(v ...V) bool
 <span id="IsAllNil"></span>
 > 检查指定的值是否全部为 nil
 
 ***
-#### func IsHasNil(v ...V)  bool
+#### func IsHasNil(v ...V) bool
 <span id="IsHasNil"></span>
 > 检查指定的值是否存在 nil
 

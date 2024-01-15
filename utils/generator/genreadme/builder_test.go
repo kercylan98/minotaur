@@ -16,11 +16,11 @@ func TestBuilder_Generate(t *testing.T) {
 	//	panic(err)
 	//}
 	//return
-	filepath.Walk("/Users/kercylan/Coding.localized/Go/minotaur", func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk("D:/sources/minotaur", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
 			return nil
 		}
-		if strings.Contains(strings.TrimPrefix(path, "/Users/kercylan/Coding.localized/Go/minotaur"), ".") {
+		if strings.Contains(strings.TrimPrefix(path, "D:/sources/minotaur"), ".") {
 			return nil
 		}
 		b, err := New(

@@ -32,12 +32,12 @@
 
 ***
 ## 详情信息
-#### func NewGolang(packageName string)  *Golang
+#### func NewGolang(packageName string) *Golang
 <span id="NewGolang"></span>
 > 创建一个 Golang 配置导出模板
 
 ***
-#### func NewJSON()  *JSON
+#### func NewJSON() *JSON
 <span id="NewJSON"></span>
 
 ***
@@ -49,7 +49,7 @@ type Golang struct {
 	Templates []*pce.TmplStruct
 }
 ```
-#### func (*Golang) Render(templates ...*pce.TmplStruct)  string,  error
+#### func (*Golang) Render(templates ...*pce.TmplStruct) ( string,  error)
 ***
 #### func (*Golang) GetVariable(config *pce.TmplStruct)  string
 ***
@@ -64,5 +64,5 @@ type JSON struct {
 	jsonIter.API
 }
 ```
-#### func (*JSON) Render(data map[any]any)  string,  error
+#### func (*JSON) Render(data map[any]any) ( string,  error)
 ***

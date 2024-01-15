@@ -163,7 +163,13 @@ func (b *Builder) genStructs() {
 				}
 				return f
 			}(),
-			funcHandler(function.Results),
+			func() string {
+				f := strings.TrimSpace(funcHandler(function.Results))
+				if len(function.Results) >= 2 && !strings.HasPrefix(f, "(") {
+					f = "(" + f + ")"
+				}
+				return f
+			}(),
 		)))
 		b.newLine(fmt.Sprintf(`<span id="%s"></span>`, function.Name))
 		b.quote()
@@ -260,7 +266,13 @@ func (b *Builder) genStructs() {
 						}
 						return f
 					}(),
-					funcHandler(function.Results),
+					func() string {
+						f := funcHandler(function.Results)
+						if len(function.Results) >= 2 && !strings.HasPrefix(strings.TrimSpace(f), "(") {
+							f = "(" + f + ")"
+						}
+						return f
+					}(),
 				)))
 				b.quote()
 				for _, comment := range function.Comments.Clear {

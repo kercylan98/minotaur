@@ -40,7 +40,7 @@ buffer 提供了缓冲区相关的实用程序。
 
 ***
 ## 详情信息
-#### func NewRing(initSize ...int)  *Ring[T]
+#### func NewRing(initSize ...int) *Ring[T]
 <span id="NewRing"></span>
 > 创建一个并发不安全的环形缓冲区
 >   - initSize: 初始容量
@@ -68,12 +68,12 @@ func TestNewRing(t *testing.T) {
 
 
 ***
-#### func NewRingUnbounded(bufferSize int)  *RingUnbounded[T]
+#### func NewRingUnbounded(bufferSize int) *RingUnbounded[T]
 <span id="NewRingUnbounded"></span>
 > 创建一个并发安全的基于环形缓冲区实现的无界缓冲区
 
 ***
-#### func NewUnbounded()  *Unbounded[V]
+#### func NewUnbounded() *Unbounded[V]
 <span id="NewUnbounded"></span>
 > 创建一个无界缓冲区
 >   - generateNil: 生成空值的函数，该函数仅需始终返回 nil 即可
@@ -93,7 +93,7 @@ type Ring[T any] struct {
 	w        int
 }
 ```
-#### func (*Ring) Read()  T,  error
+#### func (*Ring) Read() ( T,  error)
 > 读取数据
 <details>
 <summary>查看 / 收起基准测试</summary>

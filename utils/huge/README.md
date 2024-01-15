@@ -34,23 +34,23 @@
 
 ***
 ## 详情信息
-#### func NewFloat(x T)  *Float
+#### func NewFloat(x T) *Float
 <span id="NewFloat"></span>
 > 创建一个 Float
 
 ***
-#### func NewFloatByString(i string)  *Float
+#### func NewFloatByString(i string) *Float
 <span id="NewFloatByString"></span>
 > 通过字符串创建一个 Float
 >   - 如果字符串不是一个合法的数字，则返回 0
 
 ***
-#### func NewInt(x T)  *Int
+#### func NewInt(x T) *Int
 <span id="NewInt"></span>
 > 创建一个 Int
 
 ***
-#### func NewIntByString(i string)  *Int
+#### func NewIntByString(i string) *Int
 <span id="NewIntByString"></span>
 > 通过字符串创建一个 Int
 >   - 如果字符串不是一个合法的数字，则返回 0

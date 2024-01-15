@@ -66,17 +66,17 @@
 > 偏移时间新的一天事件
 
 ***
-#### func WithCaller(handle func (name string, caller func ()))  Option
+#### func WithCaller(handle func (name string, caller func ())) Option
 <span id="WithCaller"></span>
 > 通过其他的 handle 执行 Caller
 
 ***
-#### func WithMark(mark string)  Option
+#### func WithMark(mark string) Option
 <span id="WithMark"></span>
 > 通过特定的标记创建定时器
 
 ***
-#### func NewPool(tickerPoolSize int)  *Pool
+#### func NewPool(tickerPoolSize int) *Pool
 <span id="NewPool"></span>
 > 创建一个定时器池，当 tickerPoolSize 小于等于 0 时，将会引发 panic，可指定为 DefaultTickerPoolSize
 
@@ -87,7 +87,7 @@
 >   - 默认值为 DefaultTickerPoolSize，当定时器池中的定时器不足时，会自动创建新的定时器，当定时器释放时，会将多余的定时器进行释放，否则将放入定时器池中
 
 ***
-#### func GetTicker(size int, options ...Option)  *Ticker
+#### func GetTicker(size int, options ...Option) *Ticker
 <span id="GetTicker"></span>
 > 获取标准池中的一个定时器
 

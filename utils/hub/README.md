@@ -30,7 +30,7 @@
 
 ***
 ## 详情信息
-#### func NewObjectPool(generator func ()  *T, releaser func (data *T))  *ObjectPool[*T]
+#### func NewObjectPool(generator func ()  *T, releaser func (data *T)) *ObjectPool[*T]
 <span id="NewObjectPool"></span>
 > 创建一个 ObjectPool
 

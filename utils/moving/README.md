@@ -37,7 +37,7 @@
 
 ***
 ## 详情信息
-#### func NewTwoDimensional(options ...TwoDimensionalOption[EID, PosType])  *TwoDimensional[EID, PosType]
+#### func NewTwoDimensional(options ...TwoDimensionalOption[EID, PosType]) *TwoDimensional[EID, PosType]
 <span id="NewTwoDimensional"></span>
 > 创建一个用于2D对象移动的实例(TwoDimensional)
 
@@ -74,24 +74,24 @@ func TestNewTwoDimensional(t *testing.T) {
 
 
 ***
-#### func WithTwoDimensionalTimeUnit(duration time.Duration)  TwoDimensionalOption[EID, PosType]
+#### func WithTwoDimensionalTimeUnit(duration time.Duration) TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalTimeUnit"></span>
 > 通过特定时间单位创建
 >   - 默认单位为1毫秒，最小单位也为1毫秒
 
 ***
-#### func WithTwoDimensionalIdleWaitTime(duration time.Duration)  TwoDimensionalOption[EID, PosType]
+#### func WithTwoDimensionalIdleWaitTime(duration time.Duration) TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalIdleWaitTime"></span>
 > 通过特定的空闲等待时间创建
 >   - 默认情况下在没有新的移动计划时将限制 100毫秒 + 移动间隔事件(默认100毫秒)
 
 ***
-#### func WithTwoDimensionalInterval(duration time.Duration)  TwoDimensionalOption[EID, PosType]
+#### func WithTwoDimensionalInterval(duration time.Duration) TwoDimensionalOption[EID, PosType]
 <span id="WithTwoDimensionalInterval"></span>
 > 通过特定的移动间隔时间创建
 
 ***
-#### func NewEntity(guid int64, speed float64)  *MoveEntity
+#### func NewEntity(guid int64, speed float64) *MoveEntity
 <span id="NewEntity"></span>
 
 ***

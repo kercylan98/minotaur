@@ -30,7 +30,7 @@
 
 ***
 ## 详情信息
-#### func NewSyncMap(source ...map[K]V)  *SyncMap[K, V]
+#### func NewSyncMap(source ...map[K]V) *SyncMap[K, V]
 <span id="NewSyncMap"></span>
 > 创建一个 SyncMap
 

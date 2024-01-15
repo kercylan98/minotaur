@@ -141,7 +141,7 @@ collection 用于对 input 和 map 操作的工具函数
 
 ***
 ## 详情信息
-#### func CloneSlice(slice S)  S
+#### func CloneSlice(slice S) S
 <span id="CloneSlice"></span>
 > 克隆切片，该函数是 slices.Clone 的快捷方式
 
@@ -190,7 +190,7 @@ func TestCloneSlice(t *testing.T) {
 
 
 ***
-#### func CloneMap(m M)  M
+#### func CloneMap(m M) M
 <span id="CloneMap"></span>
 > 克隆 map
 
@@ -239,7 +239,7 @@ func TestCloneMap(t *testing.T) {
 
 
 ***
-#### func CloneSliceN(slice S, n int)  []S
+#### func CloneSliceN(slice S, n int) []S
 <span id="CloneSliceN"></span>
 > 克隆 slice 为 n 个切片进行返回
 
@@ -294,7 +294,7 @@ func TestCloneSliceN(t *testing.T) {
 
 
 ***
-#### func CloneMapN(m M, n int)  []M
+#### func CloneMapN(m M, n int) []M
 <span id="CloneMapN"></span>
 > 克隆 map 为 n 个 map 进行返回
 
@@ -349,7 +349,7 @@ func TestCloneMapN(t *testing.T) {
 
 
 ***
-#### func CloneSlices(slices ...S)  []S
+#### func CloneSlices(slices ...S) []S
 <span id="CloneSlices"></span>
 > 克隆多个切片
 
@@ -401,7 +401,7 @@ func TestCloneSlices(t *testing.T) {
 
 
 ***
-#### func CloneMaps(maps ...M)  []M
+#### func CloneMaps(maps ...M) []M
 <span id="CloneMaps"></span>
 > 克隆多个 map
 
@@ -453,7 +453,7 @@ func TestCloneMaps(t *testing.T) {
 
 
 ***
-#### func InSlice(slice S, v V, handler ComparisonHandler[V])  bool
+#### func InSlice(slice S, v V, handler ComparisonHandler[V]) bool
 <span id="InSlice"></span>
 > 检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 
@@ -501,7 +501,7 @@ func TestInSlice(t *testing.T) {
 
 
 ***
-#### func InComparableSlice(slice S, v V)  bool
+#### func InComparableSlice(slice S, v V) bool
 <span id="InComparableSlice"></span>
 > 检查 v 是否被包含在 slice 中
 
@@ -545,7 +545,7 @@ func TestInComparableSlice(t *testing.T) {
 
 
 ***
-#### func AllInSlice(slice S, values []V, handler ComparisonHandler[V])  bool
+#### func AllInSlice(slice S, values []V, handler ComparisonHandler[V]) bool
 <span id="AllInSlice"></span>
 > 检查 values 中的所有元素是否均被包含在 slice 中，当 handler 返回 true 时，表示 values 中的某个元素和 slice 中的某个元素相匹配
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
@@ -595,7 +595,7 @@ func TestAllInSlice(t *testing.T) {
 
 
 ***
-#### func AllInComparableSlice(slice S, values []V)  bool
+#### func AllInComparableSlice(slice S, values []V) bool
 <span id="AllInComparableSlice"></span>
 > 检查 values 中的所有元素是否均被包含在 slice 中
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
@@ -641,7 +641,7 @@ func TestAllInComparableSlice(t *testing.T) {
 
 
 ***
-#### func AnyInSlice(slice S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInSlice(slice S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInSlice"></span>
 > 检查 values 中的任意一个元素是否被包含在 slice 中，当 handler 返回 true 时，表示 value 中的某个元素和 slice 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
@@ -690,7 +690,7 @@ func TestAnyInSlice(t *testing.T) {
 
 
 ***
-#### func AnyInComparableSlice(slice S, values []V)  bool
+#### func AnyInComparableSlice(slice S, values []V) bool
 <span id="AnyInComparableSlice"></span>
 > 检查 values 中的任意一个元素是否被包含在 slice 中
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
@@ -735,7 +735,7 @@ func TestAnyInComparableSlice(t *testing.T) {
 
 
 ***
-#### func InSlices(slices []S, v V, handler ComparisonHandler[V])  bool
+#### func InSlices(slices []S, v V, handler ComparisonHandler[V]) bool
 <span id="InSlices"></span>
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
@@ -784,7 +784,7 @@ func TestInSlices(t *testing.T) {
 
 
 ***
-#### func InComparableSlices(slices []S, v V)  bool
+#### func InComparableSlices(slices []S, v V) bool
 <span id="InComparableSlices"></span>
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
@@ -829,7 +829,7 @@ func TestInComparableSlices(t *testing.T) {
 
 
 ***
-#### func AllInSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AllInSlices(slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AllInSlices"></span>
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
@@ -878,7 +878,7 @@ func TestAllInSlices(t *testing.T) {
 
 
 ***
-#### func AllInComparableSlices(slices []S, values []V)  bool
+#### func AllInComparableSlices(slices []S, values []V) bool
 <span id="AllInComparableSlices"></span>
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
@@ -923,7 +923,7 @@ func TestAllInComparableSlices(t *testing.T) {
 
 
 ***
-#### func AnyInSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInSlices(slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInSlices"></span>
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
@@ -972,7 +972,7 @@ func TestAnyInSlices(t *testing.T) {
 
 
 ***
-#### func AnyInComparableSlices(slices []S, values []V)  bool
+#### func AnyInComparableSlices(slices []S, values []V) bool
 <span id="AnyInComparableSlices"></span>
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
@@ -1017,7 +1017,7 @@ func TestAnyInComparableSlices(t *testing.T) {
 
 
 ***
-#### func InAllSlices(slices []S, v V, handler ComparisonHandler[V])  bool
+#### func InAllSlices(slices []S, v V, handler ComparisonHandler[V]) bool
 <span id="InAllSlices"></span>
 > 检查 v 是否被包含在 slices 的每一项元素中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
@@ -1066,7 +1066,7 @@ func TestInAllSlices(t *testing.T) {
 
 
 ***
-#### func InAllComparableSlices(slices []S, v V)  bool
+#### func InAllComparableSlices(slices []S, v V) bool
 <span id="InAllComparableSlices"></span>
 > 检查 v 是否被包含在 slices 的每一项元素中
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
@@ -1111,7 +1111,7 @@ func TestInAllComparableSlices(t *testing.T) {
 
 
 ***
-#### func AnyInAllSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInAllSlices(slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInAllSlices"></span>
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素，当 handler 返回 true 时，表示 value 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
@@ -1160,7 +1160,7 @@ func TestAnyInAllSlices(t *testing.T) {
 
 
 ***
-#### func AnyInAllComparableSlices(slices []S, values []V)  bool
+#### func AnyInAllComparableSlices(slices []S, values []V) bool
 <span id="AnyInAllComparableSlices"></span>
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
@@ -1205,7 +1205,7 @@ func TestAnyInAllComparableSlices(t *testing.T) {
 
 
 ***
-#### func KeyInMap(m M, key K)  bool
+#### func KeyInMap(m M, key K) bool
 <span id="KeyInMap"></span>
 > 检查 m 中是否包含特定 key
 
@@ -1249,7 +1249,7 @@ func TestKeyInMap(t *testing.T) {
 
 
 ***
-#### func ValueInMap(m M, value V, handler ComparisonHandler[V])  bool
+#### func ValueInMap(m M, value V, handler ComparisonHandler[V]) bool
 <span id="ValueInMap"></span>
 > 检查 m 中是否包含特定 value，当 handler 返回 true 时，表示 value 和 m 中的某个元素相匹配
 
@@ -1296,7 +1296,7 @@ func TestValueInMap(t *testing.T) {
 
 
 ***
-#### func AllKeyInMap(m M, keys ...K)  bool
+#### func AllKeyInMap(m M, keys ...K) bool
 <span id="AllKeyInMap"></span>
 > 检查 m 中是否包含 keys 中所有的元素
 
@@ -1340,7 +1340,7 @@ func TestAllKeyInMap(t *testing.T) {
 
 
 ***
-#### func AllValueInMap(m M, values []V, handler ComparisonHandler[V])  bool
+#### func AllValueInMap(m M, values []V, handler ComparisonHandler[V]) bool
 <span id="AllValueInMap"></span>
 > 检查 m 中是否包含 values 中所有的元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
@@ -1386,7 +1386,7 @@ func TestAllValueInMap(t *testing.T) {
 
 
 ***
-#### func AnyKeyInMap(m M, keys ...K)  bool
+#### func AnyKeyInMap(m M, keys ...K) bool
 <span id="AnyKeyInMap"></span>
 > 检查 m 中是否包含 keys 中任意一个元素
 
@@ -1430,7 +1430,7 @@ func TestAnyKeyInMap(t *testing.T) {
 
 
 ***
-#### func AnyValueInMap(m M, values []V, handler ComparisonHandler[V])  bool
+#### func AnyValueInMap(m M, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyValueInMap"></span>
 > 检查 m 中是否包含 values 中任意一个元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
@@ -1476,7 +1476,7 @@ func TestAnyValueInMap(t *testing.T) {
 
 
 ***
-#### func AllKeyInMaps(maps []M, keys ...K)  bool
+#### func AllKeyInMaps(maps []M, keys ...K) bool
 <span id="AllKeyInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 keys 中所有的元素
 
@@ -1520,7 +1520,7 @@ func TestAllKeyInMaps(t *testing.T) {
 
 
 ***
-#### func AllValueInMaps(maps []M, values []V, handler ComparisonHandler[V])  bool
+#### func AllValueInMaps(maps []M, values []V, handler ComparisonHandler[V]) bool
 <span id="AllValueInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 value 中所有的元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 
@@ -1566,7 +1566,7 @@ func TestAllValueInMaps(t *testing.T) {
 
 
 ***
-#### func AnyKeyInMaps(maps []M, keys ...K)  bool
+#### func AnyKeyInMaps(maps []M, keys ...K) bool
 <span id="AnyKeyInMaps"></span>
 > 检查 keys 中的任意一个元素是否被包含在 maps 中的任意一个元素中
 >   - 当 keys 中的任意一个元素被包含在 maps 中的任意一个元素中时，返回 true
@@ -1611,7 +1611,7 @@ func TestAnyKeyInMaps(t *testing.T) {
 
 
 ***
-#### func AnyValueInMaps(maps []M, values []V, handler ComparisonHandler[V])  bool
+#### func AnyValueInMaps(maps []M, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyValueInMaps"></span>
 > 检查 maps 中的任意一个元素是否包含 value 中的任意一个元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 >   - 当 maps 中的任意一个元素包含 value 中的任意一个元素时，返回 true
@@ -1658,7 +1658,7 @@ func TestAnyValueInMaps(t *testing.T) {
 
 
 ***
-#### func KeyInAllMaps(maps []M, key K)  bool
+#### func KeyInAllMaps(maps []M, key K) bool
 <span id="KeyInAllMaps"></span>
 > 检查 key 是否被包含在 maps 的每一个元素中
 
@@ -1702,7 +1702,7 @@ func TestKeyInAllMaps(t *testing.T) {
 
 
 ***
-#### func AnyKeyInAllMaps(maps []M, keys []K)  bool
+#### func AnyKeyInAllMaps(maps []M, keys []K) bool
 <span id="AnyKeyInAllMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 keys 中任意一个元素
 >   - 当 maps 中的每一个元素均包含 keys 中任意一个元素时，返回 true
@@ -1747,7 +1747,7 @@ func TestAnyKeyInAllMaps(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToAny(s S)  []any
+#### func ConvertSliceToAny(s S) []any
 <span id="ConvertSliceToAny"></span>
 > 将切片转换为任意类型的切片
 
@@ -1799,7 +1799,7 @@ func TestConvertSliceToAny(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToIndexMap(s S)  map[int]V
+#### func ConvertSliceToIndexMap(s S) map[int]V
 <span id="ConvertSliceToIndexMap"></span>
 > 将切片转换为索引为键的映射
 
@@ -1850,7 +1850,7 @@ func TestConvertSliceToIndexMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToIndexOnlyMap(s S)  map[int]struct {}
+#### func ConvertSliceToIndexOnlyMap(s S) map[int]struct {}
 <span id="ConvertSliceToIndexOnlyMap"></span>
 > 将切片转换为索引为键的映射
 
@@ -1905,7 +1905,7 @@ func TestConvertSliceToIndexOnlyMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToMap(s S)  map[V]struct {}
+#### func ConvertSliceToMap(s S) map[V]struct {}
 <span id="ConvertSliceToMap"></span>
 > 将切片转换为值为键的映射
 
@@ -1957,7 +1957,7 @@ func TestConvertSliceToMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToBoolMap(s S)  map[V]bool
+#### func ConvertSliceToBoolMap(s S) map[V]bool
 <span id="ConvertSliceToBoolMap"></span>
 > 将切片转换为值为键的映射
 
@@ -2008,7 +2008,7 @@ func TestConvertSliceToBoolMap(t *testing.T) {
 
 
 ***
-#### func ConvertMapKeysToSlice(m M)  []K
+#### func ConvertMapKeysToSlice(m M) []K
 <span id="ConvertMapKeysToSlice"></span>
 > 将映射的键转换为切片
 
@@ -2064,7 +2064,7 @@ func TestConvertMapKeysToSlice(t *testing.T) {
 
 
 ***
-#### func ConvertMapValuesToSlice(m M)  []V
+#### func ConvertMapValuesToSlice(m M) []V
 <span id="ConvertMapValuesToSlice"></span>
 > 将映射的值转换为切片
 
@@ -2121,7 +2121,7 @@ func TestConvertMapValuesToSlice(t *testing.T) {
 
 
 ***
-#### func InvertMap(m M)  N
+#### func InvertMap(m M) N
 <span id="InvertMap"></span>
 > 将映射的键和值互换
 
@@ -2169,7 +2169,7 @@ func TestInvertMap(t *testing.T) {
 
 
 ***
-#### func ConvertMapValuesToBool(m M)  N
+#### func ConvertMapValuesToBool(m M) N
 <span id="ConvertMapValuesToBool"></span>
 > 将映射的值转换为布尔值
 
@@ -2592,7 +2592,7 @@ func TestDeduplicateSliceInPlace(t *testing.T) {
 
 
 ***
-#### func DeduplicateSlice(s S)  S
+#### func DeduplicateSlice(s S) S
 <span id="DeduplicateSlice"></span>
 > 去除切片中的重复元素，返回新切片
 
@@ -2695,7 +2695,7 @@ func TestDeduplicateSliceInPlaceWithCompare(t *testing.T) {
 
 
 ***
-#### func DeduplicateSliceWithCompare(s S, compare func (a V)  bool)  S
+#### func DeduplicateSliceWithCompare(s S, compare func (a V)  bool) S
 <span id="DeduplicateSliceWithCompare"></span>
 > 去除切片中的重复元素，使用自定义的比较函数，返回新的切片
 
@@ -2748,7 +2748,7 @@ func TestDeduplicateSliceWithCompare(t *testing.T) {
 
 
 ***
-#### func FilterOutByIndices(slice S, indices ...int)  S
+#### func FilterOutByIndices(slice S, indices ...int) S
 <span id="FilterOutByIndices"></span>
 > 过滤切片中特定索引的元素，返回过滤后的切片
 
@@ -2798,7 +2798,7 @@ func TestFilterOutByIndices(t *testing.T) {
 
 
 ***
-#### func FilterOutByCondition(slice S, condition func (v V)  bool)  S
+#### func FilterOutByCondition(slice S, condition func (v V)  bool) S
 <span id="FilterOutByCondition"></span>
 > 过滤切片中符合条件的元素，返回过滤后的切片
 >   - condition 的返回值为 true 时，将会过滤掉该元素
@@ -2857,7 +2857,7 @@ func TestFilterOutByCondition(t *testing.T) {
 
 
 ***
-#### func FilterOutByKey(m M, key K)  M
+#### func FilterOutByKey(m M, key K) M
 <span id="FilterOutByKey"></span>
 > 过滤 map 中特定的 key，返回过滤后的 map
 
@@ -2907,7 +2907,7 @@ func TestFilterOutByKey(t *testing.T) {
 
 
 ***
-#### func FilterOutByValue(m M, value V, handler ComparisonHandler[V])  M
+#### func FilterOutByValue(m M, value V, handler ComparisonHandler[V]) M
 <span id="FilterOutByValue"></span>
 > 过滤 map 中特定的 value，返回过滤后的 map
 
@@ -2961,7 +2961,7 @@ func TestFilterOutByValue(t *testing.T) {
 
 
 ***
-#### func FilterOutByKeys(m M, keys ...K)  M
+#### func FilterOutByKeys(m M, keys ...K) M
 <span id="FilterOutByKeys"></span>
 > 过滤 map 中多个 key，返回过滤后的 map
 
@@ -3011,7 +3011,7 @@ func TestFilterOutByKeys(t *testing.T) {
 
 
 ***
-#### func FilterOutByValues(m M, values []V, handler ComparisonHandler[V])  M
+#### func FilterOutByValues(m M, values []V, handler ComparisonHandler[V]) M
 <span id="FilterOutByValues"></span>
 > 过滤 map 中多个 values，返回过滤后的 map
 
@@ -3067,7 +3067,7 @@ func TestFilterOutByValues(t *testing.T) {
 
 
 ***
-#### func FilterOutByMap(m M, condition func (k K, v V)  bool)  M
+#### func FilterOutByMap(m M, condition func (k K, v V)  bool) M
 <span id="FilterOutByMap"></span>
 > 过滤 map 中符合条件的元素，返回过滤后的 map
 >   - condition 的返回值为 true 时，将会过滤掉该元素
@@ -3212,7 +3212,7 @@ func TestFindLoopedPrevInSlice(t *testing.T) {
 
 
 ***
-#### func FindCombinationsInSliceByRange(s S, minSize int, maxSize int)  []S
+#### func FindCombinationsInSliceByRange(s S, minSize int, maxSize int) []S
 <span id="FindCombinationsInSliceByRange"></span>
 > 获取给定数组的所有组合，且每个组合的成员数量限制在指定范围内
 
@@ -3257,7 +3257,7 @@ func TestFindCombinationsInSliceByRange(t *testing.T) {
 
 
 ***
-#### func FindFirstOrDefaultInSlice(slice S, defaultValue V)  V
+#### func FindFirstOrDefaultInSlice(slice S, defaultValue V) V
 <span id="FindFirstOrDefaultInSlice"></span>
 > 判断切片中是否存在元素，返回第一个元素，不存在则返回默认值
 
@@ -3437,7 +3437,7 @@ func TestFindInSlice(t *testing.T) {
 
 
 ***
-#### func FindIndexInSlice(slice S, handler func (v V)  bool)  int
+#### func FindIndexInSlice(slice S, handler func (v V)  bool) int
 <span id="FindIndexInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
@@ -3527,7 +3527,7 @@ func TestFindInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindIndexInComparableSlice(slice S, v V)  int
+#### func FindIndexInComparableSlice(slice S, v V) int
 <span id="FindIndexInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
@@ -4158,7 +4158,7 @@ func TestSwapSlice(t *testing.T) {
 
 
 ***
-#### func MappingFromSlice(slice S, handler func (value V)  N)  NS
+#### func MappingFromSlice(slice S, handler func (value V)  N) NS
 <span id="MappingFromSlice"></span>
 > 将切片中的元素进行转换
 
@@ -4210,7 +4210,7 @@ func TestMappingFromSlice(t *testing.T) {
 
 
 ***
-#### func MappingFromMap(m M, handler func (value V)  N)  NM
+#### func MappingFromMap(m M, handler func (value V)  N) NM
 <span id="MappingFromMap"></span>
 > 将 map 中的元素进行转换
 
@@ -4744,7 +4744,7 @@ func TestChooseRandomMapValueRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyAndValueRepeatN(m M, n int)  M
+#### func ChooseRandomMapKeyAndValueRepeatN(m M, n int) M
 <span id="ChooseRandomMapKeyAndValueRepeatN"></span>
 > 获取 map 中的 n 个随机 key 和 v，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
@@ -4977,7 +4977,7 @@ func TestChooseRandomMapKeyAndValue(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyAndValueN(m M, n int)  M
+#### func ChooseRandomMapKeyAndValueN(m M, n int) M
 <span id="ChooseRandomMapKeyAndValueN"></span>
 > 获取 map 中的 inputN 个随机 key 和 v
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
@@ -5023,7 +5023,7 @@ func TestChooseRandomMapKeyAndValueN(t *testing.T) {
 
 
 ***
-#### func DescBy(a Sort, b Sort)  bool
+#### func DescBy(a Sort, b Sort) bool
 <span id="DescBy"></span>
 > 返回降序比较结果
 
@@ -5073,7 +5073,7 @@ func TestDescBy(t *testing.T) {
 
 
 ***
-#### func AscBy(a Sort, b Sort)  bool
+#### func AscBy(a Sort, b Sort) bool
 <span id="AscBy"></span>
 > 返回升序比较结果
 
@@ -5173,7 +5173,7 @@ func TestDesc(t *testing.T) {
 
 
 ***
-#### func DescByClone(slice S, getter func (index int)  Sort)  S
+#### func DescByClone(slice S, getter func (index int)  Sort) S
 <span id="DescByClone"></span>
 > 对切片进行降序排序，返回排序后的切片
 
@@ -5273,7 +5273,7 @@ func TestAsc(t *testing.T) {
 
 
 ***
-#### func AscByClone(slice S, getter func (index int)  Sort)  S
+#### func AscByClone(slice S, getter func (index int)  Sort) S
 <span id="AscByClone"></span>
 > 对切片进行升序排序，返回排序后的切片
 
@@ -5367,7 +5367,7 @@ func TestShuffle(t *testing.T) {
 
 
 ***
-#### func ShuffleByClone(slice S)  S
+#### func ShuffleByClone(slice S) S
 <span id="ShuffleByClone"></span>
 > 对切片进行随机排序，返回排序后的切片
 

@@ -96,7 +96,7 @@
 <span id="Println"></span>
 
 ***
-#### func Default()  *Logger
+#### func Default() *Logger
 <span id="Default"></span>
 > 获取默认的日志记录器
 
@@ -150,193 +150,193 @@
 >   - 然后记录器调用 os.Exit(1)，即使 FatalLevel 的日志记录被禁用
 
 ***
-#### func Skip(vs ...any)  slog.Attr
+#### func Skip(vs ...any) slog.Attr
 <span id="Skip"></span>
 > 构造一个无操作字段，这在处理其他 Field 构造函数中的无效输入时通常很有用
 >   - 该函数还支持将其他字段快捷的转换为 Skip 字段
 
 ***
-#### func Duration(key string, val time.Duration)  slog.Attr
+#### func Duration(key string, val time.Duration) slog.Attr
 <span id="Duration"></span>
 > 使用给定的键和值构造一个字段。编码器控制持续时间的序列化方式
 
 ***
-#### func DurationP(key string, val *time.Duration)  slog.Attr
+#### func DurationP(key string, val *time.Duration) slog.Attr
 <span id="DurationP"></span>
 > 构造一个带有 time.Duration 的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Bool(key string, val bool)  slog.Attr
+#### func Bool(key string, val bool) slog.Attr
 <span id="Bool"></span>
 > 构造一个带有布尔值的字段
 
 ***
-#### func BoolP(key string, val *bool)  slog.Attr
+#### func BoolP(key string, val *bool) slog.Attr
 <span id="BoolP"></span>
 > 构造一个带有布尔值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func String(key string, val string)  slog.Attr
+#### func String(key string, val string) slog.Attr
 <span id="String"></span>
 > 构造一个带有字符串值的字段
 
 ***
-#### func StringP(key string, val *string)  slog.Attr
+#### func StringP(key string, val *string) slog.Attr
 <span id="StringP"></span>
 > 构造一个带有字符串值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int(key string, val I)  slog.Attr
+#### func Int(key string, val I) slog.Attr
 <span id="Int"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func IntP(key string, val *I)  slog.Attr
+#### func IntP(key string, val *I) slog.Attr
 <span id="IntP"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int8(key string, val I)  slog.Attr
+#### func Int8(key string, val I) slog.Attr
 <span id="Int8"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int8P(key string, val *I)  slog.Attr
+#### func Int8P(key string, val *I) slog.Attr
 <span id="Int8P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int16(key string, val I)  slog.Attr
+#### func Int16(key string, val I) slog.Attr
 <span id="Int16"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int16P(key string, val *I)  slog.Attr
+#### func Int16P(key string, val *I) slog.Attr
 <span id="Int16P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int32(key string, val I)  slog.Attr
+#### func Int32(key string, val I) slog.Attr
 <span id="Int32"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int32P(key string, val *I)  slog.Attr
+#### func Int32P(key string, val *I) slog.Attr
 <span id="Int32P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int64(key string, val I)  slog.Attr
+#### func Int64(key string, val I) slog.Attr
 <span id="Int64"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int64P(key string, val *I)  slog.Attr
+#### func Int64P(key string, val *I) slog.Attr
 <span id="Int64P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint(key string, val I)  slog.Attr
+#### func Uint(key string, val I) slog.Attr
 <span id="Uint"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func UintP(key string, val *I)  slog.Attr
+#### func UintP(key string, val *I) slog.Attr
 <span id="UintP"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint8(key string, val I)  slog.Attr
+#### func Uint8(key string, val I) slog.Attr
 <span id="Uint8"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint8P(key string, val *I)  slog.Attr
+#### func Uint8P(key string, val *I) slog.Attr
 <span id="Uint8P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint16(key string, val I)  slog.Attr
+#### func Uint16(key string, val I) slog.Attr
 <span id="Uint16"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint16P(key string, val *I)  slog.Attr
+#### func Uint16P(key string, val *I) slog.Attr
 <span id="Uint16P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint32(key string, val I)  slog.Attr
+#### func Uint32(key string, val I) slog.Attr
 <span id="Uint32"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint32P(key string, val *I)  slog.Attr
+#### func Uint32P(key string, val *I) slog.Attr
 <span id="Uint32P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint64(key string, val I)  slog.Attr
+#### func Uint64(key string, val I) slog.Attr
 <span id="Uint64"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint64P(key string, val *I)  slog.Attr
+#### func Uint64P(key string, val *I) slog.Attr
 <span id="Uint64P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float(key string, val F)  slog.Attr
+#### func Float(key string, val F) slog.Attr
 <span id="Float"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func FloatP(key string, val *F)  slog.Attr
+#### func FloatP(key string, val *F) slog.Attr
 <span id="FloatP"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float32(key string, val F)  slog.Attr
+#### func Float32(key string, val F) slog.Attr
 <span id="Float32"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func Float32P(key string, val *F)  slog.Attr
+#### func Float32P(key string, val *F) slog.Attr
 <span id="Float32P"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float64(key string, val F)  slog.Attr
+#### func Float64(key string, val F) slog.Attr
 <span id="Float64"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func Float64P(key string, val *F)  slog.Attr
+#### func Float64P(key string, val *F) slog.Attr
 <span id="Float64P"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Time(key string, val time.Time)  slog.Attr
+#### func Time(key string, val time.Time) slog.Attr
 <span id="Time"></span>
 > 构造一个带有时间值的字段
 
 ***
-#### func TimeP(key string, val *time.Time)  slog.Attr
+#### func TimeP(key string, val *time.Time) slog.Attr
 <span id="TimeP"></span>
 > 构造一个带有时间值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Any(key string, val any)  slog.Attr
+#### func Any(key string, val any) slog.Attr
 <span id="Any"></span>
 > 构造一个带有任意值的字段
 
 ***
-#### func Group(key string, args ...any)  slog.Attr
+#### func Group(key string, args ...any) slog.Attr
 <span id="Group"></span>
 > 返回分组字段
 
 ***
-#### func Stack(key string)  slog.Attr
+#### func Stack(key string) slog.Attr
 <span id="Stack"></span>
 > 返回堆栈字段
 
@@ -368,27 +368,27 @@ func TestStack(t *testing.T) {
 
 
 ***
-#### func Err(err error)  slog.Attr
+#### func Err(err error) slog.Attr
 <span id="Err"></span>
 > 构造一个带有错误值的字段
 
 ***
-#### func NewHandler(w io.Writer, opts *Options)  slog.Handler
+#### func NewHandler(w io.Writer, opts *Options) slog.Handler
 <span id="NewHandler"></span>
 > 创建一个更偏向于人类可读的处理程序，该处理程序也是默认的处理程序
 
 ***
-#### func NewLogger(handlers ...slog.Handler)  *Logger
+#### func NewLogger(handlers ...slog.Handler) *Logger
 <span id="NewLogger"></span>
 > 创建一个新的日志记录器
 
 ***
-#### func NewMultiHandler(handlers ...slog.Handler)  slog.Handler
+#### func NewMultiHandler(handlers ...slog.Handler) slog.Handler
 <span id="NewMultiHandler"></span>
 > 创建一个新的多处理程序
 
 ***
-#### func NewOptions()  *Options
+#### func NewOptions() *Options
 <span id="NewOptions"></span>
 > 创建一个新的日志选项
 

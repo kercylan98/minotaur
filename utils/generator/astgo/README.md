@@ -36,7 +36,7 @@
 
 ***
 ## 详情信息
-#### func NewPackage(dir string)  *Package,  error
+#### func NewPackage(dir string) (*Package,  error)
 <span id="NewPackage"></span>
 
 <details>

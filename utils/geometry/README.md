@@ -132,7 +132,7 @@ geometry 旨在提供一组用于处理几何形状和计算几何属性的函�
 
 ***
 ## 详情信息
-#### func NewCircle(radius V, points int)  Circle[V]
+#### func NewCircle(radius V, points int) Circle[V]
 <span id="NewCircle"></span>
 > 通过传入圆的半径和需要的点数量，生成一个圆
 
@@ -146,12 +146,12 @@ func ExampleNewCircle() {
 ```
 
 ***
-#### func CalcCircleCentroidDistance(circle1 Circle[V], circle2 Circle[V])  V
+#### func CalcCircleCentroidDistance(circle1 Circle[V], circle2 Circle[V]) V
 <span id="CalcCircleCentroidDistance"></span>
 > 计算两个圆质心距离
 
 ***
-#### func GetOppositionDirection(direction Direction)  Direction
+#### func GetOppositionDirection(direction Direction) Direction
 <span id="GetOppositionDirection"></span>
 > 获取特定方向的对立方向
 
@@ -161,39 +161,39 @@ func ExampleNewCircle() {
 > 获取特定方向上的下一个坐标
 
 ***
-#### func GetDirectionNextWithPoint(direction Direction, point Point[V])  Point[V]
+#### func GetDirectionNextWithPoint(direction Direction, point Point[V]) Point[V]
 <span id="GetDirectionNextWithPoint"></span>
 > 获取特定方向上的下一个坐标
 
 ***
-#### func GetDirectionNextWithPos(direction Direction, width V, pos V)  V
+#### func GetDirectionNextWithPos(direction Direction, width V, pos V) V
 <span id="GetDirectionNextWithPos"></span>
 > 获取位置在特定宽度和特定方向上的下一个位置
 >   - 需要注意的是，在左右方向时，当下一个位置不在矩形区域内时，将会返回上一行的末位置或下一行的首位置
 
 ***
-#### func CalcDirection(x1 V, y1 V, x2 V, y2 V)  Direction
+#### func CalcDirection(x1 V, y1 V, x2 V, y2 V) Direction
 <span id="CalcDirection"></span>
 > 计算点2位于点1的方向
 
 ***
-#### func CalcDistanceWithCoordinate(x1 V, y1 V, x2 V, y2 V)  V
+#### func CalcDistanceWithCoordinate(x1 V, y1 V, x2 V, y2 V) V
 <span id="CalcDistanceWithCoordinate"></span>
 > 计算两点之间的距离
 
 ***
-#### func CalcDistanceWithPoint(point1 Point[V], point2 Point[V])  V
+#### func CalcDistanceWithPoint(point1 Point[V], point2 Point[V]) V
 <span id="CalcDistanceWithPoint"></span>
 > 计算两点之间的距离
 
 ***
-#### func CalcDistanceSquared(x1 V, y1 V, x2 V, y2 V)  V
+#### func CalcDistanceSquared(x1 V, y1 V, x2 V, y2 V) V
 <span id="CalcDistanceSquared"></span>
 > 计算两点之间的平方距离
 >   - 这个函数的主要用途是在需要计算两点之间距离的情况下，但不需要得到实际的距离值，而只需要比较距离大小。因为平方根运算相对较为耗时，所以在只需要比较大小的情况下，通常会使用平方距离。
 
 ***
-#### func CalcAngle(x1 V, y1 V, x2 V, y2 V)  V
+#### func CalcAngle(x1 V, y1 V, x2 V, y2 V) V
 <span id="CalcAngle"></span>
 > 计算点2位于点1之间的角度
 
@@ -203,75 +203,75 @@ func ExampleNewCircle() {
 > 根据给定的x、y坐标、角度和距离计算新的坐标
 
 ***
-#### func CalcRadianWithAngle(angle V)  V
+#### func CalcRadianWithAngle(angle V) V
 <span id="CalcRadianWithAngle"></span>
 > 根据角度 angle 计算弧度
 
 ***
-#### func CalcAngleDifference(angleA V, angleB V)  V
+#### func CalcAngleDifference(angleA V, angleB V) V
 <span id="CalcAngleDifference"></span>
 > 计算两个角度之间的最小角度差
 
 ***
-#### func CalcRayIsIntersect(x V, y V, angle V, shape Shape[V])  bool
+#### func CalcRayIsIntersect(x V, y V, angle V, shape Shape[V]) bool
 <span id="CalcRayIsIntersect"></span>
 > 根据给定的位置和角度生成射线，检测射线是否与多边形发生碰撞
 
 ***
-#### func NewLineSegment(start Point[V], end Point[V])  LineSegment[V]
+#### func NewLineSegment(start Point[V], end Point[V]) LineSegment[V]
 <span id="NewLineSegment"></span>
 > 创建一根线段
 
 ***
-#### func NewLineSegmentCap(start Point[V], end Point[V], data Data)  LineSegmentCap[V, Data]
+#### func NewLineSegmentCap(start Point[V], end Point[V], data Data) LineSegmentCap[V, Data]
 <span id="NewLineSegmentCap"></span>
 > 创建一根包含数据的线段
 
 ***
-#### func NewLineSegmentCapWithLine(line LineSegment[V], data Data)  LineSegmentCap[V, Data]
+#### func NewLineSegmentCapWithLine(line LineSegment[V], data Data) LineSegmentCap[V, Data]
 <span id="NewLineSegmentCapWithLine"></span>
 > 通过已有线段创建一根包含数据的线段
 
 ***
-#### func ConvertLineSegmentGeneric(line LineSegment[V])  LineSegment[TO]
+#### func ConvertLineSegmentGeneric(line LineSegment[V]) LineSegment[TO]
 <span id="ConvertLineSegmentGeneric"></span>
 > 转换线段的泛型类型为特定类型
 
 ***
-#### func PointOnLineSegmentWithCoordinate(x1 V, y1 V, x2 V, y2 V, x V, y V)  bool
+#### func PointOnLineSegmentWithCoordinate(x1 V, y1 V, x2 V, y2 V, x V, y V) bool
 <span id="PointOnLineSegmentWithCoordinate"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 
 ***
-#### func PointOnLineSegmentWithPos(width V, pos1 V, pos2 V, pos V)  bool
+#### func PointOnLineSegmentWithPos(width V, pos1 V, pos2 V, pos V) bool
 <span id="PointOnLineSegmentWithPos"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 
 ***
-#### func PointOnLineSegmentWithPoint(point1 Point[V], point2 Point[V], point Point[V])  bool
+#### func PointOnLineSegmentWithPoint(point1 Point[V], point2 Point[V], point Point[V]) bool
 <span id="PointOnLineSegmentWithPoint"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 
 ***
-#### func PointOnLineSegmentWithCoordinateInBounds(x1 V, y1 V, x2 V, y2 V, x V, y V)  bool
+#### func PointOnLineSegmentWithCoordinateInBounds(x1 V, y1 V, x2 V, y2 V, x V, y V) bool
 <span id="PointOnLineSegmentWithCoordinateInBounds"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 >   - 与 PointOnLineSegmentWithCoordinate 不同的是， PointOnLineSegmentWithCoordinateInBounds 中会判断线段及点的位置是否正确
 
 ***
-#### func PointOnLineSegmentWithPosInBounds(width V, pos1 V, pos2 V, pos V)  bool
+#### func PointOnLineSegmentWithPosInBounds(width V, pos1 V, pos2 V, pos V) bool
 <span id="PointOnLineSegmentWithPosInBounds"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 >   - 与 PointOnLineSegmentWithPos 不同的是， PointOnLineSegmentWithPosInBounds 中会判断线段及点的位置是否正确
 
 ***
-#### func PointOnLineSegmentWithPointInBounds(point1 Point[V], point2 Point[V], point Point[V])  bool
+#### func PointOnLineSegmentWithPointInBounds(point1 Point[V], point2 Point[V], point Point[V]) bool
 <span id="PointOnLineSegmentWithPointInBounds"></span>
 > 通过一个线段两个点的位置和一个点的坐标，判断这个点是否在一条线段上
 >   - 与 PointOnLineSegmentWithPoint 不同的是， PointOnLineSegmentWithPointInBounds 中会判断线段及点的位置是否正确
 
 ***
-#### func CalcLineSegmentIsCollinear(line1 LineSegment[V], line2 LineSegment[V], tolerance V)  bool
+#### func CalcLineSegmentIsCollinear(line1 LineSegment[V], line2 LineSegment[V], tolerance V) bool
 <span id="CalcLineSegmentIsCollinear"></span>
 > 检查两条线段在一个误差内是否共线
 >   - 共线是指两条线段在同一直线上，即它们的延长线可以重合
@@ -282,7 +282,7 @@ func ExampleNewCircle() {
 > 通过对点进行排序来检查两条共线线段是否重叠，返回重叠线段
 
 ***
-#### func CalcLineSegmentIsIntersect(line1 LineSegment[V], line2 LineSegment[V])  bool
+#### func CalcLineSegmentIsIntersect(line1 LineSegment[V], line2 LineSegment[V]) bool
 <span id="CalcLineSegmentIsIntersect"></span>
 > 计算两条线段是否相交
 
@@ -305,17 +305,17 @@ func TestCalcLineSegmentIsIntersect(t *testing.T) {
 
 
 ***
-#### func CalcLineSegmentSlope(line LineSegment[V])  V
+#### func CalcLineSegmentSlope(line LineSegment[V]) V
 <span id="CalcLineSegmentSlope"></span>
 > 计算线段的斜率
 
 ***
-#### func CalcLineSegmentIntercept(line LineSegment[V])  V
+#### func CalcLineSegmentIntercept(line LineSegment[V]) V
 <span id="CalcLineSegmentIntercept"></span>
 > 计算线段的截距
 
 ***
-#### func NewPoint(x V, y V)  Point[V]
+#### func NewPoint(x V, y V) Point[V]
 <span id="NewPoint"></span>
 > 创建一个由 x、y 坐标组成的点
 
@@ -337,27 +337,27 @@ func TestNewPoint(t *testing.T) {
 
 
 ***
-#### func NewPointCap(x V, y V)  PointCap[V, D]
+#### func NewPointCap(x V, y V) PointCap[V, D]
 <span id="NewPointCap"></span>
 > 创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
 
 ***
-#### func NewPointCapWithData(x V, y V, data D)  PointCap[V, D]
+#### func NewPointCapWithData(x V, y V, data D) PointCap[V, D]
 <span id="NewPointCapWithData"></span>
 > 通过设置数据的方式创建一个由 x、y 坐标组成的点，这个点具有一个数据容量
 
 ***
-#### func NewPointCapWithPoint(point Point[V], data D)  PointCap[V, D]
+#### func NewPointCapWithPoint(point Point[V], data D) PointCap[V, D]
 <span id="NewPointCapWithPoint"></span>
 > 通过设置数据的方式创建一个由已有坐标组成的点，这个点具有一个数据容量
 
 ***
-#### func CoordinateToPoint(x V, y V)  Point[V]
+#### func CoordinateToPoint(x V, y V) Point[V]
 <span id="CoordinateToPoint"></span>
 > 将坐标转换为x、y的坐标数组
 
 ***
-#### func CoordinateToPos(width V, x V, y V)  V
+#### func CoordinateToPos(width V, x V, y V) V
 <span id="CoordinateToPos"></span>
 > 将坐标转换为二维数组的顺序位置坐标
 >   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
@@ -368,7 +368,7 @@ func TestNewPoint(t *testing.T) {
 > 将坐标数组转换为x和y坐标
 
 ***
-#### func PointToPos(width V, xy Point[V])  V
+#### func PointToPos(width V, xy Point[V]) V
 <span id="PointToPos"></span>
 > 将坐标转换为二维数组的顺序位置
 >   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
@@ -379,38 +379,38 @@ func TestNewPoint(t *testing.T) {
 > 通过宽度将一个二维数组的顺序位置转换为xy坐标
 
 ***
-#### func PosToPoint(width V, pos V)  Point[V]
+#### func PosToPoint(width V, pos V) Point[V]
 <span id="PosToPoint"></span>
 > 通过宽度将一个二维数组的顺序位置转换为x、y的坐标数组
 
 ***
-#### func PosToCoordinateX(width V, pos V)  V
+#### func PosToCoordinateX(width V, pos V) V
 <span id="PosToCoordinateX"></span>
 > 通过宽度将一个二维数组的顺序位置转换为X坐标
 
 ***
-#### func PosToCoordinateY(width V, pos V)  V
+#### func PosToCoordinateY(width V, pos V) V
 <span id="PosToCoordinateY"></span>
 > 通过宽度将一个二维数组的顺序位置转换为Y坐标
 
 ***
-#### func PointCopy(point Point[V])  Point[V]
+#### func PointCopy(point Point[V]) Point[V]
 <span id="PointCopy"></span>
 > 复制一个坐标数组
 
 ***
-#### func PointToPosWithMulti(width V, points ...Point[V])  []V
+#### func PointToPosWithMulti(width V, points ...Point[V]) []V
 <span id="PointToPosWithMulti"></span>
 > 将一组坐标转换为二维数组的顺序位置
 >   - 需要确保x的取值范围必须小于width，或者将会得到不正确的值
 
 ***
-#### func PosToPointWithMulti(width V, positions ...V)  []Point[V]
+#### func PosToPointWithMulti(width V, positions ...V) []Point[V]
 <span id="PosToPointWithMulti"></span>
 > 将一组二维数组的顺序位置转换为一组数组坐标
 
 ***
-#### func PosSameRow(width V, pos1 V, pos2 V)  bool
+#### func PosSameRow(width V, pos1 V, pos2 V) bool
 <span id="PosSameRow"></span>
 > 返回两个顺序位置在同一宽度是否位于同一行
 
@@ -420,7 +420,7 @@ func TestNewPoint(t *testing.T) {
 > 将两个位置转换为 x1, y1, x2, y2 的坐标进行返回
 
 ***
-#### func CalcProjectionPoint(line LineSegment[V], point Point[V])  Point[V]
+#### func CalcProjectionPoint(line LineSegment[V], point Point[V]) Point[V]
 <span id="CalcProjectionPoint"></span>
 > 计算一个点到一条线段的最近点（即投影点）的。这个函数接收一个点和一条线段作为输入，线段由两个端点组成。
 >   - 该函数的主要用于需要计算一个点到一条线段的最近点的情况下
@@ -675,7 +675,7 @@ func TestGenerateShapeOnRectangle(t *testing.T) {
 > 获取一个矩形填充满后包含的所有位置
 
 ***
-#### func CalcRectangleCentroid(shape Shape[V])  Point[V]
+#### func CalcRectangleCentroid(shape Shape[V]) Point[V]
 <span id="CalcRectangleCentroid"></span>
 > 计算矩形质心
 >   - 非多边形质心计算，仅为顶点的平均值 - 该区域中多边形因子的适当质心
@@ -691,7 +691,7 @@ func TestGenerateShapeOnRectangle(t *testing.T) {
 > 设置 Shape.String 是没有边界的
 
 ***
-#### func NewShape(points ...Point[V])  Shape[V]
+#### func NewShape(points ...Point[V]) Shape[V]
 <span id="NewShape"></span>
 > 通过多个点生成一个形状进行返回
 
@@ -775,91 +775,91 @@ func TestNewShapeWithString(t *testing.T) {
 
 
 ***
-#### func CalcBoundingRadius(shape Shape[V])  V
+#### func CalcBoundingRadius(shape Shape[V]) V
 <span id="CalcBoundingRadius"></span>
 > 计算多边形转换为圆的半径
 
 ***
-#### func CalcBoundingRadiusWithCentroid(shape Shape[V], centroid Point[V])  V
+#### func CalcBoundingRadiusWithCentroid(shape Shape[V], centroid Point[V]) V
 <span id="CalcBoundingRadiusWithCentroid"></span>
 > 计算多边形在特定质心下圆的半径
 
 ***
-#### func CalcTriangleTwiceArea(a Point[V], b Point[V], c Point[V])  V
+#### func CalcTriangleTwiceArea(a Point[V], b Point[V], c Point[V]) V
 <span id="CalcTriangleTwiceArea"></span>
 > 计算由 a、b、c 三个点组成的三角形的面积的两倍
 
 ***
-#### func IsPointOnEdge(edges []LineSegment[V], point Point[V])  bool
+#### func IsPointOnEdge(edges []LineSegment[V], point Point[V]) bool
 <span id="IsPointOnEdge"></span>
 > 检查点是否在 edges 的任意一条边上
 
 ***
-#### func ProjectionPointToShape(point Point[V], shape Shape[V])  Point[V],  V
+#### func ProjectionPointToShape(point Point[V], shape Shape[V]) (Point[V],  V)
 <span id="ProjectionPointToShape"></span>
 > 将一个点投影到一个多边形上，找到离该点最近的投影点，并返回投影点和距离
 
 ***
-#### func WithShapeSearchRectangleLowerLimit(minWidth int, minHeight int)  ShapeSearchOption
+#### func WithShapeSearchRectangleLowerLimit(minWidth int, minHeight int) ShapeSearchOption
 <span id="WithShapeSearchRectangleLowerLimit"></span>
 > 通过矩形宽高下限的方式搜索
 
 ***
-#### func WithShapeSearchRectangleUpperLimit(maxWidth int, maxHeight int)  ShapeSearchOption
+#### func WithShapeSearchRectangleUpperLimit(maxWidth int, maxHeight int) ShapeSearchOption
 <span id="WithShapeSearchRectangleUpperLimit"></span>
 > 通过矩形宽高上限的方式搜索
 
 ***
-#### func WithShapeSearchRightAngle()  ShapeSearchOption
+#### func WithShapeSearchRightAngle() ShapeSearchOption
 <span id="WithShapeSearchRightAngle"></span>
 > 通过直角的方式进行搜索
 
 ***
-#### func WithShapeSearchOppositionDirection(direction Direction)  ShapeSearchOption
+#### func WithShapeSearchOppositionDirection(direction Direction) ShapeSearchOption
 <span id="WithShapeSearchOppositionDirection"></span>
 > 通过限制对立方向的方式搜索
 >   - 对立方向例如上不能与下共存
 
 ***
-#### func WithShapeSearchDirectionCount(count int)  ShapeSearchOption
+#### func WithShapeSearchDirectionCount(count int) ShapeSearchOption
 <span id="WithShapeSearchDirectionCount"></span>
 > 通过限制方向数量的方式搜索
 
 ***
-#### func WithShapeSearchDirectionCountLowerLimit(direction Direction, count int)  ShapeSearchOption
+#### func WithShapeSearchDirectionCountLowerLimit(direction Direction, count int) ShapeSearchOption
 <span id="WithShapeSearchDirectionCountLowerLimit"></span>
 > 通过限制特定方向数量下限的方式搜索
 
 ***
-#### func WithShapeSearchDirectionCountUpperLimit(direction Direction, count int)  ShapeSearchOption
+#### func WithShapeSearchDirectionCountUpperLimit(direction Direction, count int) ShapeSearchOption
 <span id="WithShapeSearchDirectionCountUpperLimit"></span>
 > 通过限制特定方向数量上限的方式搜索
 
 ***
-#### func WithShapeSearchDeduplication()  ShapeSearchOption
+#### func WithShapeSearchDeduplication() ShapeSearchOption
 <span id="WithShapeSearchDeduplication"></span>
 > 通过去重的方式进行搜索
 >   - 去重方式中每个点仅会被使用一次
 
 ***
-#### func WithShapeSearchPointCountLowerLimit(lowerLimit int)  ShapeSearchOption
+#### func WithShapeSearchPointCountLowerLimit(lowerLimit int) ShapeSearchOption
 <span id="WithShapeSearchPointCountLowerLimit"></span>
 > 通过限制图形构成的最小点数进行搜索
 >   - 当搜索到的图形的点数量低于 lowerLimit 时，将被忽略
 
 ***
-#### func WithShapeSearchPointCountUpperLimit(upperLimit int)  ShapeSearchOption
+#### func WithShapeSearchPointCountUpperLimit(upperLimit int) ShapeSearchOption
 <span id="WithShapeSearchPointCountUpperLimit"></span>
 > 通过限制图形构成的最大点数进行搜索
 >   - 当搜索到的图形的点数量大于 upperLimit 时，将被忽略
 
 ***
-#### func WithShapeSearchAsc()  ShapeSearchOption
+#### func WithShapeSearchAsc() ShapeSearchOption
 <span id="WithShapeSearchAsc"></span>
 > 通过升序的方式进行搜索
 
 ***
-#### func WithShapeSearchDesc()  ShapeSearchOption
+#### func WithShapeSearchDesc() ShapeSearchOption
 <span id="WithShapeSearchDesc"></span>
 > 通过降序的方式进行搜索
 

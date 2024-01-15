@@ -30,7 +30,7 @@
 
 ***
 ## 详情信息
-#### func New(pkgDirPath string, output string)  *Builder,  error
+#### func New(pkgDirPath string, output string) (*Builder,  error)
 <span id="New"></span>
 
 ***
@@ -51,11 +51,11 @@ type Builder struct {
 ```go
 
 func TestBuilder_Generate(t *testing.T) {
-	filepath.Walk("/Users/kercylan/Coding.localized/Go/minotaur", func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk("D:/sources/minotaur", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
 			return nil
 		}
-		if strings.Contains(strings.TrimPrefix(path, "/Users/kercylan/Coding.localized/Go/minotaur"), ".") {
+		if strings.Contains(strings.TrimPrefix(path, "D:/sources/minotaur"), ".") {
 			return nil
 		}
 		b, err := New(path, filepath.Join(path, "README.md"))

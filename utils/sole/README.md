@@ -55,7 +55,7 @@
 > 解除注销特定命名空间的唯一标识符
 
 ***
-#### func Get()  int64
+#### func Get() int64
 <span id="Get"></span>
 > 获取全局唯一标识符
 
@@ -65,7 +65,7 @@
 > 重置全局唯一标识符
 
 ***
-#### func GetWith(name any)  int64
+#### func GetWith(name any) int64
 <span id="GetWith"></span>
 > 获取特定命名空间的唯一标识符
 
@@ -75,17 +75,17 @@
 > 重置特定命名空间的唯一标识符
 
 ***
-#### func NewOnce()  *Once[V]
+#### func NewOnce() *Once[V]
 <span id="NewOnce"></span>
 > 创建一个用于数据取值去重的结构实例
 
 ***
-#### func SonyflakeIDE()  int64,  error
+#### func SonyflakeIDE() (int64,  error)
 <span id="SonyflakeIDE"></span>
 > 获取一个雪花id
 
 ***
-#### func SonyflakeID()  int64
+#### func SonyflakeID() int64
 <span id="SonyflakeID"></span>
 > 获取一个雪花id
 
@@ -95,32 +95,32 @@
 > 配置雪花id生成策略
 
 ***
-#### func AutoIncrementUint32()  uint32
+#### func AutoIncrementUint32() uint32
 <span id="AutoIncrementUint32"></span>
 > 获取一个自增的 uint32 值
 
 ***
-#### func AutoIncrementUint64()  uint64
+#### func AutoIncrementUint64() uint64
 <span id="AutoIncrementUint64"></span>
 > 获取一个自增的 uint64 值
 
 ***
-#### func AutoIncrementInt32()  int32
+#### func AutoIncrementInt32() int32
 <span id="AutoIncrementInt32"></span>
 > 获取一个自增的 int32 值
 
 ***
-#### func AutoIncrementInt64()  int64
+#### func AutoIncrementInt64() int64
 <span id="AutoIncrementInt64"></span>
 > 获取一个自增的 int64 值
 
 ***
-#### func AutoIncrementInt()  int
+#### func AutoIncrementInt() int
 <span id="AutoIncrementInt"></span>
 > 获取一个自增的 int 值
 
 ***
-#### func AutoIncrementString()  string
+#### func AutoIncrementString() string
 <span id="AutoIncrementString"></span>
 > 获取一个自增的字符串
 

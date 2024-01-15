@@ -33,7 +33,7 @@
 
 ***
 ## 详情信息
-#### func NewMultistage(options ...MultistageOption[HandleFunc])  *Multistage[HandleFunc]
+#### func NewMultistage(options ...MultistageOption[HandleFunc]) *Multistage[HandleFunc]
 <span id="NewMultistage"></span>
 > 创建一个支持多级分类的路由器
 
@@ -47,7 +47,7 @@ func ExampleNewMultistage() {
 ```
 
 ***
-#### func WithRouteTrim(handle func (route any)  any)  MultistageOption[HandleFunc]
+#### func WithRouteTrim(handle func (route any)  any) MultistageOption[HandleFunc]
 <span id="WithRouteTrim"></span>
 > 路由修剪选项
 >   - 将在路由注册前对路由进行对应处理

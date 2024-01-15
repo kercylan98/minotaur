@@ -33,12 +33,12 @@ deck 包中的内容用于针对一堆内容的管理，适用但不限于牌堆
 
 ***
 ## 详情信息
-#### func NewDeck()  *Deck[I]
+#### func NewDeck() *Deck[I]
 <span id="NewDeck"></span>
 > 创建一个新的甲板
 
 ***
-#### func NewGroup(guid int64, fillHandle func (guid int64)  []I)  *Group[I]
+#### func NewGroup(guid int64, fillHandle func (guid int64)  []I) *Group[I]
 <span id="NewGroup"></span>
 > 创建一个新的组
 

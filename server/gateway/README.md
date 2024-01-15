@@ -45,17 +45,17 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 
 ***
 ## 详情信息
-#### func NewEndpoint(name string, cli *client.Client, options ...EndpointOption)  *Endpoint
+#### func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *Endpoint
 <span id="NewEndpoint"></span>
 > 创建网关端点
 
 ***
-#### func WithEndpointStateEvaluator(evaluator func (costUnixNano float64)  float64)  EndpointOption
+#### func WithEndpointStateEvaluator(evaluator func (costUnixNano float64)  float64) EndpointOption
 <span id="WithEndpointStateEvaluator"></span>
 > 设置端点健康值评估函数
 
 ***
-#### func WithEndpointConnectionPoolSize(size int)  EndpointOption
+#### func WithEndpointConnectionPoolSize(size int) EndpointOption
 <span id="WithEndpointConnectionPoolSize"></span>
 > 设置端点连接池大小
 >   - 默认为 DefaultEndpointConnectionPoolSize
@@ -63,25 +63,25 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - 在网关服务器中，多个客户端在发送消息到端点服务器时，会共用一个连接，适当的增大连接池大小可以提高网关服务器的承载能力
 
 ***
-#### func WithEndpointReconnectInterval(interval time.Duration)  EndpointOption
+#### func WithEndpointReconnectInterval(interval time.Duration) EndpointOption
 <span id="WithEndpointReconnectInterval"></span>
 > 设置端点重连间隔
 >   - 默认为 DefaultEndpointReconnectInterval
 >   - 端点在连接失败后会在该间隔后重连，如果 <= 0 则不会重连
 
 ***
-#### func NewGateway(srv *server.Server, scanner Scanner, options ...Option)  *Gateway
+#### func NewGateway(srv *server.Server, scanner Scanner, options ...Option) *Gateway
 <span id="NewGateway"></span>
 > 基于 server.Server 创建 Gateway 网关服务器
 
 ***
-#### func WithEndpointSelector(selector EndpointSelector)  Option
+#### func WithEndpointSelector(selector EndpointSelector) Option
 <span id="WithEndpointSelector"></span>
 > 设置端点选择器
 >   - 默认情况下，网关会随机选择一个端点作为目标，如果需要自定义端点选择器，可以通过该选项设置
 
 ***
-#### func MarshalGatewayOutPacket(addr string, packet []byte)  []byte,  error
+#### func MarshalGatewayOutPacket(addr string, packet []byte) ([]byte,  error)
 <span id="MarshalGatewayOutPacket"></span>
 > 将数据包转换为网关出网数据包
 >   - | identifier(4) | ipv4(4) | port(2) | packet |
@@ -93,7 +93,7 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - | identifier(4) | ipv4(4) | port(2) | packet |
 
 ***
-#### func MarshalGatewayInPacket(addr string, currentTime int64, packet []byte)  []byte,  error
+#### func MarshalGatewayInPacket(addr string, currentTime int64, packet []byte) ([]byte,  error)
 <span id="MarshalGatewayInPacket"></span>
 > 将数据包转换为网关入网数据包
 >   - | ipv4(4) | port(2) | cost(4) | packet |
@@ -218,11 +218,11 @@ func TestGateway_Run(t *testing.T) {
 #### func (*Gateway) Server()  *server.Server
 > 获取网关服务器核心
 ***
-#### func (*Gateway) GetEndpoint(name string)  *Endpoint,  error
+#### func (*Gateway) GetEndpoint(name string) ( *Endpoint,  error)
 > 获取一个可用的端点
 >   - name: 端点名称
 ***
-#### func (*Gateway) GetConnEndpoint(name string, conn *server.Conn)  *Endpoint,  error
+#### func (*Gateway) GetConnEndpoint(name string, conn *server.Conn) ( *Endpoint,  error)
 > 获取一个可用的端点，如果客户端已经连接到了某个端点，将优先返回该端点
 >   - 当连接到的端点不可用或没有连接记录时，效果同 GetEndpoint 相同
 >   - 当连接行为为有状态时，推荐使用该方法
@@ -243,7 +243,7 @@ type Scanner interface {
 	GetInterval() time.Duration
 }
 ```
-#### func (*Scanner) GetEndpoints()  []*gateway.Endpoint,  error
+#### func (*Scanner) GetEndpoints() ( []*gateway.Endpoint,  error)
 ***
 #### func (*Scanner) GetInterval()  time.Duration
 ***

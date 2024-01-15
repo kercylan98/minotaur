@@ -45,13 +45,13 @@
 
 ***
 ## 详情信息
-#### func NewFileFlusher(filePath string, layout ...string)  *FileFlusher
+#### func NewFileFlusher(filePath string, layout ...string) *FileFlusher
 <span id="NewFileFlusher"></span>
 > 创建一个文件刷新器
 >   - layout 为日志文件名的时间戳格式 (默认为 time.DateOnly)
 
 ***
-#### func WithFlushInterval(interval time.Duration)  Option
+#### func WithFlushInterval(interval time.Duration) Option
 <span id="WithFlushInterval"></span>
 > 设置日志文件刷新间隔
 >   - 默认为 3s，当日志文件刷新间隔 <= 0 时，将会在每次写入日志时刷新日志文件
@@ -83,19 +83,19 @@
 > 关闭运营日志记录器
 
 ***
-#### func Analyze(filePath string, handle func (analyzer *Analyzer, record R))  *Report
+#### func Analyze(filePath string, handle func (analyzer *Analyzer, record R)) *Report
 <span id="Analyze"></span>
 > 分析特定文件的记录，当发生错误时，会发生 panic
 >   - handle 为并行执行的，需要自行处理并发安全
 >   - 适用于外部进程对于日志文件的读取，但是需要注意的是，此时日志文件可能正在被写入，所以可能会读取到错误的数据
 
 ***
-#### func AnalyzeMulti(filePaths []string, handle func (analyzer *Analyzer, record R))  *Report
+#### func AnalyzeMulti(filePaths []string, handle func (analyzer *Analyzer, record R)) *Report
 <span id="AnalyzeMulti"></span>
 > 与 Analyze 类似，但是可以分析多个文件
 
 ***
-#### func IncrementAnalyze(filePath string, handle func (analyzer *Analyzer, record R))  func () ( *Report,  error)
+#### func IncrementAnalyze(filePath string, handle func (analyzer *Analyzer, record R)) func () ( *Report,  error)
 <span id="IncrementAnalyze"></span>
 > 增量分析，返回一个函数，每次调用该函数都会分析文件中新增的内容
 

@@ -32,7 +32,7 @@ notify 包含了对外部第三方通知的实现，如机器人消息等
 
 ***
 ## 详情信息
-#### func NewManager(senders ...Sender)  *Manager
+#### func NewManager(senders ...Sender) *Manager
 <span id="NewManager"></span>
 > 通过指定的 Sender 创建一个通知管理器， senders 包中提供了一些内置的 Sender
 

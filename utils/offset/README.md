@@ -34,7 +34,7 @@
 
 ***
 ## 详情信息
-#### func NewTime(offset time.Duration)  *Time
+#### func NewTime(offset time.Duration) *Time
 <span id="NewTime"></span>
 > 新建一个包含偏移的时间
 
@@ -44,17 +44,17 @@
 > 设置全局偏移时间
 
 ***
-#### func GetGlobal()  *Time
+#### func GetGlobal() *Time
 <span id="GetGlobal"></span>
 > 获取全局偏移时间
 
 ***
-#### func Now()  time.Time
+#### func Now() time.Time
 <span id="Now"></span>
 > 获取当前时间偏移后的时间
 
 ***
-#### func Since(t time.Time)  time.Duration
+#### func Since(t time.Time) time.Duration
 <span id="Since"></span>
 > 获取当前时间偏移后的时间自从 t 以来经过的时间
 

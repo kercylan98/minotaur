@@ -35,7 +35,7 @@ dp (DistributionPattern) 提供用于在二维数组中根据不同的特征标�
 
 ***
 ## 详情信息
-#### func NewDistributionPattern(sameKindVerifyHandle func (itemA Item)  bool)  *DistributionPattern[Item]
+#### func NewDistributionPattern(sameKindVerifyHandle func (itemA Item)  bool) *DistributionPattern[Item]
 <span id="NewDistributionPattern"></span>
 > 构建一个分布图实例
 

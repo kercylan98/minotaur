@@ -34,7 +34,7 @@
 
 ***
 ## 详情信息
-#### func NewBinarySearch(options ...BinarySearchOption[CompetitorID, Score])  *BinarySearch[CompetitorID, Score]
+#### func NewBinarySearch(options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score]
 <span id="NewBinarySearch"></span>
 > 创建一个基于内存的二分查找排行榜
 
@@ -49,13 +49,13 @@ func ExampleNewBinarySearch() {
 ```
 
 ***
-#### func WithBinarySearchCount(rankCount int)  BinarySearchOption[CompetitorID, Score]
+#### func WithBinarySearchCount(rankCount int) BinarySearchOption[CompetitorID, Score]
 <span id="WithBinarySearchCount"></span>
 > 通过限制排行榜竞争者数量来创建排行榜
 >   - 默认情况下允许100位竞争者
 
 ***
-#### func WithBinarySearchASC()  BinarySearchOption[CompetitorID, Score]
+#### func WithBinarySearchASC() BinarySearchOption[CompetitorID, Score]
 <span id="WithBinarySearchASC"></span>
 > 通过升序的方式创建排行榜
 >   - 默认情况下为降序

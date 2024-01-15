@@ -104,12 +104,12 @@
 
 ***
 ## 详情信息
-#### func NewBitSet(bits ...Bit)  *BitSet[Bit]
+#### func NewBitSet(bits ...Bit) *BitSet[Bit]
 <span id="NewBitSet"></span>
 > 通过指定的 Bit 位创建一个 BitSet
 
 ***
-#### func TryWriteChannel(ch chan T, data T)  bool
+#### func TryWriteChannel(ch chan T, data T) bool
 <span id="TryWriteChannel"></span>
 > 尝试写入 channel，如果 channel 无法写入则忽略，返回是否写入成功
 >   - 无法写入的情况包括：channel 已满、channel 已关闭
@@ -121,18 +121,18 @@
 >   - 无法写入的情况包括：channel 已满、channel 已关闭
 
 ***
-#### func RegError(code int, message string)  error
+#### func RegError(code int, message string) error
 <span id="RegError"></span>
 > 通过错误码注册错误，返回错误的引用
 
 ***
-#### func RegErrorRef(code int, message string, ref error)  error
+#### func RegErrorRef(code int, message string, ref error) error
 <span id="RegErrorRef"></span>
 > 通过错误码注册错误，返回错误的引用
 >   - 引用将会被重定向到注册的错误信息
 
 ***
-#### func GetError(err error)  int,  error
+#### func GetError(err error) (int,  error)
 <span id="GetError"></span>
 > 通过错误引用获取错误码和真实错误信息，如果错误不存在则返回 0，如果错误引用不存在则返回原本的错误
 
@@ -155,7 +155,7 @@ func TestGetError(t *testing.T) {
 
 
 ***
-#### func RecoverTransform(a any)  error
+#### func RecoverTransform(a any) error
 <span id="RecoverTransform"></span>
 > recover 错误转换
 
@@ -179,7 +179,7 @@ func ExampleRecoverTransform() {
 > 执行 f 函数，如果 f 为 nil，则不执行
 
 ***
-#### func HandleErr(f func ()  error)  error
+#### func HandleErr(f func ()  error) error
 <span id="HandleErr"></span>
 > 执行 f 函数，如果 f 为 nil，则不执行
 
@@ -194,43 +194,43 @@ func ExampleRecoverTransform() {
 > go 代码格式化
 
 ***
-#### func If(expression bool, t T, f T)  T
+#### func If(expression bool, t T, f T) T
 <span id="If"></span>
 
 ***
-#### func MarshalJSON(v interface {})  []byte
+#### func MarshalJSON(v interface {}) []byte
 <span id="MarshalJSON"></span>
 > 将对象转换为 json
 >   - 当转换失败时，将返回 json 格式的空对象
 
 ***
-#### func MarshalJSONE(v interface {})  []byte,  error
+#### func MarshalJSONE(v interface {}) ([]byte,  error)
 <span id="MarshalJSONE"></span>
 > 将对象转换为 json
 >   - 当转换失败时，将返回错误信息
 
 ***
-#### func UnmarshalJSON(data []byte, v interface {})  error
+#### func UnmarshalJSON(data []byte, v interface {}) error
 <span id="UnmarshalJSON"></span>
 > 将 json 转换为对象
 
 ***
-#### func MarshalIndentJSON(v interface {}, prefix string, indent string)  []byte
+#### func MarshalIndentJSON(v interface {}, prefix string, indent string) []byte
 <span id="MarshalIndentJSON"></span>
 > 将对象转换为 json
 
 ***
-#### func MarshalToTargetWithJSON(src interface {}, dest interface {})  error
+#### func MarshalToTargetWithJSON(src interface {}, dest interface {}) error
 <span id="MarshalToTargetWithJSON"></span>
 > 将对象转换为目标对象
 
 ***
-#### func StartLossCounter()  *LossCounter
+#### func StartLossCounter() *LossCounter
 <span id="StartLossCounter"></span>
 > 开始损耗计数
 
 ***
-#### func Match(value Value)  *Matcher[Value, Result]
+#### func Match(value Value) *Matcher[Value, Result]
 <span id="Match"></span>
 > 匹配
 
@@ -255,12 +255,12 @@ func TestMatch(t *testing.T) {
 
 
 ***
-#### func IsNumber(v any)  bool
+#### func IsNumber(v any) bool
 <span id="IsNumber"></span>
 > 判断是否为数字
 
 ***
-#### func NumberToRome(num int)  string
+#### func NumberToRome(num int) string
 <span id="NumberToRome"></span>
 > 将数字转换为罗马数字
 
@@ -290,167 +290,167 @@ func TestNumberToRome(t *testing.T) {
 
 
 ***
-#### func StringToInt(value string)  int
+#### func StringToInt(value string) int
 <span id="StringToInt"></span>
 > 字符串转换为整数
 
 ***
-#### func StringToFloat64(value string)  float64
+#### func StringToFloat64(value string) float64
 <span id="StringToFloat64"></span>
 > 字符串转换为 float64
 
 ***
-#### func StringToBool(value string)  bool
+#### func StringToBool(value string) bool
 <span id="StringToBool"></span>
 > 字符串转换为 bool
 
 ***
-#### func StringToUint64(value string)  uint64
+#### func StringToUint64(value string) uint64
 <span id="StringToUint64"></span>
 > 字符串转换为 uint64
 
 ***
-#### func StringToUint(value string)  uint
+#### func StringToUint(value string) uint
 <span id="StringToUint"></span>
 > 字符串转换为 uint
 
 ***
-#### func StringToFloat32(value string)  float32
+#### func StringToFloat32(value string) float32
 <span id="StringToFloat32"></span>
 > 字符串转换为 float32
 
 ***
-#### func StringToInt64(value string)  int64
+#### func StringToInt64(value string) int64
 <span id="StringToInt64"></span>
 > 字符串转换为 int64
 
 ***
-#### func StringToUint32(value string)  uint32
+#### func StringToUint32(value string) uint32
 <span id="StringToUint32"></span>
 > 字符串转换为 uint32
 
 ***
-#### func StringToInt32(value string)  int32
+#### func StringToInt32(value string) int32
 <span id="StringToInt32"></span>
 > 字符串转换为 int32
 
 ***
-#### func StringToUint16(value string)  uint16
+#### func StringToUint16(value string) uint16
 <span id="StringToUint16"></span>
 > 字符串转换为 uint16
 
 ***
-#### func StringToInt16(value string)  int16
+#### func StringToInt16(value string) int16
 <span id="StringToInt16"></span>
 > 字符串转换为 int16
 
 ***
-#### func StringToUint8(value string)  uint8
+#### func StringToUint8(value string) uint8
 <span id="StringToUint8"></span>
 > 字符串转换为 uint8
 
 ***
-#### func StringToInt8(value string)  int8
+#### func StringToInt8(value string) int8
 <span id="StringToInt8"></span>
 > 字符串转换为 int8
 
 ***
-#### func StringToByte(value string)  byte
+#### func StringToByte(value string) byte
 <span id="StringToByte"></span>
 > 字符串转换为 byte
 
 ***
-#### func StringToRune(value string)  rune
+#### func StringToRune(value string) rune
 <span id="StringToRune"></span>
 > 字符串转换为 rune
 
 ***
-#### func IntToString(value int)  string
+#### func IntToString(value int) string
 <span id="IntToString"></span>
 > 整数转换为字符串
 
 ***
-#### func Float64ToString(value float64)  string
+#### func Float64ToString(value float64) string
 <span id="Float64ToString"></span>
 > float64 转换为字符串
 
 ***
-#### func BoolToString(value bool)  string
+#### func BoolToString(value bool) string
 <span id="BoolToString"></span>
 > bool 转换为字符串
 
 ***
-#### func Uint64ToString(value uint64)  string
+#### func Uint64ToString(value uint64) string
 <span id="Uint64ToString"></span>
 > uint64 转换为字符串
 
 ***
-#### func UintToString(value uint)  string
+#### func UintToString(value uint) string
 <span id="UintToString"></span>
 > uint 转换为字符串
 
 ***
-#### func Float32ToString(value float32)  string
+#### func Float32ToString(value float32) string
 <span id="Float32ToString"></span>
 > float32 转换为字符串
 
 ***
-#### func Int64ToString(value int64)  string
+#### func Int64ToString(value int64) string
 <span id="Int64ToString"></span>
 > int64 转换为字符串
 
 ***
-#### func Uint32ToString(value uint32)  string
+#### func Uint32ToString(value uint32) string
 <span id="Uint32ToString"></span>
 > uint32 转换为字符串
 
 ***
-#### func Int32ToString(value int32)  string
+#### func Int32ToString(value int32) string
 <span id="Int32ToString"></span>
 > int32 转换为字符串
 
 ***
-#### func Uint16ToString(value uint16)  string
+#### func Uint16ToString(value uint16) string
 <span id="Uint16ToString"></span>
 > uint16 转换为字符串
 
 ***
-#### func Int16ToString(value int16)  string
+#### func Int16ToString(value int16) string
 <span id="Int16ToString"></span>
 > int16 转换为字符串
 
 ***
-#### func Uint8ToString(value uint8)  string
+#### func Uint8ToString(value uint8) string
 <span id="Uint8ToString"></span>
 > uint8 转换为字符串
 
 ***
-#### func Int8ToString(value int8)  string
+#### func Int8ToString(value int8) string
 <span id="Int8ToString"></span>
 > int8 转换为字符串
 
 ***
-#### func ByteToString(value byte)  string
+#### func ByteToString(value byte) string
 <span id="ByteToString"></span>
 > byte 转换为字符串
 
 ***
-#### func RuneToString(value rune)  string
+#### func RuneToString(value rune) string
 <span id="RuneToString"></span>
 > rune 转换为字符串
 
 ***
-#### func StringToSlice(value string)  []string
+#### func StringToSlice(value string) []string
 <span id="StringToSlice"></span>
 > 字符串转换为切片
 
 ***
-#### func SliceToString(value []string)  string
+#### func SliceToString(value []string) string
 <span id="SliceToString"></span>
 > 切片转换为字符串
 
 ***
-#### func NewPermission()  *Permission[Code, EntityID]
+#### func NewPermission() *Permission[Code, EntityID]
 <span id="NewPermission"></span>
 > 创建权限
 
@@ -488,19 +488,19 @@ func TestNewPermission(t *testing.T) {
 
 
 ***
-#### func Retry(count int, interval time.Duration, f func ()  error)  error
+#### func Retry(count int, interval time.Duration, f func ()  error) error
 <span id="Retry"></span>
 > 根据提供的 count 次数尝试执行 f 函数，如果 f 函数返回错误，则在 interval 后重试，直到成功或者达到 count 次数
 
 ***
-#### func RetryByRule(f func ()  error, rule func (count int)  time.Duration)  error
+#### func RetryByRule(f func ()  error, rule func (count int)  time.Duration) error
 <span id="RetryByRule"></span>
 > 根据提供的规则尝试执行 f 函数，如果 f 函数返回错误，则根据 rule 的返回值进行重试
 >   - rule 将包含一个入参，表示第几次重试，返回值表示下一次重试的时间间隔，当返回值为 0 时，表示不再重试
 >   - rule 的 count 将在 f 首次失败后变为 1，因此 rule 的入参将从 1 开始
 
 ***
-#### func RetryByExponentialBackoff(f func ()  error, maxRetries int, baseDelay time.Duration, maxDelay time.Duration, multiplier float64, randomization float64, ignoreErrors ...error)  error
+#### func RetryByExponentialBackoff(f func ()  error, maxRetries int, baseDelay time.Duration, maxDelay time.Duration, multiplier float64, randomization float64, ignoreErrors ...error) error
 <span id="RetryByExponentialBackoff"></span>
 > 根据指数退避算法尝试执行 f 函数
 >   - maxRetries：最大重试次数
@@ -511,7 +511,7 @@ func TestNewPermission(t *testing.T) {
 >   - ignoreErrors：忽略的错误，当 f 返回的错误在 ignoreErrors 中时，将不会进行重试
 
 ***
-#### func ConditionalRetryByExponentialBackoff(f func ()  error, cond func ()  bool, maxRetries int, baseDelay time.Duration, maxDelay time.Duration, multiplier float64, randomization float64, ignoreErrors ...error)  error
+#### func ConditionalRetryByExponentialBackoff(f func ()  error, cond func ()  bool, maxRetries int, baseDelay time.Duration, maxDelay time.Duration, multiplier float64, randomization float64, ignoreErrors ...error) error
 <span id="ConditionalRetryByExponentialBackoff"></span>
 > 该函数与 RetryByExponentialBackoff 类似，但是可以被中断
 >   - cond 为中断条件，当 cond 返回 false 时，将会中断重试
@@ -532,37 +532,37 @@ func TestNewPermission(t *testing.T) {
 > 根据提供的 interval 时间间隔尝试执行 f 函数，如果 f 函数返回错误，则在 interval 后重试，直到成功
 
 ***
-#### func NewStackGo()  *StackGo
+#### func NewStackGo() *StackGo
 <span id="NewStackGo"></span>
 > 返回一个用于获取上一个协程调用的堆栈信息的收集器
 
 ***
-#### func LaunchTime()  time.Time
+#### func LaunchTime() time.Time
 <span id="LaunchTime"></span>
 > 获取程序启动时间
 
 ***
-#### func Hostname()  string
+#### func Hostname() string
 <span id="Hostname"></span>
 > 获取主机名
 
 ***
-#### func PID()  int
+#### func PID() int
 <span id="PID"></span>
 > 获取进程 PID
 
 ***
-#### func StringToBytes(s string)  []byte
+#### func StringToBytes(s string) []byte
 <span id="StringToBytes"></span>
 > 以零拷贝的方式将字符串转换为字节切片
 
 ***
-#### func BytesToString(b []byte)  string
+#### func BytesToString(b []byte) string
 <span id="BytesToString"></span>
 > 以零拷贝的方式将字节切片转换为字符串
 
 ***
-#### func Convert(src A)  B
+#### func Convert(src A) B
 <span id="Convert"></span>
 > 以零拷贝的方式将一个对象转换为另一个对象
 >   - 两个对象字段必须完全一致
@@ -591,7 +591,7 @@ func TestConvert(t *testing.T) {
 
 
 ***
-#### func Verify(handle func ( V))  *VerifyHandle[V]
+#### func Verify(handle func ( V)) *VerifyHandle[V]
 <span id="Verify"></span>
 > 对特定表达式进行校验，当表达式不成立时，将执行 handle
 
@@ -618,7 +618,7 @@ func ExampleVerify() {
 ```
 
 ***
-#### func OldVersion(version1 string, version2 string)  bool
+#### func OldVersion(version1 string, version2 string) bool
 <span id="OldVersion"></span>
 > 检查 version2 对于 version1 来说是不是旧版本
 
@@ -677,7 +677,7 @@ func BenchmarkOldVersion(b *testing.B) {
 
 
 ***
-#### func CompareVersion(version1 string, version2 string)  int
+#### func CompareVersion(version1 string, version2 string) int
 <span id="CompareVersion"></span>
 > 返回一个整数，用于表示两个版本号的比较结果：
 >   - 如果 version1 大于 version2，它将返回 1
@@ -901,7 +901,7 @@ func TestBitSet_Shrink(t *testing.T) {
 #### func (*BitSet) String()  string
 > 返回当前 BitSet 的字符串表示
 ***
-#### func (*BitSet) MarshalJSON()  []byte,  error
+#### func (*BitSet) MarshalJSON() ( []byte,  error)
 > 实现 json.Marshaler 接口
 ***
 #### func (*BitSet) UnmarshalJSON(data []byte)  error

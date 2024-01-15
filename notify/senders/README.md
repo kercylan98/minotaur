@@ -30,7 +30,7 @@ senders Package 包含了内置通知发送器的实现
 
 ***
 ## 详情信息
-#### func NewFeiShu(webhook string)  *FeiShu
+#### func NewFeiShu(webhook string) *FeiShu
 <span id="NewFeiShu"></span>
 > 根据特定的 webhook 地址创建飞书发送器
 

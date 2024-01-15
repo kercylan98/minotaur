@@ -75,28 +75,28 @@ activity 活动状态管理
 > 加载所有活动实体数据
 
 ***
-#### func LoadOrRefreshActivity(activityType Type, activityId ID, options ...*Options)  error
+#### func LoadOrRefreshActivity(activityType Type, activityId ID, options ...*Options) error
 <span id="LoadOrRefreshActivity"></span>
 > 加载或刷新活动
 >   - 通常在活动配置刷新时候将活动通过该方法注册或刷新
 
 ***
-#### func DefineNoneDataActivity(activityType Type)  NoneDataActivityController[Type, ID, *none, none, *none]
+#### func DefineNoneDataActivity(activityType Type) NoneDataActivityController[Type, ID, *none, none, *none]
 <span id="DefineNoneDataActivity"></span>
 > 声明无数据的活动类型
 
 ***
-#### func DefineGlobalDataActivity(activityType Type)  GlobalDataActivityController[Type, ID, Data, none, *none]
+#### func DefineGlobalDataActivity(activityType Type) GlobalDataActivityController[Type, ID, Data, none, *none]
 <span id="DefineGlobalDataActivity"></span>
 > 声明拥有全局数据的活动类型
 
 ***
-#### func DefineEntityDataActivity(activityType Type)  EntityDataActivityController[Type, ID, *none, EntityID, EntityData]
+#### func DefineEntityDataActivity(activityType Type) EntityDataActivityController[Type, ID, *none, EntityID, EntityData]
 <span id="DefineEntityDataActivity"></span>
 > 声明拥有实体数据的活动类型
 
 ***
-#### func DefineGlobalAndEntityDataActivity(activityType Type)  GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+#### func DefineGlobalAndEntityDataActivity(activityType Type) GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
 <span id="DefineGlobalAndEntityDataActivity"></span>
 > 声明拥有全局数据和实体数据的活动类型
 
@@ -161,7 +161,7 @@ activity 活动状态管理
 > 新的一天事件
 
 ***
-#### func NewOptions()  *Options
+#### func NewOptions() *Options
 <span id="NewOptions"></span>
 > 创建活动选项
 

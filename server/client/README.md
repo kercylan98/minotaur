@@ -40,25 +40,25 @@
 
 ***
 ## 详情信息
-#### func NewClient(core Core)  *Client
+#### func NewClient(core Core) *Client
 <span id="NewClient"></span>
 > 创建客户端
 
 ***
-#### func CloneClient(client *Client)  *Client
+#### func CloneClient(client *Client) *Client
 <span id="CloneClient"></span>
 > 克隆客户端
 
 ***
-#### func NewTCP(addr string)  *Client
+#### func NewTCP(addr string) *Client
 <span id="NewTCP"></span>
 
 ***
-#### func NewUnixDomainSocket(addr string)  *Client
+#### func NewUnixDomainSocket(addr string) *Client
 <span id="NewUnixDomainSocket"></span>
 
 ***
-#### func NewWebsocket(addr string)  *Client
+#### func NewWebsocket(addr string) *Client
 <span id="NewWebsocket"></span>
 > 创建 websocket 客户端
 
