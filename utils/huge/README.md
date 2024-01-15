@@ -34,7 +34,7 @@
 
 ***
 ## 详情信息
-#### func NewFloat(x T) *Float
+#### func NewFloat\[T generic.Number\](x T) *Float
 <span id="NewFloat"></span>
 > 创建一个 Float
 
@@ -45,7 +45,7 @@
 >   - 如果字符串不是一个合法的数字，则返回 0
 
 ***
-#### func NewInt(x T) *Int
+#### func NewInt\[T generic.Number\](x T) *Int
 <span id="NewInt"></span>
 > 创建一个 Int
 

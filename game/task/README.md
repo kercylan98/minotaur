@@ -88,7 +88,7 @@ func TestCond(t *testing.T) {
 
 
 ***
-#### func RegisterRefreshTaskCounterEvent(taskType string, handler RefreshTaskCounterEventHandler[Trigger])
+#### func RegisterRefreshTaskCounterEvent\[Trigger any\](taskType string, handler RefreshTaskCounterEventHandler[Trigger])
 <span id="RegisterRefreshTaskCounterEvent"></span>
 > 注册特定任务类型的刷新任务计数器事件处理函数
 
@@ -98,7 +98,7 @@ func TestCond(t *testing.T) {
 > 触发特定任务类型的刷新任务计数器事件
 
 ***
-#### func RegisterRefreshTaskConditionEvent(taskType string, handler RefreshTaskConditionEventHandler[Trigger])
+#### func RegisterRefreshTaskConditionEvent\[Trigger any\](taskType string, handler RefreshTaskConditionEventHandler[Trigger])
 <span id="RegisterRefreshTaskConditionEvent"></span>
 > 注册特定任务类型的刷新任务条件事件处理函数
 

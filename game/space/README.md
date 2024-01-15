@@ -34,7 +34,7 @@ space 游戏中常见的空间设计，例如房间、地图等
 
 ***
 ## 详情信息
-#### func NewRoomManager() *RoomManager[EntityID, RoomID, Entity, Room]
+#### func NewRoomManager\[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]\]() *RoomManager[EntityID, RoomID, Entity, Room]
 <span id="NewRoomManager"></span>
 > 创建房间管理器 RoomManager 的实例
 
@@ -49,7 +49,7 @@ func ExampleNewRoomManager() {
 ```
 
 ***
-#### func NewRoomControllerOptions() *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+#### func NewRoomControllerOptions\[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]\]() *RoomControllerOptions[EntityID, RoomID, Entity, Room]
 <span id="NewRoomControllerOptions"></span>
 > 创建房间控制器选项
 

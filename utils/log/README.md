@@ -186,132 +186,132 @@
 > 构造一个带有字符串值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int(key string, val I) slog.Attr
+#### func Int\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Int"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func IntP(key string, val *I) slog.Attr
+#### func IntP\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="IntP"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int8(key string, val I) slog.Attr
+#### func Int8\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Int8"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int8P(key string, val *I) slog.Attr
+#### func Int8P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Int8P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int16(key string, val I) slog.Attr
+#### func Int16\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Int16"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int16P(key string, val *I) slog.Attr
+#### func Int16P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Int16P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int32(key string, val I) slog.Attr
+#### func Int32\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Int32"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int32P(key string, val *I) slog.Attr
+#### func Int32P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Int32P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Int64(key string, val I) slog.Attr
+#### func Int64\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Int64"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Int64P(key string, val *I) slog.Attr
+#### func Int64P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Int64P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint(key string, val I) slog.Attr
+#### func Uint\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Uint"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func UintP(key string, val *I) slog.Attr
+#### func UintP\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="UintP"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint8(key string, val I) slog.Attr
+#### func Uint8\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Uint8"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint8P(key string, val *I) slog.Attr
+#### func Uint8P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Uint8P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint16(key string, val I) slog.Attr
+#### func Uint16\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Uint16"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint16P(key string, val *I) slog.Attr
+#### func Uint16P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Uint16P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint32(key string, val I) slog.Attr
+#### func Uint32\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Uint32"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint32P(key string, val *I) slog.Attr
+#### func Uint32P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Uint32P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Uint64(key string, val I) slog.Attr
+#### func Uint64\[I generic.Integer\](key string, val I) slog.Attr
 <span id="Uint64"></span>
 > 构造一个带有整数值的字段
 
 ***
-#### func Uint64P(key string, val *I) slog.Attr
+#### func Uint64P\[I generic.Integer\](key string, val *I) slog.Attr
 <span id="Uint64P"></span>
 > 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float(key string, val F) slog.Attr
+#### func Float\[F generic.Float\](key string, val F) slog.Attr
 <span id="Float"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func FloatP(key string, val *F) slog.Attr
+#### func FloatP\[F generic.Float\](key string, val *F) slog.Attr
 <span id="FloatP"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float32(key string, val F) slog.Attr
+#### func Float32\[F generic.Float\](key string, val F) slog.Attr
 <span id="Float32"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func Float32P(key string, val *F) slog.Attr
+#### func Float32P\[F generic.Float\](key string, val *F) slog.Attr
 <span id="Float32P"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 
 ***
-#### func Float64(key string, val F) slog.Attr
+#### func Float64\[F generic.Float\](key string, val F) slog.Attr
 <span id="Float64"></span>
 > 构造一个带有浮点值的字段
 
 ***
-#### func Float64P(key string, val *F) slog.Attr
+#### func Float64P\[F generic.Float\](key string, val *F) slog.Attr
 <span id="Float64P"></span>
 > 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
 

@@ -104,18 +104,18 @@
 
 ***
 ## 详情信息
-#### func NewBitSet(bits ...Bit) *BitSet[Bit]
+#### func NewBitSet\[Bit generic.Integer\](bits ...Bit) *BitSet[Bit]
 <span id="NewBitSet"></span>
 > 通过指定的 Bit 位创建一个 BitSet
 
 ***
-#### func TryWriteChannel(ch chan T, data T) bool
+#### func TryWriteChannel\[T any\](ch chan T, data T) bool
 <span id="TryWriteChannel"></span>
 > 尝试写入 channel，如果 channel 无法写入则忽略，返回是否写入成功
 >   - 无法写入的情况包括：channel 已满、channel 已关闭
 
 ***
-#### func TryWriteChannelByHandler(ch chan T, data T, handler func ())
+#### func TryWriteChannelByHandler\[T any\](ch chan T, data T, handler func ())
 <span id="TryWriteChannelByHandler"></span>
 > 尝试写入 channel，如果 channel 无法写入则执行 handler
 >   - 无法写入的情况包括：channel 已满、channel 已关闭
@@ -184,7 +184,7 @@ func ExampleRecoverTransform() {
 > 执行 f 函数，如果 f 为 nil，则不执行
 
 ***
-#### func HandleV(v V, f func (v V))
+#### func HandleV\[V any\](v V, f func (v V))
 <span id="HandleV"></span>
 > 执行 f 函数，如果 f 为 nil，则不执行
 
@@ -194,7 +194,7 @@ func ExampleRecoverTransform() {
 > go 代码格式化
 
 ***
-#### func If(expression bool, t T, f T) T
+#### func If\[T any\](expression bool, t T, f T) T
 <span id="If"></span>
 
 ***
@@ -230,7 +230,7 @@ func ExampleRecoverTransform() {
 > 开始损耗计数
 
 ***
-#### func Match(value Value) *Matcher[Value, Result]
+#### func Match\[Value any, Result any\](value Value) *Matcher[Value, Result]
 <span id="Match"></span>
 > 匹配
 
@@ -450,7 +450,7 @@ func TestNumberToRome(t *testing.T) {
 > 切片转换为字符串
 
 ***
-#### func NewPermission() *Permission[Code, EntityID]
+#### func NewPermission\[Code generic.Integer, EntityID comparable\]() *Permission[Code, EntityID]
 <span id="NewPermission"></span>
 > 创建权限
 
@@ -562,7 +562,7 @@ func TestNewPermission(t *testing.T) {
 > 以零拷贝的方式将字节切片转换为字符串
 
 ***
-#### func Convert(src A) B
+#### func Convert\[A any, B any\](src A) B
 <span id="Convert"></span>
 > 以零拷贝的方式将一个对象转换为另一个对象
 >   - 两个对象字段必须完全一致
@@ -591,7 +591,7 @@ func TestConvert(t *testing.T) {
 
 
 ***
-#### func Verify(handle func ( V)) *VerifyHandle[V]
+#### func Verify\[V any\](handle func ( V)) *VerifyHandle[V]
 <span id="Verify"></span>
 > 对特定表达式进行校验，当表达式不成立时，将执行 handle
 

@@ -36,22 +36,22 @@
 
 ***
 ## 详情信息
-#### func NewMatrix(dimensions ...int) *Matrix[V]
+#### func NewMatrix\[V any\](dimensions ...int) *Matrix[V]
 <span id="NewMatrix"></span>
 > 创建一个新的 Matrix 实例。
 
 ***
-#### func NewPagedSlice(pageSize int) *PagedSlice[T]
+#### func NewPagedSlice\[T any\](pageSize int) *PagedSlice[T]
 <span id="NewPagedSlice"></span>
 > 创建一个新的 PagedSlice 实例。
 
 ***
-#### func NewPrioritySlice(lengthAndCap ...int) *PrioritySlice[V]
+#### func NewPrioritySlice\[V any\](lengthAndCap ...int) *PrioritySlice[V]
 <span id="NewPrioritySlice"></span>
 > 创建一个优先级切片
 
 ***
-#### func NewSyncSlice(length int, cap int) *SyncSlice[V]
+#### func NewSyncSlice\[V any\](length int, cap int) *SyncSlice[V]
 <span id="NewSyncSlice"></span>
 > 创建一个 SyncSlice
 

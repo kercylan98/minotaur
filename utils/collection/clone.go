@@ -4,12 +4,13 @@ import (
 	"slices"
 )
 
-// CloneSlice 克隆切片，该函数是 slices.Clone 的快捷方式
+// CloneSlice 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
 func CloneSlice[S ~[]V, V any](slice S) S {
 	return slices.Clone(slice)
 }
 
-// CloneMap 克隆 map
+// CloneMap 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
+//   - 当 m 为空时，将会返回 nil
 func CloneMap[M ~map[K]V, K comparable, V any](m M) M {
 	if m == nil {
 		return nil

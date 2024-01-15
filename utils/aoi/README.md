@@ -37,7 +37,7 @@ AOI 问题是在大规模多人在线游戏中常见的问题，它涉及到确�
 
 ***
 ## 详情信息
-#### func NewTwoDimensional(width int, height int, areaWidth int, areaHeight int) *TwoDimensional[EID, PosType, E]
+#### func NewTwoDimensional\[EID generic.Basic, PosType generic.SignedNumber, E TwoDimensionalEntity[EID, PosType]\](width int, height int, areaWidth int, areaHeight int) *TwoDimensional[EID, PosType, E]
 <span id="NewTwoDimensional"></span>
 
 <details>

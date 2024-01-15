@@ -138,7 +138,7 @@ func TestNewBot(t *testing.T) {
 <span id="DefaultWebsocketUpgrader"></span>
 
 ***
-#### func NewHttpHandleWrapper(srv *Server, packer ContextPacker[Context]) *Http[Context]
+#### func NewHttpHandleWrapper\[Context any\](srv *Server, packer ContextPacker[Context]) *Http[Context]
 <span id="NewHttpHandleWrapper"></span>
 > 创建一个新的 http 处理程序包装器
 >   - 默认使用 server.HttpContext 作为上下文，如果需要依赖其作为新的上下文，可以通过 NewHttpContext 创建
@@ -149,7 +149,7 @@ func TestNewBot(t *testing.T) {
 > 基于 gin.Context 创建一个新的 HttpContext
 
 ***
-#### func NewGinWrapper(server *gin.Engine, pack func (ctx *gin.Context)  CTX) *HttpWrapper[CTX]
+#### func NewGinWrapper\[CTX any\](server *gin.Engine, pack func (ctx *gin.Context)  CTX) *HttpWrapper[CTX]
 <span id="NewGinWrapper"></span>
 > 创建 gin 包装器，用于对 NewHttpWrapper 函数的替代
 

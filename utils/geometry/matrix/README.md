@@ -30,7 +30,7 @@ matrix 提供了一个简单的二维数组的实现
 
 ***
 ## 详情信息
-#### func NewMatrix(width int, height int) *Matrix[T]
+#### func NewMatrix\[T any\](width int, height int) *Matrix[T]
 <span id="NewMatrix"></span>
 > 生成特定宽高的二维矩阵
 >   - 虽然提供了通过x、y坐标的操作函数，但是建议无论如何使用pos进行处理

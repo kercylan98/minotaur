@@ -34,7 +34,7 @@
 
 ***
 ## 详情信息
-#### func NewTurnBased(calcNextTurnDuration func ( Camp,  Entity)  time.Duration) *TurnBased[CampID, EntityID, Camp, Entity]
+#### func NewTurnBased\[CampID comparable, EntityID comparable, Camp generic.IdR[CampID], Entity generic.IdR[EntityID]\](calcNextTurnDuration func ( Camp,  Entity)  time.Duration) *TurnBased[CampID, EntityID, Camp, Entity]
 <span id="NewTurnBased"></span>
 > 创建一个新的回合制
 >   - calcNextTurnDuration 将返回下一次行动时间间隔，适用于按照速度计算下一次行动时间间隔的情况。当返回 0 时，将使用默认的行动超时时间

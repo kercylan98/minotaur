@@ -75,88 +75,88 @@ activity 活动状态管理
 > 加载所有活动实体数据
 
 ***
-#### func LoadOrRefreshActivity(activityType Type, activityId ID, options ...*Options) error
+#### func LoadOrRefreshActivity\[Type generic.Basic, ID generic.Basic\](activityType Type, activityId ID, options ...*Options) error
 <span id="LoadOrRefreshActivity"></span>
 > 加载或刷新活动
 >   - 通常在活动配置刷新时候将活动通过该方法注册或刷新
 
 ***
-#### func DefineNoneDataActivity(activityType Type) NoneDataActivityController[Type, ID, *none, none, *none]
+#### func DefineNoneDataActivity\[Type generic.Basic, ID generic.Basic\](activityType Type) NoneDataActivityController[Type, ID, *none, none, *none]
 <span id="DefineNoneDataActivity"></span>
 > 声明无数据的活动类型
 
 ***
-#### func DefineGlobalDataActivity(activityType Type) GlobalDataActivityController[Type, ID, Data, none, *none]
+#### func DefineGlobalDataActivity\[Type generic.Basic, ID generic.Basic, Data any\](activityType Type) GlobalDataActivityController[Type, ID, Data, none, *none]
 <span id="DefineGlobalDataActivity"></span>
 > 声明拥有全局数据的活动类型
 
 ***
-#### func DefineEntityDataActivity(activityType Type) EntityDataActivityController[Type, ID, *none, EntityID, EntityData]
+#### func DefineEntityDataActivity\[Type generic.Basic, ID generic.Basic, EntityID generic.Basic, EntityData any\](activityType Type) EntityDataActivityController[Type, ID, *none, EntityID, EntityData]
 <span id="DefineEntityDataActivity"></span>
 > 声明拥有实体数据的活动类型
 
 ***
-#### func DefineGlobalAndEntityDataActivity(activityType Type) GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+#### func DefineGlobalAndEntityDataActivity\[Type generic.Basic, ID generic.Basic, Data any, EntityID generic.Basic, EntityData any\](activityType Type) GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
 <span id="DefineGlobalAndEntityDataActivity"></span>
 > 声明拥有全局数据和实体数据的活动类型
 
 ***
-#### func RegUpcomingEvent(activityType Type, handler UpcomingEventHandler[ID], priority ...int)
+#### func RegUpcomingEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler UpcomingEventHandler[ID], priority ...int)
 <span id="RegUpcomingEvent"></span>
 > 注册即将开始的活动事件处理器
 
 ***
-#### func OnUpcomingEvent(activity *Activity[Type, ID])
+#### func OnUpcomingEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnUpcomingEvent"></span>
 > 即将开始的活动事件
 
 ***
-#### func RegStartedEvent(activityType Type, handler StartedEventHandler[ID], priority ...int)
+#### func RegStartedEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler StartedEventHandler[ID], priority ...int)
 <span id="RegStartedEvent"></span>
 > 注册活动开始事件处理器
 
 ***
-#### func OnStartedEvent(activity *Activity[Type, ID])
+#### func OnStartedEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnStartedEvent"></span>
 > 活动开始事件
 
 ***
-#### func RegEndedEvent(activityType Type, handler EndedEventHandler[ID], priority ...int)
+#### func RegEndedEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler EndedEventHandler[ID], priority ...int)
 <span id="RegEndedEvent"></span>
 > 注册活动结束事件处理器
 
 ***
-#### func OnEndedEvent(activity *Activity[Type, ID])
+#### func OnEndedEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnEndedEvent"></span>
 > 活动结束事件
 
 ***
-#### func RegExtendedShowStartedEvent(activityType Type, handler ExtendedShowStartedEventHandler[ID], priority ...int)
+#### func RegExtendedShowStartedEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler ExtendedShowStartedEventHandler[ID], priority ...int)
 <span id="RegExtendedShowStartedEvent"></span>
 > 注册活动结束后延长展示开始事件处理器
 
 ***
-#### func OnExtendedShowStartedEvent(activity *Activity[Type, ID])
+#### func OnExtendedShowStartedEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnExtendedShowStartedEvent"></span>
 > 活动结束后延长展示开始事件
 
 ***
-#### func RegExtendedShowEndedEvent(activityType Type, handler ExtendedShowEndedEventHandler[ID], priority ...int)
+#### func RegExtendedShowEndedEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler ExtendedShowEndedEventHandler[ID], priority ...int)
 <span id="RegExtendedShowEndedEvent"></span>
 > 注册活动结束后延长展示结束事件处理器
 
 ***
-#### func OnExtendedShowEndedEvent(activity *Activity[Type, ID])
+#### func OnExtendedShowEndedEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnExtendedShowEndedEvent"></span>
 > 活动结束后延长展示结束事件
 
 ***
-#### func RegNewDayEvent(activityType Type, handler NewDayEventHandler[ID], priority ...int)
+#### func RegNewDayEvent\[Type generic.Basic, ID generic.Basic\](activityType Type, handler NewDayEventHandler[ID], priority ...int)
 <span id="RegNewDayEvent"></span>
 > 注册新的一天事件处理器
 
 ***
-#### func OnNewDayEvent(activity *Activity[Type, ID])
+#### func OnNewDayEvent\[Type generic.Basic, ID generic.Basic\](activity *Activity[Type, ID])
 <span id="OnNewDayEvent"></span>
 > 新的一天事件
 

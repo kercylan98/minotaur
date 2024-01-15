@@ -75,7 +75,7 @@
 > 重置特定命名空间的唯一标识符
 
 ***
-#### func NewOnce() *Once[V]
+#### func NewOnce\[V any\]() *Once[V]
 <span id="NewOnce"></span>
 > 创建一个用于数据取值去重的结构实例
 

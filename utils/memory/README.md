@@ -38,7 +38,7 @@
 > 运行持久化缓存程序
 
 ***
-#### func BindPersistCacheProgram(name string, handler OutputParamHandlerFunc, option ...*Option) func ()
+#### func BindPersistCacheProgram\[OutputParamHandlerFunc any\](name string, handler OutputParamHandlerFunc, option ...*Option) func ()
 <span id="BindPersistCacheProgram"></span>
 > 绑定持久化缓存程序
 >   - name 持久化缓存程序名称
@@ -52,7 +52,7 @@
 >   - 所有持久化程序绑定完成后，应该主动调用 Run 函数运行
 
 ***
-#### func BindAction(name string, handler Func) Func
+#### func BindAction\[Func any\](name string, handler Func) Func
 <span id="BindAction"></span>
 > 绑定需要缓存的操作函数
 >   - name 缓存操作名称

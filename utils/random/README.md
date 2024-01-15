@@ -119,7 +119,7 @@
 > 返回一个随机的布尔值
 
 ***
-#### func ProbabilitySlice(getProbabilityHandle func (data T)  float64, data ...T) (hit T, miss bool)
+#### func ProbabilitySlice\[T any\](getProbabilityHandle func (data T)  float64, data ...T) (hit T, miss bool)
 <span id="ProbabilitySlice"></span>
 > 按概率随机从切片中产生一个数据并返回命中的对象及是否未命中
 >   - 当总概率小于 1 将会发生未命中的情况
@@ -147,7 +147,7 @@ func TestProbabilitySlice(t *testing.T) {
 
 
 ***
-#### func ProbabilitySliceIndex(getProbabilityHandle func (data T)  float64, data ...T) (hit T, index int, miss bool)
+#### func ProbabilitySliceIndex\[T any\](getProbabilityHandle func (data T)  float64, data ...T) (hit T, index int, miss bool)
 <span id="ProbabilitySliceIndex"></span>
 > 按概率随机从切片中产生一个数据并返回命中的对象及对象索引以及是否未命中
 >   - 当总概率小于 1 将会发生未命中的情况
@@ -200,22 +200,22 @@ func TestProbabilitySlice(t *testing.T) {
 > 返回一个随机产生的hostname。
 
 ***
-#### func WeightSlice(getWeightHandle func (data T)  int64, data ...T) T
+#### func WeightSlice\[T any\](getWeightHandle func (data T)  int64, data ...T) T
 <span id="WeightSlice"></span>
 > 按权重随机从切片中产生一个数据并返回
 
 ***
-#### func WeightSliceIndex(getWeightHandle func (data T)  int64, data ...T) (item T, index int)
+#### func WeightSliceIndex\[T any\](getWeightHandle func (data T)  int64, data ...T) (item T, index int)
 <span id="WeightSliceIndex"></span>
 > 按权重随机从切片中产生一个数据并返回数据和对应索引
 
 ***
-#### func WeightMap(getWeightHandle func (data T)  int64, data map[K]T) T
+#### func WeightMap\[K comparable, T any\](getWeightHandle func (data T)  int64, data map[K]T) T
 <span id="WeightMap"></span>
 > 按权重随机从map中产生一个数据并返回
 
 ***
-#### func WeightMapKey(getWeightHandle func (data T)  int64, data map[K]T) (item T, key K)
+#### func WeightMapKey\[K comparable, T any\](getWeightHandle func (data T)  int64, data map[K]T) (item T, key K)
 <span id="WeightMapKey"></span>
 > 按权重随机从map中产生一个数据并返回数据和对应 key
 

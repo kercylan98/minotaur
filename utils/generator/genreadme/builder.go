@@ -154,8 +154,21 @@ func (b *Builder) genStructs() {
 			continue
 		}
 		titleBuild()
-		b.title(4, strings.TrimSpace(fmt.Sprintf("func %s%s %s",
+		b.title(4, strings.TrimSpace(fmt.Sprintf("func %s%s%s %s",
 			function.Name,
+			func() string {
+				var sb strings.Builder
+				if len(function.Generic) > 0 {
+					sb.WriteString("\\[")
+					var genericStr = make([]string, 0)
+					for _, field := range function.Generic {
+						genericStr = append(genericStr, fmt.Sprintf("%s %s", field.Name, field.Type.Sign))
+					}
+					sb.WriteString(strings.Join(genericStr, ", "))
+					sb.WriteString("\\]")
+				}
+				return sb.String()
+			}(),
 			func() string {
 				f := funcHandler(function.Params)
 				if !strings.HasPrefix(f, "(") {
@@ -278,9 +291,6 @@ func (b *Builder) genStructs() {
 				b.quote()
 				for _, comment := range function.Comments.Clear {
 					b.quote(comment)
-				}
-				if function.Name == "Write" {
-					fmt.Println()
 				}
 				if example := b.p.GetExampleTest(function); example != nil {
 					b.newLine("示例代码：", "```go\n", example.Code(), "```\n")

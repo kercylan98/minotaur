@@ -65,12 +65,12 @@ combination 包提供了一些实用的组合函数。
 
 ***
 ## 详情信息
-#### func NewCombination(options ...Option[T]) *Combination[T]
+#### func NewCombination\[T Item\](options ...Option[T]) *Combination[T]
 <span id="NewCombination"></span>
 > 创建一个新的组合器
 
 ***
-#### func WithEvaluation(evaluate func (items []T)  float64) Option[T]
+#### func WithEvaluation\[T Item\](evaluate func (items []T)  float64) Option[T]
 <span id="WithEvaluation"></span>
 > 设置组合评估函数
 >   - 用于对组合进行评估，返回一个分值的评价函数
@@ -79,57 +79,57 @@ combination 包提供了一些实用的组合函数。
 >   - 默认的评估函数将返回一个随机数
 
 ***
-#### func NewMatcher(options ...MatcherOption[T]) *Matcher[T]
+#### func NewMatcher\[T Item\](options ...MatcherOption[T]) *Matcher[T]
 <span id="NewMatcher"></span>
 > 创建一个新的匹配器
 
 ***
-#### func WithMatcherEvaluation(evaluate func (items []T)  float64) MatcherOption[T]
+#### func WithMatcherEvaluation\[T Item\](evaluate func (items []T)  float64) MatcherOption[T]
 <span id="WithMatcherEvaluation"></span>
 > 设置匹配器评估函数
 >   - 用于对组合进行评估，返回一个分值的评价函数
 >   - 通过该选项将覆盖匹配器的默认(WithEvaluation)评估函数
 
 ***
-#### func WithMatcherLeastLength(length int) MatcherOption[T]
+#### func WithMatcherLeastLength\[T Item\](length int) MatcherOption[T]
 <span id="WithMatcherLeastLength"></span>
 > 通过匹配最小长度的组合创建匹配器
 >   - length: 组合的长度，表示需要匹配的组合最小数量
 
 ***
-#### func WithMatcherLength(length int) MatcherOption[T]
+#### func WithMatcherLength\[T Item\](length int) MatcherOption[T]
 <span id="WithMatcherLength"></span>
 > 通过匹配长度的组合创建匹配器
 >   - length: 组合的长度，表示需要匹配的组合数量
 
 ***
-#### func WithMatcherMostLength(length int) MatcherOption[T]
+#### func WithMatcherMostLength\[T Item\](length int) MatcherOption[T]
 <span id="WithMatcherMostLength"></span>
 > 通过匹配最大长度的组合创建匹配器
 >   - length: 组合的长度，表示需要匹配的组合最大数量
 
 ***
-#### func WithMatcherIntervalLength(min int, max int) MatcherOption[T]
+#### func WithMatcherIntervalLength\[T Item\](min int, max int) MatcherOption[T]
 <span id="WithMatcherIntervalLength"></span>
 > 通过匹配长度区间的组合创建匹配器
 >   - min: 组合的最小长度，表示需要匹配的组合最小数量
 >   - max: 组合的最大长度，表示需要匹配的组合最大数量
 
 ***
-#### func WithMatcherContinuity(getIndex func (item T)  Index) MatcherOption[T]
+#### func WithMatcherContinuity\[T Item, Index generic.Number\](getIndex func (item T)  Index) MatcherOption[T]
 <span id="WithMatcherContinuity"></span>
 > 通过匹配连续的组合创建匹配器
 >   - index: 用于获取组合中元素的索引值，用于判断是否连续
 
 ***
-#### func WithMatcherSame(count int, getType func (item T)  E) MatcherOption[T]
+#### func WithMatcherSame\[T Item, E generic.Ordered\](count int, getType func (item T)  E) MatcherOption[T]
 <span id="WithMatcherSame"></span>
 > 通过匹配相同的组合创建匹配器
 >   - count: 组合中相同元素的数量，当 count <= 0 时，表示相同元素的数量不限
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
 
 ***
-#### func WithMatcherNCarryM(n int, m int, getType func (item T)  E) MatcherOption[T]
+#### func WithMatcherNCarryM\[T Item, E generic.Ordered\](n int, m int, getType func (item T)  E) MatcherOption[T]
 <span id="WithMatcherNCarryM"></span>
 > 通过匹配 N 携带 M 的组合创建匹配器
 >   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
@@ -137,7 +137,7 @@ combination 包提供了一些实用的组合函数。
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
 
 ***
-#### func WithMatcherNCarryIndependentM(n int, m int, getType func (item T)  E) MatcherOption[T]
+#### func WithMatcherNCarryIndependentM\[T Item, E generic.Ordered\](n int, m int, getType func (item T)  E) MatcherOption[T]
 <span id="WithMatcherNCarryIndependentM"></span>
 > 通过匹配 N 携带独立 M 的组合创建匹配器
 >   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
@@ -145,87 +145,87 @@ combination 包提供了一些实用的组合函数。
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
 
 ***
-#### func NewValidator(options ...ValidatorOption[T]) *Validator[T]
+#### func NewValidator\[T Item\](options ...ValidatorOption[T]) *Validator[T]
 <span id="NewValidator"></span>
 > 创建一个新的校验器
 
 ***
-#### func WithValidatorHandle(handle func (items []T)  bool) ValidatorOption[T]
+#### func WithValidatorHandle\[T Item\](handle func (items []T)  bool) ValidatorOption[T]
 <span id="WithValidatorHandle"></span>
 > 通过特定的验证函数对组合进行验证
 
 ***
-#### func WithValidatorHandleLength(length int) ValidatorOption[T]
+#### func WithValidatorHandleLength\[T Item\](length int) ValidatorOption[T]
 <span id="WithValidatorHandleLength"></span>
 > 校验组合的长度是否符合要求
 
 ***
-#### func WithValidatorHandleLengthRange(min int, max int) ValidatorOption[T]
+#### func WithValidatorHandleLengthRange\[T Item\](min int, max int) ValidatorOption[T]
 <span id="WithValidatorHandleLengthRange"></span>
 > 校验组合的长度是否在指定的范围内
 
 ***
-#### func WithValidatorHandleLengthMin(min int) ValidatorOption[T]
+#### func WithValidatorHandleLengthMin\[T Item\](min int) ValidatorOption[T]
 <span id="WithValidatorHandleLengthMin"></span>
 > 校验组合的长度是否大于等于指定的最小值
 
 ***
-#### func WithValidatorHandleLengthMax(max int) ValidatorOption[T]
+#### func WithValidatorHandleLengthMax\[T Item\](max int) ValidatorOption[T]
 <span id="WithValidatorHandleLengthMax"></span>
 > 校验组合的长度是否小于等于指定的最大值
 
 ***
-#### func WithValidatorHandleLengthNot(length int) ValidatorOption[T]
+#### func WithValidatorHandleLengthNot\[T Item\](length int) ValidatorOption[T]
 <span id="WithValidatorHandleLengthNot"></span>
 > 校验组合的长度是否不等于指定的值
 
 ***
-#### func WithValidatorHandleTypeLength(length int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleTypeLength\[T Item, E generic.Ordered\](length int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleTypeLength"></span>
 > 校验组合成员类型数量是否为指定的值
 
 ***
-#### func WithValidatorHandleTypeLengthRange(min int, max int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleTypeLengthRange\[T Item, E generic.Ordered\](min int, max int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleTypeLengthRange"></span>
 > 校验组合成员类型数量是否在指定的范围内
 
 ***
-#### func WithValidatorHandleTypeLengthMin(min int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleTypeLengthMin\[T Item, E generic.Ordered\](min int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleTypeLengthMin"></span>
 > 校验组合成员类型数量是否大于等于指定的最小值
 
 ***
-#### func WithValidatorHandleTypeLengthMax(max int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleTypeLengthMax\[T Item, E generic.Ordered\](max int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleTypeLengthMax"></span>
 > 校验组合成员类型数量是否小于等于指定的最大值
 
 ***
-#### func WithValidatorHandleTypeLengthNot(length int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleTypeLengthNot\[T Item, E generic.Ordered\](length int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleTypeLengthNot"></span>
 > 校验组合成员类型数量是否不等于指定的值
 
 ***
-#### func WithValidatorHandleContinuous(getIndex func (item T)  Index) ValidatorOption[T]
+#### func WithValidatorHandleContinuous\[T Item, Index generic.Integer\](getIndex func (item T)  Index) ValidatorOption[T]
 <span id="WithValidatorHandleContinuous"></span>
 > 校验组合成员是否连续
 
 ***
-#### func WithValidatorHandleContinuousNot(getIndex func (item T)  Index) ValidatorOption[T]
+#### func WithValidatorHandleContinuousNot\[T Item, Index generic.Integer\](getIndex func (item T)  Index) ValidatorOption[T]
 <span id="WithValidatorHandleContinuousNot"></span>
 > 校验组合成员是否不连续
 
 ***
-#### func WithValidatorHandleGroupContinuous(getType func (item T)  E, getIndex func (item T)  Index) ValidatorOption[T]
+#### func WithValidatorHandleGroupContinuous\[T Item, E generic.Ordered, Index generic.Integer\](getType func (item T)  E, getIndex func (item T)  Index) ValidatorOption[T]
 <span id="WithValidatorHandleGroupContinuous"></span>
 > 校验组合成员是否能够按类型分组并且连续
 
 ***
-#### func WithValidatorHandleGroupContinuousN(n int, getType func (item T)  E, getIndex func (item T)  Index) ValidatorOption[T]
+#### func WithValidatorHandleGroupContinuousN\[T Item, E generic.Ordered, Index generic.Integer\](n int, getType func (item T)  E, getIndex func (item T)  Index) ValidatorOption[T]
 <span id="WithValidatorHandleGroupContinuousN"></span>
 > 校验组合成员是否能够按分组为 n 组类型并且连续
 
 ***
-#### func WithValidatorHandleNCarryM(n int, m int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleNCarryM\[T Item, E generic.Ordered\](n int, m int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleNCarryM"></span>
 >  校验组合成员是否匹配 N 携带相同的 M 的组合
 >   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同
@@ -233,7 +233,7 @@ combination 包提供了一些实用的组合函数。
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
 
 ***
-#### func WithValidatorHandleNCarryIndependentM(n int, m int, getType func (item T)  E) ValidatorOption[T]
+#### func WithValidatorHandleNCarryIndependentM\[T Item, E generic.Ordered\](n int, m int, getType func (item T)  E) ValidatorOption[T]
 <span id="WithValidatorHandleNCarryIndependentM"></span>
 > 校验组合成员是否匹配 N 携带独立的 M 的组合
 >   - n: 组合中元素的数量，表示需要匹配的组合数量，n 的类型需要全部相同

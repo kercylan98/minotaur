@@ -250,7 +250,7 @@ func ExampleCalcNextSecWithTime() {
 > 获取一个时间的年末
 
 ***
-#### func NewStateLine(zero State) *StateLine[State]
+#### func NewStateLine\[State generic.Basic\](zero State) *StateLine[State]
 <span id="NewStateLine"></span>
 > 创建一个从左向右由早到晚的状态时间线
 

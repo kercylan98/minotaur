@@ -37,7 +37,7 @@
 
 ***
 ## 详情信息
-#### func NewLockstep(options ...Option[ClientID, Command]) *Lockstep[ClientID, Command]
+#### func NewLockstep\[ClientID comparable, Command any\](options ...Option[ClientID, Command]) *Lockstep[ClientID, Command]
 <span id="NewLockstep"></span>
 > 创建一个锁步（帧）同步默认实现的组件(Lockstep)进行返回
 
@@ -78,19 +78,19 @@ func TestNewLockstep(t *testing.T) {
 
 
 ***
-#### func WithFrameLimit(frameLimit int64) Option[ClientID, Command]
+#### func WithFrameLimit\[ClientID comparable, Command any\](frameLimit int64) Option[ClientID, Command]
 <span id="WithFrameLimit"></span>
 > 通过特定逻辑帧上限创建锁步（帧）同步组件
 >   - 当达到上限时将停止广播
 
 ***
-#### func WithFrameRate(frameRate int64) Option[ClientID, Command]
+#### func WithFrameRate\[ClientID comparable, Command any\](frameRate int64) Option[ClientID, Command]
 <span id="WithFrameRate"></span>
 > 通过特定逻辑帧率创建锁步（帧）同步组件
 >   - 默认情况下为 15/s
 
 ***
-#### func WithSerialization(handle func (frame int64, commands []Command)  []byte) Option[ClientID, Command]
+#### func WithSerialization\[ClientID comparable, Command any\](handle func (frame int64, commands []Command)  []byte) Option[ClientID, Command]
 <span id="WithSerialization"></span>
 > 通过特定的序列化方式将每一帧的数据进行序列化
 > 
@@ -102,7 +102,7 @@ func TestNewLockstep(t *testing.T) {
 >     }
 
 ***
-#### func WithInitFrame(initFrame int64) Option[ClientID, Command]
+#### func WithInitFrame\[ClientID comparable, Command any\](initFrame int64) Option[ClientID, Command]
 <span id="WithInitFrame"></span>
 > 通过特定的初始帧创建锁步（帧）同步组件
 >   - 默认情况下为 0，即第一帧索引为 0

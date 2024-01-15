@@ -36,7 +36,7 @@
 
 ***
 ## 详情信息
-#### func NewDispatcher(bufferSize int, name string, handler Handler[P, M]) *Dispatcher[P, M]
+#### func NewDispatcher\[P Producer, M Message[P]\](bufferSize int, name string, handler Handler[P, M]) *Dispatcher[P, M]
 <span id="NewDispatcher"></span>
 > 创建一个新的消息分发器 Dispatcher 实例
 
@@ -107,7 +107,7 @@ func TestNewDispatcher(t *testing.T) {
 
 
 ***
-#### func NewManager(bufferSize int, handler Handler[P, M]) *Manager[P, M]
+#### func NewManager\[P Producer, M Message[P]\](bufferSize int, handler Handler[P, M]) *Manager[P, M]
 <span id="NewManager"></span>
 > 生成消息分发器管理器
 

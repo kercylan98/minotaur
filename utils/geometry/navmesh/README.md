@@ -33,7 +33,7 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 
 ***
 ## 详情信息
-#### func NewNavMesh(shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V]
+#### func NewNavMesh\[V generic.SignedNumber\](shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V]
 <span id="NewNavMesh"></span>
 > 创建一个新的导航网格，并返回一个指向该导航网格的指针。
 > 
