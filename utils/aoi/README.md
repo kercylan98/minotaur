@@ -83,6 +83,18 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber, E TwoDimens
 	repartitionQueue []func()
 }
 ```
+#### func (*TwoDimensional) AddEntity(entity E)
+***
+#### func (*TwoDimensional) DeleteEntity(entity E)
+***
+#### func (*TwoDimensional) Refresh(entity E)
+***
+#### func (*TwoDimensional) GetFocus(id EID)  map[EID]E
+***
+#### func (*TwoDimensional) SetSize(width int, height int)
+***
+#### func (*TwoDimensional) SetAreaSize(width int, height int)
+***
 <span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`
 基于2D定义的AOI对象功能接口

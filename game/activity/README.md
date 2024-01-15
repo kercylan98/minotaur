@@ -201,6 +201,32 @@ type Controller[Type generic.Basic, ID generic.Basic, Data any, EntityID generic
 	mutex      sync.RWMutex
 }
 ```
+#### func (*Controller) GetGlobalData(activityId ID)  Data
+> 获取特定活动全局数据
+***
+#### func (*Controller) GetEntityData(activityId ID, entityId EntityID)  EntityData
+> 获取特定活动实体数据
+***
+#### func (*Controller) IsOpen(activityId ID)  bool
+> 活动是否开启
+***
+#### func (*Controller) IsShow(activityId ID)  bool
+> 活动是否展示
+***
+#### func (*Controller) IsOpenOrShow(activityId ID)  bool
+> 活动是否开启或展示
+***
+#### func (*Controller) Refresh(activityId ID)
+> 刷新活动
+***
+#### func (*Controller) InitializeNoneData(handler func (activityId ID, data *DataMeta[Data]))  NoneDataActivityController[Type, ID, Data, EntityID, EntityData]
+***
+#### func (*Controller) InitializeGlobalData(handler func (activityId ID, data *DataMeta[Data]))  GlobalDataActivityController[Type, ID, Data, EntityID, EntityData]
+***
+#### func (*Controller) InitializeEntityData(handler func (activityId ID, entityId EntityID, data *EntityDataMeta[EntityData]))  EntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+***
+#### func (*Controller) InitializeGlobalAndEntityData(handler func (activityId ID, data *DataMeta[Data]), entityHandler func (activityId ID, entityId EntityID, data *EntityDataMeta[EntityData]))  GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
+***
 <span id="struct_BasicActivityController"></span>
 ### BasicActivityController `INTERFACE`
 

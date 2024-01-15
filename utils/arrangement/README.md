@@ -127,6 +127,25 @@ type Area[ID comparable, AreaInfo any] struct {
 	evaluate    AreaEvaluateHandle[ID, AreaInfo]
 }
 ```
+#### func (*Area) GetAreaInfo()  AreaInfo
+> 获取编排区域的信息
+***
+#### func (*Area) GetItems()  map[ID]Item[ID]
+> 获取编排区域中的所有成员
+***
+#### func (*Area) IsAllow(item Item[ID]) (constraintErr error, conflictItems map[ID]Item[ID], allow bool)
+> 检测一个成员是否可以被添加到该编排区域中
+***
+#### func (*Area) IsConflict(item Item[ID])  bool
+> 检测一个成员是否会造成冲突
+***
+#### func (*Area) GetConflictItems(item Item[ID])  map[ID]Item[ID]
+> 获取与一个成员产生冲突的所有其他成员
+***
+#### func (*Area) GetScore(extra ...Item[ID])  float64
+> 获取该编排区域的评估分数
+>   - 当 extra 不为空时，将会将 extra 中的内容添加到 items 中进行评估
+***
 <span id="struct_AreaOption"></span>
 ### AreaOption `STRUCT`
 编排区域选项
@@ -157,6 +176,65 @@ type Arrangement[ID comparable, AreaInfo any] struct {
 	conflictHandles   []ConflictHandle[ID, AreaInfo]
 }
 ```
+#### func (*Arrangement) AddArea(areaInfo AreaInfo, options ...AreaOption[ID, AreaInfo])
+> 添加一个编排区域
+***
+#### func (*Arrangement) AddItem(item Item[ID])
+> 添加一个成员
+***
+#### func (*Arrangement) Arrange() (areas []*Area[ID, AreaInfo], noSolution map[ID]Item[ID])
+> 编排
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestArrangement_Arrange(t *testing.T) {
+	var a = arrangement.NewArrangement[int, *Team]()
+	a.AddArea(&Team{ID: 1}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 2 {
+			return errors.New("too many")
+		}
+		return nil
+	}))
+	a.AddArea(&Team{ID: 2}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 1 {
+			return errors.New("too many")
+		}
+		return nil
+	}))
+	a.AddArea(&Team{ID: 3}, arrangement.WithAreaConstraint[int, *Team](func(area *arrangement.Area[int, *Team], item arrangement.Item[int]) error {
+		if len(area.GetItems()) >= 2 {
+			return errors.New("too many")
+		}
+		return nil
+	}))
+	for i := 0; i < 10; i++ {
+		a.AddItem(&Player{ID: i + 1})
+	}
+	res, no := a.Arrange()
+	for _, area := range res {
+		var str = fmt.Sprintf("area %d: ", area.GetAreaInfo().ID)
+		for id := range area.GetItems() {
+			str += fmt.Sprintf("%d ", id)
+		}
+		fmt.Println(str)
+	}
+	var noStr = "no: "
+	for _, i := range no {
+		noStr += fmt.Sprintf("%d ", i.GetID())
+	}
+	fmt.Println(noStr)
+}
+
+```
+
+
+</details>
+
+
+***
 <span id="struct_Editor"></span>
 ### Editor `STRUCT`
 提供了大量辅助函数的编辑器
@@ -169,6 +247,48 @@ type Editor[ID comparable, AreaInfo any] struct {
 	retryCount int
 }
 ```
+#### func (*Editor) GetPendingCount()  int
+> 获取待编排的成员数量
+***
+#### func (*Editor) RemoveAreaItem(area *Area[ID, AreaInfo], item Item[ID])
+> 从编排区域中移除一个成员到待编排队列中，如果该成员不存在于编排区域中，则不进行任何操作
+***
+#### func (*Editor) AddAreaItem(area *Area[ID, AreaInfo], item Item[ID])
+> 将一个成员添加到编排区域中，如果该成员已经存在于编排区域中，则不进行任何操作
+***
+#### func (*Editor) GetAreas()  []*Area[ID, AreaInfo]
+> 获取所有的编排区域
+***
+#### func (*Editor) GetAreasWithScoreAsc(extra ...Item[ID])  []*Area[ID, AreaInfo]
+> 获取所有的编排区域，并按照分数升序排序
+***
+#### func (*Editor) GetAreasWithScoreDesc(extra ...Item[ID])  []*Area[ID, AreaInfo]
+> 获取所有的编排区域，并按照分数降序排序
+***
+#### func (*Editor) GetRetryCount()  int
+> 获取重试次数
+***
+#### func (*Editor) GetThresholdProgressRate()  float64
+> 获取重试次数阈值进度
+***
+#### func (*Editor) GetAllowAreas(item Item[ID])  []*Area[ID, AreaInfo]
+> 获取允许的编排区域
+***
+#### func (*Editor) GetNoAllowAreas(item Item[ID])  []*Area[ID, AreaInfo]
+> 获取不允许的编排区域
+***
+#### func (*Editor) GetBestAllowArea(item Item[ID])  *Area[ID, AreaInfo]
+> 获取最佳的允许的编排区域，如果不存在，则返回 nil
+***
+#### func (*Editor) GetBestNoAllowArea(item Item[ID])  *Area[ID, AreaInfo]
+> 获取最佳的不允许的编排区域，如果不存在，则返回 nil
+***
+#### func (*Editor) GetWorstAllowArea(item Item[ID])  *Area[ID, AreaInfo]
+> 获取最差的允许的编排区域，如果不存在，则返回 nil
+***
+#### func (*Editor) GetWorstNoAllowArea(item Item[ID])  *Area[ID, AreaInfo]
+> 获取最差的不允许的编排区域，如果不存在，则返回 nil
+***
 <span id="struct_Item"></span>
 ### Item `INTERFACE`
 编排成员

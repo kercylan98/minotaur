@@ -115,6 +115,124 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber] struct {
 	position2DStopMoveEventHandles    []Position2DStopMoveEventHandle[EID, PosType]
 }
 ```
+#### func (*TwoDimensional) MoveTo(entity TwoDimensionalEntity[EID, PosType], x PosType, y PosType)
+> 设置对象移动到特定位置
+**示例代码：**
+
+```go
+
+func ExampleTwoDimensional_MoveTo() {
+	m := moving2.NewTwoDimensional(moving2.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
+	defer func() {
+		m.Release()
+	}()
+	var wait sync.WaitGroup
+	m.RegPosition2DDestinationEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println("done")
+		wait.Done()
+	})
+	wait.Add(1)
+	entity := NewEntity(1, 100)
+	m.MoveTo(entity, 50, 30)
+	wait.Wait()
+}
+
+```
+
+***
+#### func (*TwoDimensional) StopMove(id EID)
+> 停止特定对象的移动
+**示例代码：**
+
+```go
+
+func ExampleTwoDimensional_StopMove() {
+	m := moving2.NewTwoDimensional(moving2.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
+	defer func() {
+		m.Release()
+	}()
+	var wait sync.WaitGroup
+	m.RegPosition2DChangeEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
+		fmt.Println("move")
+	})
+	m.RegPosition2DStopMoveEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println("stop")
+		wait.Done()
+	})
+	m.RegPosition2DDestinationEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println("done")
+		wait.Done()
+	})
+	wait.Add(1)
+	entity := NewEntity(1, 100)
+	m.MoveTo(entity, 50, 300)
+	m.StopMove(1)
+	wait.Wait()
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestTwoDimensional_StopMove(t *testing.T) {
+	var wait sync.WaitGroup
+	m := moving2.NewTwoDimensional(moving2.WithTwoDimensionalTimeUnit[int64, float64](time.Second))
+	defer func() {
+		m.Release()
+	}()
+	m.RegPosition2DChangeEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64], oldX, oldY float64) {
+		x, y := entity.GetPosition().GetXY()
+		fmt.Println(fmt.Sprintf("%d : %d | %f, %f > %f, %f", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli(), oldX, oldY, x, y))
+	})
+	m.RegPosition2DDestinationEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println(fmt.Sprintf("%d : %d | destination", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
+		wait.Done()
+	})
+	m.RegPosition2DStopMoveEvent(func(moving *moving2.TwoDimensional[int64, float64], entity moving2.TwoDimensionalEntity[int64, float64]) {
+		fmt.Println(fmt.Sprintf("%d : %d | stop", entity.GetTwoDimensionalEntityID(), time.Now().UnixMilli()))
+		wait.Done()
+	})
+	for i := 0; i < 10; i++ {
+		wait.Add(1)
+		entity := NewEntity(int64(i)+1, float64(10+i))
+		m.MoveTo(entity, 50, 30)
+	}
+	time.Sleep(time.Second * 1)
+	for i := 0; i < 10; i++ {
+		m.StopMove(int64(i) + 1)
+	}
+	wait.Wait()
+}
+
+```
+
+
+</details>
+
+
+***
+#### func (*TwoDimensional) RegPosition2DChangeEvent(handle Position2DChangeEventHandle[EID, PosType])
+> 在对象位置改变时将执行注册的事件处理函数
+***
+#### func (*TwoDimensional) OnPosition2DChangeEvent(entity TwoDimensionalEntity[EID, PosType], oldX PosType, oldY PosType)
+***
+#### func (*TwoDimensional) RegPosition2DDestinationEvent(handle Position2DDestinationEventHandle[EID, PosType])
+> 在对象到达终点时将执行被注册的事件处理函数
+***
+#### func (*TwoDimensional) OnPosition2DDestinationEvent(entity TwoDimensionalEntity[EID, PosType])
+***
+#### func (*TwoDimensional) RegPosition2DStopMoveEvent(handle Position2DStopMoveEventHandle[EID, PosType])
+> 在对象停止移动时将执行被注册的事件处理函数
+***
+#### func (*TwoDimensional) OnPosition2DStopMoveEvent(entity TwoDimensionalEntity[EID, PosType])
+***
+#### func (*TwoDimensional) Release()
+> 释放对象移动对象所占用的资源
+***
 <span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`
 2D移动对象接口定义

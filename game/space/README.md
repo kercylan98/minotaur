@@ -70,6 +70,132 @@ type RoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[E
 	owner           *EntityID
 }
 ```
+#### func (*RoomController) HasOwner()  bool
+> 判断是否有房主
+***
+#### func (*RoomController) IsOwner(entityId EntityID)  bool
+> 判断是否为房主
+***
+#### func (*RoomController) GetOwner()  Entity
+> 获取房主
+***
+#### func (*RoomController) GetOwnerID()  EntityID
+> 获取房主 ID
+***
+#### func (*RoomController) GetOwnerExist() ( Entity,  bool)
+> 获取房间，并返回房主是否存在的状态
+***
+#### func (*RoomController) SetOwner(entityId EntityID)
+> 设置房主
+***
+#### func (*RoomController) DelOwner()
+> 删除房主，将房间设置为无主的状态
+***
+#### func (*RoomController) JoinSeat(entityId EntityID, seat ...int)  error
+> 设置特定对象加入座位，当具体的座位不存在的时候，将会自动分配座位
+>   - 当目标座位存在玩家或未添加到房间中的时候，将会返回错误
+***
+#### func (*RoomController) LeaveSeat(entityId EntityID)
+> 离开座位
+***
+#### func (*RoomController) GetSeat(entityId EntityID)  int
+> 获取座位
+***
+#### func (*RoomController) GetFirstNotEmptySeat()  int
+> 获取第一个非空座位号，如果没有非空座位，将返回 UnknownSeat
+***
+#### func (*RoomController) GetFirstEmptySeatEntity() (entity Entity)
+> 获取第一个空座位上的实体，如果没有空座位，将返回空实体
+***
+#### func (*RoomController) GetRandomEntity() (entity Entity)
+> 获取随机实体，如果房间中没有实体，将返回空实体
+***
+#### func (*RoomController) GetNotEmptySeat()  []int
+> 获取非空座位
+***
+#### func (*RoomController) GetEmptySeat()  []int
+> 获取空座位
+>   - 空座位需要在有对象离开座位后才可能出现
+***
+#### func (*RoomController) HasSeat(entityId EntityID)  bool
+> 判断是否有座位
+***
+#### func (*RoomController) GetSeatEntityCount()  int
+> 获取座位上的实体数量
+***
+#### func (*RoomController) GetSeatEntities()  map[EntityID]Entity
+> 获取座位上的实体
+***
+#### func (*RoomController) GetSeatEntitiesByOrdered()  []Entity
+> 有序的获取座位上的实体
+***
+#### func (*RoomController) GetSeatEntitiesByOrderedAndContainsEmpty()  []Entity
+> 获取有序的座位上的实体，包含空座位
+***
+#### func (*RoomController) GetSeatEntity(seat int) (entity Entity)
+> 获取座位上的实体
+***
+#### func (*RoomController) ContainEntity(id EntityID)  bool
+> 房间内是否包含实体
+***
+#### func (*RoomController) GetRoom()  Room
+> 获取原始房间实例，该实例为被接管的房间的原始实例
+***
+#### func (*RoomController) GetEntities()  map[EntityID]Entity
+> 获取所有实体
+***
+#### func (*RoomController) HasEntity(id EntityID)  bool
+> 判断是否有实体
+***
+#### func (*RoomController) GetEntity(id EntityID)  Entity
+> 获取实体
+***
+#### func (*RoomController) GetEntityExist(id EntityID) ( Entity,  bool)
+> 获取实体，并返回实体是否存在的状态
+***
+#### func (*RoomController) GetEntityIDs()  []EntityID
+> 获取所有实体ID
+***
+#### func (*RoomController) GetEntityCount()  int
+> 获取实体数量
+***
+#### func (*RoomController) ChangePassword(password *string)
+> 修改房间密码
+>   - 当房间密码为 nil 时，将会取消密码
+***
+#### func (*RoomController) AddEntity(entity Entity)  error
+> 添加实体，如果房间存在密码，应使用 AddEntityByPassword 函数进行添加，否则将始终返回 ErrRoomPasswordNotMatch 错误
+>   - 当房间已满时，将会返回 ErrRoomFull 错误
+***
+#### func (*RoomController) AddEntityByPassword(entity Entity, password string)  error
+> 通过房间密码添加实体到该房间中
+>   - 当未设置房间密码时，password 参数将会被忽略
+>   - 当房间密码不匹配时，将会返回 ErrRoomPasswordNotMatch 错误
+>   - 当房间已满时，将会返回 ErrRoomFull 错误
+***
+#### func (*RoomController) RemoveEntity(id EntityID)
+> 移除实体
+>   - 当实体被移除时如果实体在座位上，将会自动离开座位
+>   - 如果实体为房主，将会根据 RoomControllerOptions.WithOwnerInherit 函数的设置进行继承
+***
+#### func (*RoomController) RemoveAllEntities()
+> 移除该房间中的所有实体
+>   - 当实体被移除时如果实体在座位上，将会自动离开座位
+>   - 如果实体为房主，将会根据 RoomControllerOptions.WithOwnerInherit 函数的设置进行继承
+***
+#### func (*RoomController) Destroy()
+> 销毁房间，房间会从 RoomManager 中移除，同时所有房间的实体、座位等数据都会被清空
+>   - 该函数与 RoomManager.DestroyRoom 相同，RoomManager.DestroyRoom 函数为该函数的快捷方式
+***
+#### func (*RoomController) GetRoomManager()  *RoomManager[EntityID, RoomID, Entity, Room]
+> 获取该房间控制器所属的房间管理器
+***
+#### func (*RoomController) GetRoomID()  RoomID
+> 获取房间 ID
+***
+#### func (*RoomController) Broadcast(handler func ( Entity), conditions ...func ( Entity)  bool)
+> 广播，该函数会将所有房间中满足 conditions 的对象传入 handler 中进行处理
+***
 <span id="struct_RoomManager"></span>
 ### RoomManager `STRUCT`
 房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
@@ -81,6 +207,53 @@ type RoomManager[EntityID comparable, RoomID comparable, Entity generic.IdR[Enti
 	rooms        map[RoomID]*RoomController[EntityID, RoomID, Entity, Room]
 }
 ```
+#### func (*RoomManager) AssumeControl(room Room, options ...*RoomControllerOptions[EntityID, RoomID, Entity, Room])  *RoomController[EntityID, RoomID, Entity, Room]
+> 将房间控制权交由 RoomManager 接管，返回 RoomController 实例
+>   - 当任何房间需要被 RoomManager 管理时，都应该调用该方法获取到 RoomController 实例后进行操作
+>   - 房间被接管后需要在释放房间控制权时调用 RoomController.Destroy 方法，否则将会导致 RoomManager 一直持有房间资源
+**示例代码：**
+
+```go
+
+func ExampleRoomManager_AssumeControl() {
+	var rm = space.NewRoomManager[string, int64, *Player, *Room]()
+	var room = &Room{Id: 1}
+	var controller = rm.AssumeControl(room)
+	if err := controller.AddEntity(&Player{Id: "1"}); err != nil {
+		panic(err)
+	}
+	fmt.Println(controller.GetEntityCount())
+}
+
+```
+
+***
+#### func (*RoomManager) DestroyRoom(id RoomID)
+> 销毁房间，该函数为 RoomController.Destroy 的快捷方式
+***
+#### func (*RoomManager) GetRoom(id RoomID)  *RoomController[EntityID, RoomID, Entity, Room]
+> 通过房间 ID 获取对应房间的控制器 RoomController，当房间不存在时将返回 nil
+***
+#### func (*RoomManager) GetRooms()  map[RoomID]*RoomController[EntityID, RoomID, Entity, Room]
+> 获取包含所有房间 ID 到对应控制器 RoomController 的映射
+>   - 返回值的 map 为拷贝对象，可安全的对其进行增删等操作
+***
+#### func (*RoomManager) GetRoomCount()  int
+> 获取房间管理器接管的房间数量
+***
+#### func (*RoomManager) GetRoomIDs()  []RoomID
+> 获取房间管理器接管的所有房间 ID
+***
+#### func (*RoomManager) HasEntity(entityId EntityID)  bool
+> 判断特定对象是否在任一房间中，当对象不在任一房间中时将返回 false
+***
+#### func (*RoomManager) GetEntityRooms(entityId EntityID)  map[RoomID]*RoomController[EntityID, RoomID, Entity, Room]
+> 获取特定对象所在的房间，返回值为房间 ID 到对应控制器 RoomController 的映射
+>   - 由于一个对象可能在多个房间中，因此返回值为 map 类型
+***
+#### func (*RoomManager) Broadcast(handler func ( Entity), conditions ...func ( Entity)  bool)
+> 向所有房间对象广播消息，该方法将会遍历所有房间控制器并调用 RoomController.Broadcast 方法
+***
 <span id="struct_RoomAssumeControlEventHandle"></span>
 ### RoomAssumeControlEventHandle `STRUCT`
 
@@ -98,3 +271,14 @@ type RoomControllerOptions[EntityID comparable, RoomID comparable, Entity generi
 	ownerInheritHandler func(controller *RoomController[EntityID, RoomID, Entity, Room]) *EntityID
 }
 ```
+#### func (*RoomControllerOptions) WithOwnerInherit(inherit bool, inheritHandler ...func (controller *RoomController[EntityID, RoomID, Entity, Room])  *EntityID)  *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+> 设置房间所有者是否继承，默认为 false
+>   - inherit: 是否继承，当未设置 inheritHandler 且 inherit 为 true 时，将会按照随机或根据座位号顺序继承房间所有者
+>   - inheritHandler: 继承处理函数，当 inherit 为 true 时，该函数将会被调用，传入当前房间中的所有实体，返回值为新的房间所有者
+***
+#### func (*RoomControllerOptions) WithMaxEntityCount(maxEntityCount int)  *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+> 设置房间最大实体数量
+***
+#### func (*RoomControllerOptions) WithPassword(password string)  *RoomControllerOptions[EntityID, RoomID, Entity, Room]
+> 设置房间密码
+***

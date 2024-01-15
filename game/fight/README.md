@@ -65,6 +65,63 @@ type TurnBased[CampID comparable, EntityID comparable, Camp generic.IdR[CampID],
 	closed               bool
 }
 ```
+#### func (*TurnBased) Close()
+> 关闭回合制
+***
+#### func (*TurnBased) AddCamp(camp Camp, entity Entity, entities ...Entity)
+> 添加阵营
+***
+#### func (*TurnBased) SetActionTimeout(actionTimeoutHandler func ( Camp,  Entity)  time.Duration)
+> 设置行动超时时间处理函数
+>   - 默认情况下行动超时时间函数将始终返回 0
+***
+#### func (*TurnBased) Run()
+> 运行
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestTurnBased_Run(t *testing.T) {
+	tbi := fight.NewTurnBased[string, string, *Camp, *Entity](func(camp *Camp, entity *Entity) time.Duration {
+		return time.Duration(float64(time.Second) / entity.speed)
+	})
+	tbi.SetActionTimeout(func(camp *Camp, entity *Entity) time.Duration {
+		return time.Second * 5
+	})
+	tbi.RegTurnBasedEntityActionTimeoutEvent(func(controller fight.TurnBasedControllerInfo[string, string, *Camp, *Entity]) {
+		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "阵营", controller.GetCamp().GetId(), "实体", controller.GetEntity().GetId(), "超时")
+	})
+	tbi.RegTurnBasedRoundChangeEvent(func(controller fight.TurnBasedControllerInfo[string, string, *Camp, *Entity]) {
+		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "回合切换")
+	})
+	tbi.RegTurnBasedEntitySwitchEvent(func(controller fight.TurnBasedControllerAction[string, string, *Camp, *Entity]) {
+		switch controller.GetEntity().GetId() {
+		case "1":
+			go func() {
+				time.Sleep(time.Second * 2)
+				controller.Finish()
+			}()
+		case "2":
+			controller.Refresh(time.Second)
+		case "4":
+			controller.Stop()
+		}
+		t.Log("时间", time.Now().Unix(), "回合", controller.GetRound(), "阵营", controller.GetCamp().GetId(), "实体", controller.GetEntity().GetId(), "开始行动")
+	})
+	tbi.AddCamp(&Camp{id: "1"}, &Entity{id: "1", speed: 1}, &Entity{id: "2", speed: 1})
+	tbi.AddCamp(&Camp{id: "2"}, &Entity{id: "3", speed: 1}, &Entity{id: "4", speed: 1})
+	tbi.Run()
+}
+
+```
+
+
+</details>
+
+
+***
 <span id="struct_TurnBasedControllerInfo"></span>
 ### TurnBasedControllerInfo `INTERFACE`
 
@@ -97,6 +154,34 @@ type TurnBasedController[CampID comparable, EntityID comparable, Camp generic.Id
 	tb *TurnBased[CampID, EntityID, Camp, Entity]
 }
 ```
+#### func (*TurnBasedController) GetRound()  int
+> 获取当前回合数
+***
+#### func (*TurnBasedController) GetCamp()  Camp
+> 获取当前操作阵营
+***
+#### func (*TurnBasedController) GetEntity()  Entity
+> 获取当前操作实体
+***
+#### func (*TurnBasedController) GetActionTimeoutDuration()  time.Duration
+> 获取当前行动超时时长
+***
+#### func (*TurnBasedController) GetActionStartTime()  time.Time
+> 获取当前行动开始时间
+***
+#### func (*TurnBasedController) GetActionEndTime()  time.Time
+> 获取当前行动结束时间
+***
+#### func (*TurnBasedController) Finish()
+> 结束当前操作，将立即切换到下一个操作实体
+***
+#### func (*TurnBasedController) Stop()
+> 在当前回合执行完毕后停止回合进程
+***
+#### func (*TurnBasedController) Refresh(duration time.Duration)  time.Time
+> 刷新当前操作实体的行动超时时间
+>   - 当不在行动阶段时，将返回 time.Time 零值
+***
 <span id="struct_TurnBasedEntitySwitchEventHandler"></span>
 ### TurnBasedEntitySwitchEventHandler `STRUCT`
 

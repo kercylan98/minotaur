@@ -59,10 +59,8 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	abort         chan struct{}
 }
 
-// SetProducerDoneHandler 设置特定生产者所有消息处理完成时的回调函数
+// SetProducerDoneHandler 设置特定生产者的所有消息处理完成时的回调函数
 //   - 如果 handler 为 nil，则会删除该生产者的回调函数
-//
-// 需要注意的是，该 handler 中
 func (d *Dispatcher[P, M]) SetProducerDoneHandler(p P, handler func(p P, dispatcher *Action[P, M])) *Dispatcher[P, M] {
 	d.lock.Lock()
 	if handler == nil {

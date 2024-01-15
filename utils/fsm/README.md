@@ -85,6 +85,33 @@ type FSM[State comparable, Data any] struct {
 	exitAfterEventHandles   map[State][]func(state *FSM[State, Data])
 }
 ```
+#### func (*FSM) Update()
+> 触发当前状态
+***
+#### func (*FSM) Register(state State, options ...Option[State, Data])
+> 注册状态
+***
+#### func (*FSM) Unregister(state State)
+> 反注册状态
+***
+#### func (*FSM) HasState(state State)  bool
+> 检查状态机是否存在特定状态
+***
+#### func (*FSM) Change(state State)
+> 改变状态机状态到新的状态
+***
+#### func (*FSM) Current() (state State)
+> 获取当前状态
+***
+#### func (*FSM) GetData()  Data
+> 获取状态机数据
+***
+#### func (*FSM) IsZero()  bool
+> 检查状态机是否无状态
+***
+#### func (*FSM) PrevIsZero()  bool
+> 检查状态机上一个状态是否无状态
+***
 <span id="struct_Option"></span>
 ### Option `STRUCT`
 

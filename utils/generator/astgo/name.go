@@ -14,7 +14,8 @@ func newName(expr ast.Expr) string {
 	//case *ast.FuncType:
 	//case *ast.InterfaceType:
 	//case *ast.MapType:
-	//case *ast.ChanType:
+	case *ast.ChanType:
+		str.WriteString(newName(e.Value))
 	case *ast.Ident:
 		str.WriteString(e.Name)
 	case *ast.Ellipsis:
@@ -28,13 +29,17 @@ func newName(expr ast.Expr) string {
 	case *ast.IndexExpr:
 		str.WriteString(newName(e.X))
 	case *ast.IndexListExpr:
+		str.WriteString(newName(e.X))
 	case *ast.SliceExpr:
-	case *ast.TypeAssertExpr:
-	case *ast.CallExpr:
+		str.WriteString(newName(e.X))
+	//case *ast.TypeAssertExpr:
+	//case *ast.CallExpr:
 	case *ast.StarExpr:
 		str.WriteString(newName(e.X))
 	case *ast.UnaryExpr:
+		str.WriteString(newName(e.X))
 	case *ast.BinaryExpr:
+		str.WriteString(newName(e.X))
 	}
 	return str.String()
 }

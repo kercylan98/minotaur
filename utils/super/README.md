@@ -940,6 +940,12 @@ type Matcher[Value any, Result any] struct {
 	d     bool
 }
 ```
+#### func (*Matcher) Case(value Value, result Result)  *Matcher[Value, Result]
+> 匹配
+***
+#### func (*Matcher) Default(value Result)  Result
+> 默认
+***
 <span id="struct_Permission"></span>
 ### Permission `STRUCT`
 
@@ -949,6 +955,18 @@ type Permission[Code generic.Integer, EntityID comparable] struct {
 	l           sync.RWMutex
 }
 ```
+#### func (*Permission) HasPermission(entityId EntityID, permission Code)  bool
+> 是否有权限
+***
+#### func (*Permission) AddPermission(entityId EntityID, permission ...Code)
+> 添加权限
+***
+#### func (*Permission) RemovePermission(entityId EntityID, permission ...Code)
+> 移除权限
+***
+#### func (*Permission) SetPermission(entityId EntityID, permission ...Code)
+> 设置权限
+***
 <span id="struct_StackGo"></span>
 ### StackGo `STRUCT`
 用于获取上一个协程调用的堆栈信息

@@ -947,6 +947,8 @@ type LineSegmentCap[V generic.SignedNumber, Data any] struct {
 	Data Data
 }
 ```
+#### func (*LineSegmentCap) GetData()  Data
+***
 <span id="struct_Point"></span>
 ### Point `STRUCT`
 表示了一个由 x、y 坐标组成的点
@@ -1010,6 +1012,9 @@ type PointCap[V generic.SignedNumber, D any] struct {
 	Data D
 }
 ```
+#### func (PointCap) GetData()  D
+> 获取数据
+***
 <span id="struct_Shape"></span>
 ### Shape `STRUCT`
 通过多个点表示了一个形状

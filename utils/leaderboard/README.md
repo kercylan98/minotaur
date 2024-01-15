@@ -76,6 +76,107 @@ type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
 	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }
 ```
+#### func (*BinarySearch) Competitor(competitorId CompetitorID, score Score)
+> 声明排行榜竞争者
+>   - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_Competitor() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	for rank, competitor := range bs.GetAllCompetitor() {
+		fmt.Println(rank, competitor)
+	}
+}
+
+```
+
+***
+#### func (*BinarySearch) RemoveCompetitor(competitorId CompetitorID)
+> 删除特定竞争者
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_RemoveCompetitor() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	bs.RemoveCompetitor("competitor_ 1")
+	for rank, competitor := range bs.GetAllCompetitor() {
+		fmt.Println(rank, competitor)
+	}
+}
+
+```
+
+***
+#### func (*BinarySearch) Size()  int
+> 获取竞争者数量
+***
+#### func (*BinarySearch) GetRankDefault(competitorId CompetitorID, defaultValue int)  int
+> 获取竞争者排名，如果竞争者不存在则返回默认值
+>   - 排名从 0 开始
+***
+#### func (*BinarySearch) GetRank(competitorId CompetitorID) ( int,  error)
+> 获取竞争者排名
+>   - 排名从 0 开始
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_GetRank() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	fmt.Println(bs.GetRank("competitor_ 1"))
+}
+
+```
+
+***
+#### func (*BinarySearch) GetCompetitor(rank int) (competitorId CompetitorID, err error)
+> 获取特定排名的竞争者
+***
+#### func (*BinarySearch) GetCompetitorWithRange(start int, end int) ( []CompetitorID,  error)
+> 获取第start名到第end名竞争者
+***
+#### func (*BinarySearch) GetScore(competitorId CompetitorID) (score Score, err error)
+> 获取竞争者成绩
+***
+#### func (*BinarySearch) GetScoreDefault(competitorId CompetitorID, defaultValue Score)  Score
+> 获取竞争者成绩，不存在时返回默认值
+***
+#### func (*BinarySearch) GetAllCompetitor()  []CompetitorID
+> 获取所有竞争者ID
+>   - 结果为名次有序的
+***
+#### func (*BinarySearch) Clear()
+> 清空排行榜
+***
+#### func (*BinarySearch) Cmp(s1 Score, s2 Score)  int
+***
+#### func (*BinarySearch) UnmarshalJSON(bytes []byte)  error
+***
+#### func (*BinarySearch) MarshalJSON() ( []byte,  error)
+***
+#### func (*BinarySearch) RegRankChangeEvent(handle BinarySearchRankChangeEventHandle[CompetitorID, Score])
+***
+#### func (*BinarySearch) OnRankChangeEvent(competitorId CompetitorID, oldRank int, newRank int, oldScore Score, newScore Score)
+***
+#### func (*BinarySearch) RegRankClearBeforeEvent(handle BinarySearchRankClearBeforeEventHandle[CompetitorID, Score])
+***
+#### func (*BinarySearch) OnRankClearBeforeEvent()
+***
 <span id="struct_BinarySearchRankChangeEventHandle"></span>
 ### BinarySearchRankChangeEventHandle `STRUCT`
 

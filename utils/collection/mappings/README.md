@@ -46,3 +46,55 @@ type SyncMap[K comparable, V any] struct {
 	atom bool
 }
 ```
+#### func (*SyncMap) Set(key K, value V)
+> 设置一个值
+***
+#### func (*SyncMap) Get(key K)  V
+> 获取一个值
+***
+#### func (*SyncMap) Atom(handle func (m map[K]V))
+> 原子操作
+***
+#### func (*SyncMap) Exist(key K)  bool
+> 判断是否存在
+***
+#### func (*SyncMap) GetExist(key K) ( V,  bool)
+> 获取一个值并判断是否存在
+***
+#### func (*SyncMap) Delete(key K)
+> 删除一个值
+***
+#### func (*SyncMap) DeleteGet(key K)  V
+> 删除一个值并返回
+***
+#### func (*SyncMap) DeleteGetExist(key K) ( V,  bool)
+> 删除一个值并返回是否存在
+***
+#### func (*SyncMap) DeleteExist(key K)  bool
+> 删除一个值并返回是否存在
+***
+#### func (*SyncMap) Clear()
+> 清空
+***
+#### func (*SyncMap) ClearHandle(handle func (key K, value V))
+> 清空并处理
+***
+#### func (*SyncMap) Range(handle func (key K, value V)  bool)
+> 遍历所有值，如果 handle 返回 true 则停止遍历
+***
+#### func (*SyncMap) Keys()  []K
+> 获取所有的键
+***
+#### func (*SyncMap) Slice()  []V
+> 获取所有的值
+***
+#### func (*SyncMap) Map()  map[K]V
+> 转换为普通 map
+***
+#### func (*SyncMap) Size()  int
+> 获取数量
+***
+#### func (*SyncMap) MarshalJSON() ( []byte,  error)
+***
+#### func (*SyncMap) UnmarshalJSON(bytes []byte)  error
+***
