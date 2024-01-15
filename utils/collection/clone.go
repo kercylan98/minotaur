@@ -40,7 +40,8 @@ func CloneSliceN[S ~[]V, V any](slice S, n int) []S {
 	return result
 }
 
-// CloneMapN 克隆 map 为 n 个 map 进行返回
+// CloneMapN 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
+//   - 当 m 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 func CloneMapN[M ~map[K]V, K comparable, V any](m M, n int) []M {
 	if m == nil {
 		return nil
@@ -57,7 +58,9 @@ func CloneMapN[M ~map[K]V, K comparable, V any](m M, n int) []M {
 	return result
 }
 
-// CloneSlices 克隆多个切片
+// CloneSlices 对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
+//   - 当 slices 为空时，将会返回 nil
+//   - 该函数相当于使用 CloneSlice 函数一次性对多个切片进行克隆
 func CloneSlices[S ~[]V, V any](slices ...S) []S {
 	if slices == nil {
 		return nil
@@ -70,7 +73,9 @@ func CloneSlices[S ~[]V, V any](slices ...S) []S {
 	return result
 }
 
-// CloneMaps 克隆多个 map
+// CloneMaps 对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
+//   - 当 maps 为空时，将会返回 nil
+//   - 该函数相当于使用 CloneMap 函数一次性对多个 map 进行克隆
 func CloneMaps[M ~map[K]V, K comparable, V any](maps ...M) []M {
 	if maps == nil {
 		return nil

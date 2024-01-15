@@ -19,9 +19,9 @@ collection 定义了各种对于集合操作有用的各种函数
 |[CloneSlice](#CloneSlice)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
 |[CloneMap](#CloneMap)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
 |[CloneSliceN](#CloneSliceN)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
-|[CloneMapN](#CloneMapN)|克隆 map 为 n 个 map 进行返回
-|[CloneSlices](#CloneSlices)|克隆多个切片
-|[CloneMaps](#CloneMaps)|克隆多个 map
+|[CloneMapN](#CloneMapN)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
+|[CloneSlices](#CloneSlices)|对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
+|[CloneMaps](#CloneMaps)|对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
 |[InSlice](#InSlice)|检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 |[InComparableSlice](#InComparableSlice)|检查 v 是否被包含在 slice 中
 |[AllInSlice](#AllInSlice)|检查 values 中的所有元素是否均被包含在 slice 中，当 handler 返回 true 时，表示 values 中的某个元素和 slice 中的某个元素相匹配
@@ -133,8 +133,8 @@ collection 定义了各种对于集合操作有用的各种函数
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[ComparisonHandler](#struct_ComparisonHandler)|暂无描述...
-|`STRUCT`|[OrderedValueGetter](#struct_OrderedValueGetter)|暂无描述...
+|`STRUCT`|[ComparisonHandler](#struct_ComparisonHandler)|用于比较 `source` 和 `target` 两个值是否相同的比较函数
+|`STRUCT`|[OrderedValueGetter](#struct_OrderedValueGetter)|用于获取 v 的可排序字段值的函数
 
 </details>
 
@@ -314,9 +314,15 @@ func TestCloneSliceN(t *testing.T) {
 ***
 #### func CloneMapN\[M ~map[K]V, K comparable, V any\](m M, n int) []M
 <span id="CloneMapN"></span>
-> 克隆 map 为 n 个 map 进行返回
+> 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
+>   - 当 m 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 
 **示例代码：**
+
+map 克隆为 2 个新的 map，将会得到一个新的 map result，而 result 和 map 将不会有任何关联，但是如果 map 中的元素是引用类型，那么 result 中的元素将会和 map 中的元素指向同一个地址
+  - result 的结果为 [map[1:1 2:2 3:3] map[1:1 2:2 3:3]] `无序的 Key-Value 对`
+  - 示例中的结果将会输出 2
+
 
 ```go
 
@@ -370,9 +376,15 @@ func TestCloneMapN(t *testing.T) {
 ***
 #### func CloneSlices\[S ~[]V, V any\](slices ...S) []S
 <span id="CloneSlices"></span>
-> 克隆多个切片
+> 对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
+>   - 当 slices 为空时，将会返回 nil
+>   - 该函数相当于使用 CloneSlice 函数一次性对多个切片进行克隆
 
 **示例代码：**
+
+slice 克隆为 2 个新的 slice，将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址
+  - result 的结果为 [[1 2 3] [1 2 3]]
+
 
 ```go
 
@@ -423,9 +435,15 @@ func TestCloneSlices(t *testing.T) {
 ***
 #### func CloneMaps\[M ~map[K]V, K comparable, V any\](maps ...M) []M
 <span id="CloneMaps"></span>
-> 克隆多个 map
+> 对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
+>   - 当 maps 为空时，将会返回 nil
+>   - 该函数相当于使用 CloneMap 函数一次性对多个 map 进行克隆
 
 **示例代码：**
+
+map 克隆为 2 个新的 map，将会得到一个新的 map result，而 result 和 map 将不会有任何关联，但是如果 map 中的元素是引用类型，那么 result 中的元素将会和 map 中的元素指向同一个地址
+  - result 的结果为 [map[1:1 2:2 3:3] map[1:1 2:2 3:3]] `无序的 Key-Value 对`
+
 
 ```go
 
@@ -5539,13 +5557,14 @@ func TestShuffleByClone(t *testing.T) {
 ***
 <span id="struct_ComparisonHandler"></span>
 ### ComparisonHandler `STRUCT`
-
+用于比较 `source` 和 `target` 两个值是否相同的比较函数
+  - 该函数接受两个参数，分别是源值和目标值，返回 true 的情况下即表示两者相同
 ```go
 type ComparisonHandler[V any] func(source V) bool
 ```
 <span id="struct_OrderedValueGetter"></span>
 ### OrderedValueGetter `STRUCT`
-
+用于获取 v 的可排序字段值的函数
 ```go
 type OrderedValueGetter[V any, N generic.Ordered] func(v V) N
 ```
