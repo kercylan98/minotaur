@@ -24,9 +24,9 @@ deck 包中的内容用于针对一堆内容的管理，适用但不限于牌堆
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Deck](#deck)|甲板，用于针对一堆 Group 进行管理的数据结构
-|`STRUCT`|[Group](#group)|甲板中的组，用于针对一堆内容进行管理的数据结构
-|`INTERFACE`|[Item](#item)|甲板成员
+|`STRUCT`|[Deck](#struct_Deck)|甲板，用于针对一堆 Group 进行管理的数据结构
+|`STRUCT`|[Group](#struct_Group)|甲板中的组，用于针对一堆内容进行管理的数据结构
+|`INTERFACE`|[Item](#struct_Item)|甲板成员
 
 </details>
 
@@ -43,6 +43,7 @@ deck 包中的内容用于针对一堆内容的管理，适用但不限于牌堆
 > 创建一个新的组
 
 ***
+<span id="struct_Deck"></span>
 ### Deck `STRUCT`
 甲板，用于针对一堆 Group 进行管理的数据结构
 ```go
@@ -72,6 +73,7 @@ type Deck[I Item] struct {
 #### func (*Deck) GetPrev(guid int64)  *Group[I]
 > 获取特定组的上一个组
 ***
+<span id="struct_Group"></span>
 ### Group `STRUCT`
 甲板中的组，用于针对一堆内容进行管理的数据结构
 ```go
@@ -126,6 +128,7 @@ type Group[I Item] struct {
 #### func (*Group) GetItem(index int)  I
 > 获取组中的指定内容
 ***
+<span id="struct_Item"></span>
 ### Item `INTERFACE`
 甲板成员
 ```go

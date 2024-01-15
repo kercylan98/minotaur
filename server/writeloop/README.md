@@ -24,9 +24,9 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Channel](#channel)|基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
-|`STRUCT`|[Unbounded](#unbounded)|写循环
-|`INTERFACE`|[WriteLoop](#writeloop)|暂无描述...
+|`STRUCT`|[Channel](#struct_Channel)|基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
+|`STRUCT`|[Unbounded](#struct_Unbounded)|写循环
+|`INTERFACE`|[WriteLoop](#struct_WriteLoop)|暂无描述...
 
 </details>
 
@@ -106,6 +106,7 @@ func TestNewUnbounded(t *testing.T) {
 
 
 ***
+<span id="struct_Channel"></span>
 ### Channel `STRUCT`
 基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
 ```go
@@ -119,6 +120,7 @@ type Channel[T any] struct {
 #### func (*Channel) Close()
 > 关闭写循环
 ***
+<span id="struct_Unbounded"></span>
 ### Unbounded `STRUCT`
 写循环
   - 用于将数据并发安全的写入到底层连接
@@ -217,6 +219,7 @@ func TestUnbounded_Close(t *testing.T) {
 
 
 ***
+<span id="struct_WriteLoop"></span>
 ### WriteLoop `INTERFACE`
 
 ```go

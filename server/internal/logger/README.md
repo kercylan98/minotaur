@@ -16,14 +16,15 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Ants](#ants)|暂无描述...
-|`STRUCT`|[GNet](#gnet)|暂无描述...
+|`STRUCT`|[Ants](#struct_Ants)|暂无描述...
+|`STRUCT`|[GNet](#struct_GNet)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
+<span id="struct_Ants"></span>
 ### Ants `STRUCT`
 
 ```go
@@ -31,6 +32,7 @@ type Ants struct{}
 ```
 #### func (*Ants) Printf(format string, args ...interface {})
 ***
+<span id="struct_GNet"></span>
 ### GNet `STRUCT`
 
 ```go

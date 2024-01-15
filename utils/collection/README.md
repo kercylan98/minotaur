@@ -133,8 +133,8 @@ collection 用于对 input 和 map 操作的工具函数
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[ComparisonHandler](#comparisonhandler)|暂无描述...
-|`STRUCT`|[OrderedValueGetter](#orderedvaluegetter)|暂无描述...
+|`STRUCT`|[ComparisonHandler](#struct_ComparisonHandler)|暂无描述...
+|`STRUCT`|[OrderedValueGetter](#struct_OrderedValueGetter)|暂无描述...
 
 </details>
 
@@ -5411,11 +5411,13 @@ func TestShuffleByClone(t *testing.T) {
 
 
 ***
+<span id="struct_ComparisonHandler"></span>
 ### ComparisonHandler `STRUCT`
 
 ```go
 type ComparisonHandler[V any] func(source V) bool
 ```
+<span id="struct_OrderedValueGetter"></span>
 ### OrderedValueGetter `STRUCT`
 
 ```go

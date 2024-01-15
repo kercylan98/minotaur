@@ -29,8 +29,8 @@ configuration 基于配置导表功能实现的配置加载及刷新功能
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[RefreshEventHandle](#refresheventhandle)|配置刷新事件处理函数
-|`INTERFACE`|[Loader](#loader)|配置加载器
+|`STRUCT`|[RefreshEventHandle](#struct_RefreshEventHandle)|配置刷新事件处理函数
+|`INTERFACE`|[Loader](#struct_Loader)|配置加载器
 
 </details>
 
@@ -75,11 +75,13 @@ configuration 基于配置导表功能实现的配置加载及刷新功能
 <span id="OnConfigRefreshEvent"></span>
 
 ***
+<span id="struct_RefreshEventHandle"></span>
 ### RefreshEventHandle `STRUCT`
 配置刷新事件处理函数
 ```go
 type RefreshEventHandle func()
 ```
+<span id="struct_Loader"></span>
 ### Loader `INTERFACE`
 配置加载器
 ```go

@@ -28,8 +28,8 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[FSM](#fsm)|状态机
-|`STRUCT`|[Option](#option)|暂无描述...
+|`STRUCT`|[FSM](#struct_FSM)|状态机
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
@@ -69,6 +69,7 @@
 >   - 该阶段状态机的状态为新的状态，而非退出前的状态
 
 ***
+<span id="struct_FSM"></span>
 ### FSM `STRUCT`
 状态机
 ```go
@@ -84,6 +85,7 @@ type FSM[State comparable, Data any] struct {
 	exitAfterEventHandles   map[State][]func(state *FSM[State, Data])
 }
 ```
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go

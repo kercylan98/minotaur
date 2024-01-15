@@ -23,7 +23,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[SyncMap](#syncmap)|是基于 sync.RWMutex 实现的线程安全的 map
+|`STRUCT`|[SyncMap](#struct_SyncMap)|是基于 sync.RWMutex 实现的线程安全的 map
 
 </details>
 
@@ -35,6 +35,7 @@
 > 创建一个 SyncMap
 
 ***
+<span id="struct_SyncMap"></span>
 ### SyncMap `STRUCT`
 是基于 sync.RWMutex 实现的线程安全的 map
   - 适用于要考虑并发读写但是并发读写的频率不高的情况

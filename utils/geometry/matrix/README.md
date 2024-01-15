@@ -23,7 +23,7 @@ matrix 提供了一个简单的二维数组的实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Matrix](#matrix)|二维矩阵
+|`STRUCT`|[Matrix](#struct_Matrix)|二维矩阵
 
 </details>
 
@@ -37,6 +37,7 @@ matrix 提供了一个简单的二维数组的实现
 >   - 该矩阵为XY，而非YX
 
 ***
+<span id="struct_Matrix"></span>
 ### Matrix `STRUCT`
 二维矩阵
 ```go

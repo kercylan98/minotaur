@@ -43,17 +43,17 @@ activity 活动状态管理
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Activity](#activity)|活动描述
-|`STRUCT`|[Controller](#controller)|活动控制器
-|`INTERFACE`|[BasicActivityController](#basicactivitycontroller)|暂无描述...
-|`INTERFACE`|[NoneDataActivityController](#nonedataactivitycontroller)|无数据活动控制器
-|`INTERFACE`|[GlobalDataActivityController](#globaldataactivitycontroller)|全局数据活动控制器
-|`INTERFACE`|[EntityDataActivityController](#entitydataactivitycontroller)|实体数据活动控制器
-|`INTERFACE`|[GlobalAndEntityDataActivityController](#globalandentitydataactivitycontroller)|全局数据和实体数据活动控制器
-|`STRUCT`|[DataMeta](#datameta)|全局活动数据
-|`STRUCT`|[EntityDataMeta](#entitydatameta)|活动实体数据
-|`STRUCT`|[UpcomingEventHandler](#upcomingeventhandler)|暂无描述...
-|`STRUCT`|[Options](#options)|活动选项
+|`STRUCT`|[Activity](#struct_Activity)|活动描述
+|`STRUCT`|[Controller](#struct_Controller)|活动控制器
+|`INTERFACE`|[BasicActivityController](#struct_BasicActivityController)|暂无描述...
+|`INTERFACE`|[NoneDataActivityController](#struct_NoneDataActivityController)|无数据活动控制器
+|`INTERFACE`|[GlobalDataActivityController](#struct_GlobalDataActivityController)|全局数据活动控制器
+|`INTERFACE`|[EntityDataActivityController](#struct_EntityDataActivityController)|实体数据活动控制器
+|`INTERFACE`|[GlobalAndEntityDataActivityController](#struct_GlobalAndEntityDataActivityController)|全局数据和实体数据活动控制器
+|`STRUCT`|[DataMeta](#struct_DataMeta)|全局活动数据
+|`STRUCT`|[EntityDataMeta](#struct_EntityDataMeta)|活动实体数据
+|`STRUCT`|[UpcomingEventHandler](#struct_UpcomingEventHandler)|暂无描述...
+|`STRUCT`|[Options](#struct_Options)|活动选项
 
 </details>
 
@@ -166,6 +166,7 @@ activity 活动状态管理
 > 创建活动选项
 
 ***
+<span id="struct_Activity"></span>
 ### Activity `STRUCT`
 活动描述
 ```go
@@ -185,6 +186,7 @@ type Activity[Type generic.Basic, ID generic.Basic] struct {
 	initializeData    func()
 }
 ```
+<span id="struct_Controller"></span>
 ### Controller `STRUCT`
 活动控制器
 ```go
@@ -199,6 +201,7 @@ type Controller[Type generic.Basic, ID generic.Basic, Data any, EntityID generic
 	mutex      sync.RWMutex
 }
 ```
+<span id="struct_BasicActivityController"></span>
 ### BasicActivityController `INTERFACE`
 
 ```go
@@ -209,6 +212,7 @@ type BasicActivityController[Type generic.Basic, ID generic.Basic, Data any, Ent
 	Refresh(activityId ID)
 }
 ```
+<span id="struct_NoneDataActivityController"></span>
 ### NoneDataActivityController `INTERFACE`
 无数据活动控制器
 ```go
@@ -217,6 +221,7 @@ type NoneDataActivityController[Type generic.Basic, ID generic.Basic, Data any, 
 	InitializeNoneData(handler func(activityId ID, data *DataMeta[Data])) NoneDataActivityController[Type, ID, Data, EntityID, EntityData]
 }
 ```
+<span id="struct_GlobalDataActivityController"></span>
 ### GlobalDataActivityController `INTERFACE`
 全局数据活动控制器
 ```go
@@ -226,6 +231,7 @@ type GlobalDataActivityController[Type generic.Basic, ID generic.Basic, Data any
 	InitializeGlobalData(handler func(activityId ID, data *DataMeta[Data])) GlobalDataActivityController[Type, ID, Data, EntityID, EntityData]
 }
 ```
+<span id="struct_EntityDataActivityController"></span>
 ### EntityDataActivityController `INTERFACE`
 实体数据活动控制器
 ```go
@@ -235,6 +241,7 @@ type EntityDataActivityController[Type generic.Basic, ID generic.Basic, Data any
 	InitializeEntityData(handler func(activityId ID, entityId EntityID, data *EntityDataMeta[EntityData])) EntityDataActivityController[Type, ID, Data, EntityID, EntityData]
 }
 ```
+<span id="struct_GlobalAndEntityDataActivityController"></span>
 ### GlobalAndEntityDataActivityController `INTERFACE`
 全局数据和实体数据活动控制器
 ```go
@@ -245,6 +252,7 @@ type GlobalAndEntityDataActivityController[Type generic.Basic, ID generic.Basic,
 	InitializeGlobalAndEntityData(handler func(activityId ID, data *DataMeta[Data]), entityHandler func(activityId ID, entityId EntityID, data *EntityDataMeta[EntityData])) GlobalAndEntityDataActivityController[Type, ID, Data, EntityID, EntityData]
 }
 ```
+<span id="struct_DataMeta"></span>
 ### DataMeta `STRUCT`
 全局活动数据
 ```go
@@ -254,6 +262,7 @@ type DataMeta[Data any] struct {
 	LastNewDay time.Time
 }
 ```
+<span id="struct_EntityDataMeta"></span>
 ### EntityDataMeta `STRUCT`
 活动实体数据
 ```go
@@ -263,11 +272,13 @@ type EntityDataMeta[Data any] struct {
 	LastNewDay time.Time
 }
 ```
+<span id="struct_UpcomingEventHandler"></span>
 ### UpcomingEventHandler `STRUCT`
 
 ```go
 type UpcomingEventHandler[ID generic.Basic] func(activityId ID)
 ```
+<span id="struct_Options"></span>
 ### Options `STRUCT`
 活动选项
 ```go

@@ -23,11 +23,11 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[TurnBased](#turnbased)|回合制
-|`INTERFACE`|[TurnBasedControllerInfo](#turnbasedcontrollerinfo)|暂无描述...
-|`INTERFACE`|[TurnBasedControllerAction](#turnbasedcontrolleraction)|暂无描述...
-|`STRUCT`|[TurnBasedController](#turnbasedcontroller)|回合制控制器
-|`STRUCT`|[TurnBasedEntitySwitchEventHandler](#turnbasedentityswitcheventhandler)|暂无描述...
+|`STRUCT`|[TurnBased](#struct_TurnBased)|回合制
+|`INTERFACE`|[TurnBasedControllerInfo](#struct_TurnBasedControllerInfo)|暂无描述...
+|`INTERFACE`|[TurnBasedControllerAction](#struct_TurnBasedControllerAction)|暂无描述...
+|`STRUCT`|[TurnBasedController](#struct_TurnBasedController)|回合制控制器
+|`STRUCT`|[TurnBasedEntitySwitchEventHandler](#struct_TurnBasedEntitySwitchEventHandler)|暂无描述...
 
 </details>
 
@@ -40,6 +40,7 @@
 >   - calcNextTurnDuration 将返回下一次行动时间间隔，适用于按照速度计算下一次行动时间间隔的情况。当返回 0 时，将使用默认的行动超时时间
 
 ***
+<span id="struct_TurnBased"></span>
 ### TurnBased `STRUCT`
 回合制
 ```go
@@ -64,6 +65,7 @@ type TurnBased[CampID comparable, EntityID comparable, Camp generic.IdR[CampID],
 	closed               bool
 }
 ```
+<span id="struct_TurnBasedControllerInfo"></span>
 ### TurnBasedControllerInfo `INTERFACE`
 
 ```go
@@ -77,6 +79,7 @@ type TurnBasedControllerInfo[CampID comparable, EntityID comparable, Camp generi
 	Stop()
 }
 ```
+<span id="struct_TurnBasedControllerAction"></span>
 ### TurnBasedControllerAction `INTERFACE`
 
 ```go
@@ -86,6 +89,7 @@ type TurnBasedControllerAction[CampID comparable, EntityID comparable, Camp gene
 	Refresh(duration time.Duration) time.Time
 }
 ```
+<span id="struct_TurnBasedController"></span>
 ### TurnBasedController `STRUCT`
 回合制控制器
 ```go
@@ -93,6 +97,7 @@ type TurnBasedController[CampID comparable, EntityID comparable, Camp generic.Id
 	tb *TurnBased[CampID, EntityID, Camp, Entity]
 }
 ```
+<span id="struct_TurnBasedEntitySwitchEventHandler"></span>
 ### TurnBasedEntitySwitchEventHandler `STRUCT`
 
 ```go

@@ -31,11 +31,11 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[SystemNewDayEventHandle](#systemnewdayeventhandle)|暂无描述...
-|`STRUCT`|[Option](#option)|暂无描述...
-|`STRUCT`|[Pool](#pool)|定时器池
-|`STRUCT`|[Scheduler](#scheduler)|调度器
-|`STRUCT`|[Ticker](#ticker)|定时器
+|`STRUCT`|[SystemNewDayEventHandle](#struct_SystemNewDayEventHandle)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
+|`STRUCT`|[Pool](#struct_Pool)|定时器池
+|`STRUCT`|[Scheduler](#struct_Scheduler)|调度器
+|`STRUCT`|[Ticker](#struct_Ticker)|定时器
 
 </details>
 
@@ -92,16 +92,19 @@
 > 获取标准池中的一个定时器
 
 ***
+<span id="struct_SystemNewDayEventHandle"></span>
 ### SystemNewDayEventHandle `STRUCT`
 
 ```go
 type SystemNewDayEventHandle func()
 ```
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go
 type Option func(ticker *Ticker)
 ```
+<span id="struct_Pool"></span>
 ### Pool `STRUCT`
 定时器池
 ```go
@@ -123,6 +126,7 @@ type Pool struct {
 > 释放定时器池的资源，释放后由其产生的 Ticker 在 Ticker.Release 后将不再回到池中，而是直接释放
 >   - 虽然定时器池已被释放，但是依旧可以产出 Ticker
 ***
+<span id="struct_Scheduler"></span>
 ### Scheduler `STRUCT`
 调度器
 ```go
@@ -150,6 +154,7 @@ type Scheduler struct {
 #### func (*Scheduler) Caller()
 > 可由外部发起调用的执行函数
 ***
+<span id="struct_Ticker"></span>
 ### Ticker `STRUCT`
 定时器
 ```go

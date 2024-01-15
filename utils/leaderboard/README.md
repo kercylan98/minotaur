@@ -25,9 +25,9 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[BinarySearch](#binarysearch)|暂无描述...
-|`STRUCT`|[BinarySearchRankChangeEventHandle](#binarysearchrankchangeeventhandle)|暂无描述...
-|`STRUCT`|[BinarySearchOption](#binarysearchoption)|暂无描述...
+|`STRUCT`|[BinarySearch](#struct_BinarySearch)|暂无描述...
+|`STRUCT`|[BinarySearchRankChangeEventHandle](#struct_BinarySearchRankChangeEventHandle)|暂无描述...
+|`STRUCT`|[BinarySearchOption](#struct_BinarySearchOption)|暂无描述...
 
 </details>
 
@@ -61,6 +61,7 @@ func ExampleNewBinarySearch() {
 >   - 默认情况下为降序
 
 ***
+<span id="struct_BinarySearch"></span>
 ### BinarySearch `STRUCT`
 
 ```go
@@ -74,11 +75,13 @@ type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
 	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }
 ```
+<span id="struct_BinarySearchRankChangeEventHandle"></span>
 ### BinarySearchRankChangeEventHandle `STRUCT`
 
 ```go
 type BinarySearchRankChangeEventHandle[CompetitorID comparable, Score generic.Ordered] func(leaderboard *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank int, oldScore Score)
 ```
+<span id="struct_BinarySearchOption"></span>
 ### BinarySearchOption `STRUCT`
 
 ```go

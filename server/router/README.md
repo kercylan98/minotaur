@@ -24,9 +24,9 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[MultistageBind](#multistagebind)|多级分类路由绑定函数
-|`STRUCT`|[Multistage](#multistage)|支持多级分类的路由器
-|`STRUCT`|[MultistageOption](#multistageoption)|路由器选项
+|`STRUCT`|[MultistageBind](#struct_MultistageBind)|多级分类路由绑定函数
+|`STRUCT`|[Multistage](#struct_Multistage)|支持多级分类的路由器
+|`STRUCT`|[MultistageOption](#struct_MultistageOption)|路由器选项
 
 </details>
 
@@ -53,6 +53,7 @@ func ExampleNewMultistage() {
 >   - 将在路由注册前对路由进行对应处理
 
 ***
+<span id="struct_MultistageBind"></span>
 ### MultistageBind `STRUCT`
 多级分类路由绑定函数
 ```go
@@ -61,6 +62,7 @@ type MultistageBind[HandleFunc any] func(HandleFunc)
 #### func (MultistageBind) Bind(handleFunc HandleFunc)
 > 将处理函数绑定到预设的路由中
 ***
+<span id="struct_Multistage"></span>
 ### Multistage `STRUCT`
 支持多级分类的路由器
 ```go
@@ -164,6 +166,7 @@ func ExampleMultistage_Sub() {
 ```
 
 ***
+<span id="struct_MultistageOption"></span>
 ### MultistageOption `STRUCT`
 路由器选项
 ```go

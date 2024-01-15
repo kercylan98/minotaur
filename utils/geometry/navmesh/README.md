@@ -26,7 +26,7 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[NavMesh](#navmesh)|暂无描述...
+|`STRUCT`|[NavMesh](#struct_NavMesh)|暂无描述...
 
 </details>
 
@@ -54,6 +54,7 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 >   - 确保 NavMesh 计算精度的情况下，V 建议使用 float64 类型
 
 ***
+<span id="struct_NavMesh"></span>
 ### NavMesh `STRUCT`
 
 ```go

@@ -31,9 +31,9 @@ buffer 提供了缓冲区相关的实用程序。
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Ring](#ring)|环形缓冲区
-|`STRUCT`|[RingUnbounded](#ringunbounded)|基于环形缓冲区实现的无界缓冲区
-|`STRUCT`|[Unbounded](#unbounded)|是无界缓冲区的实现
+|`STRUCT`|[Ring](#struct_Ring)|环形缓冲区
+|`STRUCT`|[RingUnbounded](#struct_RingUnbounded)|基于环形缓冲区实现的无界缓冲区
+|`STRUCT`|[Unbounded](#struct_Unbounded)|是无界缓冲区的实现
 
 </details>
 
@@ -82,6 +82,7 @@ func TestNewRing(t *testing.T) {
 >   - 该缓冲区的所有方法都是线程安全的，除了用于同步的互斥锁外，不会阻塞任何东西
 
 ***
+<span id="struct_Ring"></span>
 ### Ring `STRUCT`
 环形缓冲区
 ```go
@@ -160,6 +161,7 @@ func BenchmarkRing_Write(b *testing.B) {
 #### func (*Ring) Reset()
 > 重置缓冲区
 ***
+<span id="struct_RingUnbounded"></span>
 ### RingUnbounded `STRUCT`
 基于环形缓冲区实现的无界缓冲区
 ```go
@@ -255,6 +257,7 @@ func TestRingUnbounded_Close(t *testing.T) {
 
 
 ***
+<span id="struct_Unbounded"></span>
 ### Unbounded `STRUCT`
 是无界缓冲区的实现
 ```go

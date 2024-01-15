@@ -27,10 +27,10 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`INTERFACE`|[Client](#client)|帧同步客户端接口定义
-|`STRUCT`|[StoppedEventHandle](#stoppedeventhandle)|暂无描述...
-|`STRUCT`|[Lockstep](#lockstep)|锁步（帧）同步默认实现
-|`STRUCT`|[Option](#option)|暂无描述...
+|`INTERFACE`|[Client](#struct_Client)|帧同步客户端接口定义
+|`STRUCT`|[StoppedEventHandle](#struct_StoppedEventHandle)|暂无描述...
+|`STRUCT`|[Lockstep](#struct_Lockstep)|锁步（帧）同步默认实现
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
@@ -108,6 +108,7 @@ func TestNewLockstep(t *testing.T) {
 >   - 默认情况下为 0，即第一帧索引为 0
 
 ***
+<span id="struct_Client"></span>
 ### Client `INTERFACE`
 帧同步客户端接口定义
   - 客户端应该具备ID及写入数据包的实现
@@ -117,11 +118,13 @@ type Client[ID comparable] interface {
 	Write(packet []byte, callback ...func(err error))
 }
 ```
+<span id="struct_StoppedEventHandle"></span>
 ### StoppedEventHandle `STRUCT`
 
 ```go
 type StoppedEventHandle[ClientID comparable, Command any] func(lockstep *Lockstep[ClientID, Command])
 ```
+<span id="struct_Lockstep"></span>
 ### Lockstep `STRUCT`
 锁步（帧）同步默认实现
   - 支持最大帧上限 WithFrameLimit
@@ -149,6 +152,7 @@ type Lockstep[ClientID comparable, Command any] struct {
 	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
 ```
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go

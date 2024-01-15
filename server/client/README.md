@@ -27,13 +27,13 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Client](#client)|客户端
-|`INTERFACE`|[Core](#core)|暂无描述...
-|`STRUCT`|[ConnectionClosedEventHandle](#connectionclosedeventhandle)|暂无描述...
-|`STRUCT`|[Packet](#packet)|暂无描述...
-|`STRUCT`|[TCP](#tcp)|暂无描述...
-|`STRUCT`|[UnixDomainSocket](#unixdomainsocket)|暂无描述...
-|`STRUCT`|[Websocket](#websocket)|websocket 客户端
+|`STRUCT`|[Client](#struct_Client)|客户端
+|`INTERFACE`|[Core](#struct_Core)|暂无描述...
+|`STRUCT`|[ConnectionClosedEventHandle](#struct_ConnectionClosedEventHandle)|暂无描述...
+|`STRUCT`|[Packet](#struct_Packet)|暂无描述...
+|`STRUCT`|[TCP](#struct_TCP)|暂无描述...
+|`STRUCT`|[UnixDomainSocket](#struct_UnixDomainSocket)|暂无描述...
+|`STRUCT`|[Websocket](#struct_Websocket)|websocket 客户端
 
 </details>
 
@@ -63,6 +63,7 @@
 > 创建 websocket 客户端
 
 ***
+<span id="struct_Client"></span>
 ### Client `STRUCT`
 客户端
 ```go
@@ -138,6 +139,7 @@ func TestClient_WriteWS(t *testing.T) {
 #### func (*Client) GetServerAddr()  string
 > 获取服务器地址
 ***
+<span id="struct_Core"></span>
 ### Core `INTERFACE`
 
 ```go
@@ -149,11 +151,13 @@ type Core interface {
 	Clone() Core
 }
 ```
+<span id="struct_ConnectionClosedEventHandle"></span>
 ### ConnectionClosedEventHandle `STRUCT`
 
 ```go
 type ConnectionClosedEventHandle func(conn *Client, err any)
 ```
+<span id="struct_Packet"></span>
 ### Packet `STRUCT`
 
 ```go
@@ -163,6 +167,7 @@ type Packet struct {
 	callback func(err error)
 }
 ```
+<span id="struct_TCP"></span>
 ### TCP `STRUCT`
 
 ```go
@@ -182,6 +187,7 @@ type TCP struct {
 ***
 #### func (*TCP) Clone()  Core
 ***
+<span id="struct_UnixDomainSocket"></span>
 ### UnixDomainSocket `STRUCT`
 
 ```go
@@ -243,6 +249,7 @@ func TestUnixDomainSocket_Write(t *testing.T) {
 ***
 #### func (*UnixDomainSocket) Clone()  Core
 ***
+<span id="struct_Websocket"></span>
 ### Websocket `STRUCT`
 websocket 客户端
 ```go

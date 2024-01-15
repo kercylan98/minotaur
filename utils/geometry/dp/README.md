@@ -27,8 +27,8 @@ dp (DistributionPattern) 提供用于在二维数组中根据不同的特征标�
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[DistributionPattern](#distributionpattern)|分布图
-|`STRUCT`|[Link](#link)|暂无描述...
+|`STRUCT`|[DistributionPattern](#struct_DistributionPattern)|分布图
+|`STRUCT`|[Link](#struct_Link)|暂无描述...
 
 </details>
 
@@ -69,6 +69,7 @@ func TestNewDistributionPattern(t *testing.T) {
 
 
 ***
+<span id="struct_DistributionPattern"></span>
 ### DistributionPattern `STRUCT`
 分布图
 ```go
@@ -104,6 +105,7 @@ type DistributionPattern[Item any] struct {
 > 通过特定的成员刷新特定位置的分布关系
 >   - 如果矩阵通过 LoadMatrixWithPos 加载，将会重定向至 Refresh
 ***
+<span id="struct_Link"></span>
 ### Link `STRUCT`
 
 ```go

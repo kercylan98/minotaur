@@ -52,13 +52,13 @@ combination 包提供了一些实用的组合函数。
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Combination](#combination)|用于从多个匹配器内提取组合的数据结构
-|`STRUCT`|[Option](#option)|组合器选项
-|`INTERFACE`|[Item](#item)|暂无描述...
-|`STRUCT`|[Matcher](#matcher)|用于从一组数据内提取组合的数据结构
-|`STRUCT`|[MatcherOption](#matcheroption)|匹配器选项
-|`STRUCT`|[Validator](#validator)|用于对组合进行验证的校验器
-|`STRUCT`|[ValidatorOption](#validatoroption)|暂无描述...
+|`STRUCT`|[Combination](#struct_Combination)|用于从多个匹配器内提取组合的数据结构
+|`STRUCT`|[Option](#struct_Option)|组合器选项
+|`INTERFACE`|[Item](#struct_Item)|暂无描述...
+|`STRUCT`|[Matcher](#struct_Matcher)|用于从一组数据内提取组合的数据结构
+|`STRUCT`|[MatcherOption](#struct_MatcherOption)|匹配器选项
+|`STRUCT`|[Validator](#struct_Validator)|用于对组合进行验证的校验器
+|`STRUCT`|[ValidatorOption](#struct_ValidatorOption)|暂无描述...
 
 </details>
 
@@ -241,6 +241,7 @@ combination 包提供了一些实用的组合函数。
 >   - getType: 用于获取组合中元素的类型，用于判断是否相同
 
 ***
+<span id="struct_Combination"></span>
 ### Combination `STRUCT`
 用于从多个匹配器内提取组合的数据结构
 ```go
@@ -304,16 +305,19 @@ func TestCombination_Best(t *testing.T) {
 #### func (*Combination) Worst(items []T) (name string, result []T)
 > 从一组数据中提取符合匹配器规则的最差组合
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 组合器选项
 ```go
 type Option[T Item] func(*Combination[T])
 ```
+<span id="struct_Item"></span>
 ### Item `INTERFACE`
 
 ```go
 type Item interface{}
 ```
+<span id="struct_Matcher"></span>
 ### Matcher `STRUCT`
 用于从一组数据内提取组合的数据结构
 ```go
@@ -335,11 +339,13 @@ type Matcher[T Item] struct {
 #### func (*Matcher) Worst(items []T)  []T
 > 从一组数据中提取符筛选器规则的最差组合
 ***
+<span id="struct_MatcherOption"></span>
 ### MatcherOption `STRUCT`
 匹配器选项
 ```go
 type MatcherOption[T Item] func(matcher *Matcher[T])
 ```
+<span id="struct_Validator"></span>
 ### Validator `STRUCT`
 用于对组合进行验证的校验器
 ```go
@@ -382,6 +388,7 @@ func TestValidator_Validate(t *testing.T) {
 
 
 ***
+<span id="struct_ValidatorOption"></span>
 ### ValidatorOption `STRUCT`
 
 ```go

@@ -27,7 +27,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Time](#time)|带有偏移量的时间
+|`STRUCT`|[Time](#struct_Time)|带有偏移量的时间
 
 </details>
 
@@ -59,6 +59,7 @@
 > 获取当前时间偏移后的时间自从 t 以来经过的时间
 
 ***
+<span id="struct_Time"></span>
 ### Time `STRUCT`
 带有偏移量的时间
 ```go

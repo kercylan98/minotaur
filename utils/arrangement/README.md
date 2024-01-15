@@ -34,16 +34,16 @@ arrangement 包提供了一些有用的函数来处理数组的排列。
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Area](#area)|编排区域
-|`STRUCT`|[AreaOption](#areaoption)|编排区域选项
-|`STRUCT`|[AreaConstraintHandle](#areaconstrainthandle)|暂无描述...
-|`STRUCT`|[Arrangement](#arrangement)|用于针对多条数据进行合理编排的数据结构
-|`STRUCT`|[Editor](#editor)|提供了大量辅助函数的编辑器
-|`INTERFACE`|[Item](#item)|编排成员
-|`STRUCT`|[ItemOption](#itemoption)|编排成员选项
-|`STRUCT`|[ItemFixedAreaHandle](#itemfixedareahandle)|暂无描述...
-|`STRUCT`|[Option](#option)|编排选项
-|`STRUCT`|[ConstraintHandle](#constrainthandle)|暂无描述...
+|`STRUCT`|[Area](#struct_Area)|编排区域
+|`STRUCT`|[AreaOption](#struct_AreaOption)|编排区域选项
+|`STRUCT`|[AreaConstraintHandle](#struct_AreaConstraintHandle)|暂无描述...
+|`STRUCT`|[Arrangement](#struct_Arrangement)|用于针对多条数据进行合理编排的数据结构
+|`STRUCT`|[Editor](#struct_Editor)|提供了大量辅助函数的编辑器
+|`INTERFACE`|[Item](#struct_Item)|编排成员
+|`STRUCT`|[ItemOption](#struct_ItemOption)|编排成员选项
+|`STRUCT`|[ItemFixedAreaHandle](#struct_ItemFixedAreaHandle)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|编排选项
+|`STRUCT`|[ConstraintHandle](#struct_ConstraintHandle)|暂无描述...
 
 </details>
 
@@ -115,6 +115,7 @@ arrangement 包提供了一些有用的函数来处理数组的排列。
 >   - 当所有的冲突处理函数都无法处理冲突时，将会进入下一个编排区域的尝试，如果均无法完成，将会将该成员加入到编排队列的末端，等待下一次编排
 
 ***
+<span id="struct_Area"></span>
 ### Area `STRUCT`
 编排区域
 ```go
@@ -126,16 +127,19 @@ type Area[ID comparable, AreaInfo any] struct {
 	evaluate    AreaEvaluateHandle[ID, AreaInfo]
 }
 ```
+<span id="struct_AreaOption"></span>
 ### AreaOption `STRUCT`
 编排区域选项
 ```go
 type AreaOption[ID comparable, AreaInfo any] func(area *Area[ID, AreaInfo])
 ```
+<span id="struct_AreaConstraintHandle"></span>
 ### AreaConstraintHandle `STRUCT`
 
 ```go
 type AreaConstraintHandle[ID comparable, AreaInfo any] func(area *Area[ID, AreaInfo], item Item[ID]) error
 ```
+<span id="struct_Arrangement"></span>
 ### Arrangement `STRUCT`
 用于针对多条数据进行合理编排的数据结构
   - 我不知道这个数据结构的具体用途，但是我觉得这个数据结构应该是有用的
@@ -153,6 +157,7 @@ type Arrangement[ID comparable, AreaInfo any] struct {
 	conflictHandles   []ConflictHandle[ID, AreaInfo]
 }
 ```
+<span id="struct_Editor"></span>
 ### Editor `STRUCT`
 提供了大量辅助函数的编辑器
 ```go
@@ -164,6 +169,7 @@ type Editor[ID comparable, AreaInfo any] struct {
 	retryCount int
 }
 ```
+<span id="struct_Item"></span>
 ### Item `INTERFACE`
 编排成员
 ```go
@@ -172,21 +178,25 @@ type Item[ID comparable] interface {
 	Equal(item Item[ID]) bool
 }
 ```
+<span id="struct_ItemOption"></span>
 ### ItemOption `STRUCT`
 编排成员选项
 ```go
 type ItemOption[ID comparable, AreaInfo any] func(arrangement *Arrangement[ID, AreaInfo], item Item[ID])
 ```
+<span id="struct_ItemFixedAreaHandle"></span>
 ### ItemFixedAreaHandle `STRUCT`
 
 ```go
 type ItemFixedAreaHandle[AreaInfo any] func(areaInfo AreaInfo) bool
 ```
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 编排选项
 ```go
 type Option[ID comparable, AreaInfo any] func(arrangement *Arrangement[ID, AreaInfo])
 ```
+<span id="struct_ConstraintHandle"></span>
 ### ConstraintHandle `STRUCT`
 
 ```go

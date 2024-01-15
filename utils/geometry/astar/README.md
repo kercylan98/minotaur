@@ -28,7 +28,7 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
 
 |类型|名称|描述
 |:--|:--|:--
-|`INTERFACE`|[Graph](#graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
+|`INTERFACE`|[Graph](#struct_Graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 
 </details>
 
@@ -77,6 +77,7 @@ func ExampleFind() {
 ```
 
 ***
+<span id="struct_Graph"></span>
 ### Graph `INTERFACE`
 适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 ```go

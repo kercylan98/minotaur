@@ -32,13 +32,13 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Endpoint](#endpoint)|网关端点
-|`STRUCT`|[EndpointOption](#endpointoption)|网关端点选项
-|`STRUCT`|[ConnectionOpenedEventHandle](#connectionopenedeventhandle)|暂无描述...
-|`STRUCT`|[EndpointSelector](#endpointselector)|暂无描述...
-|`STRUCT`|[Gateway](#gateway)|基于 server.Server 实现的网关服务器
-|`STRUCT`|[Option](#option)|网关选项
-|`INTERFACE`|[Scanner](#scanner)|端点扫描器
+|`STRUCT`|[Endpoint](#struct_Endpoint)|网关端点
+|`STRUCT`|[EndpointOption](#struct_EndpointOption)|网关端点选项
+|`STRUCT`|[ConnectionOpenedEventHandle](#struct_ConnectionOpenedEventHandle)|暂无描述...
+|`STRUCT`|[EndpointSelector](#struct_EndpointSelector)|暂无描述...
+|`STRUCT`|[Gateway](#struct_Gateway)|基于 server.Server 实现的网关服务器
+|`STRUCT`|[Option](#struct_Option)|网关选项
+|`INTERFACE`|[Scanner](#struct_Scanner)|端点扫描器
 
 </details>
 
@@ -105,6 +105,7 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - | ipv4(4) | port(2) | cost(4) | packet |
 
 ***
+<span id="struct_Endpoint"></span>
 ### Endpoint `STRUCT`
 网关端点
   - 每一个端点均表示了一个目标服务，网关会将数据包转发到该端点，由该端点负责将数据包转发到目标服务。
@@ -141,21 +142,25 @@ type Endpoint struct {
 > 转发数据包到该端点
 >   - 端点在处理数据包时，应区分数据包为普通直连数据包还是网关数据包。可通过 UnmarshalGatewayOutPacket 进行数据包解析，当解析失败且无其他数据包协议时，可认为该数据包为普通直连数据包。
 ***
+<span id="struct_EndpointOption"></span>
 ### EndpointOption `STRUCT`
 网关端点选项
 ```go
 type EndpointOption func(endpoint *Endpoint)
 ```
+<span id="struct_ConnectionOpenedEventHandle"></span>
 ### ConnectionOpenedEventHandle `STRUCT`
 
 ```go
 type ConnectionOpenedEventHandle func(gateway *Gateway, conn *server.Conn)
 ```
+<span id="struct_EndpointSelector"></span>
 ### EndpointSelector `STRUCT`
 
 ```go
 type EndpointSelector func(endpoints []*Endpoint) *Endpoint
 ```
+<span id="struct_Gateway"></span>
 ### Gateway `STRUCT`
 基于 server.Server 实现的网关服务器
   - 网关服务器是一个特殊的服务器，它会通过扫描器扫描端点列表，然后连接到端点列表中的所有端点，当端点连接成功后，网关服务器会将客户端的连接数据转发到端点服务器
@@ -230,11 +235,13 @@ func TestGateway_Run(t *testing.T) {
 #### func (*Gateway) SwitchEndpoint(source *Endpoint, dest *Endpoint)
 > 将端点端点的所有连接切换到另一个端点
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 网关选项
 ```go
 type Option func(gateway *Gateway)
 ```
+<span id="struct_Scanner"></span>
 ### Scanner `INTERFACE`
 端点扫描器
 ```go

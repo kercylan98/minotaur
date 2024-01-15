@@ -32,13 +32,13 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Analyzer](#analyzer)|分析器
-|`INTERFACE`|[Flusher](#flusher)|用于刷新缓冲区的接口
-|`STRUCT`|[FileFlusher](#fileflusher)|暂无描述...
-|`STRUCT`|[Option](#option)|选项
-|`STRUCT`|[Result](#result)|暂无描述...
-|`STRUCT`|[R](#r)|记录器所记录的一条数据
-|`STRUCT`|[Report](#report)|分析报告
+|`STRUCT`|[Analyzer](#struct_Analyzer)|分析器
+|`INTERFACE`|[Flusher](#struct_Flusher)|用于刷新缓冲区的接口
+|`STRUCT`|[FileFlusher](#struct_FileFlusher)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|选项
+|`STRUCT`|[Result](#struct_Result)|暂无描述...
+|`STRUCT`|[R](#struct_R)|记录器所记录的一条数据
+|`STRUCT`|[Report](#struct_Report)|分析报告
 
 </details>
 
@@ -153,6 +153,7 @@ func TestIncrementAnalyze(t *testing.T) {
 
 
 ***
+<span id="struct_Analyzer"></span>
 ### Analyzer `STRUCT`
 分析器
 ```go
@@ -214,6 +215,7 @@ type Analyzer struct {
 #### func (*Analyzer) GetValueString(key string)  string
 > 获取当前记录的值
 ***
+<span id="struct_Flusher"></span>
 ### Flusher `INTERFACE`
 用于刷新缓冲区的接口
 ```go
@@ -222,6 +224,7 @@ type Flusher interface {
 	Info() string
 }
 ```
+<span id="struct_FileFlusher"></span>
 ### FileFlusher `STRUCT`
 
 ```go
@@ -237,16 +240,19 @@ type FileFlusher struct {
 ***
 #### func (*FileFlusher) Info()  string
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 选项
 ```go
 type Option func(logger *logger)
 ```
+<span id="struct_Result"></span>
 ### Result `STRUCT`
 
 ```go
 type Result gjson.Result
 ```
+<span id="struct_R"></span>
 ### R `STRUCT`
 记录器所记录的一条数据
 ```go
@@ -280,6 +286,7 @@ type R string
 ***
 #### func (R) String()  string
 ***
+<span id="struct_Report"></span>
 ### Report `STRUCT`
 分析报告
 ```go

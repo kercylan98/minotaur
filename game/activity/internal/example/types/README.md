@@ -16,13 +16,14 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[DemoActivityData](#demoactivitydata)|暂无描述...
+|`STRUCT`|[DemoActivityData](#struct_DemoActivityData)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
+<span id="struct_DemoActivityData"></span>
 ### DemoActivityData `STRUCT`
 
 ```go

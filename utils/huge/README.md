@@ -26,8 +26,8 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Float](#float)|暂无描述...
-|`STRUCT`|[Int](#int)|暂无描述...
+|`STRUCT`|[Float](#struct_Float)|暂无描述...
+|`STRUCT`|[Int](#struct_Int)|暂无描述...
 
 </details>
 
@@ -56,6 +56,7 @@
 >   - 如果字符串不是一个合法的数字，则返回 0
 
 ***
+<span id="struct_Float"></span>
 ### Float `STRUCT`
 
 ```go
@@ -117,6 +118,7 @@ type Float big.Float
 #### func (*Float) IsNegative()  bool
 > 是否为负数
 ***
+<span id="struct_Int"></span>
 ### Int `STRUCT`
 
 ```go

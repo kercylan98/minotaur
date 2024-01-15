@@ -27,10 +27,10 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[TwoDimensional](#twodimensional)|用于2D对象移动的数据结构
-|`INTERFACE`|[TwoDimensionalEntity](#twodimensionalentity)|2D移动对象接口定义
-|`STRUCT`|[Position2DChangeEventHandle](#position2dchangeeventhandle)|暂无描述...
-|`STRUCT`|[TwoDimensionalOption](#twodimensionaloption)|暂无描述...
+|`STRUCT`|[TwoDimensional](#struct_TwoDimensional)|用于2D对象移动的数据结构
+|`INTERFACE`|[TwoDimensionalEntity](#struct_TwoDimensionalEntity)|2D移动对象接口定义
+|`STRUCT`|[Position2DChangeEventHandle](#struct_Position2DChangeEventHandle)|暂无描述...
+|`STRUCT`|[TwoDimensionalOption](#struct_TwoDimensionalOption)|暂无描述...
 
 </details>
 
@@ -95,6 +95,7 @@ func TestNewTwoDimensional(t *testing.T) {
 <span id="NewEntity"></span>
 
 ***
+<span id="struct_TwoDimensional"></span>
 ### TwoDimensional `STRUCT`
 用于2D对象移动的数据结构
   - 通过对象调用 MoveTo 方法后将开始执行该对象的移动
@@ -113,6 +114,7 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber] struct {
 	position2DStopMoveEventHandles    []Position2DStopMoveEventHandle[EID, PosType]
 }
 ```
+<span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`
 2D移动对象接口定义
 ```go
@@ -123,11 +125,13 @@ type TwoDimensionalEntity[EID generic.Basic, PosType generic.SignedNumber] inter
 	SetPosition(geometry.Point[PosType])
 }
 ```
+<span id="struct_Position2DChangeEventHandle"></span>
 ### Position2DChangeEventHandle `STRUCT`
 
 ```go
 type Position2DChangeEventHandle[EID generic.Basic, PosType generic.SignedNumber] func(moving *TwoDimensional[EID, PosType], entity TwoDimensionalEntity[EID, PosType], oldX PosType)
 ```
+<span id="struct_TwoDimensionalOption"></span>
 ### TwoDimensionalOption `STRUCT`
 
 ```go

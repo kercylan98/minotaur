@@ -70,8 +70,8 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[StateLine](#stateline)|状态时间线
-|`STRUCT`|[Period](#period)|表示一个时间段
+|`STRUCT`|[StateLine](#struct_StateLine)|状态时间线
+|`STRUCT`|[Period](#struct_Period)|表示一个时间段
 
 </details>
 
@@ -399,6 +399,7 @@ func TestNewPeriodWindow(t *testing.T) {
 > 创建一个时间段，从 t 开始，持续 nanosecond 纳秒
 
 ***
+<span id="struct_StateLine"></span>
 ### StateLine `STRUCT`
 状态时间线
 ```go
@@ -486,6 +487,7 @@ type StateLine[State generic.Basic] struct {
 #### func (*StateLine) RangeReverse(handler func (index int, state State, t time.Time)  bool)
 > 按照时间逆序遍历时间线
 ***
+<span id="struct_Period"></span>
 ### Period `STRUCT`
 表示一个时间段
 ```go

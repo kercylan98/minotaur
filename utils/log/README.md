@@ -77,10 +77,10 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Field](#field)|暂无描述...
-|`STRUCT`|[Logger](#logger)|暂无描述...
-|`STRUCT`|[MultiHandler](#multihandler)|暂无描述...
-|`STRUCT`|[Option](#option)|暂无描述...
+|`STRUCT`|[Field](#struct_Field)|暂无描述...
+|`STRUCT`|[Logger](#struct_Logger)|暂无描述...
+|`STRUCT`|[MultiHandler](#struct_MultiHandler)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
@@ -393,11 +393,13 @@ func TestStack(t *testing.T) {
 > 创建一个新的日志选项
 
 ***
+<span id="struct_Field"></span>
 ### Field `STRUCT`
 
 ```go
 type Field slog.Attr
 ```
+<span id="struct_Logger"></span>
 ### Logger `STRUCT`
 
 ```go
@@ -405,6 +407,7 @@ type Logger struct {
 	*slog.Logger
 }
 ```
+<span id="struct_MultiHandler"></span>
 ### MultiHandler `STRUCT`
 
 ```go
@@ -420,6 +423,7 @@ type MultiHandler struct {
 ***
 #### func (MultiHandler) WithGroup(name string)  slog.Handler
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go

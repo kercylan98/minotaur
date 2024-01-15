@@ -23,7 +23,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[ObjectPool](#objectpool)|基于 sync.Pool 实现的线程安全的对象池
+|`STRUCT`|[ObjectPool](#struct_ObjectPool)|基于 sync.Pool 实现的线程安全的对象池
 
 </details>
 
@@ -89,6 +89,7 @@ func TestNewObjectPool(t *testing.T) {
 
 
 ***
+<span id="struct_ObjectPool"></span>
 ### ObjectPool `STRUCT`
 基于 sync.Pool 实现的线程安全的对象池
   - 一些高频临时生成使用的对象可以通过 ObjectPool 进行管理，例如属性计算等

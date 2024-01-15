@@ -24,8 +24,8 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Golang](#golang)|配置导出模板
-|`STRUCT`|[JSON](#json)|暂无描述...
+|`STRUCT`|[Golang](#struct_Golang)|配置导出模板
+|`STRUCT`|[JSON](#struct_JSON)|暂无描述...
 
 </details>
 
@@ -41,6 +41,7 @@
 <span id="NewJSON"></span>
 
 ***
+<span id="struct_Golang"></span>
 ### Golang `STRUCT`
 配置导出模板
 ```go
@@ -57,6 +58,7 @@ type Golang struct {
 ***
 #### func (*Golang) HasIndex(config *pce.TmplStruct)  bool
 ***
+<span id="struct_JSON"></span>
 ### JSON `STRUCT`
 
 ```go

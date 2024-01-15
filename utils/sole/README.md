@@ -38,7 +38,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Once](#once)|用于数据取值去重的结构体
+|`STRUCT`|[Once](#struct_Once)|用于数据取值去重的结构体
 
 </details>
 
@@ -125,6 +125,7 @@
 > 获取一个自增的字符串
 
 ***
+<span id="struct_Once"></span>
 ### Once `STRUCT`
 用于数据取值去重的结构体
 ```go

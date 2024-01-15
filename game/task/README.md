@@ -34,11 +34,11 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Condition](#condition)|任务条件
-|`STRUCT`|[RefreshTaskCounterEventHandler](#refreshtaskcountereventhandler)|暂无描述...
-|`STRUCT`|[Option](#option)|任务选项
-|`STRUCT`|[Status](#status)|暂无描述...
-|`STRUCT`|[Task](#task)|是对任务信息进行描述和处理的结构体
+|`STRUCT`|[Condition](#struct_Condition)|任务条件
+|`STRUCT`|[RefreshTaskCounterEventHandler](#struct_RefreshTaskCounterEventHandler)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|任务选项
+|`STRUCT`|[Status](#struct_Status)|暂无描述...
+|`STRUCT`|[Task](#struct_Task)|是对任务信息进行描述和处理的结构体
 
 </details>
 
@@ -150,6 +150,7 @@ func TestCond(t *testing.T) {
 > 生成任务
 
 ***
+<span id="struct_Condition"></span>
 ### Condition `STRUCT`
 任务条件
 ```go
@@ -221,16 +222,19 @@ type Condition map[any]any
 #### func (Condition) GetAny(key any)  any
 > 获取特定类型的任务条件值，该值必须与预期类型一致，否则返回零值
 ***
+<span id="struct_RefreshTaskCounterEventHandler"></span>
 ### RefreshTaskCounterEventHandler `STRUCT`
 
 ```go
 type RefreshTaskCounterEventHandler[Trigger any] func(taskType string, trigger Trigger, count int64)
 ```
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 任务选项
 ```go
 type Option func(task *Task)
 ```
+<span id="struct_Status"></span>
 ### Status `STRUCT`
 
 ```go
@@ -238,6 +242,7 @@ type Status byte
 ```
 #### func (Status) String()  string
 ***
+<span id="struct_Task"></span>
 ### Task `STRUCT`
 是对任务信息进行描述和处理的结构体
 ```go

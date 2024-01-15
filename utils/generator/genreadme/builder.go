@@ -115,7 +115,7 @@ func (b *Builder) genMenus() {
 			structGen()
 			b.tableRow(
 				super.If(structInfo.Interface, "`INTERFACE`", "`STRUCT`"),
-				fmt.Sprintf("[%s](#%s)", structInfo.Name, strings.ToLower(structInfo.Name)),
+				fmt.Sprintf("[%s](#struct_%s)", structInfo.Name, structInfo.Name),
 				collection.FindFirstOrDefaultInSlice(structInfo.Comments.Clear, "暂无描述..."),
 			)
 		}
@@ -199,6 +199,7 @@ func (b *Builder) genStructs() {
 				continue
 			}
 			titleBuild()
+			b.newLine(fmt.Sprintf(`<span id="struct_%s"></span>`, structInfo.Name))
 			b.title(3, fmt.Sprintf("%s `%s`", structInfo.Name, super.If(structInfo.Interface, "INTERFACE", "STRUCT")))
 			b.newLine(structInfo.Comments.Clear...)
 			b.newLine("```go")

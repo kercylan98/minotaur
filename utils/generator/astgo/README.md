@@ -23,13 +23,13 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Comment](#comment)|暂无描述...
-|`STRUCT`|[Field](#field)|暂无描述...
-|`STRUCT`|[File](#file)|暂无描述...
-|`STRUCT`|[Function](#function)|暂无描述...
-|`STRUCT`|[Package](#package)|暂无描述...
-|`STRUCT`|[Struct](#struct)|暂无描述...
-|`STRUCT`|[Type](#type)|暂无描述...
+|`STRUCT`|[Comment](#struct_Comment)|暂无描述...
+|`STRUCT`|[Field](#struct_Field)|暂无描述...
+|`STRUCT`|[File](#struct_File)|暂无描述...
+|`STRUCT`|[Function](#struct_Function)|暂无描述...
+|`STRUCT`|[Package](#struct_Package)|暂无描述...
+|`STRUCT`|[Struct](#struct_Struct)|暂无描述...
+|`STRUCT`|[Type](#struct_Type)|暂无描述...
 
 </details>
 
@@ -60,6 +60,7 @@ func TestNewPackage(t *testing.T) {
 
 
 ***
+<span id="struct_Comment"></span>
 ### Comment `STRUCT`
 
 ```go
@@ -68,6 +69,7 @@ type Comment struct {
 	Clear    []string
 }
 ```
+<span id="struct_Field"></span>
 ### Field `STRUCT`
 
 ```go
@@ -78,6 +80,7 @@ type Field struct {
 	Comments  *Comment
 }
 ```
+<span id="struct_File"></span>
 ### File `STRUCT`
 
 ```go
@@ -92,6 +95,7 @@ type File struct {
 ```
 #### func (*File) Package()  string
 ***
+<span id="struct_Function"></span>
 ### Function `STRUCT`
 
 ```go
@@ -112,6 +116,7 @@ type Function struct {
 ```
 #### func (*Function) Code()  string
 ***
+<span id="struct_Package"></span>
 ### Package `STRUCT`
 
 ```go
@@ -137,6 +142,7 @@ type Package struct {
 ***
 #### func (*Package) GetBenchmarkTest(f *Function)  *Function
 ***
+<span id="struct_Struct"></span>
 ### Struct `STRUCT`
 
 ```go
@@ -151,6 +157,7 @@ type Struct struct {
 	Test      bool
 }
 ```
+<span id="struct_Type"></span>
 ### Type `STRUCT`
 
 ```go

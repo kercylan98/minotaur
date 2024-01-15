@@ -26,10 +26,10 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Matrix](#matrix)|暂无描述...
-|`STRUCT`|[PagedSlice](#pagedslice)|是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
-|`STRUCT`|[PrioritySlice](#priorityslice)|是一个优先级切片
-|`STRUCT`|[SyncSlice](#syncslice)|是基于 sync.RWMutex 实现的线程安全的 slice
+|`STRUCT`|[Matrix](#struct_Matrix)|暂无描述...
+|`STRUCT`|[PagedSlice](#struct_PagedSlice)|是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
+|`STRUCT`|[PrioritySlice](#struct_PrioritySlice)|是一个优先级切片
+|`STRUCT`|[SyncSlice](#struct_SyncSlice)|是基于 sync.RWMutex 实现的线程安全的 slice
 
 </details>
 
@@ -56,6 +56,7 @@
 > 创建一个 SyncSlice
 
 ***
+<span id="struct_Matrix"></span>
 ### Matrix `STRUCT`
 
 ```go
@@ -76,6 +77,7 @@ type Matrix[V any] struct {
 #### func (*Matrix) Clear()
 > 清空矩阵。
 ***
+<span id="struct_PagedSlice"></span>
 ### PagedSlice `STRUCT`
 是一个高效的动态数组，它通过分页管理内存并减少频繁的内存分配来提高性能。
 ```go
@@ -104,6 +106,7 @@ type PagedSlice[T any] struct {
 #### func (*PagedSlice) Range(f func (index int, value T)  bool)
 > 迭代 PagedSlice 中的所有元素。
 ***
+<span id="struct_PrioritySlice"></span>
 ### PrioritySlice `STRUCT`
 是一个优先级切片
 ```go
@@ -181,6 +184,7 @@ func TestPrioritySlice_Append(t *testing.T) {
 #### func (*PrioritySlice) String()  string
 > 返回切片字符串
 ***
+<span id="struct_SyncSlice"></span>
 ### SyncSlice `STRUCT`
 是基于 sync.RWMutex 实现的线程安全的 slice
 ```go

@@ -54,26 +54,26 @@ server 提供了包含多种网络类型的服务器实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Bot](#bot)|暂无描述...
-|`STRUCT`|[BotOption](#botoption)|暂无描述...
-|`STRUCT`|[Conn](#conn)|服务器连接单次消息的包装
-|`STRUCT`|[ConsoleParams](#consoleparams)|控制台参数
-|`STRUCT`|[MessageReadyEventHandler](#messagereadyeventhandler)|暂无描述...
-|`STRUCT`|[Http](#http)|基于 gin.Engine 包装的 http 服务器
-|`STRUCT`|[HttpContext](#httpcontext)|基于 gin.Context 的 http 请求上下文
-|`STRUCT`|[HandlerFunc](#handlerfunc)|暂无描述...
-|`STRUCT`|[ContextPacker](#contextpacker)|暂无描述...
-|`STRUCT`|[HttpRouter](#httprouter)|暂无描述...
-|`STRUCT`|[HttpWrapperHandleFunc](#httpwrapperhandlefunc)|暂无描述...
-|`STRUCT`|[HttpWrapper](#httpwrapper)|http 包装器
-|`STRUCT`|[HttpWrapperGroup](#httpwrappergroup)|http 包装器
-|`STRUCT`|[MessageType](#messagetype)|暂无描述...
-|`STRUCT`|[Message](#message)|服务器消息
-|`STRUCT`|[MultipleServer](#multipleserver)|暂无描述...
-|`STRUCT`|[Network](#network)|暂无描述...
-|`STRUCT`|[Option](#option)|暂无描述...
-|`STRUCT`|[Server](#server)|网络服务器
-|`INTERFACE`|[Service](#service)|兼容传统 service 设计模式的接口
+|`STRUCT`|[Bot](#struct_Bot)|暂无描述...
+|`STRUCT`|[BotOption](#struct_BotOption)|暂无描述...
+|`STRUCT`|[Conn](#struct_Conn)|服务器连接单次消息的包装
+|`STRUCT`|[ConsoleParams](#struct_ConsoleParams)|控制台参数
+|`STRUCT`|[MessageReadyEventHandler](#struct_MessageReadyEventHandler)|暂无描述...
+|`STRUCT`|[Http](#struct_Http)|基于 gin.Engine 包装的 http 服务器
+|`STRUCT`|[HttpContext](#struct_HttpContext)|基于 gin.Context 的 http 请求上下文
+|`STRUCT`|[HandlerFunc](#struct_HandlerFunc)|暂无描述...
+|`STRUCT`|[ContextPacker](#struct_ContextPacker)|暂无描述...
+|`STRUCT`|[HttpRouter](#struct_HttpRouter)|暂无描述...
+|`STRUCT`|[HttpWrapperHandleFunc](#struct_HttpWrapperHandleFunc)|暂无描述...
+|`STRUCT`|[HttpWrapper](#struct_HttpWrapper)|http 包装器
+|`STRUCT`|[HttpWrapperGroup](#struct_HttpWrapperGroup)|http 包装器
+|`STRUCT`|[MessageType](#struct_MessageType)|暂无描述...
+|`STRUCT`|[Message](#struct_Message)|服务器消息
+|`STRUCT`|[MultipleServer](#struct_MultipleServer)|暂无描述...
+|`STRUCT`|[Network](#struct_Network)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
+|`STRUCT`|[Server](#struct_Server)|网络服务器
+|`INTERFACE`|[Service](#struct_Service)|兼容传统 service 设计模式的接口
 
 </details>
 
@@ -385,6 +385,7 @@ func TestBindService(t *testing.T) {
 
 
 ***
+<span id="struct_Bot"></span>
 ### Bot `STRUCT`
 
 ```go
@@ -413,11 +414,13 @@ type Bot struct {
 #### func (*Bot) SendWSPacket(wst int, packet []byte)
 > 发送 WebSocket 数据包到服务器
 ***
+<span id="struct_BotOption"></span>
 ### BotOption `STRUCT`
 
 ```go
 type BotOption func(bot *Bot)
 ```
+<span id="struct_Conn"></span>
 ### Conn `STRUCT`
 服务器连接单次消息的包装
 ```go
@@ -501,6 +504,7 @@ type Conn struct {
 #### func (*Conn) Close(err ...error)
 > 关闭连接
 ***
+<span id="struct_ConsoleParams"></span>
 ### ConsoleParams `STRUCT`
 控制台参数
 ```go
@@ -527,11 +531,13 @@ type ConsoleParams map[string][]string
 #### func (ConsoleParams) Clear()
 > 清空参数
 ***
+<span id="struct_MessageReadyEventHandler"></span>
 ### MessageReadyEventHandler `STRUCT`
 
 ```go
 type MessageReadyEventHandler func(srv *Server)
 ```
+<span id="struct_Http"></span>
 ### Http `STRUCT`
 基于 gin.Engine 包装的 http 服务器
 ```go
@@ -543,6 +549,7 @@ type Http[Context any] struct {
 ```
 #### func (*Http) Gin()  *gin.Engine
 ***
+<span id="struct_HttpContext"></span>
 ### HttpContext `STRUCT`
 基于 gin.Context 的 http 请求上下文
 ```go
@@ -556,16 +563,19 @@ type HttpContext struct {
 #### func (*HttpContext) ReadTo(dest any)  error
 > 读取请求数据到指定结构体，如果失败则返回错误
 ***
+<span id="struct_HandlerFunc"></span>
 ### HandlerFunc `STRUCT`
 
 ```go
 type HandlerFunc[Context any] func(ctx Context)
 ```
+<span id="struct_ContextPacker"></span>
 ### ContextPacker `STRUCT`
 
 ```go
 type ContextPacker[Context any] func(ctx *gin.Context) Context
 ```
+<span id="struct_HttpRouter"></span>
 ### HttpRouter `STRUCT`
 
 ```go
@@ -639,11 +649,13 @@ type HttpRouter[Context any] struct {
 #### func (*HttpRouter) Use(middleware ...HandlerFunc[Context])  *HttpRouter[Context]
 > 将中间件附加到路由组。
 ***
+<span id="struct_HttpWrapperHandleFunc"></span>
 ### HttpWrapperHandleFunc `STRUCT`
 
 ```go
 type HttpWrapperHandleFunc[CTX any] func(ctx CTX)
 ```
+<span id="struct_HttpWrapper"></span>
 ### HttpWrapper `STRUCT`
 http 包装器
 ```go
@@ -703,6 +715,7 @@ type HttpWrapper[CTX any] struct {
 #### func (*HttpWrapper) Group(relativePath string, handlers ...HttpWrapperHandleFunc[CTX])  *HttpWrapperGroup[CTX]
 > 创建一个新的路由组。您应该添加所有具有共同中间件的路由。
 ***
+<span id="struct_HttpWrapperGroup"></span>
 ### HttpWrapperGroup `STRUCT`
 http 包装器
 ```go
@@ -738,6 +751,7 @@ type HttpWrapperGroup[CTX any] struct {
 #### func (*HttpWrapperGroup) Group(relativePath string, handlers ...HttpWrapperHandleFunc[CTX])  *HttpWrapperGroup[CTX]
 > 创建分组
 ***
+<span id="struct_MessageType"></span>
 ### MessageType `STRUCT`
 
 ```go
@@ -746,6 +760,7 @@ type MessageType byte
 #### func (MessageType) String()  string
 > 返回消息类型的字符串表示
 ***
+<span id="struct_Message"></span>
 ### Message `STRUCT`
 服务器消息
 ```go
@@ -771,6 +786,7 @@ type Message struct {
 #### func (*Message) String()  string
 > 返回消息的字符串表示
 ***
+<span id="struct_MultipleServer"></span>
 ### MultipleServer `STRUCT`
 
 ```go
@@ -787,6 +803,7 @@ type MultipleServer struct {
 ***
 #### func (*MultipleServer) OnExitEvent()
 ***
+<span id="struct_Network"></span>
 ### Network `STRUCT`
 
 ```go
@@ -795,11 +812,13 @@ type Network string
 #### func (Network) IsSocket()  bool
 > 返回当前服务器的网络模式是否为 Socket 模式
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go
 type Option func(srv *Server)
 ```
+<span id="struct_Server"></span>
 ### Server `STRUCT`
 网络服务器
 ```go
@@ -966,6 +985,7 @@ func ExampleServer_Run() {
 #### func (*Server) HasMessageStatistics()  bool
 > 是否了开启消息统计
 ***
+<span id="struct_Service"></span>
 ### Service `INTERFACE`
 兼容传统 service 设计模式的接口
 ```go

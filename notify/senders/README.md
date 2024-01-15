@@ -23,7 +23,7 @@ senders Package 包含了内置通知发送器的实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[FeiShu](#feishu)|飞书发送器
+|`STRUCT`|[FeiShu](#struct_FeiShu)|飞书发送器
 
 </details>
 
@@ -35,6 +35,7 @@ senders Package 包含了内置通知发送器的实现
 > 根据特定的 webhook 地址创建飞书发送器
 
 ***
+<span id="struct_FeiShu"></span>
 ### FeiShu `STRUCT`
 飞书发送器
 ```go

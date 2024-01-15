@@ -117,15 +117,15 @@ geometry 旨在提供一组用于处理几何形状和计算几何属性的函�
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Circle](#circle)|圆形
-|`STRUCT`|[FloorPlan](#floorplan)|平面图
-|`STRUCT`|[Direction](#direction)|方向
-|`STRUCT`|[LineSegment](#linesegment)|通过两个点表示一根线段
-|`STRUCT`|[LineSegmentCap](#linesegmentcap)|可以包含一份额外数据的线段
-|`STRUCT`|[Point](#point)|表示了一个由 x、y 坐标组成的点
-|`STRUCT`|[PointCap](#pointcap)|表示了一个由 x、y 坐标组成的点，这个点具有一个数据容量
-|`STRUCT`|[Shape](#shape)|通过多个点表示了一个形状
-|`STRUCT`|[ShapeSearchOption](#shapesearchoption)|图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
+|`STRUCT`|[Circle](#struct_Circle)|圆形
+|`STRUCT`|[FloorPlan](#struct_FloorPlan)|平面图
+|`STRUCT`|[Direction](#struct_Direction)|方向
+|`STRUCT`|[LineSegment](#struct_LineSegment)|通过两个点表示一根线段
+|`STRUCT`|[LineSegmentCap](#struct_LineSegmentCap)|可以包含一份额外数据的线段
+|`STRUCT`|[Point](#struct_Point)|表示了一个由 x、y 坐标组成的点
+|`STRUCT`|[PointCap](#struct_PointCap)|表示了一个由 x、y 坐标组成的点，这个点具有一个数据容量
+|`STRUCT`|[Shape](#struct_Shape)|通过多个点表示了一个形状
+|`STRUCT`|[ShapeSearchOption](#struct_ShapeSearchOption)|图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 
 </details>
 
@@ -864,6 +864,7 @@ func TestNewShapeWithString(t *testing.T) {
 > 通过降序的方式进行搜索
 
 ***
+<span id="struct_Circle"></span>
 ### Circle `STRUCT`
 圆形
 ```go
@@ -889,6 +890,7 @@ type Circle[V generic.SignedNumber] struct {
 #### func (Circle) CentroidDistance(circle Circle[V])  V
 > 计算与另一个圆的质心距离
 ***
+<span id="struct_FloorPlan"></span>
 ### FloorPlan `STRUCT`
 平面图
 ```go
@@ -906,11 +908,13 @@ type FloorPlan []string
 #### func (FloorPlan) String()  string
 > 获取平面图结果
 ***
+<span id="struct_Direction"></span>
 ### Direction `STRUCT`
 方向
 ```go
 type Direction uint8
 ```
+<span id="struct_LineSegment"></span>
 ### LineSegment `STRUCT`
 通过两个点表示一根线段
 ```go
@@ -928,6 +932,7 @@ type LineSegment[V generic.SignedNumber] [2]Point[V]
 #### func (LineSegment) GetLength()  V
 > 获取该线段的长度
 ***
+<span id="struct_LineSegmentCap"></span>
 ### LineSegmentCap `STRUCT`
 可以包含一份额外数据的线段
 ```go
@@ -936,6 +941,7 @@ type LineSegmentCap[V generic.SignedNumber, Data any] struct {
 	Data Data
 }
 ```
+<span id="struct_Point"></span>
 ### Point `STRUCT`
 表示了一个由 x、y 坐标组成的点
 ```go
@@ -989,6 +995,7 @@ type Point[V generic.SignedNumber] [2]V
 #### func (Point) Min(point Point[V])  Point[V]
 > 返回两个位置中每个维度的最小值组成的新的位置
 ***
+<span id="struct_PointCap"></span>
 ### PointCap `STRUCT`
 表示了一个由 x、y 坐标组成的点，这个点具有一个数据容量
 ```go
@@ -997,6 +1004,7 @@ type PointCap[V generic.SignedNumber, D any] struct {
 	Data D
 }
 ```
+<span id="struct_Shape"></span>
 ### Shape `STRUCT`
 通过多个点表示了一个形状
 ```go
@@ -1139,6 +1147,7 @@ func ExampleShape_ShapeSearch() {
 #### func (Shape) IsPointOnEdge(point Point[V])  bool
 > 检查点是否在该形状的一条边上
 ***
+<span id="struct_ShapeSearchOption"></span>
 ### ShapeSearchOption `STRUCT`
 图形搜索可选项，用于 Shape.ShapeSearch 搜索支持
 ```go

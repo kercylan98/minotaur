@@ -23,8 +23,8 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[XlsxExportType](#xlsxexporttype)|暂无描述...
-|`STRUCT`|[Xlsx](#xlsx)|内置的 Xlsx 配置
+|`STRUCT`|[XlsxExportType](#struct_XlsxExportType)|暂无描述...
+|`STRUCT`|[Xlsx](#struct_Xlsx)|内置的 Xlsx 配置
 
 </details>
 
@@ -35,11 +35,13 @@
 <span id="NewXlsx"></span>
 
 ***
+<span id="struct_XlsxExportType"></span>
 ### XlsxExportType `STRUCT`
 
 ```go
 type XlsxExportType int
 ```
+<span id="struct_Xlsx"></span>
 ### Xlsx `STRUCT`
 内置的 Xlsx 配置
 ```go

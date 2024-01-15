@@ -28,9 +28,9 @@ AOI 问题是在大规模多人在线游戏中常见的问题，它涉及到确�
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[TwoDimensional](#twodimensional)|暂无描述...
-|`INTERFACE`|[TwoDimensionalEntity](#twodimensionalentity)|基于2D定义的AOI对象功能接口
-|`STRUCT`|[EntityJoinVisionEventHandle](#entityjoinvisioneventhandle)|暂无描述...
+|`STRUCT`|[TwoDimensional](#struct_TwoDimensional)|暂无描述...
+|`INTERFACE`|[TwoDimensionalEntity](#struct_TwoDimensionalEntity)|基于2D定义的AOI对象功能接口
+|`STRUCT`|[EntityJoinVisionEventHandle](#struct_EntityJoinVisionEventHandle)|暂无描述...
 
 </details>
 
@@ -65,6 +65,7 @@ func TestNewTwoDimensional(t *testing.T) {
 
 
 ***
+<span id="struct_TwoDimensional"></span>
 ### TwoDimensional `STRUCT`
 
 ```go
@@ -82,6 +83,7 @@ type TwoDimensional[EID generic.Basic, PosType generic.SignedNumber, E TwoDimens
 	repartitionQueue []func()
 }
 ```
+<span id="struct_TwoDimensionalEntity"></span>
 ### TwoDimensionalEntity `INTERFACE`
 基于2D定义的AOI对象功能接口
   - AOI 对象提供了 AOI 系统中常用的属性，诸如位置坐标和视野范围等
@@ -92,6 +94,7 @@ type TwoDimensionalEntity[EID generic.Basic, PosType generic.SignedNumber] inter
 	GetPosition() geometry.Point[PosType]
 }
 ```
+<span id="struct_EntityJoinVisionEventHandle"></span>
 ### EntityJoinVisionEventHandle `STRUCT`
 
 ```go

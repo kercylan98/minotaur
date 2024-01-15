@@ -24,12 +24,12 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Action](#action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
-|`STRUCT`|[Handler](#handler)|消息处理器
-|`STRUCT`|[Dispatcher](#dispatcher)|用于服务器消息处理的消息分发器
-|`STRUCT`|[Manager](#manager)|消息分发器管理器
-|`INTERFACE`|[Message](#message)|暂无描述...
-|`INTERFACE`|[Producer](#producer)|暂无描述...
+|`STRUCT`|[Action](#struct_Action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
+|`STRUCT`|[Handler](#struct_Handler)|消息处理器
+|`STRUCT`|[Dispatcher](#struct_Dispatcher)|用于服务器消息处理的消息分发器
+|`STRUCT`|[Manager](#struct_Manager)|消息分发器管理器
+|`INTERFACE`|[Message](#struct_Message)|暂无描述...
+|`INTERFACE`|[Producer](#struct_Producer)|暂无描述...
 
 </details>
 
@@ -165,6 +165,7 @@ func TestNewManager(t *testing.T) {
 
 
 ***
+<span id="struct_Action"></span>
 ### Action `STRUCT`
 消息分发器操作器，用于暴露外部可操作的消息分发器函数
 ```go
@@ -173,11 +174,13 @@ type Action[P Producer, M Message[P]] struct {
 	d      *Dispatcher[P, M]
 }
 ```
+<span id="struct_Handler"></span>
 ### Handler `STRUCT`
 消息处理器
 ```go
 type Handler[P Producer, M Message[P]] func(dispatcher *Dispatcher[P, M], message M)
 ```
+<span id="struct_Dispatcher"></span>
 ### Dispatcher `STRUCT`
 用于服务器消息处理的消息分发器
 
@@ -207,6 +210,7 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	abort         chan struct{}
 }
 ```
+<span id="struct_Manager"></span>
 ### Manager `STRUCT`
 消息分发器管理器
 ```go
@@ -223,6 +227,7 @@ type Manager[P Producer, M Message[P]] struct {
 	createdHandler func(name string)
 }
 ```
+<span id="struct_Message"></span>
 ### Message `INTERFACE`
 
 ```go
@@ -230,6 +235,7 @@ type Message[P comparable] interface {
 	GetProducer() P
 }
 ```
+<span id="struct_Producer"></span>
 ### Producer `INTERFACE`
 
 ```go

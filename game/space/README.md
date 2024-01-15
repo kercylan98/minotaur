@@ -24,10 +24,10 @@ space 游戏中常见的空间设计，例如房间、地图等
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[RoomController](#roomcontroller)|对房间进行操作的控制器，由 RoomManager 接管后返回
-|`STRUCT`|[RoomManager](#roommanager)|房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
-|`STRUCT`|[RoomAssumeControlEventHandle](#roomassumecontroleventhandle)|暂无描述...
-|`STRUCT`|[RoomControllerOptions](#roomcontrolleroptions)|暂无描述...
+|`STRUCT`|[RoomController](#struct_RoomController)|对房间进行操作的控制器，由 RoomManager 接管后返回
+|`STRUCT`|[RoomManager](#struct_RoomManager)|房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
+|`STRUCT`|[RoomAssumeControlEventHandle](#struct_RoomAssumeControlEventHandle)|暂无描述...
+|`STRUCT`|[RoomControllerOptions](#struct_RoomControllerOptions)|暂无描述...
 
 </details>
 
@@ -54,6 +54,7 @@ func ExampleNewRoomManager() {
 > 创建房间控制器选项
 
 ***
+<span id="struct_RoomController"></span>
 ### RoomController `STRUCT`
 对房间进行操作的控制器，由 RoomManager 接管后返回
 ```go
@@ -68,6 +69,7 @@ type RoomController[EntityID comparable, RoomID comparable, Entity generic.IdR[E
 	owner           *EntityID
 }
 ```
+<span id="struct_RoomManager"></span>
 ### RoomManager `STRUCT`
 房间管理器是用于对房间进行管理的基本单元，通过该实例可以对房间进行增删改查等操作
   - 该实例是线程安全的
@@ -78,11 +80,13 @@ type RoomManager[EntityID comparable, RoomID comparable, Entity generic.IdR[Enti
 	rooms        map[RoomID]*RoomController[EntityID, RoomID, Entity, Room]
 }
 ```
+<span id="struct_RoomAssumeControlEventHandle"></span>
 ### RoomAssumeControlEventHandle `STRUCT`
 
 ```go
 type RoomAssumeControlEventHandle[EntityID comparable, RoomID comparable, Entity generic.IdR[EntityID], Room generic.IdR[RoomID]] func(controller *RoomController[EntityID, RoomID, Entity, Room])
 ```
+<span id="struct_RoomControllerOptions"></span>
 ### RoomControllerOptions `STRUCT`
 
 ```go

@@ -45,7 +45,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[CompareExpression](#compareexpression)|比较表达式
+|`STRUCT`|[CompareExpression](#struct_CompareExpression)|比较表达式
 
 </details>
 
@@ -213,6 +213,7 @@ func TestMakeLastDigitsZero(t *testing.T) {
 
 
 ***
+<span id="struct_CompareExpression"></span>
 ### CompareExpression `STRUCT`
 比较表达式
 ```go

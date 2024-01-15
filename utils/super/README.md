@@ -92,12 +92,12 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[BitSet](#bitset)|是一个可以动态增长的比特位集合
-|`STRUCT`|[LossCounter](#losscounter)|暂无描述...
-|`STRUCT`|[Matcher](#matcher)|匹配器
-|`STRUCT`|[Permission](#permission)|暂无描述...
-|`STRUCT`|[StackGo](#stackgo)|用于获取上一个协程调用的堆栈信息
-|`STRUCT`|[VerifyHandle](#verifyhandle)|校验句柄
+|`STRUCT`|[BitSet](#struct_BitSet)|是一个可以动态增长的比特位集合
+|`STRUCT`|[LossCounter](#struct_LossCounter)|暂无描述...
+|`STRUCT`|[Matcher](#struct_Matcher)|匹配器
+|`STRUCT`|[Permission](#struct_Permission)|暂无描述...
+|`STRUCT`|[StackGo](#struct_StackGo)|用于获取上一个协程调用的堆栈信息
+|`STRUCT`|[VerifyHandle](#struct_VerifyHandle)|校验句柄
 
 </details>
 
@@ -739,6 +739,7 @@ func BenchmarkCompareVersion(b *testing.B) {
 
 
 ***
+<span id="struct_BitSet"></span>
 ### BitSet `STRUCT`
 是一个可以动态增长的比特位集合
   - 默认情况下将使用 64 位无符号整数来表示比特位，当需要表示的比特位超过 64 位时，将自动增长
@@ -907,6 +908,7 @@ func TestBitSet_Shrink(t *testing.T) {
 #### func (*BitSet) UnmarshalJSON(data []byte)  error
 > 实现 json.Unmarshaler 接口
 ***
+<span id="struct_LossCounter"></span>
 ### LossCounter `STRUCT`
 
 ```go
@@ -924,6 +926,7 @@ type LossCounter struct {
 ***
 #### func (*LossCounter) String()  string
 ***
+<span id="struct_Matcher"></span>
 ### Matcher `STRUCT`
 匹配器
 ```go
@@ -933,6 +936,7 @@ type Matcher[Value any, Result any] struct {
 	d     bool
 }
 ```
+<span id="struct_Permission"></span>
 ### Permission `STRUCT`
 
 ```go
@@ -941,6 +945,7 @@ type Permission[Code generic.Integer, EntityID comparable] struct {
 	l           sync.RWMutex
 }
 ```
+<span id="struct_StackGo"></span>
 ### StackGo `STRUCT`
 用于获取上一个协程调用的堆栈信息
   - 应当最先运行 Wait 函数，然后在其他协程中调用 Stack 函数或者 GiveUp 函数
@@ -965,6 +970,7 @@ type StackGo struct {
 >   - 在调用 Wait 函数后调用该函数，将会放弃收集消息堆栈并且释放资源
 >   - 在调用 GiveUp 函数后调用 Stack 函数，将会 panic
 ***
+<span id="struct_VerifyHandle"></span>
 ### VerifyHandle `STRUCT`
 校验句柄
 ```go

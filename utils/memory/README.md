@@ -26,7 +26,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Option](#option)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
@@ -96,6 +96,7 @@ func TestBindAction(t *testing.T) {
 <span id="NewOption"></span>
 
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go

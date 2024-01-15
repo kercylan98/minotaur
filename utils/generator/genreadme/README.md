@@ -23,7 +23,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Builder](#builder)|暂无描述...
+|`STRUCT`|[Builder](#struct_Builder)|暂无描述...
 
 </details>
 
@@ -34,6 +34,7 @@
 <span id="New"></span>
 
 ***
+<span id="struct_Builder"></span>
 ### Builder `STRUCT`
 
 ```go

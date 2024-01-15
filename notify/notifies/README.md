@@ -35,10 +35,10 @@ notifies 包含了内置通知内容的实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[FeiShu](#feishu)|飞书通知消息
-|`STRUCT`|[FeiShuMessage](#feishumessage)|暂无描述...
-|`STRUCT`|[FeiShuRichText](#feishurichtext)|飞书富文本结构
-|`STRUCT`|[FeiShuRichTextContent](#feishurichtextcontent)|飞书富文本内容体
+|`STRUCT`|[FeiShu](#struct_FeiShu)|飞书通知消息
+|`STRUCT`|[FeiShuMessage](#struct_FeiShuMessage)|暂无描述...
+|`STRUCT`|[FeiShuRichText](#struct_FeiShuRichText)|飞书富文本结构
+|`STRUCT`|[FeiShuRichTextContent](#struct_FeiShuRichTextContent)|飞书富文本内容体
 
 </details>
 
@@ -147,6 +147,7 @@ notifies 包含了内置通知内容的实现
 > 创建一个飞书富文本
 
 ***
+<span id="struct_FeiShu"></span>
 ### FeiShu `STRUCT`
 飞书通知消息
 ```go
@@ -158,11 +159,13 @@ type FeiShu struct {
 #### func (*FeiShu) Format() ( string,  error)
 > 格式化通知内容
 ***
+<span id="struct_FeiShuMessage"></span>
 ### FeiShuMessage `STRUCT`
 
 ```go
 type FeiShuMessage func(feishu *FeiShu)
 ```
+<span id="struct_FeiShuRichText"></span>
 ### FeiShuRichText `STRUCT`
 飞书富文本结构
 ```go
@@ -173,6 +176,7 @@ type FeiShuRichText struct {
 #### func (*FeiShuRichText) Create(lang string, title string)  *FeiShuRichTextContent
 > 创建一个特定语言和标题的富文本内容
 ***
+<span id="struct_FeiShuRichTextContent"></span>
 ### FeiShuRichTextContent `STRUCT`
 飞书富文本内容体
 ```go
