@@ -6,6 +6,90 @@ import (
 	"testing"
 )
 
+func TestConvertSliceToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		batch    int
+		expected [][]int
+	}{
+		{name: "TestConvertSliceToBatches_NonEmpty", input: []int{1, 2, 3}, batch: 2, expected: [][]int{{1, 2}, {3}}},
+		{name: "TestConvertSliceToBatches_Empty", input: []int{}, batch: 2, expected: nil},
+		{name: "TestConvertSliceToBatches_Nil", input: nil, batch: 2, expected: nil},
+		{name: "TestConvertSliceToBatches_NonPositive", input: []int{1, 2, 3}, batch: 0, expected: nil},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertSliceToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+			for i := 0; i < len(actual); i++ {
+				av, ev := actual[i], c.expected[i]
+				if len(av) != len(ev) {
+					t.Errorf("expected: %v, actual: %v", c.expected, actual)
+				}
+				for j := 0; j < len(av); j++ {
+					aj, ej := av[j], ev[j]
+					if reflect.TypeOf(aj).Kind() != reflect.TypeOf(ej).Kind() {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+					if aj != ej {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestConvertMapKeysToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{
+		{name: "TestConvertMapKeysToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}},
+		{name: "TestConvertMapKeysToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil},
+		{name: "TestConvertMapKeysToBatches_Nil", input: nil, batch: 2, expected: nil},
+		{name: "TestConvertMapKeysToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapKeysToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+func TestConvertMapValuesToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{
+		{name: "TestConvertMapValuesToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}},
+		{name: "TestConvertMapValuesToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil},
+		{name: "TestConvertMapValuesToBatches_Nil", input: nil, batch: 2, expected: nil},
+		{name: "TestConvertMapValuesToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapValuesToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
 func TestConvertSliceToAny(t *testing.T) {
 	var cases = []struct {
 		name     string

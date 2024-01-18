@@ -4,7 +4,32 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"reflect"
+	"sort"
 )
+
+func ExampleConvertSliceToBatches() {
+	result := collection.ConvertSliceToBatches([]int{1, 2, 3}, 2)
+	for _, v := range result {
+		fmt.Println(v)
+	}
+	// Output:
+	// [1 2]
+	// [3]
+}
+
+func ExampleConvertMapKeysToBatches() {
+	result := collection.ConvertMapKeysToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+	// Output:
+	// 2
+}
+
+func ExampleConvertMapValuesToBatches() {
+	result := collection.ConvertMapValuesToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+	// Output:
+	// 2
+}
 
 func ExampleConvertSliceToAny() {
 	result := collection.ConvertSliceToAny([]int{1, 2, 3})
@@ -60,6 +85,7 @@ func ExampleConvertSliceToBoolMap() {
 
 func ExampleConvertMapKeysToSlice() {
 	result := collection.ConvertMapKeysToSlice(map[int]int{1: 1, 2: 2, 3: 3})
+	sort.Ints(result)
 	for i, v := range result {
 		fmt.Println(i, v)
 	}
