@@ -17,33 +17,70 @@ var (
 
 type Int big.Int
 
-// NewInt 创建一个 Int
-func NewInt[T generic.Number](x T) *Int {
-	return (*Int)(big.NewInt(int64(x)))
-}
-
-// NewIntByString 通过字符串创建一个 Int
-//   - 如果字符串不是一个合法的数字，则返回 0
-func NewIntByString(i string) *Int {
-	v, suc := new(big.Int).SetString(i, 10)
-	if !suc {
-		return IntZero.Copy()
+// NewInt 创建一个 Int 对象，该对象的值为 x
+func NewInt[T generic.Basic](x T) *Int {
+	var xa any = x
+	switch x := xa.(type) {
+	case int:
+		return (*Int)(big.NewInt(int64(x)))
+	case int8:
+		return (*Int)(big.NewInt(int64(x)))
+	case int16:
+		return (*Int)(big.NewInt(int64(x)))
+	case int32:
+		return (*Int)(big.NewInt(int64(x)))
+	case int64:
+		return (*Int)(big.NewInt(x))
+	case uint:
+		return (*Int)(big.NewInt(int64(x)))
+	case uint8:
+		return (*Int)(big.NewInt(int64(x)))
+	case uint16:
+		return (*Int)(big.NewInt(int64(x)))
+	case uint32:
+		return (*Int)(big.NewInt(int64(x)))
+	case uint64:
+		return (*Int)(big.NewInt(int64(x)))
+	case string:
+		si, suc := new(big.Int).SetString(x, 10)
+		if !suc {
+			return (*Int)(big.NewInt(0))
+		}
+		return (*Int)(si)
+	case bool:
+		if x {
+			return (*Int)(big.NewInt(1))
+		}
+		return (*Int)(big.NewInt(0))
+	case float32:
+		return (*Int)(big.NewInt(int64(x)))
+	case float64:
+		return (*Int)(big.NewInt(int64(x)))
 	}
-	return (*Int)(v)
+	return (*Int)(big.NewInt(0))
 }
 
+// applyIntOperation 应用一个 Int 操作
 func applyIntOperation[T generic.Number](v *Int, i T, op func(*big.Int, *big.Int) *big.Int) *Int {
 	return (*Int)(op(v.ToBigint(), NewInt(i).ToBigint()))
 }
 
+// Copy 拷贝当前 Int 对象
 func (slf *Int) Copy() *Int {
 	return (*Int)(new(big.Int).Set(slf.ToBigint()))
 }
 
+// Set 设置当前 Int 对象的值为 i
 func (slf *Int) Set(i *Int) *Int {
 	return (*Int)(slf.ToBigint().Set(i.ToBigint()))
 }
 
+// SetString 设置当前 Int 对象的值为 i
+func (slf *Int) SetString(i string) *Int {
+	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
+}
+
+// SetInt 设置当前 Int 对象的值为 i
 func (slf *Int) SetInt(i int) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
@@ -92,6 +129,9 @@ func (slf *Int) IsZero() bool {
 }
 
 func (slf *Int) ToBigint() *big.Int {
+	if slf == nil {
+		return big.NewInt(0)
+	}
 	return (*big.Int)(slf)
 }
 
@@ -130,6 +170,9 @@ func (slf *Int) Int64() int64 {
 }
 
 func (slf *Int) String() string {
+	if slf == nil {
+		return "0"
+	}
 	return slf.ToBigint().String()
 }
 
