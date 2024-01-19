@@ -1,5 +1,61 @@
 package collection
 
+// EqualSlice 检查两个切片是否相等，当 handler 返回 true 时，表示 slice1 中的某个元素和 slice2 中的某个元素相匹配
+//   - 当两个切片的容量不同时，不会影响最终的比较结果
+func EqualSlice[S ~[]V, V any](slice1 S, slice2 S, handler ComparisonHandler[V]) bool {
+	if len(slice1) != len(slice2) {
+		return false
+	}
+	for i, v1 := range slice1 {
+		if !handler(v1, slice2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// EqualComparableSlice 检查两个切片的值是否相同
+//   - 当两个切片的容量不同时，不会影响最终的比较结果
+func EqualComparableSlice[S ~[]V, V comparable](slice1 S, slice2 S) bool {
+	if len(slice1) != len(slice2) {
+		return false
+	}
+	for i, v1 := range slice1 {
+		if v1 != slice2[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// EqualMap 检查两个 map 是否相等，当 handler 返回 true 时，表示 map1 中的某个元素和 map2 中的某个元素相匹配
+//   - 当两个 map 的容量不同时，不会影响最终的比较结果
+func EqualMap[M ~map[K]V, K comparable, V any](map1 M, map2 M, handler ComparisonHandler[V]) bool {
+	if len(map1) != len(map2) {
+		return false
+	}
+	for k, v1 := range map1 {
+		if !handler(v1, map2[k]) {
+			return false
+		}
+	}
+	return true
+}
+
+// EqualComparableMap 检查两个 map 的值是否相同
+//   - 当两个 map 的容量不同时，不会影响最终的比较结果
+func EqualComparableMap[M ~map[K]V, K comparable, V comparable](map1 M, map2 M) bool {
+	if len(map1) != len(map2) {
+		return false
+	}
+	for k, v1 := range map1 {
+		if v1 != map2[k] {
+			return false
+		}
+	}
+	return true
+}
+
 // InSlice 检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 func InSlice[S ~[]V, V any](slice S, v V, handler ComparisonHandler[V]) bool {
 	if len(slice) == 0 {

@@ -5,6 +5,58 @@ import (
 	"github.com/kercylan98/minotaur/utils/collection"
 )
 
+func ExampleEqualSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualSlice(s1, s2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualSlice(s1, s3, func(source, target int) bool {
+		return source == target
+	}))
+	// Output:
+	// false
+	// true
+}
+
+func ExampleEqualComparableSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualComparableSlice(s1, s2))
+	fmt.Println(collection.EqualComparableSlice(s1, s3))
+	// Output:
+	// false
+	// true
+}
+
+func ExampleEqualMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualMap(m1, m2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualMap(m1, m3, func(source, target int) bool {
+		return source == target
+	}))
+	// Output:
+	// false
+	// true
+}
+
+func ExampleEqualComparableMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualComparableMap(m1, m2))
+	fmt.Println(collection.EqualComparableMap(m1, m3))
+	// Output:
+	// false
+	// true
+}
+
 func ExampleInSlice() {
 	result := collection.InSlice([]int{1, 2, 3}, 2, func(source, target int) bool {
 		return source == target

@@ -85,42 +85,67 @@ func (slf *Int) SetInt(i int) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetInt8 设置当前 Int 对象的值为 i
 func (slf *Int) SetInt8(i int8) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetInt16 设置当前 Int 对象的值为 i
 func (slf *Int) SetInt16(i int16) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetInt32 设置当前 Int 对象的值为 i
 func (slf *Int) SetInt32(i int32) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetInt64 设置当前 Int 对象的值为 i
 func (slf *Int) SetInt64(i int64) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetUint 设置当前 Int 对象的值为 i
 func (slf *Int) SetUint(i uint) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetUint8 设置当前 Int 对象的值为 i
 func (slf *Int) SetUint8(i uint8) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetUint16 设置当前 Int 对象的值为 i
 func (slf *Int) SetUint16(i uint16) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetUint32 设置当前 Int 对象的值为 i
 func (slf *Int) SetUint32(i uint32) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetUint64 设置当前 Int 对象的值为 i
 func (slf *Int) SetUint64(i uint64) *Int {
 	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
 }
 
+// SetFloat32 设置当前 Int 对象的值为 i 向下取整后的值
+func (slf *Int) SetFloat32(i float32) *Int {
+	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
+}
+
+// SetFloat64 设置当前 Int 对象的值为 i 向下取整后的值
+func (slf *Int) SetFloat64(i float64) *Int {
+	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
+}
+
+// SetBool 设置当前 Int 对象的值为 i，当 i 为 true 时，值为 1，当 i 为 false 时，值为 0
+func (slf *Int) SetBool(i bool) *Int {
+	return (*Int)(slf.ToBigint().Set((*big.Int)(NewInt(i))))
+}
+
+// IsZero 判断当前 Int 对象的值是否为 0
 func (slf *Int) IsZero() bool {
 	if slf == nil || slf.EqualTo(IntZero) {
 		return true
@@ -128,6 +153,7 @@ func (slf *Int) IsZero() bool {
 	return false
 }
 
+// ToBigint 转换为 *big.Int
 func (slf *Int) ToBigint() *big.Int {
 	if slf == nil {
 		return big.NewInt(0)
@@ -140,35 +166,37 @@ func (slf *Int) Cmp(i *Int) int {
 	return slf.ToBigint().Cmp(i.ToBigint())
 }
 
-// GreaterThan 大于
+// GreaterThan 检查 slf 是否大于 i
 func (slf *Int) GreaterThan(i *Int) bool {
 	return slf.Cmp(i) > 0
 }
 
-// GreaterThanOrEqualTo 大于或等于
+// GreaterThanOrEqualTo 检查 slf 是否大于或等于 i
 func (slf *Int) GreaterThanOrEqualTo(i *Int) bool {
 	return slf.Cmp(i) >= 0
 }
 
-// LessThan 小于
+// LessThan 检查 slf 是否小于 i
 func (slf *Int) LessThan(i *Int) bool {
 	return slf.Cmp(i) < 0
 }
 
-// LessThanOrEqualTo 小于或等于
+// LessThanOrEqualTo 检查 slf 是否小于或等于 i
 func (slf *Int) LessThanOrEqualTo(i *Int) bool {
 	return slf.Cmp(i) <= 0
 }
 
-// EqualTo 等于
+// EqualTo 检查 slf 是否等于 i
 func (slf *Int) EqualTo(i *Int) bool {
 	return slf.Cmp(i) == 0
 }
 
+// Int64 转换为 int64 类型进行返回
 func (slf *Int) Int64() int64 {
 	return slf.ToBigint().Int64()
 }
 
+// String 转换为 string 类型进行返回
 func (slf *Int) String() string {
 	if slf == nil {
 		return "0"
@@ -176,6 +204,7 @@ func (slf *Int) String() string {
 	return slf.ToBigint().String()
 }
 
+// Add 使用 i 对 slf 进行加法运算，slf 的值会变为运算后的值。返回 slf
 func (slf *Int) Add(i *Int) *Int {
 	x := slf.ToBigint()
 	return (*Int)(x.Add(x, i.ToBigint()))
