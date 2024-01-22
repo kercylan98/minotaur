@@ -7,9 +7,13 @@ import (
 )
 
 // NewBitSet 通过指定的 Bit 位创建一个 BitSet
+//   - 当指定的 Bit 位存在负数时，将会 panic
 func NewBitSet[Bit generic.Integer](bits ...Bit) *BitSet[Bit] {
 	set := &BitSet[Bit]{set: make([]uint64, 0, 1)}
 	for _, bit := range bits {
+		if bit < 0 {
+			panic(fmt.Errorf("bit %v is negative", bit))
+		}
 		set.Set(bit)
 	}
 	return set
@@ -43,6 +47,15 @@ func (slf *BitSet[Bit]) Del(bit Bit) *BitSet[Bit] {
 // Shrink 将 BitSet 中的比特位集合缩小到最小
 //   - 正常情况下当 BitSet 中的比特位超出 64 位时，将自动增长，当 BitSet 中的比特位数量减少时，可以使用该方法将 BitSet 中的比特位集合缩小到最小
 func (slf *BitSet[Bit]) Shrink() *BitSet[Bit] {
+	switch len(slf.set) {
+	case 0:
+		return slf
+	case 1:
+		if slf.set[0] == 0 {
+			slf.set = nil
+			return slf
+		}
+	}
 	index := len(slf.set) - 1
 	if slf.set[index] != 0 {
 		return slf
