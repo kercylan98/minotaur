@@ -84,12 +84,35 @@ type Server struct {
 	systemSignal             chan os.Signal                        // 系统信号
 	closeChannel             chan struct{}                         // 关闭信号
 	multipleRuntimeErrorChan chan error                            // 多服务器模式下的运行时错误
+	data                     map[string]any                        // 服务器全局数据
 
 	messageCounter atomic.Int64 // 消息计数器
 	addr           string       // 侦听地址
 	network        Network      // 网络类型
 	closed         uint32       // 服务器是否已关闭
 	services       []func()     // 服务
+}
+
+// LoadData 加载绑定的服务器数据
+func LoadData[T any](srv *Server, name string, data any) T {
+	return srv.data[name].(T)
+}
+
+// BindData 绑定数据到特定服务器
+func BindData(srv *Server, name string, data any) {
+	srv.BindData(name, data)
+}
+
+// BindData 绑定数据到特定服务器
+func (srv *Server) BindData(name string, data any) {
+	if srv.data == nil {
+		srv.data = map[string]any{}
+	}
+	_, exist := srv.data[name]
+	if exist {
+		panic(fmt.Errorf("data with duplicate names is bound, got: %s", name))
+	}
+	srv.data[name] = data
 }
 
 // preCheckAndAdaptation 预检查及适配
