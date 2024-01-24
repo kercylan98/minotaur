@@ -103,6 +103,11 @@ func BindData(srv *Server, name string, data any) {
 	srv.BindData(name, data)
 }
 
+// LoadData 加载绑定的服务器数据
+func (srv *Server) LoadData(name string, data any) any {
+	return srv.data[name]
+}
+
 // BindData 绑定数据到特定服务器
 func (srv *Server) BindData(name string, data any) {
 	if srv.data == nil {
