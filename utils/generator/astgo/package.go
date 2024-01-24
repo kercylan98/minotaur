@@ -91,7 +91,7 @@ func (p *Package) Structs() []*Struct {
 }
 
 func (p *Package) FileComments() *Comment {
-	var comment = newComment(nil)
+	var comment = newComment("", nil)
 	for _, file := range p.Files {
 		for _, c := range file.Comment.Comments {
 			comment.Comments = append(comment.Comments, c)

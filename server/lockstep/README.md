@@ -27,17 +27,17 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`INTERFACE`|[Client](#client)|帧同步客户端接口定义
-|`STRUCT`|[StoppedEventHandle](#stoppedeventhandle)|暂无描述...
-|`STRUCT`|[Lockstep](#lockstep)|锁步（帧）同步默认实现
-|`STRUCT`|[Option](#option)|暂无描述...
+|`INTERFACE`|[Client](#struct_Client)|帧同步客户端接口定义
+|`STRUCT`|[StoppedEventHandle](#struct_StoppedEventHandle)|暂无描述...
+|`STRUCT`|[Lockstep](#struct_Lockstep)|锁步（帧）同步默认实现
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewLockstep(options ...Option[ClientID, Command])  *Lockstep[ClientID, Command]
+#### func NewLockstep\[ClientID comparable, Command any\](options ...Option[ClientID, Command]) *Lockstep[ClientID, Command]
 <span id="NewLockstep"></span>
 > 创建一个锁步（帧）同步默认实现的组件(Lockstep)进行返回
 
@@ -78,19 +78,19 @@ func TestNewLockstep(t *testing.T) {
 
 
 ***
-#### func WithFrameLimit(frameLimit int64)  Option[ClientID, Command]
+#### func WithFrameLimit\[ClientID comparable, Command any\](frameLimit int64) Option[ClientID, Command]
 <span id="WithFrameLimit"></span>
 > 通过特定逻辑帧上限创建锁步（帧）同步组件
 >   - 当达到上限时将停止广播
 
 ***
-#### func WithFrameRate(frameRate int64)  Option[ClientID, Command]
+#### func WithFrameRate\[ClientID comparable, Command any\](frameRate int64) Option[ClientID, Command]
 <span id="WithFrameRate"></span>
 > 通过特定逻辑帧率创建锁步（帧）同步组件
 >   - 默认情况下为 15/s
 
 ***
-#### func WithSerialization(handle func (frame int64, commands []Command)  []byte)  Option[ClientID, Command]
+#### func WithSerialization\[ClientID comparable, Command any\](handle func (frame int64, commands []Command)  []byte) Option[ClientID, Command]
 <span id="WithSerialization"></span>
 > 通过特定的序列化方式将每一帧的数据进行序列化
 > 
@@ -102,12 +102,13 @@ func TestNewLockstep(t *testing.T) {
 >     }
 
 ***
-#### func WithInitFrame(initFrame int64)  Option[ClientID, Command]
+#### func WithInitFrame\[ClientID comparable, Command any\](initFrame int64) Option[ClientID, Command]
 <span id="WithInitFrame"></span>
 > 通过特定的初始帧创建锁步（帧）同步组件
 >   - 默认情况下为 0，即第一帧索引为 0
 
 ***
+<span id="struct_Client"></span>
 ### Client `INTERFACE`
 帧同步客户端接口定义
   - 客户端应该具备ID及写入数据包的实现
@@ -117,11 +118,13 @@ type Client[ID comparable] interface {
 	Write(packet []byte, callback ...func(err error))
 }
 ```
+<span id="struct_StoppedEventHandle"></span>
 ### StoppedEventHandle `STRUCT`
 
 ```go
 type StoppedEventHandle[ClientID comparable, Command any] func(lockstep *Lockstep[ClientID, Command])
 ```
+<span id="struct_Lockstep"></span>
 ### Lockstep `STRUCT`
 锁步（帧）同步默认实现
   - 支持最大帧上限 WithFrameLimit
@@ -149,6 +152,108 @@ type Lockstep[ClientID comparable, Command any] struct {
 	lockstepStoppedEventHandles []StoppedEventHandle[ClientID, Command]
 }
 ```
+<span id="struct_Lockstep_JoinClient"></span>
+
+#### func (*Lockstep) JoinClient(client Client[ClientID])
+> 将客户端加入到广播队列中，通常在开始广播前使用
+>   - 如果客户端在开始广播后加入，将丢失之前的帧数据，如要从特定帧开始追帧请使用 JoinClientWithFrame
+
+***
+<span id="struct_Lockstep_JoinClientWithFrame"></span>
+
+#### func (*Lockstep) JoinClientWithFrame(client Client[ClientID], frameIndex int64)
+> 加入客户端到广播队列中，并从特定帧开始追帧
+>   - 可用于重连及状态同步、帧同步混用的情况
+>   - 混用：服务端记录指令时同时做一次状态计算，新客户端加入时直接同步当前状态，之后从特定帧开始广播
+
+***
+<span id="struct_Lockstep_GetClientCount"></span>
+
+#### func (*Lockstep) GetClientCount()  int
+> 获取客户端数量
+
+***
+<span id="struct_Lockstep_DropCache"></span>
+
+#### func (*Lockstep) DropCache(handler func (frame int64)  bool)
+> 丢弃特定帧的缓存，当 handler 返回 true 时将丢弃缓存
+
+***
+<span id="struct_Lockstep_LeaveClient"></span>
+
+#### func (*Lockstep) LeaveClient(clientId ClientID)
+> 将客户端从广播队列中移除
+
+***
+<span id="struct_Lockstep_StartBroadcast"></span>
+
+#### func (*Lockstep) StartBroadcast()
+> 开始广播
+>   - 在开始广播后将持续按照设定的帧率进行帧数推进，并在每一帧推进时向客户端进行同步，需提前将客户端加入广播队列 JoinClient
+>   - 广播过程中使用 AddCommand 将该帧数据追加到当前帧中
+
+***
+<span id="struct_Lockstep_StopBroadcast"></span>
+
+#### func (*Lockstep) StopBroadcast()
+> 停止广播
+
+***
+<span id="struct_Lockstep_IsRunning"></span>
+
+#### func (*Lockstep) IsRunning()  bool
+> 是否正在广播
+
+***
+<span id="struct_Lockstep_AddCommand"></span>
+
+#### func (*Lockstep) AddCommand(command Command)
+> 添加命令到当前帧
+
+***
+<span id="struct_Lockstep_AddCommands"></span>
+
+#### func (*Lockstep) AddCommands(commands []Command)
+> 添加命令到当前帧
+
+***
+<span id="struct_Lockstep_GetCurrentFrame"></span>
+
+#### func (*Lockstep) GetCurrentFrame()  int64
+> 获取当前帧
+
+***
+<span id="struct_Lockstep_GetClientCurrentFrame"></span>
+
+#### func (*Lockstep) GetClientCurrentFrame(clientId ClientID)  int64
+> 获取客户端当前帧
+
+***
+<span id="struct_Lockstep_GetFrameLimit"></span>
+
+#### func (*Lockstep) GetFrameLimit()  int64
+> 获取帧上限
+>   - 未设置时将返回0
+
+***
+<span id="struct_Lockstep_GetCurrentCommands"></span>
+
+#### func (*Lockstep) GetCurrentCommands()  []Command
+> 获取当前帧还未结束时的所有指令
+
+***
+<span id="struct_Lockstep_RegLockstepStoppedEvent"></span>
+
+#### func (*Lockstep) RegLockstepStoppedEvent(handle StoppedEventHandle[ClientID, Command])
+> 当广播停止时将触发被注册的事件处理函数
+
+***
+<span id="struct_Lockstep_OnLockstepStoppedEvent"></span>
+
+#### func (*Lockstep) OnLockstepStoppedEvent()
+
+***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go

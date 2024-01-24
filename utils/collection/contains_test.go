@@ -9,6 +9,106 @@ var intComparisonHandler = func(source, target int) bool {
 	return source == target
 }
 
+func TestEqualSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{
+		{"TestEqualSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true},
+		{"TestEqualSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false},
+		{"TestEqualSlice_EmptySlice", []int{}, []int{}, true},
+		{"TestEqualSlice_NilSlice", nil, nil, true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualSlice(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s",
+					c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+func TestEqualComparableSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{
+		{"TestEqualComparableSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true},
+		{"TestEqualComparableSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false},
+		{"TestEqualComparableSlice_EmptySlice", []int{}, []int{}, true},
+		{"TestEqualComparableSlice_NilSlice", nil, nil, true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableSlice(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s",
+					c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+func TestEqualMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{
+		{"TestEqualMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true},
+		{"TestEqualMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false},
+		{"TestEqualMap_EmptyMap", map[int]int{}, map[int]int{}, true},
+		{"TestEqualMap_NilMap", nil, nil, true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualMap(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s",
+					c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+func TestEqualComparableMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{
+		{"TestEqualComparableMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true},
+		{"TestEqualComparableMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false},
+		{"TestEqualComparableMap_EmptyMap", map[int]int{}, map[int]int{}, true},
+		{"TestEqualComparableMap_NilMap", nil, nil, true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableMap(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s",
+					c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
 func TestInSlice(t *testing.T) {
 	var cases = []struct {
 		name     string

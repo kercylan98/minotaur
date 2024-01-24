@@ -25,20 +25,21 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[BinarySearch](#binarysearch)|暂无描述...
-|`STRUCT`|[BinarySearchRankChangeEventHandle](#binarysearchrankchangeeventhandle)|暂无描述...
-|`STRUCT`|[BinarySearchOption](#binarysearchoption)|暂无描述...
+|`STRUCT`|[BinarySearch](#struct_BinarySearch)|暂无描述...
+|`STRUCT`|[BinarySearchRankChangeEventHandle](#struct_BinarySearchRankChangeEventHandle)|暂无描述...
+|`STRUCT`|[BinarySearchOption](#struct_BinarySearchOption)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewBinarySearch(options ...BinarySearchOption[CompetitorID, Score])  *BinarySearch[CompetitorID, Score]
+#### func NewBinarySearch\[CompetitorID comparable, Score generic.Ordered\](options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score]
 <span id="NewBinarySearch"></span>
 > 创建一个基于内存的二分查找排行榜
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewBinarySearch() {
@@ -49,18 +50,19 @@ func ExampleNewBinarySearch() {
 ```
 
 ***
-#### func WithBinarySearchCount(rankCount int)  BinarySearchOption[CompetitorID, Score]
+#### func WithBinarySearchCount\[CompetitorID comparable, Score generic.Ordered\](rankCount int) BinarySearchOption[CompetitorID, Score]
 <span id="WithBinarySearchCount"></span>
 > 通过限制排行榜竞争者数量来创建排行榜
 >   - 默认情况下允许100位竞争者
 
 ***
-#### func WithBinarySearchASC()  BinarySearchOption[CompetitorID, Score]
+#### func WithBinarySearchASC\[CompetitorID comparable, Score generic.Ordered\]() BinarySearchOption[CompetitorID, Score]
 <span id="WithBinarySearchASC"></span>
 > 通过升序的方式创建排行榜
 >   - 默认情况下为降序
 
 ***
+<span id="struct_BinarySearch"></span>
 ### BinarySearch `STRUCT`
 
 ```go
@@ -74,11 +76,168 @@ type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
 	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }
 ```
+<span id="struct_BinarySearch_Competitor"></span>
+
+#### func (*BinarySearch) Competitor(competitorId CompetitorID, score Score)
+> 声明排行榜竞争者
+>   - 如果竞争者存在的情况下，会更新已有成绩，否则新增竞争者
+
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_Competitor() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	for rank, competitor := range bs.GetAllCompetitor() {
+		fmt.Println(rank, competitor)
+	}
+}
+
+```
+
+***
+<span id="struct_BinarySearch_RemoveCompetitor"></span>
+
+#### func (*BinarySearch) RemoveCompetitor(competitorId CompetitorID)
+> 删除特定竞争者
+
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_RemoveCompetitor() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	bs.RemoveCompetitor("competitor_ 1")
+	for rank, competitor := range bs.GetAllCompetitor() {
+		fmt.Println(rank, competitor)
+	}
+}
+
+```
+
+***
+<span id="struct_BinarySearch_Size"></span>
+
+#### func (*BinarySearch) Size()  int
+> 获取竞争者数量
+
+***
+<span id="struct_BinarySearch_GetRankDefault"></span>
+
+#### func (*BinarySearch) GetRankDefault(competitorId CompetitorID, defaultValue int)  int
+> 获取竞争者排名，如果竞争者不存在则返回默认值
+>   - 排名从 0 开始
+
+***
+<span id="struct_BinarySearch_GetRank"></span>
+
+#### func (*BinarySearch) GetRank(competitorId CompetitorID) ( int,  error)
+> 获取竞争者排名
+>   - 排名从 0 开始
+
+**示例代码：**
+
+```go
+
+func ExampleBinarySearch_GetRank() {
+	bs := leaderboard2.NewBinarySearch[string, int](leaderboard2.WithBinarySearchCount[string, int](10))
+	scores := []int{6131, 132, 5133, 134, 135, 136, 137, 138, 139, 140, 222, 333, 444, 555, 666}
+	for i := 1; i <= 15; i++ {
+		bs.Competitor(fmt.Sprintf("competitor_%2d", i), scores[i-1])
+	}
+	fmt.Println(bs.GetRank("competitor_ 1"))
+}
+
+```
+
+***
+<span id="struct_BinarySearch_GetCompetitor"></span>
+
+#### func (*BinarySearch) GetCompetitor(rank int) (competitorId CompetitorID, err error)
+> 获取特定排名的竞争者
+
+***
+<span id="struct_BinarySearch_GetCompetitorWithRange"></span>
+
+#### func (*BinarySearch) GetCompetitorWithRange(start int, end int) ( []CompetitorID,  error)
+> 获取第start名到第end名竞争者
+
+***
+<span id="struct_BinarySearch_GetScore"></span>
+
+#### func (*BinarySearch) GetScore(competitorId CompetitorID) (score Score, err error)
+> 获取竞争者成绩
+
+***
+<span id="struct_BinarySearch_GetScoreDefault"></span>
+
+#### func (*BinarySearch) GetScoreDefault(competitorId CompetitorID, defaultValue Score)  Score
+> 获取竞争者成绩，不存在时返回默认值
+
+***
+<span id="struct_BinarySearch_GetAllCompetitor"></span>
+
+#### func (*BinarySearch) GetAllCompetitor()  []CompetitorID
+> 获取所有竞争者ID
+>   - 结果为名次有序的
+
+***
+<span id="struct_BinarySearch_Clear"></span>
+
+#### func (*BinarySearch) Clear()
+> 清空排行榜
+
+***
+<span id="struct_BinarySearch_Cmp"></span>
+
+#### func (*BinarySearch) Cmp(s1 Score, s2 Score)  int
+
+***
+<span id="struct_BinarySearch_UnmarshalJSON"></span>
+
+#### func (*BinarySearch) UnmarshalJSON(bytes []byte)  error
+
+***
+<span id="struct_BinarySearch_MarshalJSON"></span>
+
+#### func (*BinarySearch) MarshalJSON() ( []byte,  error)
+
+***
+<span id="struct_BinarySearch_RegRankChangeEvent"></span>
+
+#### func (*BinarySearch) RegRankChangeEvent(handle BinarySearchRankChangeEventHandle[CompetitorID, Score])
+
+***
+<span id="struct_BinarySearch_OnRankChangeEvent"></span>
+
+#### func (*BinarySearch) OnRankChangeEvent(competitorId CompetitorID, oldRank int, newRank int, oldScore Score, newScore Score)
+
+***
+<span id="struct_BinarySearch_RegRankClearBeforeEvent"></span>
+
+#### func (*BinarySearch) RegRankClearBeforeEvent(handle BinarySearchRankClearBeforeEventHandle[CompetitorID, Score])
+
+***
+<span id="struct_BinarySearch_OnRankClearBeforeEvent"></span>
+
+#### func (*BinarySearch) OnRankClearBeforeEvent()
+
+***
+<span id="struct_BinarySearchRankChangeEventHandle"></span>
 ### BinarySearchRankChangeEventHandle `STRUCT`
 
 ```go
 type BinarySearchRankChangeEventHandle[CompetitorID comparable, Score generic.Ordered] func(leaderboard *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank int, oldScore Score)
 ```
+<span id="struct_BinarySearchOption"></span>
 ### BinarySearchOption `STRUCT`
 
 ```go

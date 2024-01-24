@@ -16,6 +16,22 @@ import (
 	"time"
 )
 
+// Network 服务器运行的网络模式
+//   - 根据不同的网络模式，服务器将会产生不同的行为，该类型将在服务器创建时候指定
+//
+// 服务器支持的网络模式如下：
+//   - NetworkNone 该模式下不监听任何网络端口，仅开启消息队列，适用于纯粹的跨服服务器等情况
+//   - NetworkTcp 该模式下将会监听 TCP 协议的所有地址，包括 IPv4 和 IPv6
+//   - NetworkTcp4 该模式下将会监听 TCP 协议的 IPv4 地址
+//   - NetworkTcp6 该模式下将会监听 TCP 协议的 IPv6 地址
+//   - NetworkUdp 该模式下将会监听 UDP 协议的所有地址，包括 IPv4 和 IPv6
+//   - NetworkUdp4 该模式下将会监听 UDP 协议的 IPv4 地址
+//   - NetworkUdp6 该模式下将会监听 UDP 协议的 IPv6 地址
+//   - NetworkUnix 该模式下将会监听 Unix 协议的地址
+//   - NetworkHttp 该模式下将会监听 HTTP 协议的地址
+//   - NetworkWebsocket 该模式下将会监听 Websocket 协议的地址
+//   - NetworkKcp 该模式下将会监听 KCP 协议的地址
+//   - NetworkGRPC 该模式下将会监听 GRPC 协议的地址
 type Network string
 
 const (
@@ -103,6 +119,7 @@ func (n Network) adaptation(srv *Server) <-chan error {
 	switch n {
 	case NetworkNone:
 		srv.addr = "-"
+		state <- nil
 	case NetworkTcp:
 		n.gNetMode(state, srv)
 	case NetworkTcp4:
@@ -125,6 +142,8 @@ func (n Network) adaptation(srv *Server) <-chan error {
 		n.kcpMode(state, srv)
 	case NetworkGRPC:
 		n.grpcMode(state, srv)
+	default:
+		state <- fmt.Errorf("unsupported network mode: %s", n)
 	}
 	return state
 }
@@ -248,7 +267,8 @@ func (n Network) websocketMode(state chan<- error, srv *Server) {
 	if srv.websocketUpgrader == nil {
 		srv.websocketUpgrader = DefaultWebsocketUpgrader()
 	}
-	http.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc(pattern, func(writer http.ResponseWriter, request *http.Request) {
 		ip := request.Header.Get("X-Real-IP")
 		ws, err := srv.websocketUpgrader.Upgrade(writer, request, nil)
 		if err != nil {
@@ -304,20 +324,29 @@ func (n Network) websocketMode(state chan<- error, srv *Server) {
 			srv.PushPacketMessage(conn, messageType, packet)
 		}
 	})
-	go func(lis *listener) {
+	go func(lis *listener, mux *http.ServeMux) {
 		var err error
 		if len(lis.srv.certFile)+len(lis.srv.keyFile) > 0 {
-			err = http.ServeTLS(lis, nil, lis.srv.certFile, lis.srv.keyFile)
+			err = http.ServeTLS(lis, mux, lis.srv.certFile, lis.srv.keyFile)
 		} else {
-			err = http.Serve(lis, nil)
+			err = http.Serve(lis, mux)
 		}
 		if err != nil {
 			super.TryWriteChannel(lis.state, err)
 		}
-	}((&listener{srv: srv, Listener: l, state: state}).init())
+	}((&listener{srv: srv, Listener: l, state: state}).init(), mux)
 }
 
-// IsSocket 返回当前服务器的网络模式是否为 Socket 模式
+// IsSocket 返回当前服务器的网络模式是否为 Socket 模式，目前为止仅有如下几种模式为 Socket 模式：
+//   - NetworkTcp
+//   - NetworkTcp4
+//   - NetworkTcp6
+//   - NetworkUdp
+//   - NetworkUdp4
+//   - NetworkUdp6
+//   - NetworkUnix
+//   - NetworkKcp
+//   - NetworkWebsocket
 func (n Network) IsSocket() bool {
 	return collection.KeyInMap(socketNetworks, n)
 }

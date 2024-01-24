@@ -46,7 +46,7 @@
 
 ***
 ## 详情信息
-#### func RangeLine(eachString string, eachFunc func (index int, line string)  error)  error
+#### func RangeLine(eachString string, eachFunc func (index int, line string)  error) error
 <span id="RangeLine"></span>
 > 对传入的eachString进行按行切片后再进行遍历
 >   - 该函数会预先对“\r\n”进行处理替换为“\n”。
@@ -54,72 +54,72 @@
 >   - index表示了当前行的行号（由0开始），line表示了当前行的内容。
 
 ***
-#### func SplitTrimSpace(str string, sep string)  []string
+#### func SplitTrimSpace(str string, sep string) []string
 <span id="SplitTrimSpace"></span>
 > 按照空格分割字符串并去除空格
 
 ***
-#### func FirstUpper(str string)  string
+#### func FirstUpper(str string) string
 <span id="FirstUpper"></span>
 > 首字母大写
 
 ***
-#### func FirstLower(str string)  string
+#### func FirstLower(str string) string
 <span id="FirstLower"></span>
 > 首字母小写
 
 ***
-#### func FirstUpperBytes(str []byte)  []byte
+#### func FirstUpperBytes(str []byte) []byte
 <span id="FirstUpperBytes"></span>
 > 首字母大写
 
 ***
-#### func FirstLowerBytes(str []byte)  []byte
+#### func FirstLowerBytes(str []byte) []byte
 <span id="FirstLowerBytes"></span>
 > 首字母小写
 
 ***
-#### func IsEmpty(str string)  bool
+#### func IsEmpty(str string) bool
 <span id="IsEmpty"></span>
 > 判断字符串是否为空
 
 ***
-#### func IsEmptyBytes(str []byte)  bool
+#### func IsEmptyBytes(str []byte) bool
 <span id="IsEmptyBytes"></span>
 > 判断字符串是否为空
 
 ***
-#### func IsNotEmpty(str string)  bool
+#### func IsNotEmpty(str string) bool
 <span id="IsNotEmpty"></span>
 > 判断字符串是否不为空
 
 ***
-#### func IsNotEmptyBytes(str []byte)  bool
+#### func IsNotEmptyBytes(str []byte) bool
 <span id="IsNotEmptyBytes"></span>
 > 判断字符串是否不为空
 
 ***
-#### func SnakeString(str string)  string
+#### func SnakeString(str string) string
 <span id="SnakeString"></span>
 > 蛇形字符串
 
 ***
-#### func SnakeStringBytes(str []byte)  []byte
+#### func SnakeStringBytes(str []byte) []byte
 <span id="SnakeStringBytes"></span>
 > 蛇形字符串
 
 ***
-#### func CamelString(str string)  string
+#### func CamelString(str string) string
 <span id="CamelString"></span>
 > 驼峰字符串
 
 ***
-#### func CamelStringBytes(str []byte)  []byte
+#### func CamelStringBytes(str []byte) []byte
 <span id="CamelStringBytes"></span>
 > 驼峰字符串
 
 ***
-#### func SortJoin(delimiter string, s ...string)  string
+#### func SortJoin(delimiter string, s ...string) string
 <span id="SortJoin"></span>
 > 将多个字符串排序后拼接
 
@@ -130,19 +130,19 @@
 >   - 隐藏身份证、邮箱、手机号等敏感信息用*号替代
 
 ***
-#### func ThousandsSeparator(str string)  string
+#### func ThousandsSeparator(str string) string
 <span id="ThousandsSeparator"></span>
 > 返回将str进行千位分隔符处理后的字符串。
 
 ***
-#### func KV(str string, tag ...string)  string,  string
+#### func KV(str string, tag ...string) (string,  string)
 <span id="KV"></span>
 > 返回str经过转换后形成的key、value
 >   - 这里tag表示使用什么字符串来区分key和value的分隔符。
 >   - 默认情况即不传入tag的情况下分隔符为“=”。
 
 ***
-#### func FormatSpeedyInt(numberStr string)  int,  error
+#### func FormatSpeedyInt(numberStr string) (int,  error)
 <span id="FormatSpeedyInt"></span>
 > 返回numberStr经过格式化后去除空格和“,”分隔符的结果
 >   - 当字符串为“123,456,789”的时候，返回结果为“123456789”。
@@ -150,7 +150,7 @@
 >   - 当字符串为“1 23, 45 6, 789”的时候，返回结果为“123456789”。
 
 ***
-#### func FormatSpeedyInt64(numberStr string)  int64,  error
+#### func FormatSpeedyInt64(numberStr string) (int64,  error)
 <span id="FormatSpeedyInt64"></span>
 > 返回numberStr经过格式化后去除空格和“,”分隔符的结果
 >   - 当字符串为“123,456,789”的时候，返回结果为“123456789”。
@@ -158,7 +158,7 @@
 >   - 当字符串为“1 23, 45 6, 789”的时候，返回结果为“123456789”。
 
 ***
-#### func FormatSpeedyFloat32(numberStr string)  float64,  error
+#### func FormatSpeedyFloat32(numberStr string) (float64,  error)
 <span id="FormatSpeedyFloat32"></span>
 > 返回numberStr经过格式化后去除空格和“,”分隔符的结果
 >   - 当字符串为“123,456,789.123”的时候，返回结果为“123456789.123”。
@@ -166,7 +166,7 @@
 >   - 当字符串为“1 23, 45 6, 789.123”的时候，返回结果为“123456789.123”。
 
 ***
-#### func FormatSpeedyFloat64(numberStr string)  float64,  error
+#### func FormatSpeedyFloat64(numberStr string) (float64,  error)
 <span id="FormatSpeedyFloat64"></span>
 > 返回numberStr经过格式化后去除空格和“,”分隔符的结果
 >   - 当字符串为“123,456,789.123”的时候，返回结果为“123456789.123”。

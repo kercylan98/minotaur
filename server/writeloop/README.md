@@ -24,16 +24,16 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Channel](#channel)|基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
-|`STRUCT`|[Unbounded](#unbounded)|写循环
-|`INTERFACE`|[WriteLoop](#writeloop)|暂无描述...
+|`STRUCT`|[Channel](#struct_Channel)|基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
+|`STRUCT`|[Unbounded](#struct_Unbounded)|写循环
+|`INTERFACE`|[WriteLoop](#struct_WriteLoop)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewChannel(pool *hub.ObjectPool[Message], channelSize int, writeHandler func (message Message)  error, errorHandler func (err any))  *Channel[Message]
+#### func NewChannel\[Message any\](pool *hub.ObjectPool[Message], channelSize int, writeHandler func (message Message)  error, errorHandler func (err any)) *Channel[Message]
 <span id="NewChannel"></span>
 > 创建基于 Channel 的写循环
 >   - pool 用于管理 Message 对象的缓冲池，在创建 Message 对象时也应该使用该缓冲池，以便复用 Message 对象。 Channel 会在写入完成后将 Message 对象放回缓冲池
@@ -44,7 +44,7 @@
 > 传入 writeHandler 的消息对象是从 Channel 中获取的，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
 
 ***
-#### func NewUnbounded(pool *hub.ObjectPool[Message], writeHandler func (message Message)  error, errorHandler func (err any))  *Unbounded[Message]
+#### func NewUnbounded\[Message any\](pool *hub.ObjectPool[Message], writeHandler func (message Message)  error, errorHandler func (err any)) *Unbounded[Message]
 <span id="NewUnbounded"></span>
 > 创建写循环
 >   - pool 用于管理 Message 对象的缓冲池，在创建 Message 对象时也应该使用该缓冲池，以便复用 Message 对象。 Unbounded 会在写入完成后将 Message 对象放回缓冲池
@@ -53,7 +53,8 @@
 > 
 > 传入 writeHandler 的消息对象是从 pool 中获取的，并且在 writeHandler 执行完成后会被放回 pool 中，因此 writeHandler 不应该持有消息对象的引用，同时也不应该主动释放消息对象
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewUnbounded() {
@@ -106,6 +107,7 @@ func TestNewUnbounded(t *testing.T) {
 
 
 ***
+<span id="struct_Channel"></span>
 ### Channel `STRUCT`
 基于 chan 的写循环，与 Unbounded 相同，但是使用 Channel 实现
 ```go
@@ -113,12 +115,19 @@ type Channel[T any] struct {
 	c chan T
 }
 ```
+<span id="struct_Channel_Put"></span>
+
 #### func (*Channel) Put(message T)
 > 将数据放入写循环，message 应该来源于 hub.ObjectPool
+
 ***
+<span id="struct_Channel_Close"></span>
+
 #### func (*Channel) Close()
 > 关闭写循环
+
 ***
+<span id="struct_Unbounded"></span>
 ### Unbounded `STRUCT`
 写循环
   - 用于将数据并发安全的写入到底层连接
@@ -127,8 +136,11 @@ type Unbounded[Message any] struct {
 	buf *buffer.Unbounded[Message]
 }
 ```
+<span id="struct_Unbounded_Put"></span>
+
 #### func (*Unbounded) Put(message Message)
 > 将数据放入写循环，message 应该来源于 hub.ObjectPool
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -186,8 +198,11 @@ func BenchmarkUnbounded_Put(b *testing.B) {
 
 
 ***
+<span id="struct_Unbounded_Close"></span>
+
 #### func (*Unbounded) Close()
 > 关闭写循环
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -217,6 +232,7 @@ func TestUnbounded_Close(t *testing.T) {
 
 
 ***
+<span id="struct_WriteLoop"></span>
 ### WriteLoop `INTERFACE`
 
 ```go

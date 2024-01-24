@@ -26,7 +26,7 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Option](#option)|暂无描述...
+|`STRUCT`|[Option](#struct_Option)|暂无描述...
 
 </details>
 
@@ -38,7 +38,7 @@
 > 运行持久化缓存程序
 
 ***
-#### func BindPersistCacheProgram(name string, handler OutputParamHandlerFunc, option ...*Option)  func ()
+#### func BindPersistCacheProgram\[OutputParamHandlerFunc any\](name string, handler OutputParamHandlerFunc, option ...*Option) func ()
 <span id="BindPersistCacheProgram"></span>
 > 绑定持久化缓存程序
 >   - name 持久化缓存程序名称
@@ -52,7 +52,7 @@
 >   - 所有持久化程序绑定完成后，应该主动调用 Run 函数运行
 
 ***
-#### func BindAction(name string, handler Func)  Func
+#### func BindAction\[Func any\](name string, handler Func) Func
 <span id="BindAction"></span>
 > 绑定需要缓存的操作函数
 >   - name 缓存操作名称
@@ -92,10 +92,11 @@ func TestBindAction(t *testing.T) {
 
 
 ***
-#### func NewOption()  *Option
+#### func NewOption() *Option
 <span id="NewOption"></span>
 
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 
 ```go
@@ -106,10 +107,13 @@ type Option struct {
 	delay      time.Duration
 }
 ```
+<span id="struct_Option_WithPeriodicity"></span>
+
 #### func (*Option) WithPeriodicity(ticker *timer.Ticker, firstDelay time.Duration, interval time.Duration, delay time.Duration)  *Option
 > 设置持久化周期
 >   - ticker 定时器，通常建议使用服务器的定时器，这样可以降低多线程的程序复杂性
 >   - firstDelay 首次持久化延迟，当首次持久化为 0 时，将会在下一个持久化周期开始时持久化
 >   - interval 持久化间隔
 >   - delay 每条数据持久化间隔，适当的设置该值可以使持久化期间尽量降低对用户体验的影响，如果为0，将会一次性持久化所有数据
+
 ***

@@ -35,22 +35,22 @@ notifies 包含了内置通知内容的实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[FeiShu](#feishu)|飞书通知消息
-|`STRUCT`|[FeiShuMessage](#feishumessage)|暂无描述...
-|`STRUCT`|[FeiShuRichText](#feishurichtext)|飞书富文本结构
-|`STRUCT`|[FeiShuRichTextContent](#feishurichtextcontent)|飞书富文本内容体
+|`STRUCT`|[FeiShu](#struct_FeiShu)|飞书通知消息
+|`STRUCT`|[FeiShuMessage](#struct_FeiShuMessage)|暂无描述...
+|`STRUCT`|[FeiShuRichText](#struct_FeiShuRichText)|飞书富文本结构
+|`STRUCT`|[FeiShuRichTextContent](#struct_FeiShuRichTextContent)|飞书富文本内容体
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewFeiShu(message FeiShuMessage)  *FeiShu
+#### func NewFeiShu(message FeiShuMessage) *FeiShu
 <span id="NewFeiShu"></span>
 > 创建飞书通知消息
 
 ***
-#### func FeiShuMessageWithText(text string)  FeiShuMessage
+#### func FeiShuMessageWithText(text string) FeiShuMessage
 <span id="FeiShuMessageWithText"></span>
 > 飞书文本消息
 >   - 支持通过换行符进行消息换行
@@ -68,24 +68,24 @@ notifies 包含了内置通知内容的实现
 >   - 请确保链接是合法的，否则会以原始内容发送消息。
 
 ***
-#### func FeiShuMessageWithRichText(richText *FeiShuRichText)  FeiShuMessage
+#### func FeiShuMessageWithRichText(richText *FeiShuRichText) FeiShuMessage
 <span id="FeiShuMessageWithRichText"></span>
 > 飞书富文本消息
 
 ***
-#### func FeiShuMessageWithImage(imageKey string)  FeiShuMessage
+#### func FeiShuMessageWithImage(imageKey string) FeiShuMessage
 <span id="FeiShuMessageWithImage"></span>
 > 飞书图片消息
 >   - imageKey 可通过上传图片接口获取
 
 ***
-#### func FeiShuMessageWithInteractive(json string)  FeiShuMessage
+#### func FeiShuMessageWithInteractive(json string) FeiShuMessage
 <span id="FeiShuMessageWithInteractive"></span>
 > 飞书卡片消息
 >   - json 表示卡片的 json 数据或者消息模板的 json 数据
 
 ***
-#### func FeiShuMessageWithShareChat(chatId string)  FeiShuMessage
+#### func FeiShuMessageWithShareChat(chatId string) FeiShuMessage
 <span id="FeiShuMessageWithShareChat"></span>
 > 飞书分享群名片
 >   - chatId 群ID获取方式请参见群ID说明
@@ -93,7 +93,7 @@ notifies 包含了内置通知内容的实现
 > 群ID说明：https://open.feishu.cn/document/server-docs/group/chat/chat-id-description
 
 ***
-#### func FeiShuMessageWithShareUser(userId string)  FeiShuMessage
+#### func FeiShuMessageWithShareUser(userId string) FeiShuMessage
 <span id="FeiShuMessageWithShareUser"></span>
 > 飞书分享个人名片
 >   - userId 表示用户的 OpenID 获取方式请参见了解更多：如何获取 Open ID
@@ -101,7 +101,7 @@ notifies 包含了内置通知内容的实现
 > 如何获取 Open ID：https://open.feishu.cn/document/faq/trouble-shooting/how-to-obtain-openid
 
 ***
-#### func FeiShuMessageWithAudio(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithAudio(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithAudio"></span>
 > 飞书语音消息
 >   - fileKey 语音文件Key，可通过上传文件接口获取
@@ -109,7 +109,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithMedia(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithMedia(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithMedia"></span>
 > 飞书视频消息
 >   - fileKey 视频文件Key，可通过上传文件接口获取
@@ -117,7 +117,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithMediaAndCover(fileKey string, imageKey string)  FeiShuMessage
+#### func FeiShuMessageWithMediaAndCover(fileKey string, imageKey string) FeiShuMessage
 <span id="FeiShuMessageWithMediaAndCover"></span>
 > 飞书带封面的视频消息
 >   - fileKey 视频文件Key，可通过上传文件接口获取
@@ -126,7 +126,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithFile(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithFile(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithFile"></span>
 > 飞书文件消息
 >   - fileKey 文件Key，可通过上传文件接口获取
@@ -134,7 +134,7 @@ notifies 包含了内置通知内容的实现
 > 上传文件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create
 
 ***
-#### func FeiShuMessageWithSticker(fileKey string)  FeiShuMessage
+#### func FeiShuMessageWithSticker(fileKey string) FeiShuMessage
 <span id="FeiShuMessageWithSticker"></span>
 > 飞书表情包消息
 >   - fileKey 表情包文件Key，目前仅支持发送机器人收到的表情包，可通过接收消息事件的推送获取表情包 file_key。
@@ -142,11 +142,12 @@ notifies 包含了内置通知内容的实现
 > 接收消息事件：https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
 
 ***
-#### func NewFeiShuRichText()  *FeiShuRichText
+#### func NewFeiShuRichText() *FeiShuRichText
 <span id="NewFeiShuRichText"></span>
 > 创建一个飞书富文本
 
 ***
+<span id="struct_FeiShu"></span>
 ### FeiShu `STRUCT`
 飞书通知消息
 ```go
@@ -155,14 +156,19 @@ type FeiShu struct {
 	MsgType string
 }
 ```
-#### func (*FeiShu) Format()  string,  error
+<span id="struct_FeiShu_Format"></span>
+
+#### func (*FeiShu) Format() ( string,  error)
 > 格式化通知内容
+
 ***
+<span id="struct_FeiShuMessage"></span>
 ### FeiShuMessage `STRUCT`
 
 ```go
 type FeiShuMessage func(feishu *FeiShu)
 ```
+<span id="struct_FeiShuRichText"></span>
 ### FeiShuRichText `STRUCT`
 飞书富文本结构
 ```go
@@ -170,9 +176,13 @@ type FeiShuRichText struct {
 	content map[string]*FeiShuRichTextContent
 }
 ```
+<span id="struct_FeiShuRichText_Create"></span>
+
 #### func (*FeiShuRichText) Create(lang string, title string)  *FeiShuRichTextContent
 > 创建一个特定语言和标题的富文本内容
+
 ***
+<span id="struct_FeiShuRichTextContent"></span>
 ### FeiShuRichTextContent `STRUCT`
 飞书富文本内容体
 ```go
@@ -182,45 +192,75 @@ type FeiShuRichTextContent struct {
 	Content  [][]map[string]any
 }
 ```
+<span id="struct_FeiShuRichTextContent_AddText"></span>
+
 #### func (*FeiShuRichTextContent) AddText(text string, styles ...string)  *FeiShuRichTextContent
 > 添加文本
+
 ***
+<span id="struct_FeiShuRichTextContent_AddUnescapeText"></span>
+
 #### func (*FeiShuRichTextContent) AddUnescapeText(text string, styles ...string)  *FeiShuRichTextContent
 > 添加 unescape 解码的文本
+
 ***
+<span id="struct_FeiShuRichTextContent_AddLink"></span>
+
 #### func (*FeiShuRichTextContent) AddLink(text string, href string, styles ...string)  *FeiShuRichTextContent
 > 添加超链接文本
 >   - 请确保链接地址的合法性，否则消息会发送失败
+
 ***
+<span id="struct_FeiShuRichTextContent_AddAt"></span>
+
 #### func (*FeiShuRichTextContent) AddAt(userId string, styles ...string)  *FeiShuRichTextContent
 > 添加@的用户
 >   - @单个用户时，userId 字段必须是有效值
 >   - @所有人填"all"。
+
 ***
+<span id="struct_FeiShuRichTextContent_AddAtWithUsername"></span>
+
 #### func (*FeiShuRichTextContent) AddAtWithUsername(userId string, username string, styles ...string)  *FeiShuRichTextContent
 > 添加包含用户名的@用户
 >   - @单个用户时，userId 字段必须是有效值
 >   - @所有人填"all"。
+
 ***
+<span id="struct_FeiShuRichTextContent_AddImg"></span>
+
 #### func (*FeiShuRichTextContent) AddImg(imageKey string)  *FeiShuRichTextContent
 > 添加图片
 >   - imageKey 表示图片的唯一标识，可通过上传图片接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddMedia"></span>
+
 #### func (*FeiShuRichTextContent) AddMedia(fileKey string)  *FeiShuRichTextContent
 > 添加视频
 >   - fileKey 表示视频文件的唯一标识，可通过上传文件接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddMediaWithCover"></span>
+
 #### func (*FeiShuRichTextContent) AddMediaWithCover(fileKey string, imageKey string)  *FeiShuRichTextContent
 > 添加包含封面的视频
 >   - fileKey 表示视频文件的唯一标识，可通过上传文件接口获取
 >   - imageKey 表示图片的唯一标识，可通过上传图片接口获取
+
 ***
+<span id="struct_FeiShuRichTextContent_AddEmotion"></span>
+
 #### func (*FeiShuRichTextContent) AddEmotion(emojiType string)  *FeiShuRichTextContent
 > 添加表情
 >   - emojiType 表示表情类型，部分可选值请参见表情文案。
 > 
 > 表情文案：https://open.feishu.cn/document/server-docs/im-v1/message-reaction/emojis-introduce
+
 ***
+<span id="struct_FeiShuRichTextContent_Ok"></span>
+
 #### func (*FeiShuRichTextContent) Ok()  *FeiShuRichText
 > 确认完成，将返回 FeiShuRichText 可继续创建多语言富文本
+
 ***

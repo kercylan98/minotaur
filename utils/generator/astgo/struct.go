@@ -8,7 +8,7 @@ func newStruct(astGen *ast.GenDecl) *Struct {
 	astTypeSpec := astGen.Specs[0].(*ast.TypeSpec)
 	s := &Struct{
 		Name:     astTypeSpec.Name.String(),
-		Comments: newComment(astGen.Doc),
+		Comments: newComment(astTypeSpec.Name.String(), astGen.Doc),
 	}
 	s.Internal = s.Name[0] >= 97 && s.Name[0] <= 122
 	if astTypeSpec.TypeParams != nil {

@@ -28,14 +28,14 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
 
 |类型|名称|描述
 |:--|:--|:--
-|`INTERFACE`|[Graph](#graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
+|`INTERFACE`|[Graph](#struct_Graph)|适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 
 </details>
 
 
 ***
 ## 详情信息
-#### func Find(graph Graph[Node], start Node, end Node, cost func (a Node)  V, heuristic func (a Node)  V)  []Node
+#### func Find\[Node comparable, V generic.SignedNumber\](graph Graph[Node], start Node, end Node, cost func (a Node)  V, heuristic func (a Node)  V) []Node
 <span id="Find"></span>
 > 使用 A* 算法在导航网格上查找从起点到终点的最短路径，并返回路径上的节点序列。
 > 
@@ -58,7 +58,8 @@ astar 提供用于实现 A* 算法的函数和数据结构。A* 算法是一种�
 >   - 函数内部使用了堆数据结构来管理待处理的节点。
 >   - 函数返回一个节点序列，表示从起点到终点的最短路径。如果找不到路径，则返回空序列。
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFind() {
@@ -77,6 +78,7 @@ func ExampleFind() {
 ```
 
 ***
+<span id="struct_Graph"></span>
 ### Graph `INTERFACE`
 适用于 A* 算法的图数据结构接口定义，表示导航网格，其中包含了节点和连接节点的边。
 ```go
@@ -84,5 +86,8 @@ type Graph[Node comparable] interface {
 	Neighbours(node Node) []Node
 }
 ```
+<span id="struct_Graph_Neighbours"></span>
+
 #### func (Graph) Neighbours(point geometry.Point[int])  []geometry.Point[int]
+
 ***

@@ -115,7 +115,7 @@ func (b *Builder) genMenus() {
 			structGen()
 			b.tableRow(
 				super.If(structInfo.Interface, "`INTERFACE`", "`STRUCT`"),
-				fmt.Sprintf("[%s](#%s)", structInfo.Name, strings.ToLower(structInfo.Name)),
+				fmt.Sprintf("[%s](#struct_%s)", structInfo.Name, structInfo.Name),
 				collection.FindFirstOrDefaultInSlice(structInfo.Comments.Clear, "暂无描述..."),
 			)
 		}
@@ -154,8 +154,21 @@ func (b *Builder) genStructs() {
 			continue
 		}
 		titleBuild()
-		b.title(4, strings.TrimSpace(fmt.Sprintf("func %s%s %s",
+		b.title(4, strings.TrimSpace(fmt.Sprintf("func %s%s%s %s",
 			function.Name,
+			func() string {
+				var sb strings.Builder
+				if len(function.Generic) > 0 {
+					sb.WriteString("\\[")
+					var genericStr = make([]string, 0)
+					for _, field := range function.Generic {
+						genericStr = append(genericStr, fmt.Sprintf("%s %s", field.Name, field.Type.Sign))
+					}
+					sb.WriteString(strings.Join(genericStr, ", "))
+					sb.WriteString("\\]")
+				}
+				return sb.String()
+			}(),
 			func() string {
 				f := funcHandler(function.Params)
 				if !strings.HasPrefix(f, "(") {
@@ -163,7 +176,13 @@ func (b *Builder) genStructs() {
 				}
 				return f
 			}(),
-			funcHandler(function.Results),
+			func() string {
+				f := strings.TrimSpace(funcHandler(function.Results))
+				if len(function.Results) >= 2 && !strings.HasPrefix(f, "(") {
+					f = "(" + f + ")"
+				}
+				return f
+			}(),
 		)))
 		b.newLine(fmt.Sprintf(`<span id="%s"></span>`, function.Name))
 		b.quote()
@@ -172,15 +191,34 @@ func (b *Builder) genStructs() {
 		}
 		b.newLine()
 		if example := b.p.GetExampleTest(function); example != nil {
-			b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+			b.newLine("**示例代码：**").newLine()
+			if len(example.Comments.Clear) > 0 {
+				for _, s := range example.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
+			b.newLine("```go\n", example.Code(), "```\n")
 		}
 		if unitTest := b.p.GetUnitTest(function); unitTest != nil {
 			b.detailsStart("查看 / 收起单元测试")
+			if len(unitTest.Comments.Clear) > 0 {
+				for _, s := range unitTest.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
 			b.newLine("```go\n", unitTest.Code(), "```\n")
 			b.detailsEnd()
 		}
 		if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
 			b.detailsStart("查看 / 收起基准测试")
+			if len(benchmarkTest.Comments.Clear) > 0 {
+				for _, s := range benchmarkTest.Comments.Clear {
+					b.newLine(fmt.Sprintf("%s", s))
+				}
+				b.newLine().newLine()
+			}
 			b.newLine("```go\n", benchmarkTest.Code(), "```\n")
 			b.detailsEnd()
 		}
@@ -193,6 +231,7 @@ func (b *Builder) genStructs() {
 				continue
 			}
 			titleBuild()
+			b.newLine(fmt.Sprintf(`<span id="struct_%s"></span>`, structInfo.Name))
 			b.title(3, fmt.Sprintf("%s `%s`", structInfo.Name, super.If(structInfo.Interface, "INTERFACE", "STRUCT")))
 			b.newLine(structInfo.Comments.Clear...)
 			b.newLine("```go")
@@ -249,6 +288,7 @@ func (b *Builder) genStructs() {
 				if function.Internal || function.Test {
 					continue
 				}
+				b.newLine(fmt.Sprintf(`<span id="struct_%s_%s"></span>`, structInfo.Name, function.Name)).newLine()
 				b.title(4, strings.TrimSpace(fmt.Sprintf("func (%s%s) %s%s %s",
 					super.If(function.Struct.Type.IsPointer, "*", ""),
 					structInfo.Name,
@@ -260,25 +300,48 @@ func (b *Builder) genStructs() {
 						}
 						return f
 					}(),
-					funcHandler(function.Results),
+					func() string {
+						f := funcHandler(function.Results)
+						if len(function.Results) >= 2 && !strings.HasPrefix(strings.TrimSpace(f), "(") {
+							f = "(" + f + ")"
+						}
+						return f
+					}(),
 				)))
 				b.quote()
 				for _, comment := range function.Comments.Clear {
 					b.quote(comment)
 				}
-				if function.Name == "Write" {
-					fmt.Println()
-				}
+				b.newLine()
 				if example := b.p.GetExampleTest(function); example != nil {
-					b.newLine("示例代码：", "```go\n", example.Code(), "```\n")
+					b.newLine("**示例代码：**").newLine()
+					if len(example.Comments.Clear) > 0 {
+						for _, s := range example.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
+					b.newLine("```go\n", example.Code(), "```\n")
 				}
 				if unitTest := b.p.GetUnitTest(function); unitTest != nil {
 					b.detailsStart("查看 / 收起单元测试")
+					if len(unitTest.Comments.Clear) > 0 {
+						for _, s := range unitTest.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
 					b.newLine("```go\n", unitTest.Code(), "```\n")
 					b.detailsEnd()
 				}
 				if benchmarkTest := b.p.GetBenchmarkTest(function); benchmarkTest != nil {
 					b.detailsStart("查看 / 收起基准测试")
+					if len(benchmarkTest.Comments.Clear) > 0 {
+						for _, s := range benchmarkTest.Comments.Clear {
+							b.newLine(fmt.Sprintf("%s", s))
+						}
+						b.newLine().newLine()
+					}
 					b.newLine("```go\n", benchmarkTest.Code(), "```\n")
 					b.detailsEnd()
 				}

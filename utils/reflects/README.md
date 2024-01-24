@@ -32,27 +32,27 @@
 
 ***
 ## 详情信息
-#### func WrapperFunc(f any, wrapper func (call func ( []reflect.Value)  []reflect.Value)  func (args []reflect.Value)  []reflect.Value) (wf Func, err error)
+#### func WrapperFunc\[Func any\](f any, wrapper func (call func ( []reflect.Value)  []reflect.Value)  func (args []reflect.Value)  []reflect.Value) (wf Func, err error)
 <span id="WrapperFunc"></span>
 > 包装函数
 
 ***
-#### func WrapperFuncBefore2After(f Func, before func (), after func ()) (wf Func, err error)
+#### func WrapperFuncBefore2After\[Func any\](f Func, before func (), after func ()) (wf Func, err error)
 <span id="WrapperFuncBefore2After"></span>
 > 包装函数，前置函数执行前，后置函数执行后
 
 ***
-#### func WrapperFuncBefore(f Func, before func ()) (wf Func, err error)
+#### func WrapperFuncBefore\[Func any\](f Func, before func ()) (wf Func, err error)
 <span id="WrapperFuncBefore"></span>
 > 包装函数，前置函数执行前
 
 ***
-#### func WrapperFuncAfter(f Func, after func ()) (wf Func, err error)
+#### func WrapperFuncAfter\[Func any\](f Func, after func ()) (wf Func, err error)
 <span id="WrapperFuncAfter"></span>
 > 包装函数，后置函数执行后
 
 ***
-#### func GetPtrUnExportFiled(s reflect.Value, filedIndex int)  reflect.Value
+#### func GetPtrUnExportFiled(s reflect.Value, filedIndex int) reflect.Value
 <span id="GetPtrUnExportFiled"></span>
 > 获取指针类型的未导出字段
 
@@ -62,12 +62,12 @@
 > 设置指针类型的未导出字段
 
 ***
-#### func Copy(s reflect.Value)  reflect.Value
+#### func Copy(s reflect.Value) reflect.Value
 <span id="Copy"></span>
 > 拷贝
 
 ***
-#### func GetPointer(src T)  reflect.Value
+#### func GetPointer\[T any\](src T) reflect.Value
 <span id="GetPointer"></span>
 > 获取指针
 

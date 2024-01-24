@@ -24,23 +24,24 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Golang](#golang)|配置导出模板
-|`STRUCT`|[JSON](#json)|暂无描述...
+|`STRUCT`|[Golang](#struct_Golang)|配置导出模板
+|`STRUCT`|[JSON](#struct_JSON)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewGolang(packageName string)  *Golang
+#### func NewGolang(packageName string) *Golang
 <span id="NewGolang"></span>
 > 创建一个 Golang 配置导出模板
 
 ***
-#### func NewJSON()  *JSON
+#### func NewJSON() *JSON
 <span id="NewJSON"></span>
 
 ***
+<span id="struct_Golang"></span>
 ### Golang `STRUCT`
 配置导出模板
 ```go
@@ -49,14 +50,27 @@ type Golang struct {
 	Templates []*pce.TmplStruct
 }
 ```
-#### func (*Golang) Render(templates ...*pce.TmplStruct)  string,  error
+<span id="struct_Golang_Render"></span>
+
+#### func (*Golang) Render(templates ...*pce.TmplStruct) ( string,  error)
+
 ***
+<span id="struct_Golang_GetVariable"></span>
+
 #### func (*Golang) GetVariable(config *pce.TmplStruct)  string
+
 ***
+<span id="struct_Golang_GetConfigName"></span>
+
 #### func (*Golang) GetConfigName(config *pce.TmplStruct)  string
+
 ***
+<span id="struct_Golang_HasIndex"></span>
+
 #### func (*Golang) HasIndex(config *pce.TmplStruct)  bool
+
 ***
+<span id="struct_JSON"></span>
 ### JSON `STRUCT`
 
 ```go
@@ -64,5 +78,8 @@ type JSON struct {
 	jsonIter.API
 }
 ```
-#### func (*JSON) Render(data map[any]any)  string,  error
+<span id="struct_JSON_Render"></span>
+
+#### func (*JSON) Render(data map[any]any) ( string,  error)
+
 ***

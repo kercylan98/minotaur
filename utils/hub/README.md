@@ -23,18 +23,19 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[ObjectPool](#objectpool)|基于 sync.Pool 实现的线程安全的对象池
+|`STRUCT`|[ObjectPool](#struct_ObjectPool)|基于 sync.Pool 实现的线程安全的对象池
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewObjectPool(generator func ()  *T, releaser func (data *T))  *ObjectPool[*T]
+#### func NewObjectPool\[T any\](generator func ()  *T, releaser func (data *T)) *ObjectPool[*T]
 <span id="NewObjectPool"></span>
 > 创建一个 ObjectPool
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewObjectPool() {
@@ -89,6 +90,7 @@ func TestNewObjectPool(t *testing.T) {
 
 
 ***
+<span id="struct_ObjectPool"></span>
 ### ObjectPool `STRUCT`
 基于 sync.Pool 实现的线程安全的对象池
   - 一些高频临时生成使用的对象可以通过 ObjectPool 进行管理，例如属性计算等
@@ -98,8 +100,11 @@ type ObjectPool[T any] struct {
 	releaser func(data T)
 }
 ```
+<span id="struct_ObjectPool_Get"></span>
+
 #### func (*ObjectPool) Get()  T
 > 获取一个对象
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -135,8 +140,11 @@ func TestObjectPool_Get(t *testing.T) {
 
 
 ***
+<span id="struct_ObjectPool_Release"></span>
+
 #### func (*ObjectPool) Release(data T)
 > 将使用完成的对象放回缓冲区
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 

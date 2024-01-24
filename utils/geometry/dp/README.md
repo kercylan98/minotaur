@@ -27,15 +27,15 @@ dp (DistributionPattern) 提供用于在二维数组中根据不同的特征标�
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[DistributionPattern](#distributionpattern)|分布图
-|`STRUCT`|[Link](#link)|暂无描述...
+|`STRUCT`|[DistributionPattern](#struct_DistributionPattern)|分布图
+|`STRUCT`|[Link](#struct_Link)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewDistributionPattern(sameKindVerifyHandle func (itemA Item)  bool)  *DistributionPattern[Item]
+#### func NewDistributionPattern\[Item any\](sameKindVerifyHandle func (itemA Item)  bool) *DistributionPattern[Item]
 <span id="NewDistributionPattern"></span>
 > 构建一个分布图实例
 
@@ -69,6 +69,7 @@ func TestNewDistributionPattern(t *testing.T) {
 
 
 ***
+<span id="struct_DistributionPattern"></span>
 ### DistributionPattern `STRUCT`
 分布图
 ```go
@@ -80,30 +81,49 @@ type DistributionPattern[Item any] struct {
 	usePos               bool
 }
 ```
+<span id="struct_DistributionPattern_GetLinks"></span>
+
 #### func (*DistributionPattern) GetLinks(pos int) (result []Link[Item])
 > 获取关联的成员
 >   - 其中包含传入的 pos 成员
+
 ***
+<span id="struct_DistributionPattern_HasLink"></span>
+
 #### func (*DistributionPattern) HasLink(pos int)  bool
 > 检查一个位置是否包含除它本身外的其他关联成员
+
 ***
+<span id="struct_DistributionPattern_LoadMatrix"></span>
+
 #### func (*DistributionPattern) LoadMatrix(matrix [][]Item)
 > 通过二维矩阵加载分布图
 >   - 通过该函数加载的分布图使用的矩阵是复制后的矩阵，因此无法直接通过刷新(Refresh)来更新分布关系
 >   - 需要通过直接刷新的方式请使用 LoadMatrixWithPos
+
 ***
+<span id="struct_DistributionPattern_LoadMatrixWithPos"></span>
+
 #### func (*DistributionPattern) LoadMatrixWithPos(width int, matrix []Item)
 > 通过二维矩阵加载分布图
+
 ***
+<span id="struct_DistributionPattern_Refresh"></span>
+
 #### func (*DistributionPattern) Refresh(pos int)
 > 刷新特定位置的分布关系
 >   - 由于 LoadMatrix 的矩阵是复制后的矩阵，所以任何外部的改动都不会影响到分布图的变化，在这种情况下，刷新将没有任何意义
 >   - 需要通过直接刷新的方式请使用 LoadMatrixWithPos 加载矩阵，或者通过 RefreshWithItem 函数进行刷新
+
 ***
+<span id="struct_DistributionPattern_RefreshWithItem"></span>
+
 #### func (*DistributionPattern) RefreshWithItem(pos int, item Item)
 > 通过特定的成员刷新特定位置的分布关系
 >   - 如果矩阵通过 LoadMatrixWithPos 加载，将会重定向至 Refresh
+
 ***
+<span id="struct_Link"></span>
 ### Link `STRUCT`
 
 ```go

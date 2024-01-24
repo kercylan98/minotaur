@@ -29,27 +29,27 @@
 
 ***
 ## 详情信息
-#### func GetWorkingDir()  string
+#### func GetWorkingDir() string
 <span id="GetWorkingDir"></span>
 > 获取工作目录绝对路径
 
 ***
-#### func GetTempDir()  string
+#### func GetTempDir() string
 <span id="GetTempDir"></span>
 > 获取系统临时目录
 
 ***
-#### func GetExecutablePathByBuild()  string
+#### func GetExecutablePathByBuild() string
 <span id="GetExecutablePathByBuild"></span>
 > 获取当前执行文件绝对路径（go build）
 
 ***
-#### func GetExecutablePathByCaller()  string
+#### func GetExecutablePathByCaller() string
 <span id="GetExecutablePathByCaller"></span>
 > 获取当前执行文件绝对路径（go run）
 
 ***
-#### func CurrentRunningFuncName(skip ...int)  string
+#### func CurrentRunningFuncName(skip ...int) string
 <span id="CurrentRunningFuncName"></span>
 > 获取正在运行的函数名
 

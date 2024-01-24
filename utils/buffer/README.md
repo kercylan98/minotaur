@@ -31,16 +31,16 @@ buffer 提供了缓冲区相关的实用程序。
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Ring](#ring)|环形缓冲区
-|`STRUCT`|[RingUnbounded](#ringunbounded)|基于环形缓冲区实现的无界缓冲区
-|`STRUCT`|[Unbounded](#unbounded)|是无界缓冲区的实现
+|`STRUCT`|[Ring](#struct_Ring)|环形缓冲区
+|`STRUCT`|[RingUnbounded](#struct_RingUnbounded)|基于环形缓冲区实现的无界缓冲区
+|`STRUCT`|[Unbounded](#struct_Unbounded)|是无界缓冲区的实现
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewRing(initSize ...int)  *Ring[T]
+#### func NewRing\[T any\](initSize ...int) *Ring[T]
 <span id="NewRing"></span>
 > 创建一个并发不安全的环形缓冲区
 >   - initSize: 初始容量
@@ -68,12 +68,12 @@ func TestNewRing(t *testing.T) {
 
 
 ***
-#### func NewRingUnbounded(bufferSize int)  *RingUnbounded[T]
+#### func NewRingUnbounded\[T any\](bufferSize int) *RingUnbounded[T]
 <span id="NewRingUnbounded"></span>
 > 创建一个并发安全的基于环形缓冲区实现的无界缓冲区
 
 ***
-#### func NewUnbounded()  *Unbounded[V]
+#### func NewUnbounded\[V any\]() *Unbounded[V]
 <span id="NewUnbounded"></span>
 > 创建一个无界缓冲区
 >   - generateNil: 生成空值的函数，该函数仅需始终返回 nil 即可
@@ -82,6 +82,7 @@ func TestNewRing(t *testing.T) {
 >   - 该缓冲区的所有方法都是线程安全的，除了用于同步的互斥锁外，不会阻塞任何东西
 
 ***
+<span id="struct_Ring"></span>
 ### Ring `STRUCT`
 环形缓冲区
 ```go
@@ -93,8 +94,11 @@ type Ring[T any] struct {
 	w        int
 }
 ```
-#### func (*Ring) Read()  T,  error
+<span id="struct_Ring_Read"></span>
+
+#### func (*Ring) Read() ( T,  error)
 > 读取数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -119,14 +123,23 @@ func BenchmarkRing_Read(b *testing.B) {
 
 
 ***
+<span id="struct_Ring_ReadAll"></span>
+
 #### func (*Ring) ReadAll()  []T
 > 读取所有数据
+
 ***
+<span id="struct_Ring_Peek"></span>
+
 #### func (*Ring) Peek() (t T, err error)
 > 查看数据
+
 ***
+<span id="struct_Ring_Write"></span>
+
 #### func (*Ring) Write(v T)
 > 写入数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -148,18 +161,31 @@ func BenchmarkRing_Write(b *testing.B) {
 
 
 ***
+<span id="struct_Ring_IsEmpty"></span>
+
 #### func (*Ring) IsEmpty()  bool
 > 是否为空
+
 ***
+<span id="struct_Ring_Cap"></span>
+
 #### func (*Ring) Cap()  int
 > 返回缓冲区容量
+
 ***
+<span id="struct_Ring_Len"></span>
+
 #### func (*Ring) Len()  int
 > 返回缓冲区长度
+
 ***
+<span id="struct_Ring_Reset"></span>
+
 #### func (*Ring) Reset()
 > 重置缓冲区
+
 ***
+<span id="struct_RingUnbounded"></span>
 ### RingUnbounded `STRUCT`
 基于环形缓冲区实现的无界缓冲区
 ```go
@@ -173,8 +199,11 @@ type RingUnbounded[T any] struct {
 	closedSignal chan struct{}
 }
 ```
+<span id="struct_RingUnbounded_Write"></span>
+
 #### func (*RingUnbounded) Write(v T)
 > 写入数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -196,8 +225,11 @@ func BenchmarkRingUnbounded_Write(b *testing.B) {
 
 
 ***
+<span id="struct_RingUnbounded_Read"></span>
+
 #### func (*RingUnbounded) Read()  chan T
 > 读取数据
+
 <details>
 <summary>查看 / 收起基准测试</summary>
 
@@ -222,11 +254,17 @@ func BenchmarkRingUnbounded_Read(b *testing.B) {
 
 
 ***
+<span id="struct_RingUnbounded_Closed"></span>
+
 #### func (*RingUnbounded) Closed()  bool
 > 判断缓冲区是否已关闭
+
 ***
+<span id="struct_RingUnbounded_Close"></span>
+
 #### func (*RingUnbounded) Close()  chan struct {}
 > 关闭缓冲区，关闭后将不再接收新数据，但是已有数据仍然可以读取
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -255,6 +293,7 @@ func TestRingUnbounded_Close(t *testing.T) {
 
 
 ***
+<span id="struct_Unbounded"></span>
 ### Unbounded `STRUCT`
 是无界缓冲区的实现
 ```go
@@ -265,15 +304,24 @@ type Unbounded[V any] struct {
 	backlog []V
 }
 ```
+<span id="struct_Unbounded_Put"></span>
+
 #### func (*Unbounded) Put(t V)
 > 将数据放入缓冲区
+
 ***
+<span id="struct_Unbounded_Load"></span>
+
 #### func (*Unbounded) Load()
 > 将缓冲区中的数据发送到读取通道中，如果缓冲区中没有数据，则不会发送
 >   - 在每次 Get 后都应该执行该函数
+
 ***
+<span id="struct_Unbounded_Get"></span>
+
 #### func (*Unbounded) Get()  chan V
 > 获取读取通道
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -296,9 +344,15 @@ func TestUnbounded_Get(t *testing.T) {
 
 
 ***
+<span id="struct_Unbounded_Close"></span>
+
 #### func (*Unbounded) Close()
 > 关闭
+
 ***
+<span id="struct_Unbounded_IsClosed"></span>
+
 #### func (*Unbounded) IsClosed()  bool
 > 是否已关闭
+
 ***

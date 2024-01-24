@@ -1,5 +1,55 @@
 package collection
 
+// ConvertSliceToBatches 将切片 s 转换为分批次的切片，当 batchSize 小于等于 0 或者 s 长度为 0 时，将会返回 nil
+func ConvertSliceToBatches[S ~[]V, V any](s S, batchSize int) []S {
+	if len(s) == 0 || batchSize <= 0 {
+		return nil
+	}
+	var batches = make([]S, 0, len(s)/batchSize+1)
+	for i := 0; i < len(s); i += batchSize {
+		var end = i + batchSize
+		if end > len(s) {
+			end = len(s)
+		}
+		batches = append(batches, s[i:end])
+	}
+	return batches
+}
+
+// ConvertMapKeysToBatches 将映射的键转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+func ConvertMapKeysToBatches[M ~map[K]V, K comparable, V any](m M, batchSize int) [][]K {
+	if len(m) == 0 || batchSize <= 0 {
+		return nil
+	}
+	var batches = make([][]K, 0, len(m)/batchSize+1)
+	var keys = ConvertMapKeysToSlice(m)
+	for i := 0; i < len(keys); i += batchSize {
+		var end = i + batchSize
+		if end > len(keys) {
+			end = len(keys)
+		}
+		batches = append(batches, keys[i:end])
+	}
+	return batches
+}
+
+// ConvertMapValuesToBatches 将映射的值转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+func ConvertMapValuesToBatches[M ~map[K]V, K comparable, V any](m M, batchSize int) [][]V {
+	if len(m) == 0 || batchSize <= 0 {
+		return nil
+	}
+	var batches = make([][]V, 0, len(m)/batchSize+1)
+	var values = ConvertMapValuesToSlice(m)
+	for i := 0; i < len(values); i += batchSize {
+		var end = i + batchSize
+		if end > len(values) {
+			end = len(values)
+		}
+		batches = append(batches, values[i:end])
+	}
+	return batches
+}
+
 // ConvertSliceToAny 将切片转换为任意类型的切片
 func ConvertSliceToAny[S ~[]V, V any](s S) []any {
 	if len(s) == 0 {

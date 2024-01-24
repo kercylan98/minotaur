@@ -3,7 +3,7 @@
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
 ![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
 
-collection 用于对 input 和 map 操作的工具函数
+collection 定义了各种对于集合操作有用的各种函数
 
 
 ## 目录导航
@@ -16,12 +16,16 @@ collection 用于对 input 和 map 操作的工具函数
 
 |函数名称|描述
 |:--|:--
-|[CloneSlice](#CloneSlice)|克隆切片，该函数是 slices.Clone 的快捷方式
-|[CloneMap](#CloneMap)|克隆 map
-|[CloneSliceN](#CloneSliceN)|克隆 slice 为 n 个切片进行返回
-|[CloneMapN](#CloneMapN)|克隆 map 为 n 个 map 进行返回
-|[CloneSlices](#CloneSlices)|克隆多个切片
-|[CloneMaps](#CloneMaps)|克隆多个 map
+|[CloneSlice](#CloneSlice)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
+|[CloneMap](#CloneMap)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
+|[CloneSliceN](#CloneSliceN)|通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
+|[CloneMapN](#CloneMapN)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
+|[CloneSlices](#CloneSlices)|对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
+|[CloneMaps](#CloneMaps)|对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
+|[EqualSlice](#EqualSlice)|检查两个切片是否相等，当 handler 返回 true 时，表示 slice1 中的某个元素和 slice2 中的某个元素相匹配
+|[EqualComparableSlice](#EqualComparableSlice)|检查两个切片的值是否相同
+|[EqualMap](#EqualMap)|检查两个 map 是否相等，当 handler 返回 true 时，表示 map1 中的某个元素和 map2 中的某个元素相匹配
+|[EqualComparableMap](#EqualComparableMap)|检查两个 map 的值是否相同
 |[InSlice](#InSlice)|检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 |[InComparableSlice](#InComparableSlice)|检查 v 是否被包含在 slice 中
 |[AllInSlice](#AllInSlice)|检查 values 中的所有元素是否均被包含在 slice 中，当 handler 返回 true 时，表示 values 中的某个元素和 slice 中的某个元素相匹配
@@ -50,6 +54,9 @@ collection 用于对 input 和 map 操作的工具函数
 |[AnyValueInMaps](#AnyValueInMaps)|检查 maps 中的任意一个元素是否包含 value 中的任意一个元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 |[KeyInAllMaps](#KeyInAllMaps)|检查 key 是否被包含在 maps 的每一个元素中
 |[AnyKeyInAllMaps](#AnyKeyInAllMaps)|检查 maps 中的每一个元素是否均包含 keys 中任意一个元素
+|[ConvertSliceToBatches](#ConvertSliceToBatches)|将切片 s 转换为分批次的切片，当 batchSize 小于等于 0 或者 s 长度为 0 时，将会返回 nil
+|[ConvertMapKeysToBatches](#ConvertMapKeysToBatches)|将映射的键转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+|[ConvertMapValuesToBatches](#ConvertMapValuesToBatches)|将映射的值转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
 |[ConvertSliceToAny](#ConvertSliceToAny)|将切片转换为任意类型的切片
 |[ConvertSliceToIndexMap](#ConvertSliceToIndexMap)|将切片转换为索引为键的映射
 |[ConvertSliceToIndexOnlyMap](#ConvertSliceToIndexOnlyMap)|将切片转换为索引为键的映射
@@ -99,6 +106,17 @@ collection 用于对 input 和 map 操作的工具函数
 |[FindMin2MaxFromComparableMap](#FindMin2MaxFromComparableMap)|获取 map 中的最小值和最大值
 |[FindMin2MaxFromMap](#FindMin2MaxFromMap)|获取 map 中的最小值和最大值
 |[SwapSlice](#SwapSlice)|将切片中的两个元素进行交换
+|[LoopSlice](#LoopSlice)|迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+|[ReverseLoopSlice](#ReverseLoopSlice)|逆序迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+|[LoopMap](#LoopMap)|迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedKeyAsc](#LoopMapByOrderedKeyAsc)|按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedKeyDesc](#LoopMapByOrderedKeyDesc)|按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedValueAsc](#LoopMapByOrderedValueAsc)|按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedValueDesc](#LoopMapByOrderedValueDesc)|按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByKeyGetterAsc](#LoopMapByKeyGetterAsc)|按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByValueGetterAsc](#LoopMapByValueGetterAsc)|按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByKeyGetterDesc](#LoopMapByKeyGetterDesc)|按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByValueGetterDesc](#LoopMapByValueGetterDesc)|按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 |[MappingFromSlice](#MappingFromSlice)|将切片中的元素进行转换
 |[MappingFromMap](#MappingFromMap)|将 map 中的元素进行转换
 |[MergeSlices](#MergeSlices)|合并切片
@@ -133,19 +151,24 @@ collection 用于对 input 和 map 操作的工具函数
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[ComparisonHandler](#comparisonhandler)|暂无描述...
-|`STRUCT`|[OrderedValueGetter](#orderedvaluegetter)|暂无描述...
+|`STRUCT`|[ComparisonHandler](#struct_ComparisonHandler)|用于比较 `source` 和 `target` 两个值是否相同的比较函数
+|`STRUCT`|[OrderedValueGetter](#struct_OrderedValueGetter)|用于获取 v 的可排序字段值的函数
 
 </details>
 
 
 ***
 ## 详情信息
-#### func CloneSlice(slice S)  S
+#### func CloneSlice\[S ~[]V, V any\](slice S) S
 <span id="CloneSlice"></span>
-> 克隆切片，该函数是 slices.Clone 的快捷方式
+> 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片
 
-示例代码：
+**示例代码：**
+
+在该示例中，将 slice 克隆后将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址
+  - 示例中的结果将会输出 [1 2 3]
+
+
 ```go
 
 func ExampleCloneSlice() {
@@ -190,11 +213,17 @@ func TestCloneSlice(t *testing.T) {
 
 
 ***
-#### func CloneMap(m M)  M
+#### func CloneMap\[M ~map[K]V, K comparable, V any\](m M) M
 <span id="CloneMap"></span>
-> 克隆 map
+> 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map
+>   - 当 m 为空时，将会返回 nil
 
-示例代码：
+**示例代码：**
+
+在该示例中，将 map 克隆后将会得到一个新的 map result，而 result 和 map 将不会有任何关联，但是如果 map 中的元素是引用类型，那么 result 中的元素将会和 map 中的元素指向同一个地址
+  - 示例中的结果将会输出 3
+
+
 ```go
 
 func ExampleCloneMap() {
@@ -239,11 +268,18 @@ func TestCloneMap(t *testing.T) {
 
 
 ***
-#### func CloneSliceN(slice S, n int)  []S
+#### func CloneSliceN\[S ~[]V, V any\](slice S, n int) []S
 <span id="CloneSliceN"></span>
-> 克隆 slice 为 n 个切片进行返回
+> 通过创建一个新切片并将 slice 的元素复制到新切片的方式来克隆切片为 n 个切片
+>   - 当 slice 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 
-示例代码：
+**示例代码：**
+
+通过将 slice 克隆为 2 个新的 slice，将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址
+  - result 的结果为 [[1 2 3] [1 2 3]]
+  - 示例中的结果将会输出 2
+
+
 ```go
 
 func ExampleCloneSliceN() {
@@ -294,11 +330,18 @@ func TestCloneSliceN(t *testing.T) {
 
 
 ***
-#### func CloneMapN(m M, n int)  []M
+#### func CloneMapN\[M ~map[K]V, K comparable, V any\](m M, n int) []M
 <span id="CloneMapN"></span>
-> 克隆 map 为 n 个 map 进行返回
+> 通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
+>   - 当 m 为空时，将会返回 nil，当 n <= 0 时，将会返回零值切片
 
-示例代码：
+**示例代码：**
+
+通过将 map 克隆为 2 个新的 map，将会得到一个新的 map result，而 result 和 map 将不会有任何关联，但是如果 map 中的元素是引用类型，那么 result 中的元素将会和 map 中的元素指向同一个地址
+  - result 的结果为 [map[1:1 2:2 3:3] map[1:1 2:2 3:3]] `无序的 Key-Value 对`
+  - 示例中的结果将会输出 2
+
+
 ```go
 
 func ExampleCloneMapN() {
@@ -349,11 +392,18 @@ func TestCloneMapN(t *testing.T) {
 
 
 ***
-#### func CloneSlices(slices ...S)  []S
+#### func CloneSlices\[S ~[]V, V any\](slices ...S) []S
 <span id="CloneSlices"></span>
-> 克隆多个切片
+> 对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
+>   - 当 slices 为空时，将会返回 nil
+>   - 该函数相当于使用 CloneSlice 函数一次性对多个切片进行克隆
 
-示例代码：
+**示例代码：**
+
+通过将多个 slice 克隆为 2 个新的 slice，将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址
+  - result 的结果为 [[1 2 3] [1 2 3]]
+
+
 ```go
 
 func ExampleCloneSlices() {
@@ -401,11 +451,18 @@ func TestCloneSlices(t *testing.T) {
 
 
 ***
-#### func CloneMaps(maps ...M)  []M
+#### func CloneMaps\[M ~map[K]V, K comparable, V any\](maps ...M) []M
 <span id="CloneMaps"></span>
-> 克隆多个 map
+> 对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
+>   - 当 maps 为空时，将会返回 nil
+>   - 该函数相当于使用 CloneMap 函数一次性对多个 map 进行克隆
 
-示例代码：
+**示例代码：**
+
+通过将多个 map 克隆为 2 个新的 map，将会得到一个新的 map result，而 result 和 map 将不会有任何关联，但是如果 map 中的元素是引用类型，那么 result 中的元素将会和 map 中的元素指向同一个地址
+  - result 的结果为 [map[1:1 2:2 3:3] map[1:1 2:2 3:3]] `无序的 Key-Value 对`
+
+
 ```go
 
 func ExampleCloneMaps() {
@@ -453,11 +510,220 @@ func TestCloneMaps(t *testing.T) {
 
 
 ***
-#### func InSlice(slice S, v V, handler ComparisonHandler[V])  bool
+#### func EqualSlice\[S ~[]V, V any\](slice1 S, slice2 S, handler ComparisonHandler[V]) bool
+<span id="EqualSlice"></span>
+> 检查两个切片是否相等，当 handler 返回 true 时，表示 slice1 中的某个元素和 slice2 中的某个元素相匹配
+>   - 当两个切片的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualSlice(s1, s2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualSlice(s1, s3, func(source, target int) bool {
+		return source == target
+	}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{{"TestEqualSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true}, {"TestEqualSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false}, {"TestEqualSlice_EmptySlice", []int{}, []int{}, true}, {"TestEqualSlice_NilSlice", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualSlice(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualComparableSlice\[S ~[]V, V comparable\](slice1 S, slice2 S) bool
+<span id="EqualComparableSlice"></span>
+> 检查两个切片的值是否相同
+>   - 当两个切片的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualComparableSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualComparableSlice(s1, s2))
+	fmt.Println(collection.EqualComparableSlice(s1, s3))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualComparableSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{{"TestEqualComparableSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true}, {"TestEqualComparableSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false}, {"TestEqualComparableSlice_EmptySlice", []int{}, []int{}, true}, {"TestEqualComparableSlice_NilSlice", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableSlice(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualMap\[M ~map[K]V, K comparable, V any\](map1 M, map2 M, handler ComparisonHandler[V]) bool
+<span id="EqualMap"></span>
+> 检查两个 map 是否相等，当 handler 返回 true 时，表示 map1 中的某个元素和 map2 中的某个元素相匹配
+>   - 当两个 map 的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualMap(m1, m2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualMap(m1, m3, func(source, target int) bool {
+		return source == target
+	}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{{"TestEqualMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true}, {"TestEqualMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false}, {"TestEqualMap_EmptyMap", map[int]int{}, map[int]int{}, true}, {"TestEqualMap_NilMap", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualMap(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualComparableMap\[M ~map[K]V, K comparable, V comparable\](map1 M, map2 M) bool
+<span id="EqualComparableMap"></span>
+> 检查两个 map 的值是否相同
+>   - 当两个 map 的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualComparableMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualComparableMap(m1, m2))
+	fmt.Println(collection.EqualComparableMap(m1, m3))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualComparableMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{{"TestEqualComparableMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true}, {"TestEqualComparableMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false}, {"TestEqualComparableMap_EmptyMap", map[int]int{}, map[int]int{}, true}, {"TestEqualComparableMap_NilMap", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableMap(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func InSlice\[S ~[]V, V any\](slice S, v V, handler ComparisonHandler[V]) bool
 <span id="InSlice"></span>
 > 检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInSlice() {
@@ -501,11 +767,12 @@ func TestInSlice(t *testing.T) {
 
 
 ***
-#### func InComparableSlice(slice S, v V)  bool
+#### func InComparableSlice\[S ~[]V, V comparable\](slice S, v V) bool
 <span id="InComparableSlice"></span>
 > 检查 v 是否被包含在 slice 中
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInComparableSlice() {
@@ -545,13 +812,14 @@ func TestInComparableSlice(t *testing.T) {
 
 
 ***
-#### func AllInSlice(slice S, values []V, handler ComparisonHandler[V])  bool
+#### func AllInSlice\[S ~[]V, V any\](slice S, values []V, handler ComparisonHandler[V]) bool
 <span id="AllInSlice"></span>
 > 检查 values 中的所有元素是否均被包含在 slice 中，当 handler 返回 true 时，表示 values 中的某个元素和 slice 中的某个元素相匹配
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
 >   - 当 values 长度为 0 或为 nil 时，将返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInSlice() {
@@ -595,13 +863,14 @@ func TestAllInSlice(t *testing.T) {
 
 
 ***
-#### func AllInComparableSlice(slice S, values []V)  bool
+#### func AllInComparableSlice\[S ~[]V, V comparable\](slice S, values []V) bool
 <span id="AllInComparableSlice"></span>
 > 检查 values 中的所有元素是否均被包含在 slice 中
 >   - 在所有 values 中的元素都被包含在 slice 中时，返回 true
 >   - 当 values 长度为 0 或为 nil 时，将返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInComparableSlice() {
@@ -641,12 +910,13 @@ func TestAllInComparableSlice(t *testing.T) {
 
 
 ***
-#### func AnyInSlice(slice S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInSlice\[S ~[]V, V any\](slice S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInSlice"></span>
 > 检查 values 中的任意一个元素是否被包含在 slice 中，当 handler 返回 true 时，表示 value 中的某个元素和 slice 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInSlice() {
@@ -690,12 +960,13 @@ func TestAnyInSlice(t *testing.T) {
 
 
 ***
-#### func AnyInComparableSlice(slice S, values []V)  bool
+#### func AnyInComparableSlice\[S ~[]V, V comparable\](slice S, values []V) bool
 <span id="AnyInComparableSlice"></span>
 > 检查 values 中的任意一个元素是否被包含在 slice 中
 >   - 当 values 中的任意一个元素被包含在 slice 中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInComparableSlice() {
@@ -735,12 +1006,13 @@ func TestAnyInComparableSlice(t *testing.T) {
 
 
 ***
-#### func InSlices(slices []S, v V, handler ComparisonHandler[V])  bool
+#### func InSlices\[S ~[]V, V any\](slices []S, v V, handler ComparisonHandler[V]) bool
 <span id="InSlices"></span>
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInSlices() {
@@ -784,12 +1056,13 @@ func TestInSlices(t *testing.T) {
 
 
 ***
-#### func InComparableSlices(slices []S, v V)  bool
+#### func InComparableSlices\[S ~[]V, V comparable\](slices []S, v V) bool
 <span id="InComparableSlices"></span>
 > 通过将多个切片合并后检查 v 是否被包含在 slices 中
 >   - 当传入的 v 被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInComparableSlices() {
@@ -829,12 +1102,13 @@ func TestInComparableSlices(t *testing.T) {
 
 
 ***
-#### func AllInSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AllInSlices\[S ~[]V, V any\](slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AllInSlices"></span>
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInSlices() {
@@ -878,12 +1152,13 @@ func TestAllInSlices(t *testing.T) {
 
 
 ***
-#### func AllInComparableSlices(slices []S, values []V)  bool
+#### func AllInComparableSlices\[S ~[]V, V comparable\](slices []S, values []V) bool
 <span id="AllInComparableSlices"></span>
 > 通过将多个切片合并后检查 values 中的所有元素是否被包含在 slices 中
 >   - 当 values 中的所有元素都被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllInComparableSlices() {
@@ -923,12 +1198,13 @@ func TestAllInComparableSlices(t *testing.T) {
 
 
 ***
-#### func AnyInSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInSlices\[S ~[]V, V any\](slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInSlices"></span>
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中，当 handler 返回 true 时，表示 values 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInSlices() {
@@ -972,12 +1248,13 @@ func TestAnyInSlices(t *testing.T) {
 
 
 ***
-#### func AnyInComparableSlices(slices []S, values []V)  bool
+#### func AnyInComparableSlices\[S ~[]V, V comparable\](slices []S, values []V) bool
 <span id="AnyInComparableSlices"></span>
 > 通过将多个切片合并后检查 values 中的任意一个元素是否被包含在 slices 中
 >   - 当 values 中的任意一个元素被包含在 slices 的任一成员中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInComparableSlices() {
@@ -1017,12 +1294,13 @@ func TestAnyInComparableSlices(t *testing.T) {
 
 
 ***
-#### func InAllSlices(slices []S, v V, handler ComparisonHandler[V])  bool
+#### func InAllSlices\[S ~[]V, V any\](slices []S, v V, handler ComparisonHandler[V]) bool
 <span id="InAllSlices"></span>
 > 检查 v 是否被包含在 slices 的每一项元素中，当 handler 返回 true 时，表示 v 和 slices 中的某个元素相匹配
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInAllSlices() {
@@ -1066,12 +1344,13 @@ func TestInAllSlices(t *testing.T) {
 
 
 ***
-#### func InAllComparableSlices(slices []S, v V)  bool
+#### func InAllComparableSlices\[S ~[]V, V comparable\](slices []S, v V) bool
 <span id="InAllComparableSlices"></span>
 > 检查 v 是否被包含在 slices 的每一项元素中
 >   - 当 v 被包含在 slices 的每一项元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInAllComparableSlices() {
@@ -1111,12 +1390,13 @@ func TestInAllComparableSlices(t *testing.T) {
 
 
 ***
-#### func AnyInAllSlices(slices []S, values []V, handler ComparisonHandler[V])  bool
+#### func AnyInAllSlices\[S ~[]V, V any\](slices []S, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyInAllSlices"></span>
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素，当 handler 返回 true 时，表示 value 中的某个元素和 slices 中的某个元素相匹配
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInAllSlices() {
@@ -1160,12 +1440,13 @@ func TestAnyInAllSlices(t *testing.T) {
 
 
 ***
-#### func AnyInAllComparableSlices(slices []S, values []V)  bool
+#### func AnyInAllComparableSlices\[S ~[]V, V comparable\](slices []S, values []V) bool
 <span id="AnyInAllComparableSlices"></span>
 > 检查 slices 中的每一个元素是否均包含至少任意一个 values 中的元素
 >   - 当 slices 中的每一个元素均包含至少任意一个 values 中的元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyInAllComparableSlices() {
@@ -1205,11 +1486,12 @@ func TestAnyInAllComparableSlices(t *testing.T) {
 
 
 ***
-#### func KeyInMap(m M, key K)  bool
+#### func KeyInMap\[M ~map[K]V, K comparable, V any\](m M, key K) bool
 <span id="KeyInMap"></span>
 > 检查 m 中是否包含特定 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleKeyInMap() {
@@ -1249,11 +1531,12 @@ func TestKeyInMap(t *testing.T) {
 
 
 ***
-#### func ValueInMap(m M, value V, handler ComparisonHandler[V])  bool
+#### func ValueInMap\[M ~map[K]V, K comparable, V any\](m M, value V, handler ComparisonHandler[V]) bool
 <span id="ValueInMap"></span>
 > 检查 m 中是否包含特定 value，当 handler 返回 true 时，表示 value 和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleValueInMap() {
@@ -1296,11 +1579,12 @@ func TestValueInMap(t *testing.T) {
 
 
 ***
-#### func AllKeyInMap(m M, keys ...K)  bool
+#### func AllKeyInMap\[M ~map[K]V, K comparable, V any\](m M, keys ...K) bool
 <span id="AllKeyInMap"></span>
 > 检查 m 中是否包含 keys 中所有的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllKeyInMap() {
@@ -1340,11 +1624,12 @@ func TestAllKeyInMap(t *testing.T) {
 
 
 ***
-#### func AllValueInMap(m M, values []V, handler ComparisonHandler[V])  bool
+#### func AllValueInMap\[M ~map[K]V, K comparable, V any\](m M, values []V, handler ComparisonHandler[V]) bool
 <span id="AllValueInMap"></span>
 > 检查 m 中是否包含 values 中所有的元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllValueInMap() {
@@ -1386,11 +1671,12 @@ func TestAllValueInMap(t *testing.T) {
 
 
 ***
-#### func AnyKeyInMap(m M, keys ...K)  bool
+#### func AnyKeyInMap\[M ~map[K]V, K comparable, V any\](m M, keys ...K) bool
 <span id="AnyKeyInMap"></span>
 > 检查 m 中是否包含 keys 中任意一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInMap() {
@@ -1430,11 +1716,12 @@ func TestAnyKeyInMap(t *testing.T) {
 
 
 ***
-#### func AnyValueInMap(m M, values []V, handler ComparisonHandler[V])  bool
+#### func AnyValueInMap\[M ~map[K]V, K comparable, V any\](m M, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyValueInMap"></span>
 > 检查 m 中是否包含 values 中任意一个元素，当 handler 返回 true 时，表示 values 中的某个元素和 m 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyValueInMap() {
@@ -1476,11 +1763,12 @@ func TestAnyValueInMap(t *testing.T) {
 
 
 ***
-#### func AllKeyInMaps(maps []M, keys ...K)  bool
+#### func AllKeyInMaps\[M ~map[K]V, K comparable, V any\](maps []M, keys ...K) bool
 <span id="AllKeyInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 keys 中所有的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllKeyInMaps() {
@@ -1520,11 +1808,12 @@ func TestAllKeyInMaps(t *testing.T) {
 
 
 ***
-#### func AllValueInMaps(maps []M, values []V, handler ComparisonHandler[V])  bool
+#### func AllValueInMaps\[M ~map[K]V, K comparable, V any\](maps []M, values []V, handler ComparisonHandler[V]) bool
 <span id="AllValueInMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 value 中所有的元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAllValueInMaps() {
@@ -1566,12 +1855,13 @@ func TestAllValueInMaps(t *testing.T) {
 
 
 ***
-#### func AnyKeyInMaps(maps []M, keys ...K)  bool
+#### func AnyKeyInMaps\[M ~map[K]V, K comparable, V any\](maps []M, keys ...K) bool
 <span id="AnyKeyInMaps"></span>
 > 检查 keys 中的任意一个元素是否被包含在 maps 中的任意一个元素中
 >   - 当 keys 中的任意一个元素被包含在 maps 中的任意一个元素中时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInMaps() {
@@ -1611,12 +1901,13 @@ func TestAnyKeyInMaps(t *testing.T) {
 
 
 ***
-#### func AnyValueInMaps(maps []M, values []V, handler ComparisonHandler[V])  bool
+#### func AnyValueInMaps\[M ~map[K]V, K comparable, V any\](maps []M, values []V, handler ComparisonHandler[V]) bool
 <span id="AnyValueInMaps"></span>
 > 检查 maps 中的任意一个元素是否包含 value 中的任意一个元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 >   - 当 maps 中的任意一个元素包含 value 中的任意一个元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyValueInMaps() {
@@ -1658,11 +1949,12 @@ func TestAnyValueInMaps(t *testing.T) {
 
 
 ***
-#### func KeyInAllMaps(maps []M, key K)  bool
+#### func KeyInAllMaps\[M ~map[K]V, K comparable, V any\](maps []M, key K) bool
 <span id="KeyInAllMaps"></span>
 > 检查 key 是否被包含在 maps 的每一个元素中
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleKeyInAllMaps() {
@@ -1702,12 +1994,13 @@ func TestKeyInAllMaps(t *testing.T) {
 
 
 ***
-#### func AnyKeyInAllMaps(maps []M, keys []K)  bool
+#### func AnyKeyInAllMaps\[M ~map[K]V, K comparable, V any\](maps []M, keys []K) bool
 <span id="AnyKeyInAllMaps"></span>
 > 检查 maps 中的每一个元素是否均包含 keys 中任意一个元素
 >   - 当 maps 中的每一个元素均包含 keys 中任意一个元素时，返回 true
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAnyKeyInAllMaps() {
@@ -1747,11 +2040,164 @@ func TestAnyKeyInAllMaps(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToAny(s S)  []any
+#### func ConvertSliceToBatches\[S ~[]V, V any\](s S, batchSize int) []S
+<span id="ConvertSliceToBatches"></span>
+> 将切片 s 转换为分批次的切片，当 batchSize 小于等于 0 或者 s 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertSliceToBatches() {
+	result := collection.ConvertSliceToBatches([]int{1, 2, 3}, 2)
+	for _, v := range result {
+		fmt.Println(v)
+	}
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertSliceToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertSliceToBatches_NonEmpty", input: []int{1, 2, 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertSliceToBatches_Empty", input: []int{}, batch: 2, expected: nil}, {name: "TestConvertSliceToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertSliceToBatches_NonPositive", input: []int{1, 2, 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertSliceToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+			for i := 0; i < len(actual); i++ {
+				av, ev := actual[i], c.expected[i]
+				if len(av) != len(ev) {
+					t.Errorf("expected: %v, actual: %v", c.expected, actual)
+				}
+				for j := 0; j < len(av); j++ {
+					aj, ej := av[j], ev[j]
+					if reflect.TypeOf(aj).Kind() != reflect.TypeOf(ej).Kind() {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+					if aj != ej {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+				}
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ConvertMapKeysToBatches\[M ~map[K]V, K comparable, V any\](m M, batchSize int) [][]K
+<span id="ConvertMapKeysToBatches"></span>
+> 将映射的键转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertMapKeysToBatches() {
+	result := collection.ConvertMapKeysToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertMapKeysToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertMapKeysToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertMapKeysToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil}, {name: "TestConvertMapKeysToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertMapKeysToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapKeysToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ConvertMapValuesToBatches\[M ~map[K]V, K comparable, V any\](m M, batchSize int) [][]V
+<span id="ConvertMapValuesToBatches"></span>
+> 将映射的值转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertMapValuesToBatches() {
+	result := collection.ConvertMapValuesToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertMapValuesToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertMapValuesToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertMapValuesToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil}, {name: "TestConvertMapValuesToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertMapValuesToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapValuesToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ConvertSliceToAny\[S ~[]V, V any\](s S) []any
 <span id="ConvertSliceToAny"></span>
 > 将切片转换为任意类型的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToAny() {
@@ -1799,11 +2245,12 @@ func TestConvertSliceToAny(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToIndexMap(s S)  map[int]V
+#### func ConvertSliceToIndexMap\[S ~[]V, V any\](s S) map[int]V
 <span id="ConvertSliceToIndexMap"></span>
 > 将切片转换为索引为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToIndexMap() {
@@ -1850,11 +2297,12 @@ func TestConvertSliceToIndexMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToIndexOnlyMap(s S)  map[int]struct {}
+#### func ConvertSliceToIndexOnlyMap\[S ~[]V, V any\](s S) map[int]struct {}
 <span id="ConvertSliceToIndexOnlyMap"></span>
 > 将切片转换为索引为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToIndexOnlyMap() {
@@ -1905,11 +2353,12 @@ func TestConvertSliceToIndexOnlyMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToMap(s S)  map[V]struct {}
+#### func ConvertSliceToMap\[S ~[]V, V comparable\](s S) map[V]struct {}
 <span id="ConvertSliceToMap"></span>
 > 将切片转换为值为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToMap() {
@@ -1957,11 +2406,12 @@ func TestConvertSliceToMap(t *testing.T) {
 
 
 ***
-#### func ConvertSliceToBoolMap(s S)  map[V]bool
+#### func ConvertSliceToBoolMap\[S ~[]V, V comparable\](s S) map[V]bool
 <span id="ConvertSliceToBoolMap"></span>
 > 将切片转换为值为键的映射
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertSliceToBoolMap() {
@@ -2008,15 +2458,17 @@ func TestConvertSliceToBoolMap(t *testing.T) {
 
 
 ***
-#### func ConvertMapKeysToSlice(m M)  []K
+#### func ConvertMapKeysToSlice\[M ~map[K]V, K comparable, V any\](m M) []K
 <span id="ConvertMapKeysToSlice"></span>
 > 将映射的键转换为切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapKeysToSlice() {
 	result := collection.ConvertMapKeysToSlice(map[int]int{1: 1, 2: 2, 3: 3})
+	sort.Ints(result)
 	for i, v := range result {
 		fmt.Println(i, v)
 	}
@@ -2064,11 +2516,12 @@ func TestConvertMapKeysToSlice(t *testing.T) {
 
 
 ***
-#### func ConvertMapValuesToSlice(m M)  []V
+#### func ConvertMapValuesToSlice\[M ~map[K]V, K comparable, V any\](m M) []V
 <span id="ConvertMapValuesToSlice"></span>
 > 将映射的值转换为切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapValuesToSlice() {
@@ -2121,11 +2574,12 @@ func TestConvertMapValuesToSlice(t *testing.T) {
 
 
 ***
-#### func InvertMap(m M)  N
+#### func InvertMap\[M ~map[K]V, N map[V]K, K comparable, V comparable\](m M) N
 <span id="InvertMap"></span>
 > 将映射的键和值互换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleInvertMap() {
@@ -2169,11 +2623,12 @@ func TestInvertMap(t *testing.T) {
 
 
 ***
-#### func ConvertMapValuesToBool(m M)  N
+#### func ConvertMapValuesToBool\[M ~map[K]V, N map[K]bool, K comparable, V any\](m M) N
 <span id="ConvertMapValuesToBool"></span>
 > 将映射的值转换为布尔值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleConvertMapValuesToBool() {
@@ -2217,11 +2672,12 @@ func TestConvertMapValuesToBool(t *testing.T) {
 
 
 ***
-#### func ReverseSlice(s *S)
+#### func ReverseSlice\[S ~[]V, V any\](s *S)
 <span id="ReverseSlice"></span>
 > 将切片反转
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleReverseSlice() {
@@ -2270,11 +2726,12 @@ func TestReverseSlice(t *testing.T) {
 
 
 ***
-#### func ClearSlice(slice *S)
+#### func ClearSlice\[S ~[]V, V any\](slice *S)
 <span id="ClearSlice"></span>
 > 清空切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleClearSlice() {
@@ -2319,11 +2776,12 @@ func TestClearSlice(t *testing.T) {
 
 
 ***
-#### func ClearMap(m M)
+#### func ClearMap\[M ~map[K]V, K comparable, V any\](m M)
 <span id="ClearMap"></span>
 > 清空 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleClearMap() {
@@ -2368,11 +2826,12 @@ func TestClearMap(t *testing.T) {
 
 
 ***
-#### func DropSliceByIndices(slice *S, indices ...int)
+#### func DropSliceByIndices\[S ~[]V, V any\](slice *S, indices ...int)
 <span id="DropSliceByIndices"></span>
 > 删除切片中特定索引的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceByIndices() {
@@ -2418,12 +2877,13 @@ func TestDropSliceByIndices(t *testing.T) {
 
 
 ***
-#### func DropSliceByCondition(slice *S, condition func (v V)  bool)
+#### func DropSliceByCondition\[S ~[]V, V any\](slice *S, condition func (v V)  bool)
 <span id="DropSliceByCondition"></span>
 > 删除切片中符合条件的元素
 >   - condition 的返回值为 true 时，将会删除该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceByCondition() {
@@ -2479,11 +2939,12 @@ func TestDropSliceByCondition(t *testing.T) {
 
 
 ***
-#### func DropSliceOverlappingElements(slice *S, anotherSlice []V, comparisonHandler ComparisonHandler[V])
+#### func DropSliceOverlappingElements\[S ~[]V, V any\](slice *S, anotherSlice []V, comparisonHandler ComparisonHandler[V])
 <span id="DropSliceOverlappingElements"></span>
 > 删除切片中与另一个切片重叠的元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDropSliceOverlappingElements() {
@@ -2542,11 +3003,12 @@ func TestDropSliceOverlappingElements(t *testing.T) {
 
 
 ***
-#### func DeduplicateSliceInPlace(s *S)
+#### func DeduplicateSliceInPlace\[S ~[]V, V comparable\](s *S)
 <span id="DeduplicateSliceInPlace"></span>
 > 去除切片中的重复元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceInPlace() {
@@ -2592,11 +3054,12 @@ func TestDeduplicateSliceInPlace(t *testing.T) {
 
 
 ***
-#### func DeduplicateSlice(s S)  S
+#### func DeduplicateSlice\[S ~[]V, V comparable\](s S) S
 <span id="DeduplicateSlice"></span>
 > 去除切片中的重复元素，返回新切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSlice() {
@@ -2641,11 +3104,12 @@ func TestDeduplicateSlice(t *testing.T) {
 
 
 ***
-#### func DeduplicateSliceInPlaceWithCompare(s *S, compare func (a V)  bool)
+#### func DeduplicateSliceInPlaceWithCompare\[S ~[]V, V any\](s *S, compare func (a V)  bool)
 <span id="DeduplicateSliceInPlaceWithCompare"></span>
 > 去除切片中的重复元素，使用自定义的比较函数
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceInPlaceWithCompare() {
@@ -2695,11 +3159,12 @@ func TestDeduplicateSliceInPlaceWithCompare(t *testing.T) {
 
 
 ***
-#### func DeduplicateSliceWithCompare(s S, compare func (a V)  bool)  S
+#### func DeduplicateSliceWithCompare\[S ~[]V, V any\](s S, compare func (a V)  bool) S
 <span id="DeduplicateSliceWithCompare"></span>
 > 去除切片中的重复元素，使用自定义的比较函数，返回新的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDeduplicateSliceWithCompare() {
@@ -2748,11 +3213,12 @@ func TestDeduplicateSliceWithCompare(t *testing.T) {
 
 
 ***
-#### func FilterOutByIndices(slice S, indices ...int)  S
+#### func FilterOutByIndices\[S []V, V any\](slice S, indices ...int) S
 <span id="FilterOutByIndices"></span>
 > 过滤切片中特定索引的元素，返回过滤后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByIndices() {
@@ -2798,12 +3264,13 @@ func TestFilterOutByIndices(t *testing.T) {
 
 
 ***
-#### func FilterOutByCondition(slice S, condition func (v V)  bool)  S
+#### func FilterOutByCondition\[S ~[]V, V any\](slice S, condition func (v V)  bool) S
 <span id="FilterOutByCondition"></span>
 > 过滤切片中符合条件的元素，返回过滤后的切片
 >   - condition 的返回值为 true 时，将会过滤掉该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByCondition() {
@@ -2857,11 +3324,12 @@ func TestFilterOutByCondition(t *testing.T) {
 
 
 ***
-#### func FilterOutByKey(m M, key K)  M
+#### func FilterOutByKey\[M ~map[K]V, K comparable, V any\](m M, key K) M
 <span id="FilterOutByKey"></span>
 > 过滤 map 中特定的 key，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByKey() {
@@ -2907,11 +3375,12 @@ func TestFilterOutByKey(t *testing.T) {
 
 
 ***
-#### func FilterOutByValue(m M, value V, handler ComparisonHandler[V])  M
+#### func FilterOutByValue\[M ~map[K]V, K comparable, V any\](m M, value V, handler ComparisonHandler[V]) M
 <span id="FilterOutByValue"></span>
 > 过滤 map 中特定的 value，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByValue() {
@@ -2961,11 +3430,12 @@ func TestFilterOutByValue(t *testing.T) {
 
 
 ***
-#### func FilterOutByKeys(m M, keys ...K)  M
+#### func FilterOutByKeys\[M ~map[K]V, K comparable, V any\](m M, keys ...K) M
 <span id="FilterOutByKeys"></span>
 > 过滤 map 中多个 key，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByKeys() {
@@ -3011,11 +3481,12 @@ func TestFilterOutByKeys(t *testing.T) {
 
 
 ***
-#### func FilterOutByValues(m M, values []V, handler ComparisonHandler[V])  M
+#### func FilterOutByValues\[M ~map[K]V, K comparable, V any\](m M, values []V, handler ComparisonHandler[V]) M
 <span id="FilterOutByValues"></span>
 > 过滤 map 中多个 values，返回过滤后的 map
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByValues() {
@@ -3067,12 +3538,13 @@ func TestFilterOutByValues(t *testing.T) {
 
 
 ***
-#### func FilterOutByMap(m M, condition func (k K, v V)  bool)  M
+#### func FilterOutByMap\[M ~map[K]V, K comparable, V any\](m M, condition func (k K, v V)  bool) M
 <span id="FilterOutByMap"></span>
 > 过滤 map 中符合条件的元素，返回过滤后的 map
 >   - condition 的返回值为 true 时，将会过滤掉该元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFilterOutByMap() {
@@ -3122,12 +3594,13 @@ func TestFilterOutByMap(t *testing.T) {
 
 
 ***
-#### func FindLoopedNextInSlice(slice S, i int) (next int, value V)
+#### func FindLoopedNextInSlice\[S ~[]V, V any\](slice S, i int) (next int, value V)
 <span id="FindLoopedNextInSlice"></span>
 > 返回 i 的下一个数组成员，当 i 达到数组长度时从 0 开始
 >   - 当 i 为负数时将返回第一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindLoopedNextInSlice() {
@@ -3167,12 +3640,13 @@ func TestFindLoopedNextInSlice(t *testing.T) {
 
 
 ***
-#### func FindLoopedPrevInSlice(slice S, i int) (prev int, value V)
+#### func FindLoopedPrevInSlice\[S ~[]V, V any\](slice S, i int) (prev int, value V)
 <span id="FindLoopedPrevInSlice"></span>
 > 返回 i 的上一个数组成员，当 i 为 0 时从数组末尾开始
 >   - 当 i 为负数时将返回最后一个元素
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindLoopedPrevInSlice() {
@@ -3212,11 +3686,12 @@ func TestFindLoopedPrevInSlice(t *testing.T) {
 
 
 ***
-#### func FindCombinationsInSliceByRange(s S, minSize int, maxSize int)  []S
+#### func FindCombinationsInSliceByRange\[S ~[]V, V any\](s S, minSize int, maxSize int) []S
 <span id="FindCombinationsInSliceByRange"></span>
 > 获取给定数组的所有组合，且每个组合的成员数量限制在指定范围内
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindCombinationsInSliceByRange() {
@@ -3257,11 +3732,12 @@ func TestFindCombinationsInSliceByRange(t *testing.T) {
 
 
 ***
-#### func FindFirstOrDefaultInSlice(slice S, defaultValue V)  V
+#### func FindFirstOrDefaultInSlice\[S ~[]V, V any\](slice S, defaultValue V) V
 <span id="FindFirstOrDefaultInSlice"></span>
 > 判断切片中是否存在元素，返回第一个元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindFirstOrDefaultInSlice() {
@@ -3300,11 +3776,12 @@ func TestFindFirstOrDefaultInSlice(t *testing.T) {
 
 
 ***
-#### func FindOrDefaultInSlice(slice S, defaultValue V, handler func (v V)  bool) (t V)
+#### func FindOrDefaultInSlice\[S ~[]V, V any\](slice S, defaultValue V, handler func (v V)  bool) (t V)
 <span id="FindOrDefaultInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindOrDefaultInSlice() {
@@ -3347,11 +3824,12 @@ func TestFindOrDefaultInSlice(t *testing.T) {
 
 
 ***
-#### func FindOrDefaultInComparableSlice(slice S, v V, defaultValue V) (t V)
+#### func FindOrDefaultInComparableSlice\[S ~[]V, V comparable\](slice S, v V, defaultValue V) (t V)
 <span id="FindOrDefaultInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则返回默认值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindOrDefaultInComparableSlice() {
@@ -3390,11 +3868,12 @@ func TestFindOrDefaultInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindInSlice(slice S, handler func (v V)  bool) (i int, t V)
+#### func FindInSlice\[S ~[]V, V any\](slice S, handler func (v V)  bool) (i int, t V)
 <span id="FindInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindInSlice() {
@@ -3437,11 +3916,12 @@ func TestFindInSlice(t *testing.T) {
 
 
 ***
-#### func FindIndexInSlice(slice S, handler func (v V)  bool)  int
+#### func FindIndexInSlice\[S ~[]V, V any\](slice S, handler func (v V)  bool) int
 <span id="FindIndexInSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindIndexInSlice() {
@@ -3484,11 +3964,12 @@ func TestFindIndexInSlice(t *testing.T) {
 
 
 ***
-#### func FindInComparableSlice(slice S, v V) (i int, t V)
+#### func FindInComparableSlice\[S ~[]V, V comparable\](slice S, v V) (i int, t V)
 <span id="FindInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引和元素，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindInComparableSlice() {
@@ -3527,11 +4008,12 @@ func TestFindInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindIndexInComparableSlice(slice S, v V)  int
+#### func FindIndexInComparableSlice\[S ~[]V, V comparable\](slice S, v V) int
 <span id="FindIndexInComparableSlice"></span>
 > 判断切片中是否存在某个元素，返回第一个匹配的索引，不存在则索引返回 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindIndexInComparableSlice() {
@@ -3570,11 +4052,12 @@ func TestFindIndexInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindMinimumInComparableSlice(slice S) (result V)
+#### func FindMinimumInComparableSlice\[S ~[]V, V generic.Ordered\](slice S) (result V)
 <span id="FindMinimumInComparableSlice"></span>
 > 获取切片中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinimumInComparableSlice() {
@@ -3613,11 +4096,12 @@ func TestFindMinimumInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindMinimumInSlice(slice S, handler OrderedValueGetter[V, N]) (result V)
+#### func FindMinimumInSlice\[S ~[]V, V any, N generic.Ordered\](slice S, handler OrderedValueGetter[V, N]) (result V)
 <span id="FindMinimumInSlice"></span>
 > 获取切片中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinimumInSlice() {
@@ -3660,11 +4144,12 @@ func TestFindMinimumInSlice(t *testing.T) {
 
 
 ***
-#### func FindMaximumInComparableSlice(slice S) (result V)
+#### func FindMaximumInComparableSlice\[S ~[]V, V generic.Ordered\](slice S) (result V)
 <span id="FindMaximumInComparableSlice"></span>
 > 获取切片中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaximumInComparableSlice() {
@@ -3703,11 +4188,12 @@ func TestFindMaximumInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindMaximumInSlice(slice S, handler OrderedValueGetter[V, N]) (result V)
+#### func FindMaximumInSlice\[S ~[]V, V any, N generic.Ordered\](slice S, handler OrderedValueGetter[V, N]) (result V)
 <span id="FindMaximumInSlice"></span>
 > 获取切片中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaximumInSlice() {
@@ -3750,11 +4236,12 @@ func TestFindMaximumInSlice(t *testing.T) {
 
 
 ***
-#### func FindMin2MaxInComparableSlice(slice S) (min V, max V)
+#### func FindMin2MaxInComparableSlice\[S ~[]V, V generic.Ordered\](slice S) (min V, max V)
 <span id="FindMin2MaxInComparableSlice"></span>
 > 获取切片中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxInComparableSlice() {
@@ -3794,11 +4281,12 @@ func TestFindMin2MaxInComparableSlice(t *testing.T) {
 
 
 ***
-#### func FindMin2MaxInSlice(slice S, handler OrderedValueGetter[V, N]) (min V, max V)
+#### func FindMin2MaxInSlice\[S ~[]V, V any, N generic.Ordered\](slice S, handler OrderedValueGetter[V, N]) (min V, max V)
 <span id="FindMin2MaxInSlice"></span>
 > 获取切片中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxInSlice() {
@@ -3842,11 +4330,12 @@ func TestFindMin2MaxInSlice(t *testing.T) {
 
 
 ***
-#### func FindMinFromComparableMap(m M) (result V)
+#### func FindMinFromComparableMap\[M ~map[K]V, K comparable, V generic.Ordered\](m M) (result V)
 <span id="FindMinFromComparableMap"></span>
 > 获取 map 中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinFromComparableMap() {
@@ -3885,11 +4374,12 @@ func TestFindMinFromComparableMap(t *testing.T) {
 
 
 ***
-#### func FindMinFromMap(m M, handler OrderedValueGetter[V, N]) (result V)
+#### func FindMinFromMap\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, handler OrderedValueGetter[V, N]) (result V)
 <span id="FindMinFromMap"></span>
 > 获取 map 中的最小值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMinFromMap() {
@@ -3932,11 +4422,12 @@ func TestFindMinFromMap(t *testing.T) {
 
 
 ***
-#### func FindMaxFromComparableMap(m M) (result V)
+#### func FindMaxFromComparableMap\[M ~map[K]V, K comparable, V generic.Ordered\](m M) (result V)
 <span id="FindMaxFromComparableMap"></span>
 > 获取 map 中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaxFromComparableMap() {
@@ -3975,11 +4466,12 @@ func TestFindMaxFromComparableMap(t *testing.T) {
 
 
 ***
-#### func FindMaxFromMap(m M, handler OrderedValueGetter[V, N]) (result V)
+#### func FindMaxFromMap\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, handler OrderedValueGetter[V, N]) (result V)
 <span id="FindMaxFromMap"></span>
 > 获取 map 中的最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMaxFromMap() {
@@ -4022,11 +4514,12 @@ func TestFindMaxFromMap(t *testing.T) {
 
 
 ***
-#### func FindMin2MaxFromComparableMap(m M) (min V, max V)
+#### func FindMin2MaxFromComparableMap\[M ~map[K]V, K comparable, V generic.Ordered\](m M) (min V, max V)
 <span id="FindMin2MaxFromComparableMap"></span>
 > 获取 map 中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxFromComparableMap() {
@@ -4066,11 +4559,12 @@ func TestFindMin2MaxFromComparableMap(t *testing.T) {
 
 
 ***
-#### func FindMin2MaxFromMap(m M) (min V, max V)
+#### func FindMin2MaxFromMap\[M ~map[K]V, K comparable, V generic.Ordered\](m M) (min V, max V)
 <span id="FindMin2MaxFromMap"></span>
 > 获取 map 中的最小值和最大值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleFindMin2MaxFromMap() {
@@ -4110,11 +4604,12 @@ func TestFindMin2MaxFromMap(t *testing.T) {
 
 
 ***
-#### func SwapSlice(slice *S, i int, j int)
+#### func SwapSlice\[S ~[]V, V any\](slice *S, i int, j int)
 <span id="SwapSlice"></span>
 > 将切片中的两个元素进行交换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleSwapSlice() {
@@ -4158,11 +4653,675 @@ func TestSwapSlice(t *testing.T) {
 
 
 ***
-#### func MappingFromSlice(slice S, handler func (value V)  N)  NS
+#### func LoopSlice\[S ~[]V, V any\](slice S, f func (i int, val V)  bool)
+<span id="LoopSlice"></span>
+> 迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopSlice() {
+	var result []int
+	collection.LoopSlice([]int{1, 2, 3, 4, 5}, func(i int, val int) bool {
+		result = append(result, val)
+		if uint(i) == 1 {
+			return false
+		}
+		return true
+	})
+	fmt.Println(result)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopSlice(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         []int
+		out        []int
+		breakIndex uint
+	}{{"TestLoopSlice_Part", []int{1, 2, 3, 4, 5}, []int{1, 2}, 2}, {"TestLoopSlice_All", []int{1, 2, 3, 4, 5}, []int{1, 2, 3, 4, 5}, 0}, {"TestLoopSlice_Empty", []int{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopSlice(c.in, func(i int, val int) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopSlice(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ReverseLoopSlice\[S ~[]V, V any\](slice S, f func (i int, val V)  bool)
+<span id="ReverseLoopSlice"></span>
+> 逆序迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleReverseLoopSlice() {
+	var result []int
+	collection.ReverseLoopSlice([]int{1, 2, 3, 4, 5}, func(i int, val int) bool {
+		result = append(result, val)
+		if uint(i) == 1 {
+			return false
+		}
+		return true
+	})
+	fmt.Println(result)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestReverseLoopSlice(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         []int
+		out        []int
+		breakIndex uint
+	}{{"TestReverseLoopSlice_Part", []int{1, 2, 3, 4, 5}, []int{5, 4}, 2}, {"TestReverseLoopSlice_All", []int{1, 2, 3, 4, 5}, []int{5, 4, 3, 2, 1}, 0}, {"TestReverseLoopSlice_Empty", []int{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.ReverseLoopSlice(c.in, func(i int, val int) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == uint(len(c.in))-c.breakIndex {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("ReverseLoopSlice(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMap\[M ~map[K]V, K comparable, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMap"></span>
+> 迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - m 的迭代顺序是不确定的，因此每次迭代的顺序可能不同
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMap() {
+	var result []int
+	collection.LoopMap(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMap(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        map[int]string
+		breakIndex uint
+	}{{"TestLoopMap_Part", map[int]string{1: "1", 2: "2", 3: "3"}, map[int]string{1: "1", 2: "2"}, 2}, {"TestLoopMap_All", map[int]string{1: "1", 2: "2", 3: "3"}, map[int]string{1: "1", 2: "2", 3: "3"}, 0}, {"TestLoopMap_Empty", map[int]string{}, map[int]string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result = make(map[int]string)
+			collection.LoopMap(c.in, func(i int, key int, val string) bool {
+				result[key] = val
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableMap(result, c.out) {
+				t.Errorf("LoopMap(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedKeyAsc\[M ~map[K]V, K generic.Ordered, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedKeyAsc"></span>
+> 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedKeyAsc() {
+	var result []int
+	collection.LoopMapByOrderedKeyAsc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedKeyAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByOrderedKeyAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2}, 2}, {"TestLoopMapByOrderedKeyAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2, 3}, 0}, {"TestLoopMapByOrderedKeyAsc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByOrderedKeyAsc(c.in, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedKeyAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedKeyDesc\[M ~map[K]V, K generic.Ordered, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedKeyDesc"></span>
+> 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedKeyDesc() {
+	var result []int
+	collection.LoopMapByOrderedKeyDesc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedKeyDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByOrderedKeyDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2}, 2}, {"TestLoopMapByOrderedKeyDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2, 1}, 0}, {"TestLoopMapByOrderedKeyDesc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByOrderedKeyDesc(c.in, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedKeyDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedValueAsc\[M ~map[K]V, K comparable, V generic.Ordered\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedValueAsc"></span>
+> 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedValueAsc() {
+	var result []int
+	collection.LoopMapByOrderedValueAsc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedValueAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByOrderedValueAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2"}, 2}, {"TestLoopMapByOrderedValueAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2", "3"}, 0}, {"TestLoopMapByOrderedValueAsc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByOrderedValueAsc(c.in, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedValueAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedValueDesc\[M ~map[K]V, K comparable, V generic.Ordered\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedValueDesc"></span>
+> 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedValueDesc() {
+	var result []int
+	collection.LoopMapByOrderedValueDesc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedValueDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByOrderedValueDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2"}, 2}, {"TestLoopMapByOrderedValueDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2", "1"}, 0}, {"TestLoopMapByOrderedValueDesc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByOrderedValueDesc(c.in, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedValueDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByKeyGetterAsc\[M ~map[K]V, K comparable, V comparable, N generic.Ordered\](m M, getter func (k K)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByKeyGetterAsc"></span>
+> 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByKeyGetterAsc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByKeyGetterAsc(m, func(k string) int {
+		return m[k]
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByKeyGetterAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByKeyGetterAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2}, 2}, {"TestLoopMapByKeyGetterAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2, 3}, 0}, {"TestLoopMapByKeyGetterAsc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByKeyGetterAsc(c.in, func(key int) int {
+				return key
+			}, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByKeyGetterAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByValueGetterAsc\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, getter func (v V)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByValueGetterAsc"></span>
+> 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByValueGetterAsc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByValueGetterAsc(m, func(v int) int {
+		return v
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByValueGetterAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByValueGetterAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2"}, 2}, {"TestLoopMapByValueGetterAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2", "3"}, 0}, {"TestLoopMapByValueGetterAsc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByValueGetterAsc(c.in, func(val string) string {
+				return val
+			}, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByValueGetterAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByKeyGetterDesc\[M ~map[K]V, K comparable, V comparable, N generic.Ordered\](m M, getter func (k K)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByKeyGetterDesc"></span>
+> 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByKeyGetterDesc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByKeyGetterDesc(m, func(k string) int {
+		return m[k]
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByKeyGetterDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByKeyGetterDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2}, 2}, {"TestLoopMapByKeyGetterDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2, 1}, 0}, {"TestLoopMapByKeyGetterDesc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByKeyGetterDesc(c.in, func(key int) int {
+				return key
+			}, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByKeyGetterDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByValueGetterDesc\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, getter func (v V)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByValueGetterDesc"></span>
+> 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByValueGetterDesc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByValueGetterDesc(m, func(v int) int {
+		return v
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByValueGetterDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByValueGetterDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2"}, 2}, {"TestLoopMapByValueGetterDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2", "1"}, 0}, {"TestLoopMapByValueGetterDesc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByValueGetterDesc(c.in, func(val string) string {
+				return val
+			}, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByValueGetterDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func MappingFromSlice\[S ~[]V, NS []N, V any, N any\](slice S, handler func (value V)  N) NS
 <span id="MappingFromSlice"></span>
 > 将切片中的元素进行转换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMappingFromSlice() {
@@ -4210,11 +5369,12 @@ func TestMappingFromSlice(t *testing.T) {
 
 
 ***
-#### func MappingFromMap(m M, handler func (value V)  N)  NM
+#### func MappingFromMap\[M ~map[K]V, NM map[K]N, K comparable, V any, N any\](m M, handler func (value V)  N) NM
 <span id="MappingFromMap"></span>
 > 将 map 中的元素进行转换
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMappingFromMap() {
@@ -4262,11 +5422,12 @@ func TestMappingFromMap(t *testing.T) {
 
 
 ***
-#### func MergeSlices(slices ...S) (result S)
+#### func MergeSlices\[S ~[]V, V any\](slices ...S) (result S)
 <span id="MergeSlices"></span>
 > 合并切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeSlices() {
@@ -4309,11 +5470,12 @@ func TestMergeSlices(t *testing.T) {
 
 
 ***
-#### func MergeMaps(maps ...M) (result M)
+#### func MergeMaps\[M ~map[K]V, K comparable, V any\](maps ...M) (result M)
 <span id="MergeMaps"></span>
 > 合并 map，当多个 map 中存在相同的 key 时，后面的 map 中的 key 将会覆盖前面的 map 中的 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeMaps() {
@@ -4352,11 +5514,12 @@ func TestMergeMaps(t *testing.T) {
 
 
 ***
-#### func MergeMapsWithSkip(maps ...M) (result M)
+#### func MergeMapsWithSkip\[M ~map[K]V, K comparable, V any\](maps ...M) (result M)
 <span id="MergeMapsWithSkip"></span>
 > 合并 map，当多个 map 中存在相同的 key 时，后面的 map 中的 key 将会被跳过
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleMergeMapsWithSkip() {
@@ -4395,12 +5558,13 @@ func TestMergeMapsWithSkip(t *testing.T) {
 
 
 ***
-#### func ChooseRandomSliceElementRepeatN(slice S, n int) (result []V)
+#### func ChooseRandomSliceElementRepeatN\[S ~[]V, V any\](slice S, n int) (result []V)
 <span id="ChooseRandomSliceElementRepeatN"></span>
 > 返回 slice 中的 n 个可重复随机元素
 >   - 当 slice 长度为 0 或 n 小于等于 0 时将会返回 nil
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElementRepeatN() {
@@ -4439,12 +5603,13 @@ func TestChooseRandomSliceElementRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomIndexRepeatN(slice S, n int) (result []int)
+#### func ChooseRandomIndexRepeatN\[S ~[]V, V any\](slice S, n int) (result []int)
 <span id="ChooseRandomIndexRepeatN"></span>
 > 返回 slice 中的 n 个可重复随机元素的索引
 >   - 当 slice 长度为 0 或 n 小于等于 0 时将会返回 nil
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndexRepeatN() {
@@ -4483,11 +5648,12 @@ func TestChooseRandomIndexRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomSliceElement(slice S) (v V)
+#### func ChooseRandomSliceElement\[S ~[]V, V any\](slice S) (v V)
 <span id="ChooseRandomSliceElement"></span>
 > 返回 slice 中随机一个元素，当 slice 长度为 0 时将会得到 V 的零值
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElement() {
@@ -4526,11 +5692,12 @@ func TestChooseRandomSliceElement(t *testing.T) {
 
 
 ***
-#### func ChooseRandomIndex(slice S) (index int)
+#### func ChooseRandomIndex\[S ~[]V, V any\](slice S) (index int)
 <span id="ChooseRandomIndex"></span>
 > 返回 slice 中随机一个元素的索引，当 slice 长度为 0 时将会得到 -1
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndex() {
@@ -4569,12 +5736,13 @@ func TestChooseRandomIndex(t *testing.T) {
 
 
 ***
-#### func ChooseRandomSliceElementN(slice S, n int) (result []V)
+#### func ChooseRandomSliceElementN\[S ~[]V, V any\](slice S, n int) (result []V)
 <span id="ChooseRandomSliceElementN"></span>
 > 返回 slice 中的 n 个不可重复的随机元素
 >   - 当 slice 长度为 0 或 n 大于 slice 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomSliceElementN() {
@@ -4612,12 +5780,13 @@ func TestChooseRandomSliceElementN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomIndexN(slice S, n int) (result []int)
+#### func ChooseRandomIndexN\[S ~[]V, V any\](slice S, n int) (result []int)
 <span id="ChooseRandomIndexN"></span>
 > 获取切片中的 n 个随机元素的索引
 >   - 如果 n 大于切片长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomIndexN() {
@@ -4656,12 +5825,13 @@ func TestChooseRandomIndexN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyRepeatN(m M, n int) (result []K)
+#### func ChooseRandomMapKeyRepeatN\[M ~map[K]V, K comparable, V any\](m M, n int) (result []K)
 <span id="ChooseRandomMapKeyRepeatN"></span>
 > 获取 map 中的 n 个随机 key，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyRepeatN() {
@@ -4700,12 +5870,13 @@ func TestChooseRandomMapKeyRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapValueRepeatN(m M, n int) (result []V)
+#### func ChooseRandomMapValueRepeatN\[M ~map[K]V, K comparable, V any\](m M, n int) (result []V)
 <span id="ChooseRandomMapValueRepeatN"></span>
 > 获取 map 中的 n 个随机 n，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValueRepeatN() {
@@ -4744,12 +5915,13 @@ func TestChooseRandomMapValueRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyAndValueRepeatN(m M, n int)  M
+#### func ChooseRandomMapKeyAndValueRepeatN\[M ~map[K]V, K comparable, V any\](m M, n int) M
 <span id="ChooseRandomMapKeyAndValueRepeatN"></span>
 > 获取 map 中的 n 个随机 key 和 v，允许重复
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValueRepeatN() {
@@ -4788,11 +5960,12 @@ func TestChooseRandomMapKeyAndValueRepeatN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKey(m M) (k K)
+#### func ChooseRandomMapKey\[M ~map[K]V, K comparable, V any\](m M) (k K)
 <span id="ChooseRandomMapKey"></span>
 > 获取 map 中的随机 key
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKey() {
@@ -4831,11 +6004,12 @@ func TestChooseRandomMapKey(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapValue(m M) (v V)
+#### func ChooseRandomMapValue\[M ~map[K]V, K comparable, V any\](m M) (v V)
 <span id="ChooseRandomMapValue"></span>
 > 获取 map 中的随机 value
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValue() {
@@ -4874,12 +6048,13 @@ func TestChooseRandomMapValue(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyN(m M, n int) (result []K)
+#### func ChooseRandomMapKeyN\[M ~map[K]V, K comparable, V any\](m M, n int) (result []K)
 <span id="ChooseRandomMapKeyN"></span>
 > 获取 map 中的 inputN 个随机 key
 >   - 如果 inputN 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyN() {
@@ -4890,12 +6065,13 @@ func ExampleChooseRandomMapKeyN() {
 ```
 
 ***
-#### func ChooseRandomMapValueN(m M, n int) (result []V)
+#### func ChooseRandomMapValueN\[M ~map[K]V, K comparable, V any\](m M, n int) (result []V)
 <span id="ChooseRandomMapValueN"></span>
 > 获取 map 中的 n 个随机 value
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapValueN() {
@@ -4934,11 +6110,12 @@ func TestChooseRandomMapValueN(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyAndValue(m M) (k K, v V)
+#### func ChooseRandomMapKeyAndValue\[M ~map[K]V, K comparable, V any\](m M) (k K, v V)
 <span id="ChooseRandomMapKeyAndValue"></span>
 > 获取 map 中的随机 key 和 v
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValue() {
@@ -4977,12 +6154,13 @@ func TestChooseRandomMapKeyAndValue(t *testing.T) {
 
 
 ***
-#### func ChooseRandomMapKeyAndValueN(m M, n int)  M
+#### func ChooseRandomMapKeyAndValueN\[M ~map[K]V, K comparable, V any\](m M, n int) M
 <span id="ChooseRandomMapKeyAndValueN"></span>
 > 获取 map 中的 inputN 个随机 key 和 v
 >   - 如果 n 大于 map 长度或小于 0 时将会发生 panic
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleChooseRandomMapKeyAndValueN() {
@@ -5023,11 +6201,12 @@ func TestChooseRandomMapKeyAndValueN(t *testing.T) {
 
 
 ***
-#### func DescBy(a Sort, b Sort)  bool
+#### func DescBy\[Sort generic.Ordered\](a Sort, b Sort) bool
 <span id="DescBy"></span>
 > 返回降序比较结果
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDescBy() {
@@ -5073,11 +6252,12 @@ func TestDescBy(t *testing.T) {
 
 
 ***
-#### func AscBy(a Sort, b Sort)  bool
+#### func AscBy\[Sort generic.Ordered\](a Sort, b Sort) bool
 <span id="AscBy"></span>
 > 返回升序比较结果
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAscBy() {
@@ -5123,11 +6303,12 @@ func TestAscBy(t *testing.T) {
 
 
 ***
-#### func Desc(slice *S, getter func (index int)  Sort)
+#### func Desc\[S ~[]V, V any, Sort generic.Ordered\](slice *S, getter func (index int)  Sort)
 <span id="Desc"></span>
 > 对切片进行降序排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDesc() {
@@ -5173,11 +6354,12 @@ func TestDesc(t *testing.T) {
 
 
 ***
-#### func DescByClone(slice S, getter func (index int)  Sort)  S
+#### func DescByClone\[S ~[]V, V any, Sort generic.Ordered\](slice S, getter func (index int)  Sort) S
 <span id="DescByClone"></span>
 > 对切片进行降序排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleDescByClone() {
@@ -5223,11 +6405,12 @@ func TestDescByClone(t *testing.T) {
 
 
 ***
-#### func Asc(slice *S, getter func (index int)  Sort)
+#### func Asc\[S ~[]V, V any, Sort generic.Ordered\](slice *S, getter func (index int)  Sort)
 <span id="Asc"></span>
 > 对切片进行升序排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAsc() {
@@ -5273,11 +6456,12 @@ func TestAsc(t *testing.T) {
 
 
 ***
-#### func AscByClone(slice S, getter func (index int)  Sort)  S
+#### func AscByClone\[S ~[]V, V any, Sort generic.Ordered\](slice S, getter func (index int)  Sort) S
 <span id="AscByClone"></span>
 > 对切片进行升序排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleAscByClone() {
@@ -5323,11 +6507,12 @@ func TestAscByClone(t *testing.T) {
 
 
 ***
-#### func Shuffle(slice *S)
+#### func Shuffle\[S ~[]V, V any\](slice *S)
 <span id="Shuffle"></span>
 > 对切片进行随机排序
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShuffle() {
@@ -5367,11 +6552,12 @@ func TestShuffle(t *testing.T) {
 
 
 ***
-#### func ShuffleByClone(slice S)  S
+#### func ShuffleByClone\[S ~[]V, V any\](slice S) S
 <span id="ShuffleByClone"></span>
 > 对切片进行随机排序，返回排序后的切片
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleShuffleByClone() {
@@ -5411,13 +6597,16 @@ func TestShuffleByClone(t *testing.T) {
 
 
 ***
+<span id="struct_ComparisonHandler"></span>
 ### ComparisonHandler `STRUCT`
-
+用于比较 `source` 和 `target` 两个值是否相同的比较函数
+  - 该函数接受两个参数，分别是源值和目标值，返回 true 的情况下即表示两者相同
 ```go
 type ComparisonHandler[V any] func(source V) bool
 ```
+<span id="struct_OrderedValueGetter"></span>
 ### OrderedValueGetter `STRUCT`
-
+用于获取 v 的可排序字段值的函数
 ```go
 type OrderedValueGetter[V any, N generic.Ordered] func(v V) N
 ```

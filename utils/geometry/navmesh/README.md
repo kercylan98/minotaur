@@ -26,14 +26,14 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[NavMesh](#navmesh)|暂无描述...
+|`STRUCT`|[NavMesh](#struct_NavMesh)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewNavMesh(shapes []geometry.Shape[V], meshShrinkAmount V)  *NavMesh[V]
+#### func NewNavMesh\[V generic.SignedNumber\](shapes []geometry.Shape[V], meshShrinkAmount V) *NavMesh[V]
 <span id="NewNavMesh"></span>
 > 创建一个新的导航网格，并返回一个指向该导航网格的指针。
 > 
@@ -54,6 +54,7 @@ navmesh 提供了用于导航网格处理的函数和数据结构。导航网格
 >   - 确保 NavMesh 计算精度的情况下，V 建议使用 float64 类型
 
 ***
+<span id="struct_NavMesh"></span>
 ### NavMesh `STRUCT`
 
 ```go
@@ -62,9 +63,14 @@ type NavMesh[V generic.SignedNumber] struct {
 	meshShrinkAmount V
 }
 ```
+<span id="struct_NavMesh_Neighbours"></span>
+
 #### func (*NavMesh) Neighbours(node *shape[V])  []*shape[V]
 > 实现 astar.Graph 的接口，用于向 A* 算法提供相邻图形
+
 ***
+<span id="struct_NavMesh_Find"></span>
+
 #### func (*NavMesh) Find(point geometry.Point[V], maxDistance V) (distance V, findPoint geometry.Point[V], findShape geometry.Shape[V])
 > 用于在 NavMesh 中查找离给定点最近的形状，并返回距离、找到的点和找到的形状。
 > 
@@ -82,7 +88,10 @@ type NavMesh[V generic.SignedNumber] struct {
 >   - 如果给定点不在任何形状内部或者形状的边上，将计算给定点到每个形状的距离，并找到最近的形状和对应的点。
 >   - 距离的计算采用几何学中的投影点到形状的距离。
 >   - 函数返回离给定点最近的形状的距离、找到的点和找到的形状。
+
 ***
+<span id="struct_NavMesh_FindPath"></span>
+
 #### func (*NavMesh) FindPath(start geometry.Point[V], end geometry.Point[V]) (result []geometry.Point[V])
 > 函数用于在 NavMesh 中查找从起点到终点的路径，并返回路径上的点序列。
 > 
@@ -98,7 +107,9 @@ type NavMesh[V generic.SignedNumber] struct {
 >   - 如果起点或终点不在任何形状内部，且 NavMesh 的 meshShrinkAmount 大于0，则会考虑缩小的形状。
 >   - 使用 A* 算法在 NavMesh 上搜索从起点形状到终点形状的最短路径。
 >   - 使用漏斗算法对路径进行优化，以得到最终的路径点序列。
-示例代码：
+
+**示例代码：**
+
 ```go
 
 func ExampleNavMesh_FindPath() {

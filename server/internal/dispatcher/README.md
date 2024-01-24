@@ -24,23 +24,24 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Action](#action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
-|`STRUCT`|[Handler](#handler)|消息处理器
-|`STRUCT`|[Dispatcher](#dispatcher)|用于服务器消息处理的消息分发器
-|`STRUCT`|[Manager](#manager)|消息分发器管理器
-|`INTERFACE`|[Message](#message)|暂无描述...
-|`INTERFACE`|[Producer](#producer)|暂无描述...
+|`STRUCT`|[Action](#struct_Action)|消息分发器操作器，用于暴露外部可操作的消息分发器函数
+|`STRUCT`|[Handler](#struct_Handler)|消息处理器
+|`STRUCT`|[Dispatcher](#struct_Dispatcher)|用于服务器消息处理的消息分发器
+|`STRUCT`|[Manager](#struct_Manager)|消息分发器管理器
+|`INTERFACE`|[Message](#struct_Message)|暂无描述...
+|`INTERFACE`|[Producer](#struct_Producer)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewDispatcher(bufferSize int, name string, handler Handler[P, M])  *Dispatcher[P, M]
+#### func NewDispatcher\[P Producer, M Message[P]\](bufferSize int, name string, handler Handler[P, M]) *Dispatcher[P, M]
 <span id="NewDispatcher"></span>
 > 创建一个新的消息分发器 Dispatcher 实例
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewDispatcher() {
@@ -107,11 +108,12 @@ func TestNewDispatcher(t *testing.T) {
 
 
 ***
-#### func NewManager(bufferSize int, handler Handler[P, M])  *Manager[P, M]
+#### func NewManager\[P Producer, M Message[P]\](bufferSize int, handler Handler[P, M]) *Manager[P, M]
 <span id="NewManager"></span>
 > 生成消息分发器管理器
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewManager() {
@@ -165,6 +167,7 @@ func TestNewManager(t *testing.T) {
 
 
 ***
+<span id="struct_Action"></span>
 ### Action `STRUCT`
 消息分发器操作器，用于暴露外部可操作的消息分发器函数
 ```go
@@ -173,11 +176,31 @@ type Action[P Producer, M Message[P]] struct {
 	d      *Dispatcher[P, M]
 }
 ```
+<span id="struct_Action_Name"></span>
+
+#### func (*Action) Name()  string
+> 获取消息分发器名称
+
+***
+<span id="struct_Action_UnExpel"></span>
+
+#### func (*Action) UnExpel()
+> 取消特定生产者的驱逐计划
+
+***
+<span id="struct_Action_Expel"></span>
+
+#### func (*Action) Expel()
+> 设置该消息分发器即将被驱逐，当消息分发器中没有任何消息时，会自动关闭
+
+***
+<span id="struct_Handler"></span>
 ### Handler `STRUCT`
 消息处理器
 ```go
 type Handler[P Producer, M Message[P]] func(dispatcher *Dispatcher[P, M], message M)
 ```
+<span id="struct_Dispatcher"></span>
 ### Dispatcher `STRUCT`
 用于服务器消息处理的消息分发器
 
@@ -207,6 +230,394 @@ type Dispatcher[P Producer, M Message[P]] struct {
 	abort         chan struct{}
 }
 ```
+<span id="struct_Dispatcher_SetProducerDoneHandler"></span>
+
+#### func (*Dispatcher) SetProducerDoneHandler(p P, handler func (p P, dispatcher *Action[P, M]))  *Dispatcher[P, M]
+> 设置特定生产者的所有消息处理完成时的回调函数
+>   - 如果 handler 为 nil，则会删除该生产者的回调函数
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_SetProducerDoneHandler(t *testing.T) {
+	var cases = []struct {
+		name          string
+		producer      string
+		messageFinish *atomic.Bool
+		cancel        bool
+	}{{name: "TestDispatcher_SetProducerDoneHandlerNotCancel", producer: "producer", cancel: false}, {name: "TestDispatcher_SetProducerDoneHandlerCancel", producer: "producer", cancel: true}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.messageFinish = &atomic.Bool{}
+			w := new(sync.WaitGroup)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				w.Done()
+			})
+			d.Put(&TestMessage{producer: c.producer})
+			d.SetProducerDoneHandler(c.producer, func(p string, dispatcher *dispatcher.Action[string, *TestMessage]) {
+				c.messageFinish.Store(true)
+			})
+			if c.cancel {
+				d.SetProducerDoneHandler(c.producer, nil)
+			}
+			w.Add(1)
+			d.Start()
+			w.Wait()
+			if c.cancel && c.messageFinish.Load() {
+				t.Errorf("%s should cancel, but not", c.name)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_SetClosedHandler"></span>
+
+#### func (*Dispatcher) SetClosedHandler(handler func (dispatcher *Action[P, M]))  *Dispatcher[P, M]
+> 设置消息分发器关闭时的回调函数
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_SetClosedHandler(t *testing.T) {
+	var cases = []struct {
+		name                  string
+		handlerFinishMsgCount *atomic.Int64
+		msgTime               time.Duration
+		msgCount              int
+	}{{name: "TestDispatcher_SetClosedHandler_Normal", msgTime: 0, msgCount: 1}, {name: "TestDispatcher_SetClosedHandler_MessageCount1024", msgTime: 0, msgCount: 1024}, {name: "TestDispatcher_SetClosedHandler_MessageTime1sMessageCount3", msgTime: 1 * time.Second, msgCount: 3}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.handlerFinishMsgCount = &atomic.Int64{}
+			w := new(sync.WaitGroup)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				time.Sleep(c.msgTime)
+				c.handlerFinishMsgCount.Add(1)
+			})
+			d.SetClosedHandler(func(dispatcher *dispatcher.Action[string, *TestMessage]) {
+				w.Done()
+			})
+			for i := 0; i < c.msgCount; i++ {
+				d.Put(&TestMessage{producer: "producer"})
+			}
+			w.Add(1)
+			d.Start()
+			d.Expel()
+			w.Wait()
+			if c.handlerFinishMsgCount.Load() != int64(c.msgCount) {
+				t.Errorf("%s should finish %d messages, but finish %d", c.name, c.msgCount, c.handlerFinishMsgCount.Load())
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_Name"></span>
+
+#### func (*Dispatcher) Name()  string
+> 获取消息分发器名称
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_Name(t *testing.T) {
+	var cases = []struct{ name string }{{name: "TestDispatcher_Name_Normal"}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			if d.Name() != c.name {
+				t.Errorf("%s should equal %s, but not", c.name, c.name)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_Unique"></span>
+
+#### func (*Dispatcher) Unique(name string)  bool
+> 设置唯一消息键，返回是否已存在
+
+***
+<span id="struct_Dispatcher_AntiUnique"></span>
+
+#### func (*Dispatcher) AntiUnique(name string)
+> 取消唯一消息键
+
+***
+<span id="struct_Dispatcher_Expel"></span>
+
+#### func (*Dispatcher) Expel()
+> 设置该消息分发器即将被驱逐，当消息分发器中没有任何消息时，会自动关闭
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_Expel(t *testing.T) {
+	var cases = []struct {
+		name                  string
+		handlerFinishMsgCount *atomic.Int64
+		msgTime               time.Duration
+		msgCount              int
+	}{{name: "TestDispatcher_Expel_Normal", msgTime: 0, msgCount: 1}, {name: "TestDispatcher_Expel_MessageCount1024", msgTime: 0, msgCount: 1024}, {name: "TestDispatcher_Expel_MessageTime1sMessageCount3", msgTime: 1 * time.Second, msgCount: 3}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.handlerFinishMsgCount = &atomic.Int64{}
+			w := new(sync.WaitGroup)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				time.Sleep(c.msgTime)
+				c.handlerFinishMsgCount.Add(1)
+			})
+			d.SetClosedHandler(func(dispatcher *dispatcher.Action[string, *TestMessage]) {
+				w.Done()
+			})
+			for i := 0; i < c.msgCount; i++ {
+				d.Put(&TestMessage{producer: "producer"})
+			}
+			w.Add(1)
+			d.Start()
+			d.Expel()
+			w.Wait()
+			if c.handlerFinishMsgCount.Load() != int64(c.msgCount) {
+				t.Errorf("%s should finish %d messages, but finish %d", c.name, c.msgCount, c.handlerFinishMsgCount.Load())
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_UnExpel"></span>
+
+#### func (*Dispatcher) UnExpel()
+> 取消特定生产者的驱逐计划
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_UnExpel(t *testing.T) {
+	var cases = []struct {
+		name      string
+		closed    *atomic.Bool
+		isUnExpel bool
+		expect    bool
+	}{{name: "TestDispatcher_UnExpel_Normal", isUnExpel: true, expect: false}, {name: "TestDispatcher_UnExpel_NotExpel", isUnExpel: false, expect: true}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.closed = &atomic.Bool{}
+			w := new(sync.WaitGroup)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				w.Done()
+			})
+			d.SetClosedHandler(func(dispatcher *dispatcher.Action[string, *TestMessage]) {
+				c.closed.Store(true)
+			})
+			d.Put(&TestMessage{producer: "producer"})
+			w.Add(1)
+			if c.isUnExpel {
+				d.Expel()
+				d.UnExpel()
+			} else {
+				d.Expel()
+			}
+			d.Start()
+			w.Wait()
+			if c.closed.Load() != c.expect {
+				t.Errorf("%s should %v, but %v", c.name, c.expect, c.closed.Load())
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_IncrCount"></span>
+
+#### func (*Dispatcher) IncrCount(producer P, i int64)
+> 主动增量设置特定生产者的消息计数，这在等待异步消息完成后再关闭消息分发器时非常有用
+>   - 如果 i 为负数，则会减少消息计数
+
+***
+<span id="struct_Dispatcher_Put"></span>
+
+#### func (*Dispatcher) Put(message M)
+> 将消息放入分发器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_Put(t *testing.T) {
+	var cases = []struct {
+		name        string
+		producer    string
+		messageDone *atomic.Bool
+	}{{name: "TestDispatcher_Put_Normal", producer: "producer"}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.messageDone = &atomic.Bool{}
+			w := new(sync.WaitGroup)
+			w.Add(1)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				c.messageDone.Store(true)
+				w.Done()
+			})
+			d.Start()
+			d.Put(&TestMessage{producer: c.producer})
+			d.Expel()
+			w.Wait()
+			if !c.messageDone.Load() {
+				t.Errorf("%s should done, but not", c.name)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_Start"></span>
+
+#### func (*Dispatcher) Start()  *Dispatcher[P, M]
+> 以非阻塞的方式开始进行消息分发，当消息分发器中没有任何消息并且处于驱逐计划 Expel 时，将会自动关闭
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_Start(t *testing.T) {
+	var cases = []struct {
+		name        string
+		producer    string
+		messageDone *atomic.Bool
+	}{{name: "TestDispatcher_Start_Normal", producer: "producer"}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			c.messageDone = &atomic.Bool{}
+			w := new(sync.WaitGroup)
+			w.Add(1)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+				c.messageDone.Store(true)
+				w.Done()
+			})
+			d.Start()
+			d.Put(&TestMessage{producer: c.producer})
+			d.Expel()
+			w.Wait()
+			if !c.messageDone.Load() {
+				t.Errorf("%s should done, but not", c.name)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Dispatcher_Closed"></span>
+
+#### func (*Dispatcher) Closed()  bool
+> 判断消息分发器是否已关闭
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestDispatcher_Closed(t *testing.T) {
+	var cases = []struct{ name string }{{name: "TestDispatcher_Closed_Normal"}}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			w := new(sync.WaitGroup)
+			w.Add(1)
+			d := dispatcher.NewDispatcher(1024, c.name, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			d.SetClosedHandler(func(dispatcher *dispatcher.Action[string, *TestMessage]) {
+				w.Done()
+			})
+			d.Start()
+			d.Expel()
+			w.Wait()
+			if !d.Closed() {
+				t.Errorf("%s should closed, but not", c.name)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager"></span>
 ### Manager `STRUCT`
 消息分发器管理器
 ```go
@@ -223,6 +634,323 @@ type Manager[P Producer, M Message[P]] struct {
 	createdHandler func(name string)
 }
 ```
+<span id="struct_Manager_Wait"></span>
+
+#### func (*Manager) Wait()
+> 等待所有消息分发器关闭
+
+***
+<span id="struct_Manager_SetDispatcherClosedHandler"></span>
+
+#### func (*Manager) SetDispatcherClosedHandler(handler func (name string))  *Manager[P, M]
+> 设置消息分发器关闭时的回调函数
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_SetDispatcherClosedHandler(t *testing.T) {
+	var cases = []struct {
+		name            string
+		setCloseHandler bool
+	}{{name: "TestManager_SetDispatcherClosedHandler_Set", setCloseHandler: true}, {name: "TestManager_SetDispatcherClosedHandler_NotSet", setCloseHandler: false}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var closed atomic.Bool
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			if c.setCloseHandler {
+				m.SetDispatcherClosedHandler(func(name string) {
+					closed.Store(true)
+				})
+			}
+			m.BindProducer(c.name, c.name)
+			m.UnBindProducer(c.name)
+			m.Wait()
+			if c.setCloseHandler && !closed.Load() {
+				t.Errorf("SetDispatcherClosedHandler() should be called")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_SetDispatcherCreatedHandler"></span>
+
+#### func (*Manager) SetDispatcherCreatedHandler(handler func (name string))  *Manager[P, M]
+> 设置消息分发器创建时的回调函数
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_SetDispatcherCreatedHandler(t *testing.T) {
+	var cases = []struct {
+		name              string
+		setCreatedHandler bool
+	}{{name: "TestManager_SetDispatcherCreatedHandler_Set", setCreatedHandler: true}, {name: "TestManager_SetDispatcherCreatedHandler_NotSet", setCreatedHandler: false}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var created atomic.Bool
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			if c.setCreatedHandler {
+				m.SetDispatcherCreatedHandler(func(name string) {
+					created.Store(true)
+				})
+			}
+			m.BindProducer(c.name, c.name)
+			m.UnBindProducer(c.name)
+			m.Wait()
+			if c.setCreatedHandler && !created.Load() {
+				t.Errorf("SetDispatcherCreatedHandler() should be called")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_HasDispatcher"></span>
+
+#### func (*Manager) HasDispatcher(name string)  bool
+> 检查是否存在指定名称的消息分发器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_HasDispatcher(t *testing.T) {
+	var cases = []struct {
+		name     string
+		bindName string
+		has      bool
+	}{{name: "TestManager_HasDispatcher_Has", bindName: "TestManager_HasDispatcher_Has", has: true}, {name: "TestManager_HasDispatcher_NotHas", bindName: "TestManager_HasDispatcher_NotHas", has: false}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			m.BindProducer(c.bindName, c.bindName)
+			var cond string
+			if c.has {
+				cond = c.bindName
+			}
+			if m.HasDispatcher(cond) != c.has {
+				t.Errorf("HasDispatcher() should return %v", c.has)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_GetDispatcherNum"></span>
+
+#### func (*Manager) GetDispatcherNum()  int
+> 获取当前正在工作的消息分发器数量
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_GetDispatcherNum(t *testing.T) {
+	var cases = []struct {
+		name string
+		num  int
+	}{{name: "TestManager_GetDispatcherNum_N1", num: -1}, {name: "TestManager_GetDispatcherNum_0", num: 0}, {name: "TestManager_GetDispatcherNum_1", num: 1}, {name: "TestManager_GetDispatcherNum_2", num: 2}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			switch {
+			case c.num <= 0:
+				return
+			case c.num == 1:
+				if m.GetDispatcherNum() != 1 {
+					t.Errorf("GetDispatcherNum() should return 1")
+				}
+				return
+			default:
+				for i := 0; i < c.num-1; i++ {
+					m.BindProducer(fmt.Sprintf("%s_%d", c.name, i), fmt.Sprintf("%s_%d", c.name, i))
+				}
+				if m.GetDispatcherNum() != c.num {
+					t.Errorf("GetDispatcherNum() should return %v", c.num)
+				}
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_GetSystemDispatcher"></span>
+
+#### func (*Manager) GetSystemDispatcher()  *Dispatcher[P, M]
+> 获取系统消息分发器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_GetSystemDispatcher(t *testing.T) {
+	var cases = []struct{ name string }{{name: "TestManager_GetSystemDispatcher"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			if m.GetSystemDispatcher() == nil {
+				t.Errorf("GetSystemDispatcher() should not return nil")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_GetDispatcher"></span>
+
+#### func (*Manager) GetDispatcher(p P)  *Dispatcher[P, M]
+> 获取生产者正在使用的消息分发器，如果生产者没有绑定消息分发器，则会返回系统消息分发器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_GetDispatcher(t *testing.T) {
+	var cases = []struct {
+		name     string
+		bindName string
+	}{{name: "TestManager_GetDispatcher", bindName: "TestManager_GetDispatcher"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			m.BindProducer(c.bindName, c.bindName)
+			if m.GetDispatcher(c.bindName) == nil {
+				t.Errorf("GetDispatcher() should not return nil")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_BindProducer"></span>
+
+#### func (*Manager) BindProducer(p P, name string)
+> 绑定生产者使用特定的消息分发器，如果生产者已经绑定了消息分发器，则会先解绑
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_BindProducer(t *testing.T) {
+	var cases = []struct {
+		name     string
+		bindName string
+	}{{name: "TestManager_BindProducer", bindName: "TestManager_BindProducer"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			m.BindProducer(c.bindName, c.bindName)
+			if m.GetDispatcher(c.bindName) == nil {
+				t.Errorf("GetDispatcher() should not return nil")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Manager_UnBindProducer"></span>
+
+#### func (*Manager) UnBindProducer(p P)
+> 解绑生产者使用特定的消息分发器
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestManager_UnBindProducer(t *testing.T) {
+	var cases = []struct {
+		name     string
+		bindName string
+	}{{name: "TestManager_UnBindProducer", bindName: "TestManager_UnBindProducer"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := dispatcher.NewManager[string, *TestMessage](1024, func(dispatcher *dispatcher.Dispatcher[string, *TestMessage], message *TestMessage) {
+			})
+			m.BindProducer(c.bindName, c.bindName)
+			m.UnBindProducer(c.bindName)
+			if m.GetDispatcher(c.bindName) != m.GetSystemDispatcher() {
+				t.Errorf("GetDispatcher() should return SystemDispatcher")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Message"></span>
 ### Message `INTERFACE`
 
 ```go
@@ -230,6 +958,7 @@ type Message[P comparable] interface {
 	GetProducer() P
 }
 ```
+<span id="struct_Producer"></span>
 ### Producer `INTERFACE`
 
 ```go

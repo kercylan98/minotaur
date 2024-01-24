@@ -27,14 +27,14 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Time](#time)|带有偏移量的时间
+|`STRUCT`|[Time](#struct_Time)|带有偏移量的时间
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewTime(offset time.Duration)  *Time
+#### func NewTime(offset time.Duration) *Time
 <span id="NewTime"></span>
 > 新建一个包含偏移的时间
 
@@ -44,21 +44,22 @@
 > 设置全局偏移时间
 
 ***
-#### func GetGlobal()  *Time
+#### func GetGlobal() *Time
 <span id="GetGlobal"></span>
 > 获取全局偏移时间
 
 ***
-#### func Now()  time.Time
+#### func Now() time.Time
 <span id="Now"></span>
 > 获取当前时间偏移后的时间
 
 ***
-#### func Since(t time.Time)  time.Duration
+#### func Since(t time.Time) time.Duration
 <span id="Since"></span>
 > 获取当前时间偏移后的时间自从 t 以来经过的时间
 
 ***
+<span id="struct_Time"></span>
 ### Time `STRUCT`
 带有偏移量的时间
 ```go
@@ -66,12 +67,21 @@ type Time struct {
 	offset time.Duration
 }
 ```
+<span id="struct_Time_SetOffset"></span>
+
 #### func (*Time) SetOffset(offset time.Duration)
 > 设置时间偏移
+
 ***
+<span id="struct_Time_Now"></span>
+
 #### func (*Time) Now()  time.Time
 > 获取当前时间偏移后的时间
+
 ***
+<span id="struct_Time_Since"></span>
+
 #### func (*Time) Since(t time.Time)  time.Duration
 > 获取当前时间偏移后的时间自从 t 以来经过的时间
+
 ***

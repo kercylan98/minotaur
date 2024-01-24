@@ -23,17 +23,18 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Builder](#builder)|暂无描述...
+|`STRUCT`|[Builder](#struct_Builder)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
-#### func New(pkgDirPath string, output string)  *Builder,  error
+#### func New(pkgDirPath string, output string) (*Builder,  error)
 <span id="New"></span>
 
 ***
+<span id="struct_Builder"></span>
 ### Builder `STRUCT`
 
 ```go
@@ -43,7 +44,10 @@ type Builder struct {
 	o string
 }
 ```
+<span id="struct_Builder_Generate"></span>
+
 #### func (*Builder) Generate()  error
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -51,11 +55,11 @@ type Builder struct {
 ```go
 
 func TestBuilder_Generate(t *testing.T) {
-	filepath.Walk("/Users/kercylan/Coding.localized/Go/minotaur", func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk("D:/sources/minotaur", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
 			return nil
 		}
-		if strings.Contains(strings.TrimPrefix(path, "/Users/kercylan/Coding.localized/Go/minotaur"), ".") {
+		if strings.Contains(strings.TrimPrefix(path, "D:/sources/minotaur"), ".") {
 			return nil
 		}
 		b, err := New(path, filepath.Join(path, "README.md"))

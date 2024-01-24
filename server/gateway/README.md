@@ -32,30 +32,30 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Endpoint](#endpoint)|网关端点
-|`STRUCT`|[EndpointOption](#endpointoption)|网关端点选项
-|`STRUCT`|[ConnectionOpenedEventHandle](#connectionopenedeventhandle)|暂无描述...
-|`STRUCT`|[EndpointSelector](#endpointselector)|暂无描述...
-|`STRUCT`|[Gateway](#gateway)|基于 server.Server 实现的网关服务器
-|`STRUCT`|[Option](#option)|网关选项
-|`INTERFACE`|[Scanner](#scanner)|端点扫描器
+|`STRUCT`|[Endpoint](#struct_Endpoint)|网关端点
+|`STRUCT`|[EndpointOption](#struct_EndpointOption)|网关端点选项
+|`STRUCT`|[ConnectionOpenedEventHandle](#struct_ConnectionOpenedEventHandle)|暂无描述...
+|`STRUCT`|[EndpointSelector](#struct_EndpointSelector)|暂无描述...
+|`STRUCT`|[Gateway](#struct_Gateway)|基于 server.Server 实现的网关服务器
+|`STRUCT`|[Option](#struct_Option)|网关选项
+|`INTERFACE`|[Scanner](#struct_Scanner)|端点扫描器
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewEndpoint(name string, cli *client.Client, options ...EndpointOption)  *Endpoint
+#### func NewEndpoint(name string, cli *client.Client, options ...EndpointOption) *Endpoint
 <span id="NewEndpoint"></span>
 > 创建网关端点
 
 ***
-#### func WithEndpointStateEvaluator(evaluator func (costUnixNano float64)  float64)  EndpointOption
+#### func WithEndpointStateEvaluator(evaluator func (costUnixNano float64)  float64) EndpointOption
 <span id="WithEndpointStateEvaluator"></span>
 > 设置端点健康值评估函数
 
 ***
-#### func WithEndpointConnectionPoolSize(size int)  EndpointOption
+#### func WithEndpointConnectionPoolSize(size int) EndpointOption
 <span id="WithEndpointConnectionPoolSize"></span>
 > 设置端点连接池大小
 >   - 默认为 DefaultEndpointConnectionPoolSize
@@ -63,25 +63,25 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - 在网关服务器中，多个客户端在发送消息到端点服务器时，会共用一个连接，适当的增大连接池大小可以提高网关服务器的承载能力
 
 ***
-#### func WithEndpointReconnectInterval(interval time.Duration)  EndpointOption
+#### func WithEndpointReconnectInterval(interval time.Duration) EndpointOption
 <span id="WithEndpointReconnectInterval"></span>
 > 设置端点重连间隔
 >   - 默认为 DefaultEndpointReconnectInterval
 >   - 端点在连接失败后会在该间隔后重连，如果 <= 0 则不会重连
 
 ***
-#### func NewGateway(srv *server.Server, scanner Scanner, options ...Option)  *Gateway
+#### func NewGateway(srv *server.Server, scanner Scanner, options ...Option) *Gateway
 <span id="NewGateway"></span>
 > 基于 server.Server 创建 Gateway 网关服务器
 
 ***
-#### func WithEndpointSelector(selector EndpointSelector)  Option
+#### func WithEndpointSelector(selector EndpointSelector) Option
 <span id="WithEndpointSelector"></span>
 > 设置端点选择器
 >   - 默认情况下，网关会随机选择一个端点作为目标，如果需要自定义端点选择器，可以通过该选项设置
 
 ***
-#### func MarshalGatewayOutPacket(addr string, packet []byte)  []byte,  error
+#### func MarshalGatewayOutPacket(addr string, packet []byte) ([]byte,  error)
 <span id="MarshalGatewayOutPacket"></span>
 > 将数据包转换为网关出网数据包
 >   - | identifier(4) | ipv4(4) | port(2) | packet |
@@ -93,7 +93,7 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - | identifier(4) | ipv4(4) | port(2) | packet |
 
 ***
-#### func MarshalGatewayInPacket(addr string, currentTime int64, packet []byte)  []byte,  error
+#### func MarshalGatewayInPacket(addr string, currentTime int64, packet []byte) ([]byte,  error)
 <span id="MarshalGatewayInPacket"></span>
 > 将数据包转换为网关入网数据包
 >   - | ipv4(4) | port(2) | cost(4) | packet |
@@ -105,6 +105,7 @@ gateway 是用于处理服务器消息的网关模块，适用于对客户端消
 >   - | ipv4(4) | port(2) | cost(4) | packet |
 
 ***
+<span id="struct_Endpoint"></span>
 ### Endpoint `STRUCT`
 网关端点
   - 每一个端点均表示了一个目标服务，网关会将数据包转发到该端点，由该端点负责将数据包转发到目标服务。
@@ -128,34 +129,50 @@ type Endpoint struct {
 	cps         int
 }
 ```
+<span id="struct_Endpoint_GetName"></span>
+
 #### func (*Endpoint) GetName()  string
 > 获取端点名称
+
 ***
+<span id="struct_Endpoint_GetAddress"></span>
+
 #### func (*Endpoint) GetAddress()  string
 > 获取端点地址
+
 ***
+<span id="struct_Endpoint_GetState"></span>
+
 #### func (*Endpoint) GetState()  float64
 > 获取端点健康值
+
 ***
+<span id="struct_Endpoint_Forward"></span>
+
 #### func (*Endpoint) Forward(conn *server.Conn, packet []byte, callback ...func (err error))
 > 转发数据包到该端点
 >   - 端点在处理数据包时，应区分数据包为普通直连数据包还是网关数据包。可通过 UnmarshalGatewayOutPacket 进行数据包解析，当解析失败且无其他数据包协议时，可认为该数据包为普通直连数据包。
+
 ***
+<span id="struct_EndpointOption"></span>
 ### EndpointOption `STRUCT`
 网关端点选项
 ```go
 type EndpointOption func(endpoint *Endpoint)
 ```
+<span id="struct_ConnectionOpenedEventHandle"></span>
 ### ConnectionOpenedEventHandle `STRUCT`
 
 ```go
 type ConnectionOpenedEventHandle func(gateway *Gateway, conn *server.Conn)
 ```
+<span id="struct_EndpointSelector"></span>
 ### EndpointSelector `STRUCT`
 
 ```go
 type EndpointSelector func(endpoints []*Endpoint) *Endpoint
 ```
+<span id="struct_Gateway"></span>
 ### Gateway `STRUCT`
 基于 server.Server 实现的网关服务器
   - 网关服务器是一个特殊的服务器，它会通过扫描器扫描端点列表，然后连接到端点列表中的所有端点，当端点连接成功后，网关服务器会将客户端的连接数据转发到端点服务器
@@ -181,8 +198,11 @@ type Gateway struct {
 	cceLock sync.RWMutex
 }
 ```
+<span id="struct_Gateway_Run"></span>
+
 #### func (*Gateway) Run(addr string)  error
 > 运行网关
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -212,29 +232,46 @@ func TestGateway_Run(t *testing.T) {
 
 
 ***
+<span id="struct_Gateway_Shutdown"></span>
+
 #### func (*Gateway) Shutdown()
 > 关闭网关
+
 ***
+<span id="struct_Gateway_Server"></span>
+
 #### func (*Gateway) Server()  *server.Server
 > 获取网关服务器核心
+
 ***
-#### func (*Gateway) GetEndpoint(name string)  *Endpoint,  error
+<span id="struct_Gateway_GetEndpoint"></span>
+
+#### func (*Gateway) GetEndpoint(name string) ( *Endpoint,  error)
 > 获取一个可用的端点
 >   - name: 端点名称
+
 ***
-#### func (*Gateway) GetConnEndpoint(name string, conn *server.Conn)  *Endpoint,  error
+<span id="struct_Gateway_GetConnEndpoint"></span>
+
+#### func (*Gateway) GetConnEndpoint(name string, conn *server.Conn) ( *Endpoint,  error)
 > 获取一个可用的端点，如果客户端已经连接到了某个端点，将优先返回该端点
 >   - 当连接到的端点不可用或没有连接记录时，效果同 GetEndpoint 相同
 >   - 当连接行为为有状态时，推荐使用该方法
+
 ***
+<span id="struct_Gateway_SwitchEndpoint"></span>
+
 #### func (*Gateway) SwitchEndpoint(source *Endpoint, dest *Endpoint)
 > 将端点端点的所有连接切换到另一个端点
+
 ***
+<span id="struct_Option"></span>
 ### Option `STRUCT`
 网关选项
 ```go
 type Option func(gateway *Gateway)
 ```
+<span id="struct_Scanner"></span>
 ### Scanner `INTERFACE`
 端点扫描器
 ```go
@@ -243,7 +280,13 @@ type Scanner interface {
 	GetInterval() time.Duration
 }
 ```
-#### func (*Scanner) GetEndpoints()  []*gateway.Endpoint,  error
+<span id="struct_Scanner_GetEndpoints"></span>
+
+#### func (*Scanner) GetEndpoints() ( []*gateway.Endpoint,  error)
+
 ***
+<span id="struct_Scanner_GetInterval"></span>
+
 #### func (*Scanner) GetInterval()  time.Duration
+
 ***

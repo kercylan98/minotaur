@@ -23,18 +23,19 @@ senders Package 包含了内置通知发送器的实现
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[FeiShu](#feishu)|飞书发送器
+|`STRUCT`|[FeiShu](#struct_FeiShu)|飞书发送器
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewFeiShu(webhook string)  *FeiShu
+#### func NewFeiShu(webhook string) *FeiShu
 <span id="NewFeiShu"></span>
 > 根据特定的 webhook 地址创建飞书发送器
 
 ***
+<span id="struct_FeiShu"></span>
 ### FeiShu `STRUCT`
 飞书发送器
 ```go
@@ -43,8 +44,11 @@ type FeiShu struct {
 	webhook string
 }
 ```
+<span id="struct_FeiShu_Push"></span>
+
 #### func (*FeiShu) Push(notify notify.Notify)  error
 > 推送通知
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -52,7 +56,7 @@ type FeiShu struct {
 ```go
 
 func TestFeiShu_Push(t *testing.T) {
-	fs := NewFeiShu("https://open.feishu.cn/open-apis/bot/v2/hook/d886f30f-814c-47b1-aeb0-b508da0f7f22")
+	fs := NewFeiShu("https://open.feishu.cn/open-apis/bot/v2/hook/bid")
 	rt := notifies.NewFeiShu(notifies.FeiShuMessageWithRichText(notifies.NewFeiShuRichText().Create("zh_cn", "标题咯").AddText("哈哈哈").Ok()))
 	if err := fs.Push(rt); err != nil {
 		panic(err)

@@ -24,20 +24,21 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[MultistageBind](#multistagebind)|多级分类路由绑定函数
-|`STRUCT`|[Multistage](#multistage)|支持多级分类的路由器
-|`STRUCT`|[MultistageOption](#multistageoption)|路由器选项
+|`STRUCT`|[MultistageBind](#struct_MultistageBind)|多级分类路由绑定函数
+|`STRUCT`|[Multistage](#struct_Multistage)|支持多级分类的路由器
+|`STRUCT`|[MultistageOption](#struct_MultistageOption)|路由器选项
 
 </details>
 
 
 ***
 ## 详情信息
-#### func NewMultistage(options ...MultistageOption[HandleFunc])  *Multistage[HandleFunc]
+#### func NewMultistage\[HandleFunc any\](options ...MultistageOption[HandleFunc]) *Multistage[HandleFunc]
 <span id="NewMultistage"></span>
 > 创建一个支持多级分类的路由器
 
-示例代码：
+**示例代码：**
+
 ```go
 
 func ExampleNewMultistage() {
@@ -47,20 +48,25 @@ func ExampleNewMultistage() {
 ```
 
 ***
-#### func WithRouteTrim(handle func (route any)  any)  MultistageOption[HandleFunc]
+#### func WithRouteTrim\[HandleFunc any\](handle func (route any)  any) MultistageOption[HandleFunc]
 <span id="WithRouteTrim"></span>
 > 路由修剪选项
 >   - 将在路由注册前对路由进行对应处理
 
 ***
+<span id="struct_MultistageBind"></span>
 ### MultistageBind `STRUCT`
 多级分类路由绑定函数
 ```go
 type MultistageBind[HandleFunc any] func(HandleFunc)
 ```
+<span id="struct_MultistageBind_Bind"></span>
+
 #### func (MultistageBind) Bind(handleFunc HandleFunc)
 > 将处理函数绑定到预设的路由中
+
 ***
+<span id="struct_Multistage"></span>
 ### Multistage `STRUCT`
 支持多级分类的路由器
 ```go
@@ -71,10 +77,14 @@ type Multistage[HandleFunc any] struct {
 	trim   func(route any) any
 }
 ```
+<span id="struct_Multistage_Register"></span>
+
 #### func (*Multistage) Register(routes ...any)  MultistageBind[HandleFunc]
 > 注册路由是结合 Sub 和 Route 的快捷方式，用于一次性注册多级路由
 >   - 该函数将返回一个注册函数，可通过调用其将路由绑定到特定处理函数，例如：router.Register("a", "b").Bind(onExec())
-示例代码：
+
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Register() {
@@ -86,9 +96,13 @@ func ExampleMultistage_Register() {
 ```
 
 ***
+<span id="struct_Multistage_Route"></span>
+
 #### func (*Multistage) Route(route any, handleFunc HandleFunc)
 > 为特定路由绑定处理函数，被绑定的处理函数将可以通过 Match 函数进行匹配
-示例代码：
+
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Route() {
@@ -100,10 +114,14 @@ func ExampleMultistage_Route() {
 ```
 
 ***
+<span id="struct_Multistage_Match"></span>
+
 #### func (*Multistage) Match(routes ...any)  HandleFunc
 > 匹配已绑定处理函数的路由，返回处理函数
 >   - 如果未找到将会返回空指针
-示例代码：
+
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Match() {
@@ -150,9 +168,13 @@ func TestMultistage_Match(t *testing.T) {
 
 
 ***
+<span id="struct_Multistage_Sub"></span>
+
 #### func (*Multistage) Sub(route any)  *Multistage[HandleFunc]
 > 获取子路由器
-示例代码：
+
+**示例代码：**
+
 ```go
 
 func ExampleMultistage_Sub() {
@@ -164,6 +186,7 @@ func ExampleMultistage_Sub() {
 ```
 
 ***
+<span id="struct_MultistageOption"></span>
 ### MultistageOption `STRUCT`
 路由器选项
 ```go

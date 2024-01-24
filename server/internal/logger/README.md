@@ -16,33 +16,53 @@
 
 |类型|名称|描述
 |:--|:--|:--
-|`STRUCT`|[Ants](#ants)|暂无描述...
-|`STRUCT`|[GNet](#gnet)|暂无描述...
+|`STRUCT`|[Ants](#struct_Ants)|暂无描述...
+|`STRUCT`|[GNet](#struct_GNet)|暂无描述...
 
 </details>
 
 
 ***
 ## 详情信息
+<span id="struct_Ants"></span>
 ### Ants `STRUCT`
 
 ```go
 type Ants struct{}
 ```
+<span id="struct_Ants_Printf"></span>
+
 #### func (*Ants) Printf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet"></span>
 ### GNet `STRUCT`
 
 ```go
 type GNet struct{}
 ```
+<span id="struct_GNet_Debugf"></span>
+
 #### func (*GNet) Debugf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Infof"></span>
+
 #### func (*GNet) Infof(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Warnf"></span>
+
 #### func (*GNet) Warnf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Errorf"></span>
+
 #### func (*GNet) Errorf(format string, args ...interface {})
+
 ***
+<span id="struct_GNet_Fatalf"></span>
+
 #### func (*GNet) Fatalf(format string, args ...interface {})
+
 ***

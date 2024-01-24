@@ -34,52 +34,52 @@
 
 ***
 ## 详情信息
-#### func EncryptBase64(data []byte)  string
+#### func EncryptBase64(data []byte) string
 <span id="EncryptBase64"></span>
 > 对数据进行Base64编码
 
 ***
-#### func DecodedBase64(data string)  []byte,  error
+#### func DecodedBase64(data string) ([]byte,  error)
 <span id="DecodedBase64"></span>
 > 对数据进行Base64解码
 
 ***
-#### func EncryptCRC32(str string)  uint32
+#### func EncryptCRC32(str string) uint32
 <span id="EncryptCRC32"></span>
 > 对字符串进行CRC加密并返回其结果。
 
 ***
-#### func DecodedCRC32(data []byte)  uint32
+#### func DecodedCRC32(data []byte) uint32
 <span id="DecodedCRC32"></span>
 > 对字节数组进行CRC加密并返回其结果。
 
 ***
-#### func EncryptMD5(str string)  string
+#### func EncryptMD5(str string) string
 <span id="EncryptMD5"></span>
 > 对字符串进行MD5加密并返回其结果。
 
 ***
-#### func DecodedMD5(data []byte)  string
+#### func DecodedMD5(data []byte) string
 <span id="DecodedMD5"></span>
 > 对字节数组进行MD5加密并返回其结果。
 
 ***
-#### func EncryptSHA1(str string)  string
+#### func EncryptSHA1(str string) string
 <span id="EncryptSHA1"></span>
 > 对字符串进行SHA1加密并返回其结果。
 
 ***
-#### func DecodedSHA1(data []byte)  string
+#### func DecodedSHA1(data []byte) string
 <span id="DecodedSHA1"></span>
 > 对字节数组进行SHA1加密并返回其结果。
 
 ***
-#### func EncryptSHA256(str string)  string
+#### func EncryptSHA256(str string) string
 <span id="EncryptSHA256"></span>
 > 对字符串进行SHA256加密并返回其结果。
 
 ***
-#### func DecodedSHA256(data []byte)  string
+#### func DecodedSHA256(data []byte) string
 <span id="DecodedSHA256"></span>
 > 对字节数组进行SHA256加密并返回其结果。
 

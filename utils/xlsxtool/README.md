@@ -25,7 +25,7 @@
 
 ***
 ## 详情信息
-#### func GetSheetMatrix(sheet *xlsx.Sheet)  *matrix.Matrix[*xlsx.Cell]
+#### func GetSheetMatrix(sheet *xlsx.Sheet) *matrix.Matrix[*xlsx.Cell]
 <span id="GetSheetMatrix"></span>
 > 将sheet转换为二维矩阵
 
