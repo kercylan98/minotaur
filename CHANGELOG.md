@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.5.2](https://github.com/kercylan98/minotaur/compare/v0.5.1...v0.5.2) (2024-01-24)
+
+
+### Other | 其他更改
+
+* 依赖版本更新 ([6cc158d](https://github.com/kercylan98/minotaur/commit/6cc158d43aa144f3f076711b54dd38ef9641b9ec))
+
+
+### Features | 新特性
+
+* collection 包新增 ConvertSliceToBatches、ConvertMapKeysToBatches、ConvertMapValuesToBatches 函数，用于将切片或 map 转换为按特定数量分批的批次切片 ([9dba7ff](https://github.com/kercylan98/minotaur/commit/9dba7ffe19f0b5502e06d3cafcd1602736e6648e))
+* collection 包新增 Equel 命名前缀的用于比较切片和 map 元素是否相同的函数，新增 Loop 命名前缀的用于遍历切片和 map 元素的函数 ([756f823](https://github.com/kercylan98/minotaur/commit/756f823ca409477891f7368c5cc33bd1a06174af))
+* huge 包 NewInt 函数支持 string、bool、float 类型 ([c4605cc](https://github.com/kercylan98/minotaur/commit/c4605cc4c30e4eeee29662265dfa852d58a96549))
+* server.Server.LoadData 函数支持加载 any 类型的数据 ([ebe7a70](https://github.com/kercylan98/minotaur/commit/ebe7a7049692e8aa4cf2e8cae9b1e5bfdd2836e4))
+* super 包新增 TryReadChannel、TryReadChannelByHandler 函数用于对 channel 尝试写入 ([959abff](https://github.com/kercylan98/minotaur/commit/959abff85f4cbf0c4c81b586317e39bf3dee3a80))
+* 支持向 server.Server 绑定一些数据 ([acc4684](https://github.com/kercylan98/minotaur/commit/acc468492fc76faa69d493c83098bfecbb1e720d))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 包 None 网络类型启动阻塞的问题。增加传入不支持网络类型将导致 panic 的特性。优化 WebSocket 服务器将不再使用 http.DefaultMuxServer，转而使用 http.NewServeMux ([1645ae4](https://github.com/kercylan98/minotaur/commit/1645ae47df879067ba286affec39e5bed168fa02))
+* 修复 super 包 JSON 解析部分零值不正确的问题 ([36de593](https://github.com/kercylan98/minotaur/commit/36de5934ce1591fb6347d8b34f6550e2fe4811fb))
+
+
+### Docs | 文档优化
+
+* 优化 README.md 函数签名 ([bd7a3fe](https://github.com/kercylan98/minotaur/commit/bd7a3fee6b658c509f9e255cdba058b0eac8f209))
+* 优化 README.md 包级函数不显示泛型签名的情况 ([a026e4c](https://github.com/kercylan98/minotaur/commit/a026e4cf965ffa2390ac86a29478f609ceab23a3))
+* 优化 README.md 可读性 ([22449ff](https://github.com/kercylan98/minotaur/commit/22449ff5c34d681d34c0b59d3fce1a8987278d5e))
+* 优化 README.md 导航中无法跳转结构体的情况 ([e7e679e](https://github.com/kercylan98/minotaur/commit/e7e679ea8662d84aa9014dd26e643cc57d3374d7))
+* 优化 README.md 的测试用例描述 ([cb340da](https://github.com/kercylan98/minotaur/commit/cb340da0e5c9b884b86d459e6379cc0a0b146a50))
+* 优化 README.md 的测试用例描述 ([580bab2](https://github.com/kercylan98/minotaur/commit/580bab2dfc847096fdc380a692fa5fc5bbbd63ec))
+* 优化泛型结构体函数的文档展示 ([6e6f338](https://github.com/kercylan98/minotaur/commit/6e6f33899b791c585f70c1b8bcca5c8e619f0cea))
+* 完善 collection 包部分文档 ([5ea3202](https://github.com/kercylan98/minotaur/commit/5ea32027320e24b8d036a8d5529ab51f5aef2f4b))
+* 完善根目录 README.md，增加项目实践记录内容。生成子目录 README.md 文档 ([fc14e73](https://github.com/kercylan98/minotaur/commit/fc14e7380125d6c4880e643ea01f1d2056b0ddc4))
+
+
+### Tests | 新增或优化测试用例
+
+* server 包完善部分测试用例 ([bbf70fa](https://github.com/kercylan98/minotaur/commit/bbf70fab02712ffb4a30a5f9b6400f16758d97c2))
+* super.BitSet 完善测试用例 ([f08f068](https://github.com/kercylan98/minotaur/commit/f08f06891c94a2589d60203e2d4427e35f620625))
+
 ## [0.5.1](https://github.com/kercylan98/minotaur/compare/v0.5.0...v0.5.1) (2024-01-14)
 
 
