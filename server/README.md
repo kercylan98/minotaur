@@ -47,6 +47,8 @@ server 提供了包含多种网络类型的服务器实现
 |[WithWebsocketMessageType](#WithWebsocketMessageType)|设置仅支持特定类型的Websocket消息
 |[WithPProf](#WithPProf)|通过性能分析工具PProf创建服务器
 |[New](#New)|根据特定网络类型创建一个服务器
+|[LoadData](#LoadData)|加载绑定的服务器数据
+|[BindData](#BindData)|绑定数据到特定服务器
 |[BindService](#BindService)|绑定服务到特定 Server，被绑定的服务将会在 Server 初始化时执行 Service.OnInit 方法
 
 
@@ -514,6 +516,16 @@ func TestNew(t *testing.T) {
 
 </details>
 
+
+***
+#### func LoadData\[T any\](srv *Server, name string, data any) T
+<span id="LoadData"></span>
+> 加载绑定的服务器数据
+
+***
+#### func BindData(srv *Server, name string, data any)
+<span id="BindData"></span>
+> 绑定数据到特定服务器
 
 ***
 #### func BindService(srv *Server, services ...Service)
@@ -1340,6 +1352,7 @@ type Server struct {
 	systemSignal             chan os.Signal
 	closeChannel             chan struct{}
 	multipleRuntimeErrorChan chan error
+	data                     map[string]any
 	messageCounter           atomic.Int64
 	addr                     string
 	network                  Network
@@ -1347,6 +1360,18 @@ type Server struct {
 	services                 []func()
 }
 ```
+<span id="struct_Server_LoadData"></span>
+
+#### func (*Server) LoadData(name string, data any)  any
+> 加载绑定的服务器数据
+
+***
+<span id="struct_Server_BindData"></span>
+
+#### func (*Server) BindData(name string, data any)
+> 绑定数据到特定服务器
+
+***
 <span id="struct_Server_Run"></span>
 
 #### func (*Server) Run(addr string) (err error)

@@ -1,11 +1,53 @@
 # Minotaur
 
+Minotaur 是一个用于服务端开发的支持库，其中采用了大量泛型设计，主要被用于游戏服务器开发，但由于拥有大量通用的功能，也常被用于 WEB 开发。
+***
+
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
-![](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat)
-![](https://komarev.com/ghpvc/?username=kercylan98)
+![license](https://img.shields.io/github/license/kercylan98/minotaur)
 <a target="_blank" href="https://goreportcard.com/report/github.com/kercylan98/minotaur"><img src="https://goreportcard.com/badge/github.com/kercylan98/minotaur?style=flat-square" /></a>
 
-Minotaur 是一个基于 Golang 1.20 编写的服务端开发支持库，其中采用了大量泛型设计，主要被用于游戏服务器开发，但由于拥有大量通用的功能，也常被用于 WEB 开发。
+![go version](https://img.shields.io/github/go-mod/go-version/kercylan98/minotaur?logo=go&style=flat)
+![tag](https://img.shields.io/github/v/tag/kercylan98/minotaur?logo=github&style=flat)
+![views](https://komarev.com/ghpvc/?username=kercylan98&color=blue&style=flat)
+
+![email](https://img.shields.io/badge/Email-kercylan@gmail.com-green.svg?style=flat&logo=gmail&link=mailto:kercylan@gmail.com)
+![qq-group](https://img.shields.io/badge/QQ%20Group-758219443-green.svg?style=flat&logo=tencent-qq&link=https://qm.qq.com/cgi-bin/qm/qr?k=WzRWJIDLzuJbH6-VjdFiTCd1_qA_Ug-D&jump_from=webapi&authKey=ktLEw3XyY9yO+i9rPbI6Fk0UA0uEhACcUidOFdblaiToZtbHcXyU7sFb31FEc9JJ&noverify=0)
+![telegram](https://img.shields.io/badge/Telegram-ziv__siren-green.svg?style=flat&logo=telegram&link=https://telegram.me/ziv_siren)
+
+> - 这是支持快速搭建多功能游戏服务器及 HTTP 服务器的 `Golang` 服务端框架；
+> - 网络传输基于 [`gorilla/websocket`](https://github.com/gorilla/websocket)、[`gin-gonic/gin`](https://github.com/gin-gonic/gin)、[`grpc/grpc-go`](https://github.com/grpc/grpc-go)、[`panjf2000/gnet`](https://github.com/panjf2000/gnet)、[`xtaci/kcp-go`](https://github.com/xtaci/kcp-go) 构建；
+> - 该项目的目标是提供一个简单、高效、可扩展的游戏服务器框架，让开发者可以专注于游戏逻辑的开发，而不用花费大量时间在网络传输、配置导表、日志、监控等基础功能的开发上；
+
+***
+在 Minotaur 中不包括任何跨服实现，但支持基于多级路由器快速实现跨服功能。推荐使用 [`NATS.io`](https://nats.io/) 作为跨服消息中间件。
+  - 目前已实践的弹幕游戏项目以 `NATS.io` 作为消息队列，实现了跨服、埋点日志收集等功能，部署在 `Kubernetes` 集群中；
+  - 该项目客户端与服务端采用 `WebSocket` 进行通讯，服务端暴露 `HTTP` 接口接收互动数据消息回调，通过负载均衡器进入 `Kubernetes` 集群中的 `Minotaur` 服务，最终通过 `NATS.io` 消息队列转发至对应所在的 `Pod` 中进行处理；
+
+<details>
+<summary>关于 Pod 配置参数及非极限压测数据</summary>
+
+> 本次压测 `Pod` 扩容数量为 1，但由于压测连接是最开始就建立好的，所以该扩容的 `Pod` 并没有接受到压力。
+> 理论上来说该 `Pod` 也应该接受 `HTTP` 回调压力，实测过程中，这个扩容的 `Pod` 没有接受到任何压力
+
+**Pod 配置参数**
+
+![pod](.github/images/pod.png)
+
+**压测结果**
+
+![压测数据](.github/images/yc1.png)
+![压测数据](.github/images/yc2.png)
+
+**监控数据**
+
+![事件](./.github/images/yc-event.png)
+![CPU](./.github/images/yc-cpu.png)
+![内存](./.github/images/yc-memory.png)
+
+</details>
+
+***
 
 ## 特色内容
 ```mermaid

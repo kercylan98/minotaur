@@ -19,6 +19,8 @@
 |[NewBitSet](#NewBitSet)|通过指定的 Bit 位创建一个 BitSet
 |[TryWriteChannel](#TryWriteChannel)|尝试写入 channel，如果 channel 无法写入则忽略，返回是否写入成功
 |[TryWriteChannelByHandler](#TryWriteChannelByHandler)|尝试写入 channel，如果 channel 无法写入则执行 handler
+|[TryReadChannel](#TryReadChannel)|尝试读取 channel，如果 channel 无法读取则忽略，返回是否读取成功
+|[TryReadChannelByHandler](#TryReadChannelByHandler)|尝试读取 channel，如果 channel 无法读取则执行 handler
 |[RegError](#RegError)|通过错误码注册错误，返回错误的引用
 |[RegErrorRef](#RegErrorRef)|通过错误码注册错误，返回错误的引用
 |[GetError](#GetError)|通过错误引用获取错误码和真实错误信息，如果错误不存在则返回 0，如果错误引用不存在则返回原本的错误
@@ -107,6 +109,50 @@
 #### func NewBitSet\[Bit generic.Integer\](bits ...Bit) *BitSet[Bit]
 <span id="NewBitSet"></span>
 > 通过指定的 Bit 位创建一个 BitSet
+>   - 当指定的 Bit 位存在负数时，将会 panic
+
+**示例代码：**
+
+```go
+
+func ExampleNewBitSet() {
+	var bs = super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	bs.Set(10)
+	fmt.Println(bs.Bits())
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewBitSet(t *testing.T) {
+	var cases = []struct {
+		name        string
+		in          []int
+		shouldPanic bool
+	}{{name: "normal", in: []int{1, 2, 3, 4, 5, 6, 7, 8, 9}}, {name: "empty", in: make([]int, 0)}, {name: "nil", in: nil}, {name: "negative", in: []int{-1, -2}, shouldPanic: true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !c.shouldPanic {
+					t.Fatalf("panic: %v", r)
+				}
+			}()
+			bs := super.NewBitSet(c.in...)
+			t.Log(bs)
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 #### func TryWriteChannel\[T any\](ch chan T, data T) bool
@@ -119,6 +165,18 @@
 <span id="TryWriteChannelByHandler"></span>
 > 尝试写入 channel，如果 channel 无法写入则执行 handler
 >   - 无法写入的情况包括：channel 已满、channel 已关闭
+
+***
+#### func TryReadChannel\[T any\](ch chan T) (v T, suc bool)
+<span id="TryReadChannel"></span>
+> 尝试读取 channel，如果 channel 无法读取则忽略，返回是否读取成功
+>   - 无法读取的情况包括：channel 已空、channel 已关闭
+
+***
+#### func TryReadChannelByHandler\[T any\](ch chan T, handler func (ch chan T)  T) (v T)
+<span id="TryReadChannelByHandler"></span>
+> 尝试读取 channel，如果 channel 无法读取则执行 handler
+>   - 无法读取的情况包括：channel 已空、channel 已关闭
 
 ***
 #### func RegError(code int, message string) error
@@ -757,6 +815,18 @@ type BitSet[Bit generic.Integer] struct {
 #### func (*BitSet) Set(bit Bit)  *BitSet[Bit]
 > 将指定的位 bit 设置为 1
 
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Set() {
+	var bs = super.NewBitSet[int]()
+	bs.Set(10)
+	fmt.Println(bs.Bits())
+}
+
+```
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -764,11 +834,29 @@ type BitSet[Bit generic.Integer] struct {
 ```go
 
 func TestBitSet_Set(t *testing.T) {
-	bs := super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	bs.Set(11)
-	bs.Set(12)
-	bs.Set(13)
-	t.Log(bs)
+	var cases = []struct {
+		name        string
+		in          []int
+		shouldPanic bool
+	}{{name: "normal", in: []int{1, 2, 3, 4, 5, 6, 7, 8, 9}}, {name: "empty", in: make([]int, 0)}, {name: "nil", in: nil}, {name: "negative", in: []int{-1, -2}, shouldPanic: true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !c.shouldPanic {
+					t.Fatalf("panic: %v", r)
+				}
+			}()
+			bs := super.NewBitSet[int]()
+			for _, bit := range c.in {
+				bs.Set(bit)
+			}
+			for _, bit := range c.in {
+				if !bs.Has(bit) {
+					t.Fatalf("bit %v not set", bit)
+				}
+			}
+		})
+	}
 }
 
 ```
@@ -783,6 +871,18 @@ func TestBitSet_Set(t *testing.T) {
 #### func (*BitSet) Del(bit Bit)  *BitSet[Bit]
 > 将指定的位 bit 设置为 0
 
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Del() {
+	var bs = super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	bs.Del(1)
+	fmt.Println(bs.Bits())
+}
+
+```
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -790,12 +890,32 @@ func TestBitSet_Set(t *testing.T) {
 ```go
 
 func TestBitSet_Del(t *testing.T) {
-	bs := super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	bs.Del(11)
-	bs.Del(12)
-	bs.Del(13)
-	bs.Del(10)
-	t.Log(bs)
+	var cases = []struct {
+		name        string
+		in          []int
+		shouldPanic bool
+	}{{name: "normal", in: []int{1, 2, 3, 4, 5, 6, 7, 8, 9}}, {name: "empty", in: make([]int, 0)}, {name: "nil", in: nil}, {name: "negative", in: []int{-1, -2}, shouldPanic: true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !c.shouldPanic {
+					t.Fatalf("panic: %v", r)
+				}
+			}()
+			bs := super.NewBitSet[int]()
+			for _, bit := range c.in {
+				bs.Set(bit)
+			}
+			for _, bit := range c.in {
+				bs.Del(bit)
+			}
+			for _, bit := range c.in {
+				if bs.Has(bit) {
+					t.Fatalf("bit %v not del", bit)
+				}
+			}
+		})
+	}
 }
 
 ```
@@ -811,6 +931,21 @@ func TestBitSet_Del(t *testing.T) {
 > 将 BitSet 中的比特位集合缩小到最小
 >   - 正常情况下当 BitSet 中的比特位超出 64 位时，将自动增长，当 BitSet 中的比特位数量减少时，可以使用该方法将 BitSet 中的比特位集合缩小到最小
 
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Shrink() {
+	var bs = super.NewBitSet(111, 222, 333, 444)
+	fmt.Println(bs.Cap())
+	bs.Del(444)
+	fmt.Println(bs.Cap())
+	bs.Shrink()
+	fmt.Println(bs.Cap())
+}
+
+```
+
 <details>
 <summary>查看 / 收起单元测试</summary>
 
@@ -818,13 +953,22 @@ func TestBitSet_Del(t *testing.T) {
 ```go
 
 func TestBitSet_Shrink(t *testing.T) {
-	bs := super.NewBitSet(63)
-	t.Log(bs.Cap())
-	bs.Set(200)
-	t.Log(bs.Cap())
-	bs.Del(200)
-	bs.Shrink()
-	t.Log(bs.Cap())
+	var cases = []struct {
+		name string
+		in   []int
+	}{{name: "normal", in: []int{1, 2, 3, 4, 5, 6, 7, 8, 9}}, {name: "empty", in: make([]int, 0)}, {name: "nil", in: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			bs := super.NewBitSet(c.in...)
+			for _, v := range c.in {
+				bs.Del(v)
+			}
+			bs.Shrink()
+			if bs.Cap() != 0 {
+				t.Fatalf("cap %v != 0", bs.Cap())
+			}
+		})
+	}
 }
 
 ```
@@ -839,11 +983,34 @@ func TestBitSet_Shrink(t *testing.T) {
 #### func (*BitSet) Cap()  int
 > 返回当前 BitSet 中可以表示的最大比特位数量
 
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Cap() {
+	var bs = super.NewBitSet(63)
+	fmt.Println(bs.Cap())
+}
+
+```
+
 ***
 <span id="struct_BitSet_Has"></span>
 
 #### func (*BitSet) Has(bit Bit)  bool
 > 检查指定的位 bit 是否被设置为 1
+
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Has() {
+	var bs = super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	fmt.Println(bs.Has(1))
+	fmt.Println(bs.Has(10))
+}
+
+```
 
 ***
 <span id="struct_BitSet_Clear"></span>
@@ -851,11 +1018,34 @@ func TestBitSet_Shrink(t *testing.T) {
 #### func (*BitSet) Clear()  *BitSet[Bit]
 > 清空所有的比特位
 
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Clear() {
+	var bs = super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	bs.Clear()
+	fmt.Println(bs.Bits())
+}
+
+```
+
 ***
 <span id="struct_BitSet_Len"></span>
 
 #### func (*BitSet) Len()  int
 > 返回当前 BitSet 中被设置的比特位数量
+
+**示例代码：**
+
+```go
+
+func ExampleBitSet_Len() {
+	var bs = super.NewBitSet(1, 2, 3, 4, 5, 6, 7, 8, 9)
+	fmt.Println(bs.Len())
+}
+
+```
 
 ***
 <span id="struct_BitSet_Bits"></span>

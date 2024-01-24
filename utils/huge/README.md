@@ -18,8 +18,7 @@
 |:--|:--
 |[NewFloat](#NewFloat)|创建一个 Float
 |[NewFloatByString](#NewFloatByString)|通过字符串创建一个 Float
-|[NewInt](#NewInt)|创建一个 Int
-|[NewIntByString](#NewIntByString)|通过字符串创建一个 Int
+|[NewInt](#NewInt)|创建一个 Int 对象，该对象的值为 x
 
 
 > 类型定义
@@ -45,15 +44,88 @@
 >   - 如果字符串不是一个合法的数字，则返回 0
 
 ***
-#### func NewInt\[T generic.Number\](x T) *Int
+#### func NewInt\[T generic.Basic\](x T) *Int
 <span id="NewInt"></span>
-> 创建一个 Int
+> 创建一个 Int 对象，该对象的值为 x
 
-***
-#### func NewIntByString(i string) *Int
-<span id="NewIntByString"></span>
-> 通过字符串创建一个 Int
->   - 如果字符串不是一个合法的数字，则返回 0
+**示例代码：**
+
+该案例展示了 NewInt 对各种基本类型的支持及用法
+
+
+```go
+
+func ExampleNewInt() {
+	fmt.Println(huge.NewInt("12345678900000000"))
+	fmt.Println(huge.NewInt(1234567890))
+	fmt.Println(huge.NewInt(true))
+	fmt.Println(huge.NewInt(123.123))
+	fmt.Println(huge.NewInt(byte(1)))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestNewInt(t *testing.T) {
+	var cases = []struct {
+		name string
+		nil  bool
+		in   int64
+		mul  int64
+		want string
+	}{{name: "TestNewIntNegative", in: -1, want: "-1"}, {name: "TestNewIntZero", in: 0, want: "0"}, {name: "TestNewIntPositive", in: 1, want: "1"}, {name: "TestNewIntMax", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestNewIntMin", in: -9223372036854775808, want: "-9223372036854775808"}, {name: "TestNewIntMulNegative", in: -9223372036854775808, mul: 10000000, want: "-92233720368547758080000000"}, {name: "TestNewIntMulPositive", in: 9223372036854775807, mul: 10000000, want: "92233720368547758070000000"}, {name: "TestNewIntNil", nil: true, want: "0"}, {name: "TestNewIntNilMul", nil: true, mul: 10000000, want: "0"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var got *huge.Int
+			switch {
+			case c.nil:
+				if c.mul > 0 {
+					got = huge.NewInt(0).MulInt64(c.mul)
+				}
+			case c.mul == 0:
+				got = huge.NewInt(c.in)
+			default:
+				got = huge.NewInt(c.in).MulInt64(c.mul)
+			}
+			if s := got.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, got.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+	t.Run("TestNewIntFromString", func(t *testing.T) {
+		if got := huge.NewInt("1234567890123456789012345678901234567890"); got.String() != "1234567890123456789012345678901234567890" {
+			t.Fatalf("want: %s, got: %s", "1234567890123456789012345678901234567890", got.String())
+		}
+	})
+	t.Run("TestNewIntFromInt", func(t *testing.T) {
+		if got := huge.NewInt(1234567890); got.String() != "1234567890" {
+			t.Fatalf("want: %s, got: %s", "1234567890", got.String())
+		}
+	})
+	t.Run("TestNewIntFromBool", func(t *testing.T) {
+		if got := huge.NewInt(true); got.String() != "1" {
+			t.Fatalf("want: %s, got: %s", "1", got.String())
+		}
+	})
+	t.Run("TestNewIntFromFloat", func(t *testing.T) {
+		if got := huge.NewInt(1234567890.1234567890); got.String() != "1234567890" {
+			t.Fatalf("want: %s, got: %s", "1234567890", got.String())
+		}
+	})
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Float"></span>
@@ -190,71 +262,689 @@ type Int big.Int
 <span id="struct_Int_Copy"></span>
 
 #### func (*Int) Copy()  *Int
+> 拷贝当前 Int 对象
+
+**示例代码：**
+
+```go
+
+func ExampleInt_Copy() {
+	var a = huge.NewInt(1234567890)
+	var b = a.Copy().SetInt64(9876543210)
+	fmt.Println(a)
+	fmt.Println(b)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_Copy(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want string
+	}{{name: "TestIntCopyNegative", in: -1, want: "-1"}, {name: "TestIntCopyZero", in: 0, want: "0"}, {name: "TestIntCopyPositive", in: 1, want: "1"}, {name: "TestIntCopyMax", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntCopyMin", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in = huge.NewInt(c.in)
+			var got = in.Copy()
+			if in.Int64() != c.in {
+				t.Fatalf("want: %d, got: %d", c.in, in.Int64())
+			}
+			if s := got.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, got.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_Set"></span>
 
 #### func (*Int) Set(i *Int)  *Int
+> 设置当前 Int 对象的值为 i
+
+**示例代码：**
+
+```go
+
+func ExampleInt_Set() {
+	var a = huge.NewInt(1234567890)
+	var b = huge.NewInt(9876543210)
+	fmt.Println(a)
+	a.Set(b)
+	fmt.Println(a)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_Set(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want string
+	}{{name: "TestIntSetNegative", in: -1, want: "-1"}, {name: "TestIntSetZero", in: 0, want: "0"}, {name: "TestIntSetPositive", in: 1, want: "1"}, {name: "TestIntSetMax", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntSetMin", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.Set(huge.NewInt(c.in))
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Int_SetString"></span>
+
+#### func (*Int) SetString(i string)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetString(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   string
+		want string
+	}{{name: "TestIntSetStringNegative", in: "-1", want: "-1"}, {name: "TestIntSetStringZero", in: "0", want: "0"}, {name: "TestIntSetStringPositive", in: "1", want: "1"}, {name: "TestIntSetStringMax", in: "9223372036854775807", want: "9223372036854775807"}, {name: "TestIntSetStringMin", in: "-9223372036854775808", want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetString(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetInt"></span>
 
 #### func (*Int) SetInt(i int)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetInt(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want string
+	}{{name: "TestIntSetIntNegative", in: -1, want: "-1"}, {name: "TestIntSetIntZero", in: 0, want: "0"}, {name: "TestIntSetIntPositive", in: 1, want: "1"}, {name: "TestIntSetIntMax", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntSetIntMin", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetInt64(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetInt8"></span>
 
 #### func (*Int) SetInt8(i int8)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetInt8(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int8
+		want string
+	}{{name: "TestIntSetInt8Negative", in: -1, want: "-1"}, {name: "TestIntSetInt8Zero", in: 0, want: "0"}, {name: "TestIntSetInt8Positive", in: 1, want: "1"}, {name: "TestIntSetInt8Max", in: 127, want: "127"}, {name: "TestIntSetInt8Min", in: -128, want: "-128"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetInt8(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetInt16"></span>
 
 #### func (*Int) SetInt16(i int16)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetInt16(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int16
+		want string
+	}{{name: "TestIntSetInt16Negative", in: -1, want: "-1"}, {name: "TestIntSetInt16Zero", in: 0, want: "0"}, {name: "TestIntSetInt16Positive", in: 1, want: "1"}, {name: "TestIntSetInt16Max", in: 32767, want: "32767"}, {name: "TestIntSetInt16Min", in: -32768, want: "-32768"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetInt16(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetInt32"></span>
 
 #### func (*Int) SetInt32(i int32)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetInt32(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int32
+		want string
+	}{{name: "TestIntSetInt32Negative", in: -1, want: "-1"}, {name: "TestIntSetInt32Zero", in: 0, want: "0"}, {name: "TestIntSetInt32Positive", in: 1, want: "1"}, {name: "TestIntSetInt32Max", in: 2147483647, want: "2147483647"}, {name: "TestIntSetInt32Min", in: -2147483648, want: "-2147483648"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetInt32(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetInt64"></span>
 
 #### func (*Int) SetInt64(i int64)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetInt64(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want string
+	}{{name: "TestIntSetInt64Negative", in: -1, want: "-1"}, {name: "TestIntSetInt64Zero", in: 0, want: "0"}, {name: "TestIntSetInt64Positive", in: 1, want: "1"}, {name: "TestIntSetInt64Max", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntSetInt64Min", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetInt64(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetUint"></span>
 
 #### func (*Int) SetUint(i uint)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetUint(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   uint64
+		want string
+	}{{name: "TestIntSetUintNegative", in: 0, want: "0"}, {name: "TestIntSetUintZero", in: 0, want: "0"}, {name: "TestIntSetUintPositive", in: 1, want: "1"}, {name: "TestIntSetUintMax", in: 18446744073709551615, want: "18446744073709551615"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetUint64(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetUint8"></span>
 
 #### func (*Int) SetUint8(i uint8)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetUint8(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   uint8
+		want string
+	}{{name: "TestIntSetUint8Negative", in: 0, want: "0"}, {name: "TestIntSetUint8Zero", in: 0, want: "0"}, {name: "TestIntSetUint8Positive", in: 1, want: "1"}, {name: "TestIntSetUint8Max", in: 255, want: "255"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetUint8(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetUint16"></span>
 
 #### func (*Int) SetUint16(i uint16)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetUint16(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   uint16
+		want string
+	}{{name: "TestIntSetUint16Negative", in: 0, want: "0"}, {name: "TestIntSetUint16Zero", in: 0, want: "0"}, {name: "TestIntSetUint16Positive", in: 1, want: "1"}, {name: "TestIntSetUint16Max", in: 65535, want: "65535"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetUint16(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetUint32"></span>
 
 #### func (*Int) SetUint32(i uint32)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetUint32(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   uint32
+		want string
+	}{{name: "TestIntSetUint32Negative", in: 0, want: "0"}, {name: "TestIntSetUint32Zero", in: 0, want: "0"}, {name: "TestIntSetUint32Positive", in: 1, want: "1"}, {name: "TestIntSetUint32Max", in: 4294967295, want: "4294967295"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetUint32(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_SetUint64"></span>
 
 #### func (*Int) SetUint64(i uint64)  *Int
+> 设置当前 Int 对象的值为 i
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetUint64(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   uint64
+		want string
+	}{{name: "TestIntSetUint64Negative", in: 0, want: "0"}, {name: "TestIntSetUint64Zero", in: 0, want: "0"}, {name: "TestIntSetUint64Positive", in: 1, want: "1"}, {name: "TestIntSetUint64Max", in: 18446744073709551615, want: "18446744073709551615"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetUint64(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Int_SetFloat32"></span>
+
+#### func (*Int) SetFloat32(i float32)  *Int
+> 设置当前 Int 对象的值为 i 向下取整后的值
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetFloat32(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   float32
+		want string
+	}{{name: "TestIntSetFloat32Negative", in: -1.1, want: "-1"}, {name: "TestIntSetFloat32Zero", in: 0, want: "0"}, {name: "TestIntSetFloat32Positive", in: 1.1, want: "1"}, {name: "TestIntSetFloat32Max", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntSetFloat32Min", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetFloat32(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Int_SetFloat64"></span>
+
+#### func (*Int) SetFloat64(i float64)  *Int
+> 设置当前 Int 对象的值为 i 向下取整后的值
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetFloat64(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   float64
+		want string
+	}{{name: "TestIntSetFloat64Negative", in: -1.1, want: "-1"}, {name: "TestIntSetFloat64Zero", in: 0, want: "0"}, {name: "TestIntSetFloat64Positive", in: 1.1, want: "1"}, {name: "TestIntSetFloat64Max", in: 9223372036854775807, want: "9223372036854775807"}, {name: "TestIntSetFloat64Min", in: -9223372036854775808, want: "-9223372036854775808"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetFloat64(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+<span id="struct_Int_SetBool"></span>
+
+#### func (*Int) SetBool(i bool)  *Int
+> 设置当前 Int 对象的值为 i，当 i 为 true 时，值为 1，当 i 为 false 时，值为 0
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_SetBool(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   bool
+		want string
+	}{{name: "TestIntSetBoolFalse", in: false, want: "0"}, {name: "TestIntSetBoolTrue", in: true, want: "1"}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var in *huge.Int
+			in = in.SetBool(c.in)
+			if s := in.String(); s != c.want {
+				t.Fatalf("want: %s, got: %s", c.want, in.String())
+			} else {
+				t.Log(s)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_IsZero"></span>
 
 #### func (*Int) IsZero()  bool
+> 判断当前 Int 对象的值是否为 0
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_IsZero(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want bool
+	}{{name: "TestIntIsZeroNegative", in: -1, want: false}, {name: "TestIntIsZeroZero", in: 0, want: true}, {name: "TestIntIsZeroPositive", in: 1, want: false}, {name: "TestIntIsZeroMax", in: 9223372036854775807, want: false}, {name: "TestIntIsZeroMin", in: -9223372036854775808, want: false}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := huge.NewInt(c.in).IsZero(); got != c.want {
+				t.Fatalf("want: %t, got: %t", c.want, got)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_ToBigint"></span>
 
 #### func (*Int) ToBigint()  *big.Int
+> 转换为 *big.Int
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestInt_ToBigint(t *testing.T) {
+	var cases = []struct {
+		name string
+		in   int64
+		want *big.Int
+	}{{name: "TestIntToBigintNegative", in: -1, want: big.NewInt(-1)}, {name: "TestIntToBigintZero", in: 0, want: big.NewInt(0)}, {name: "TestIntToBigintPositive", in: 1, want: big.NewInt(1)}, {name: "TestIntToBigintMax", in: 9223372036854775807, want: big.NewInt(9223372036854775807)}, {name: "TestIntToBigintMin", in: -9223372036854775808, want: big.NewInt(-9223372036854775808)}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := huge.NewInt(c.in).ToBigint(); got.Cmp(c.want) != 0 {
+				t.Fatalf("want: %s, got: %s", c.want.String(), got.String())
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
 
 ***
 <span id="struct_Int_Cmp"></span>
@@ -266,46 +956,49 @@ type Int big.Int
 <span id="struct_Int_GreaterThan"></span>
 
 #### func (*Int) GreaterThan(i *Int)  bool
-> 大于
+> 检查 slf 是否大于 i
 
 ***
 <span id="struct_Int_GreaterThanOrEqualTo"></span>
 
 #### func (*Int) GreaterThanOrEqualTo(i *Int)  bool
-> 大于或等于
+> 检查 slf 是否大于或等于 i
 
 ***
 <span id="struct_Int_LessThan"></span>
 
 #### func (*Int) LessThan(i *Int)  bool
-> 小于
+> 检查 slf 是否小于 i
 
 ***
 <span id="struct_Int_LessThanOrEqualTo"></span>
 
 #### func (*Int) LessThanOrEqualTo(i *Int)  bool
-> 小于或等于
+> 检查 slf 是否小于或等于 i
 
 ***
 <span id="struct_Int_EqualTo"></span>
 
 #### func (*Int) EqualTo(i *Int)  bool
-> 等于
+> 检查 slf 是否等于 i
 
 ***
 <span id="struct_Int_Int64"></span>
 
 #### func (*Int) Int64()  int64
+> 转换为 int64 类型进行返回
 
 ***
 <span id="struct_Int_String"></span>
 
 #### func (*Int) String()  string
+> 转换为 string 类型进行返回
 
 ***
 <span id="struct_Int_Add"></span>
 
 #### func (*Int) Add(i *Int)  *Int
+> 使用 i 对 slf 进行加法运算，slf 的值会变为运算后的值。返回 slf
 
 ***
 <span id="struct_Int_AddInt"></span>

@@ -22,6 +22,10 @@ collection 定义了各种对于集合操作有用的各种函数
 |[CloneMapN](#CloneMapN)|通过创建一个新 map 并将 m 的元素复制到新 map 的方式来克隆 map 为 n 个 map
 |[CloneSlices](#CloneSlices)|对 slices 中的每一项元素进行克隆，最终返回一个新的二维切片
 |[CloneMaps](#CloneMaps)|对 maps 中的每一项元素进行克隆，最终返回一个新的 map 切片
+|[EqualSlice](#EqualSlice)|检查两个切片是否相等，当 handler 返回 true 时，表示 slice1 中的某个元素和 slice2 中的某个元素相匹配
+|[EqualComparableSlice](#EqualComparableSlice)|检查两个切片的值是否相同
+|[EqualMap](#EqualMap)|检查两个 map 是否相等，当 handler 返回 true 时，表示 map1 中的某个元素和 map2 中的某个元素相匹配
+|[EqualComparableMap](#EqualComparableMap)|检查两个 map 的值是否相同
 |[InSlice](#InSlice)|检查 v 是否被包含在 slice 中，当 handler 返回 true 时，表示 v 和 slice 中的某个元素相匹配
 |[InComparableSlice](#InComparableSlice)|检查 v 是否被包含在 slice 中
 |[AllInSlice](#AllInSlice)|检查 values 中的所有元素是否均被包含在 slice 中，当 handler 返回 true 时，表示 values 中的某个元素和 slice 中的某个元素相匹配
@@ -50,6 +54,9 @@ collection 定义了各种对于集合操作有用的各种函数
 |[AnyValueInMaps](#AnyValueInMaps)|检查 maps 中的任意一个元素是否包含 value 中的任意一个元素，当 handler 返回 true 时，表示 value 中的某个元素和 maps 中的某个元素相匹配
 |[KeyInAllMaps](#KeyInAllMaps)|检查 key 是否被包含在 maps 的每一个元素中
 |[AnyKeyInAllMaps](#AnyKeyInAllMaps)|检查 maps 中的每一个元素是否均包含 keys 中任意一个元素
+|[ConvertSliceToBatches](#ConvertSliceToBatches)|将切片 s 转换为分批次的切片，当 batchSize 小于等于 0 或者 s 长度为 0 时，将会返回 nil
+|[ConvertMapKeysToBatches](#ConvertMapKeysToBatches)|将映射的键转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+|[ConvertMapValuesToBatches](#ConvertMapValuesToBatches)|将映射的值转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
 |[ConvertSliceToAny](#ConvertSliceToAny)|将切片转换为任意类型的切片
 |[ConvertSliceToIndexMap](#ConvertSliceToIndexMap)|将切片转换为索引为键的映射
 |[ConvertSliceToIndexOnlyMap](#ConvertSliceToIndexOnlyMap)|将切片转换为索引为键的映射
@@ -99,6 +106,17 @@ collection 定义了各种对于集合操作有用的各种函数
 |[FindMin2MaxFromComparableMap](#FindMin2MaxFromComparableMap)|获取 map 中的最小值和最大值
 |[FindMin2MaxFromMap](#FindMin2MaxFromMap)|获取 map 中的最小值和最大值
 |[SwapSlice](#SwapSlice)|将切片中的两个元素进行交换
+|[LoopSlice](#LoopSlice)|迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+|[ReverseLoopSlice](#ReverseLoopSlice)|逆序迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+|[LoopMap](#LoopMap)|迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedKeyAsc](#LoopMapByOrderedKeyAsc)|按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedKeyDesc](#LoopMapByOrderedKeyDesc)|按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedValueAsc](#LoopMapByOrderedValueAsc)|按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByOrderedValueDesc](#LoopMapByOrderedValueDesc)|按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByKeyGetterAsc](#LoopMapByKeyGetterAsc)|按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByValueGetterAsc](#LoopMapByValueGetterAsc)|按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByKeyGetterDesc](#LoopMapByKeyGetterDesc)|按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+|[LoopMapByValueGetterDesc](#LoopMapByValueGetterDesc)|按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 |[MappingFromSlice](#MappingFromSlice)|将切片中的元素进行转换
 |[MappingFromMap](#MappingFromMap)|将 map 中的元素进行转换
 |[MergeSlices](#MergeSlices)|合并切片
@@ -480,6 +498,214 @@ func TestCloneMaps(t *testing.T) {
 						t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "after clone, the inputV of maps is not equal")
 					}
 				}
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualSlice\[S ~[]V, V any\](slice1 S, slice2 S, handler ComparisonHandler[V]) bool
+<span id="EqualSlice"></span>
+> 检查两个切片是否相等，当 handler 返回 true 时，表示 slice1 中的某个元素和 slice2 中的某个元素相匹配
+>   - 当两个切片的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualSlice(s1, s2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualSlice(s1, s3, func(source, target int) bool {
+		return source == target
+	}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{{"TestEqualSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true}, {"TestEqualSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false}, {"TestEqualSlice_EmptySlice", []int{}, []int{}, true}, {"TestEqualSlice_NilSlice", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualSlice(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualComparableSlice\[S ~[]V, V comparable\](slice1 S, slice2 S) bool
+<span id="EqualComparableSlice"></span>
+> 检查两个切片的值是否相同
+>   - 当两个切片的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualComparableSlice() {
+	s1 := []int{1, 2, 3}
+	s2 := []int{1}
+	s3 := []int{1, 2, 3}
+	fmt.Println(collection.EqualComparableSlice(s1, s2))
+	fmt.Println(collection.EqualComparableSlice(s1, s3))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualComparableSlice(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		inputV   []int
+		expected bool
+	}{{"TestEqualComparableSlice_NonEmptySliceEqual", []int{1, 2, 3}, []int{1, 2, 3}, true}, {"TestEqualComparableSlice_NonEmptySliceNotEqual", []int{1, 2, 3}, []int{1, 2}, false}, {"TestEqualComparableSlice_EmptySlice", []int{}, []int{}, true}, {"TestEqualComparableSlice_NilSlice", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableSlice(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualMap\[M ~map[K]V, K comparable, V any\](map1 M, map2 M, handler ComparisonHandler[V]) bool
+<span id="EqualMap"></span>
+> 检查两个 map 是否相等，当 handler 返回 true 时，表示 map1 中的某个元素和 map2 中的某个元素相匹配
+>   - 当两个 map 的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualMap(m1, m2, func(source, target int) bool {
+		return source == target
+	}))
+	fmt.Println(collection.EqualMap(m1, m3, func(source, target int) bool {
+		return source == target
+	}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{{"TestEqualMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true}, {"TestEqualMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false}, {"TestEqualMap_EmptyMap", map[int]int{}, map[int]int{}, true}, {"TestEqualMap_NilMap", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualMap(c.input, c.inputV, func(source, target int) bool {
+				return source == target
+			})
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func EqualComparableMap\[M ~map[K]V, K comparable, V comparable\](map1 M, map2 M) bool
+<span id="EqualComparableMap"></span>
+> 检查两个 map 的值是否相同
+>   - 当两个 map 的容量不同时，不会影响最终的比较结果
+
+**示例代码：**
+
+```go
+
+func ExampleEqualComparableMap() {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1}
+	m3 := map[string]int{"a": 1, "b": 2}
+	fmt.Println(collection.EqualComparableMap(m1, m2))
+	fmt.Println(collection.EqualComparableMap(m1, m3))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestEqualComparableMap(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		inputV   map[int]int
+		expected bool
+	}{{"TestEqualComparableMap_NonEmptyMapEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1, 2: 2}, true}, {"TestEqualComparableMap_NonEmptyMapNotEqual", map[int]int{1: 1, 2: 2}, map[int]int{1: 1}, false}, {"TestEqualComparableMap_EmptyMap", map[int]int{}, map[int]int{}, true}, {"TestEqualComparableMap_NilMap", nil, nil, true}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var actual = collection.EqualComparableMap(c.input, c.inputV)
+			if actual != c.expected {
+				t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expected, actual, "not as expected")
 			}
 		})
 	}
@@ -1814,6 +2040,158 @@ func TestAnyKeyInAllMaps(t *testing.T) {
 
 
 ***
+#### func ConvertSliceToBatches\[S ~[]V, V any\](s S, batchSize int) []S
+<span id="ConvertSliceToBatches"></span>
+> 将切片 s 转换为分批次的切片，当 batchSize 小于等于 0 或者 s 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertSliceToBatches() {
+	result := collection.ConvertSliceToBatches([]int{1, 2, 3}, 2)
+	for _, v := range result {
+		fmt.Println(v)
+	}
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertSliceToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    []int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertSliceToBatches_NonEmpty", input: []int{1, 2, 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertSliceToBatches_Empty", input: []int{}, batch: 2, expected: nil}, {name: "TestConvertSliceToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertSliceToBatches_NonPositive", input: []int{1, 2, 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertSliceToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+			for i := 0; i < len(actual); i++ {
+				av, ev := actual[i], c.expected[i]
+				if len(av) != len(ev) {
+					t.Errorf("expected: %v, actual: %v", c.expected, actual)
+				}
+				for j := 0; j < len(av); j++ {
+					aj, ej := av[j], ev[j]
+					if reflect.TypeOf(aj).Kind() != reflect.TypeOf(ej).Kind() {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+					if aj != ej {
+						t.Errorf("expected: %v, actual: %v", c.expected, actual)
+					}
+				}
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ConvertMapKeysToBatches\[M ~map[K]V, K comparable, V any\](m M, batchSize int) [][]K
+<span id="ConvertMapKeysToBatches"></span>
+> 将映射的键转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertMapKeysToBatches() {
+	result := collection.ConvertMapKeysToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertMapKeysToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertMapKeysToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertMapKeysToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil}, {name: "TestConvertMapKeysToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertMapKeysToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapKeysToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ConvertMapValuesToBatches\[M ~map[K]V, K comparable, V any\](m M, batchSize int) [][]V
+<span id="ConvertMapValuesToBatches"></span>
+> 将映射的值转换为分批次的切片，当 batchSize 小于等于 0 或者 m 长度为 0 时，将会返回 nil
+
+**示例代码：**
+
+```go
+
+func ExampleConvertMapValuesToBatches() {
+	result := collection.ConvertMapValuesToBatches(map[int]int{1: 1, 2: 2, 3: 3}, 2)
+	fmt.Println(len(result))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestConvertMapValuesToBatches(t *testing.T) {
+	var cases = []struct {
+		name     string
+		input    map[int]int
+		batch    int
+		expected [][]int
+	}{{name: "TestConvertMapValuesToBatches_NonEmpty", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 2, expected: [][]int{{1, 2}, {3}}}, {name: "TestConvertMapValuesToBatches_Empty", input: map[int]int{}, batch: 2, expected: nil}, {name: "TestConvertMapValuesToBatches_Nil", input: nil, batch: 2, expected: nil}, {name: "TestConvertMapValuesToBatches_NonPositive", input: map[int]int{1: 1, 2: 2, 3: 3}, batch: 0, expected: nil}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := collection.ConvertMapValuesToBatches(c.input, c.batch)
+			if len(actual) != len(c.expected) {
+				t.Errorf("expected: %v, actual: %v", c.expected, actual)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
 #### func ConvertSliceToAny\[S ~[]V, V any\](s S) []any
 <span id="ConvertSliceToAny"></span>
 > 将切片转换为任意类型的切片
@@ -2090,6 +2468,7 @@ func TestConvertSliceToBoolMap(t *testing.T) {
 
 func ExampleConvertMapKeysToSlice() {
 	result := collection.ConvertMapKeysToSlice(map[int]int{1: 1, 2: 2, 3: 3})
+	sort.Ints(result)
 	for i, v := range result {
 		fmt.Println(i, v)
 	}
@@ -4262,6 +4641,669 @@ func TestSwapSlice(t *testing.T) {
 				if v != c.expect[i] {
 					t.Fatalf("%s failed, expected: %v, actual: %v, error: %s", c.name, c.expect, c.slice, "the slice is not equal")
 				}
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopSlice\[S ~[]V, V any\](slice S, f func (i int, val V)  bool)
+<span id="LoopSlice"></span>
+> 迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopSlice() {
+	var result []int
+	collection.LoopSlice([]int{1, 2, 3, 4, 5}, func(i int, val int) bool {
+		result = append(result, val)
+		if uint(i) == 1 {
+			return false
+		}
+		return true
+	})
+	fmt.Println(result)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopSlice(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         []int
+		out        []int
+		breakIndex uint
+	}{{"TestLoopSlice_Part", []int{1, 2, 3, 4, 5}, []int{1, 2}, 2}, {"TestLoopSlice_All", []int{1, 2, 3, 4, 5}, []int{1, 2, 3, 4, 5}, 0}, {"TestLoopSlice_Empty", []int{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopSlice(c.in, func(i int, val int) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopSlice(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func ReverseLoopSlice\[S ~[]V, V any\](slice S, f func (i int, val V)  bool)
+<span id="ReverseLoopSlice"></span>
+> 逆序迭代切片 slice 中的每一个函数，并将索引和值传递给 f 函数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleReverseLoopSlice() {
+	var result []int
+	collection.ReverseLoopSlice([]int{1, 2, 3, 4, 5}, func(i int, val int) bool {
+		result = append(result, val)
+		if uint(i) == 1 {
+			return false
+		}
+		return true
+	})
+	fmt.Println(result)
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestReverseLoopSlice(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         []int
+		out        []int
+		breakIndex uint
+	}{{"TestReverseLoopSlice_Part", []int{1, 2, 3, 4, 5}, []int{5, 4}, 2}, {"TestReverseLoopSlice_All", []int{1, 2, 3, 4, 5}, []int{5, 4, 3, 2, 1}, 0}, {"TestReverseLoopSlice_Empty", []int{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.ReverseLoopSlice(c.in, func(i int, val int) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == uint(len(c.in))-c.breakIndex {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("ReverseLoopSlice(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMap\[M ~map[K]V, K comparable, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMap"></span>
+> 迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - m 的迭代顺序是不确定的，因此每次迭代的顺序可能不同
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMap() {
+	var result []int
+	collection.LoopMap(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMap(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        map[int]string
+		breakIndex uint
+	}{{"TestLoopMap_Part", map[int]string{1: "1", 2: "2", 3: "3"}, map[int]string{1: "1", 2: "2"}, 2}, {"TestLoopMap_All", map[int]string{1: "1", 2: "2", 3: "3"}, map[int]string{1: "1", 2: "2", 3: "3"}, 0}, {"TestLoopMap_Empty", map[int]string{}, map[int]string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result = make(map[int]string)
+			collection.LoopMap(c.in, func(i int, key int, val string) bool {
+				result[key] = val
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableMap(result, c.out) {
+				t.Errorf("LoopMap(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedKeyAsc\[M ~map[K]V, K generic.Ordered, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedKeyAsc"></span>
+> 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedKeyAsc() {
+	var result []int
+	collection.LoopMapByOrderedKeyAsc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedKeyAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByOrderedKeyAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2}, 2}, {"TestLoopMapByOrderedKeyAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2, 3}, 0}, {"TestLoopMapByOrderedKeyAsc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByOrderedKeyAsc(c.in, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedKeyAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedKeyDesc\[M ~map[K]V, K generic.Ordered, V any\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedKeyDesc"></span>
+> 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedKeyDesc() {
+	var result []int
+	collection.LoopMapByOrderedKeyDesc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedKeyDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByOrderedKeyDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2}, 2}, {"TestLoopMapByOrderedKeyDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2, 1}, 0}, {"TestLoopMapByOrderedKeyDesc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByOrderedKeyDesc(c.in, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedKeyDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedValueAsc\[M ~map[K]V, K comparable, V generic.Ordered\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedValueAsc"></span>
+> 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedValueAsc() {
+	var result []int
+	collection.LoopMapByOrderedValueAsc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedValueAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByOrderedValueAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2"}, 2}, {"TestLoopMapByOrderedValueAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2", "3"}, 0}, {"TestLoopMapByOrderedValueAsc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByOrderedValueAsc(c.in, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedValueAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByOrderedValueDesc\[M ~map[K]V, K comparable, V generic.Ordered\](m M, f func (i int, key K, val V)  bool)
+<span id="LoopMapByOrderedValueDesc"></span>
+> 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByOrderedValueDesc() {
+	var result []int
+	collection.LoopMapByOrderedValueDesc(map[string]int{"a": 1, "b": 2, "c": 3}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByOrderedValueDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByOrderedValueDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2"}, 2}, {"TestLoopMapByOrderedValueDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2", "1"}, 0}, {"TestLoopMapByOrderedValueDesc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByOrderedValueDesc(c.in, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByOrderedValueDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByKeyGetterAsc\[M ~map[K]V, K comparable, V comparable, N generic.Ordered\](m M, getter func (k K)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByKeyGetterAsc"></span>
+> 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByKeyGetterAsc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByKeyGetterAsc(m, func(k string) int {
+		return m[k]
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByKeyGetterAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByKeyGetterAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2}, 2}, {"TestLoopMapByKeyGetterAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{1, 2, 3}, 0}, {"TestLoopMapByKeyGetterAsc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByKeyGetterAsc(c.in, func(key int) int {
+				return key
+			}, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByKeyGetterAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByValueGetterAsc\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, getter func (v V)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByValueGetterAsc"></span>
+> 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByValueGetterAsc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByValueGetterAsc(m, func(v int) int {
+		return v
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{1, 2, 3}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByValueGetterAsc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByValueGetterAsc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2"}, 2}, {"TestLoopMapByValueGetterAsc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"1", "2", "3"}, 0}, {"TestLoopMapByValueGetterAsc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByValueGetterAsc(c.in, func(val string) string {
+				return val
+			}, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByValueGetterAsc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByKeyGetterDesc\[M ~map[K]V, K comparable, V comparable, N generic.Ordered\](m M, getter func (k K)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByKeyGetterDesc"></span>
+> 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByKeyGetterDesc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByKeyGetterDesc(m, func(k string) int {
+		return m[k]
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByKeyGetterDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []int
+		breakIndex uint
+	}{{"TestLoopMapByKeyGetterDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2}, 2}, {"TestLoopMapByKeyGetterDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []int{3, 2, 1}, 0}, {"TestLoopMapByKeyGetterDesc_Empty", map[int]string{}, []int{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []int
+			collection.LoopMapByKeyGetterDesc(c.in, func(key int) int {
+				return key
+			}, func(i int, key int, val string) bool {
+				result = append(result, key)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByKeyGetterDesc(%v) got %v, want %v", c.in, result, c.out)
+			}
+		})
+	}
+}
+
+```
+
+
+</details>
+
+
+***
+#### func LoopMapByValueGetterDesc\[M ~map[K]V, K comparable, V any, N generic.Ordered\](m M, getter func (v V)  N, f func (i int, key K, val V)  bool)
+<span id="LoopMapByValueGetterDesc"></span>
+> 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
+>   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
+>   - 迭代过程将在 f 函数返回 false 时中断
+
+**示例代码：**
+
+```go
+
+func ExampleLoopMapByValueGetterDesc() {
+	var m = map[string]int{"a": 1, "b": 2, "c": 3}
+	var result []int
+	collection.LoopMapByValueGetterDesc(m, func(v int) int {
+		return v
+	}, func(i int, key string, val int) bool {
+		result = append(result, val)
+		return true
+	})
+	fmt.Println(collection.AllInComparableSlice(result, []int{3, 2, 1}))
+}
+
+```
+
+<details>
+<summary>查看 / 收起单元测试</summary>
+
+
+```go
+
+func TestLoopMapByValueGetterDesc(t *testing.T) {
+	var cases = []struct {
+		name       string
+		in         map[int]string
+		out        []string
+		breakIndex uint
+	}{{"TestLoopMapByValueGetterDesc_Part", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2"}, 2}, {"TestLoopMapByValueGetterDesc_All", map[int]string{1: "1", 2: "2", 3: "3"}, []string{"3", "2", "1"}, 0}, {"TestLoopMapByValueGetterDesc_Empty", map[int]string{}, []string{}, 0}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var result []string
+			collection.LoopMapByValueGetterDesc(c.in, func(val string) string {
+				return val
+			}, func(i int, key int, val string) bool {
+				result = append(result, val)
+				if c.breakIndex != 0 && uint(i) == c.breakIndex-1 {
+					return false
+				}
+				return true
+			})
+			if !collection.EqualComparableSlice(result, c.out) {
+				t.Errorf("LoopMapByValueGetterDesc(%v) got %v, want %v", c.in, result, c.out)
 			}
 		})
 	}
