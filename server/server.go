@@ -94,7 +94,7 @@ type Server struct {
 }
 
 // LoadData 加载绑定的服务器数据
-func LoadData[T any](srv *Server, name string, data any) T {
+func LoadData[T any](srv *Server, name string) T {
 	return srv.data[name].(T)
 }
 
