@@ -5,6 +5,12 @@ import (
 	"github.com/kercylan98/minotaur/utils/collection"
 )
 
+func ExampleMergeSlice() {
+	fmt.Println(collection.MergeSlice(1, 2, 3))
+	// Output:
+	// [1 2 3]
+}
+
 func ExampleMergeSlices() {
 	fmt.Println(
 		collection.MergeSlices(

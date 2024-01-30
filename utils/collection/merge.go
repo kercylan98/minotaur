@@ -1,5 +1,16 @@
 package collection
 
+// MergeSlice 合并切片
+func MergeSlice[V any](values ...V) (result []V) {
+	if len(values) == 0 {
+		return nil
+	}
+
+	result = make([]V, 0, len(values))
+	result = append(result, values...)
+	return
+}
+
 // MergeSlices 合并切片
 func MergeSlices[S ~[]V, V any](slices ...S) (result S) {
 	if len(slices) == 0 {
