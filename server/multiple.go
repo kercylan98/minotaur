@@ -11,19 +11,21 @@ import (
 
 func NewMultipleServer(serverHandle ...func() (addr string, srv *Server)) *MultipleServer {
 	ms := &MultipleServer{
-		servers:   make([]*Server, len(serverHandle), len(serverHandle)),
-		addresses: make([]string, len(serverHandle), len(serverHandle)),
-	}
-	for i := 0; i < len(serverHandle); i++ {
-		ms.addresses[i], ms.servers[i] = serverHandle[i]()
+		servers:       make([]*Server, len(serverHandle), len(serverHandle)),
+		addresses:     make([]string, len(serverHandle), len(serverHandle)),
+		serverHandles: serverHandle,
 	}
 	return ms
 }
 
 type MultipleServer struct {
-	servers          []*Server
-	addresses        []string
-	exitEventHandles []func()
+	servers                  []*Server
+	addresses                []string
+	exitEventHandles         []func()
+	startFinishEventHandlers []func()
+	services                 []func()
+	preload                  []func()
+	serverHandles            []func() (addr string, srv *Server)
 }
 
 func (slf *MultipleServer) Run() {
@@ -33,6 +35,15 @@ func (slf *MultipleServer) Run() {
 		close(exceptionChannel)
 		close(runtimeExceptionChannel)
 	}()
+	for _, service := range slf.services {
+		service()
+	}
+	for _, preload := range slf.preload {
+		preload()
+	}
+	for i := 0; i < len(slf.serverHandles); i++ {
+		slf.addresses[i], slf.servers[i] = slf.serverHandles[i]()
+	}
 	var wait sync.WaitGroup
 	var hasKcp bool
 	for i := 0; i < len(slf.servers); i++ {
@@ -69,6 +80,7 @@ func (slf *MultipleServer) Run() {
 		kcp.SystemTimedSched.Close()
 	}
 
+	slf.OnStartFinishEvent()
 	showServersInfo(serverMultipleMark, slf.servers...)
 
 	systemSignal := make(chan os.Signal, 1)
@@ -118,6 +130,17 @@ func (slf *MultipleServer) RegExitEvent(handle func()) {
 
 func (slf *MultipleServer) OnExitEvent() {
 	for _, handle := range slf.exitEventHandles {
+		handle()
+	}
+}
+
+// RegStartFinishEvent 注册启动完成事件
+func (slf *MultipleServer) RegStartFinishEvent(handle func()) {
+	slf.startFinishEventHandlers = append(slf.startFinishEventHandlers, handle)
+}
+
+func (slf *MultipleServer) OnStartFinishEvent() {
+	for _, handle := range slf.startFinishEventHandlers {
 		handle()
 	}
 }
