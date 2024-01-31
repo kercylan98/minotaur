@@ -47,15 +47,6 @@ func Run() {
 	// OnPreload
 	for i := 0; i < len(m.services); i++ {
 		s := m.services[i]
-		for f := 0; f < s.vof.Elem().NumField(); f++ {
-			field := s.vof.Elem().Field(f)
-			for _, v := range tvm {
-				if v.Type().AssignableTo(field.Type()) {
-					field.Set(v)
-					break
-				}
-			}
-		}
 		s.instance.OnPreload()
 		log.Info(fmt.Sprintf("service %s preloaded", s.name))
 	}

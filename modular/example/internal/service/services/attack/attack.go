@@ -11,15 +11,16 @@ type Service struct {
 }
 
 func (a *Service) OnInit() {
+	expose.AttackExpose = a
 	a.name = "attack"
 }
 
 func (a *Service) OnPreload() {
-	fmt.Println(a.name, "call", a.Login.Name())
+	a.Login = expose.LoginExpose
 }
 
 func (a *Service) OnMount() {
-
+	fmt.Println("attack service mounted, call", a.Login.Name(), "service")
 }
 
 func (a *Service) Name() string {
