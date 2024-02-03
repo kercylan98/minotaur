@@ -101,6 +101,7 @@ func (n Network) preprocessing(srv *Server) {
 	case NetworkUdp6:
 	case NetworkUnix:
 	case NetworkHttp:
+		gin.SetMode(gin.ReleaseMode)
 		srv.ginServer = gin.New()
 		srv.httpServer = &http.Server{
 			Handler: srv.ginServer,
@@ -251,18 +252,18 @@ func (n Network) httpMode(state chan<- error, srv *Server) {
 
 // websocketMode websocket模式
 func (n Network) websocketMode(state chan<- error, srv *Server) {
-	l, err := net.Listen(string(NetworkTcp), srv.addr)
-	if err != nil {
-		super.TryWriteChannel(state, err)
-		return
-	}
 	var pattern string
 	var index = strings.Index(srv.addr, "/")
 	if index == -1 {
 		pattern = "/"
 	} else {
 		pattern = srv.addr[index:]
-		srv.addr = srv.addr[:index]
+		//srv.addr = srv.addr[:index]
+	}
+	l, err := net.Listen(string(NetworkTcp), srv.addr[:index])
+	if err != nil {
+		super.TryWriteChannel(state, err)
+		return
 	}
 	if srv.websocketUpgrader == nil {
 		srv.websocketUpgrader = DefaultWebsocketUpgrader()
