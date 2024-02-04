@@ -253,14 +253,16 @@ func (n Network) httpMode(state chan<- error, srv *Server) {
 // websocketMode websocket模式
 func (n Network) websocketMode(state chan<- error, srv *Server) {
 	var pattern string
+	var address string
 	var index = strings.Index(srv.addr, "/")
 	if index == -1 {
 		pattern = "/"
+		address = srv.addr
 	} else {
 		pattern = srv.addr[index:]
-		//srv.addr = srv.addr[:index]
+		address = srv.addr[:index]
 	}
-	l, err := net.Listen(string(NetworkTcp), srv.addr[:index])
+	l, err := net.Listen(string(NetworkTcp), address)
 	if err != nil {
 		super.TryWriteChannel(state, err)
 		return
