@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/kercylan98/minotaur/compare/v0.5.3...v0.5.4) (2024-02-04)
+
+
+### Bug Fixes | 修复
+
+* 修复 server 包 WebSocket 路由兼容性问题 ([590d0a1](https://github.com/kercylan98/minotaur/commit/590d0a1887412d62831a2cbbe5e699ac3fd19a6c))
+
 ## [0.5.3](https://github.com/kercylan98/minotaur/compare/v0.5.2...v0.5.3) (2024-02-04)
 
 
