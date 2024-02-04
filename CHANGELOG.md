@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.3](https://github.com/kercylan98/minotaur/compare/v0.5.2...v0.5.3) (2024-02-04)
+
+
+### Other | 其他更改
+
+* 移除 modular 包部分日志 ([04a92b2](https://github.com/kercylan98/minotaur/commit/04a92b2805f03571edd355ae032847aef6728bf1))
+
+
+### Features | 新特性
+
+* collection 包新增 MergeSlice 函数，用于将多个同类型对象合并为一个切片 ([4799a8c](https://github.com/kercylan98/minotaur/commit/4799a8cb73d2bccb2b8a1fd0b33bc2a9746a3f89))
+* server.MultipleServer 支持绑定 Service ([6b24b7c](https://github.com/kercylan98/minotaur/commit/6b24b7c5760705138a8818870de8afa692895fdd))
+* timer 包新增 GetCurrWeekDate 和 GetLastWeekDate 函数 ([ad4777a](https://github.com/kercylan98/minotaur/commit/ad4777a379753750fac9d98b7b4f0b80ca688c39))
+* 新增 modular 包，用于实现模块化项目 ([c95b206](https://github.com/kercylan98/minotaur/commit/c95b206592b3be31c1fe5ece891434d03e968c73))
+
+
+### Bug Fixes | 修复
+
+* 修复 server 使用 WebSocket 模式下，路由不支持 :1234/ws 的格式问题 ([f8e368a](https://github.com/kercylan98/minotaur/commit/f8e368a8caa93be1bebfadef6f65649b31eb3640))
+* 修复 server.LoadData 函数签名的错误 ([e585e12](https://github.com/kercylan98/minotaur/commit/e585e12a7243a37cbb335a72500f425d0de188bf))
+* 修复 times.GetCurrWeekDate 和 times.GetLastWeekDate 在 week 参数与今日 week 相同的情况下，会多获取到一周的问题 ([902dada](https://github.com/kercylan98/minotaur/commit/902dadad5abffe215ababb5ce6d310141708f6fc))
+* 移除 modular 包的自动注入，优化 modular.Service 接口说明 ([d531939](https://github.com/kercylan98/minotaur/commit/d531939903e14fdc191263433214515fc12d8a93))
+
 ## [0.5.2](https://github.com/kercylan98/minotaur/compare/v0.5.1...v0.5.2) (2024-01-24)
 
 
