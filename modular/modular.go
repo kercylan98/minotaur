@@ -55,6 +55,5 @@ func Run() {
 	for i := 0; i < len(m.services); i++ {
 		s := m.services[i]
 		s.instance.OnMount()
-		log.Info(fmt.Sprintf("service %s mounted", s.name))
 	}
 }
