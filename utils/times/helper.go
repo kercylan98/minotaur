@@ -20,7 +20,7 @@ func GetCurrWeekDate(now time.Time, week time.Weekday) time.Time {
 	w := int(week)
 	monday := GetMondayZero(now)
 	var curr time.Time
-	if WeekDay(now) > w {
+	if WeekDay(now) >= w {
 		curr = monday.AddDate(0, 0, w-1)
 	} else {
 		curr = monday.AddDate(0, 0, w-1)
@@ -34,7 +34,7 @@ func GetLastWeekDate(now time.Time, week time.Weekday) time.Time {
 	w := int(week)
 	monday := GetMondayZero(now)
 	var last time.Time
-	if WeekDay(now) > w {
+	if WeekDay(now) >= w {
 		last = monday.AddDate(0, 0, -(7 - w + 1))
 	} else {
 		last = monday.AddDate(0, 0, -(7 - w + 1))
