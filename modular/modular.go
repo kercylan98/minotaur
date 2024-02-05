@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
 	"reflect"
+	"sync"
 )
 
 var application *modular
@@ -56,4 +57,19 @@ func Run() {
 		s := m.services[i]
 		s.instance.OnMount()
 	}
+
+	// OnBlock
+	var wait = new(sync.WaitGroup)
+	for i := 0; i < len(m.services); i++ {
+		s := m.services[i]
+		if block, ok := s.instance.(Block); ok {
+			wait.Add(1)
+			go func(wait *sync.WaitGroup) {
+				defer wait.Done()
+				block.OnBlock()
+			}(wait)
+		}
+	}
+	wait.Wait()
+	log.Info("all services exited")
 }
