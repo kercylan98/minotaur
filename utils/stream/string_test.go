@@ -767,7 +767,7 @@ func TestString_Split(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := stream.NewString(c.in).Split(c.sep)
-			for i, v := range got {
+			for i, v := range got.Elem() {
 				if v != c.want[i] {
 					t.Fatalf("NewString(%s).Split(%s) = %v; want %v", c.in, c.sep, got, c.want)
 				}
@@ -791,7 +791,7 @@ func TestString_SplitN(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := stream.NewString(c.in).SplitN(c.sep, c.n)
-			for i, v := range got {
+			for i, v := range got.Elem() {
 				if v != c.want[i] {
 					t.Fatalf("NewString(%s).SplitN(%s, %d) = %v; want %v", c.in, c.sep, c.n, got, c.want)
 				}
@@ -814,7 +814,7 @@ func TestString_Batched(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := stream.NewString(c.in).Batched(c.size)
-			for i, v := range got {
+			for i, v := range got.Elem() {
 				if v != c.want[i] {
 					t.Fatalf("NewString(%s).Batched(%d) = %v; want %v", c.in, c.size, got, c.want)
 				}

@@ -15,7 +15,7 @@ type String[S ~string] struct {
 	str S
 }
 
-// Elem 返回字符串
+// Elem 返回原始元素
 func (s *String[S]) Elem() S {
 	return s.str
 }
@@ -287,7 +287,7 @@ func (s *String[S]) Update(f func(S) S) *String[S] {
 }
 
 // Split 返回字符串切片
-func (s *String[S]) Split(sep string) Strings[S] {
+func (s *String[S]) Split(sep string) *Strings[S] {
 	slice := strings.Split(string(s.str), sep)
 	rep := make([]S, len(slice))
 	for i, v := range slice {
@@ -297,7 +297,7 @@ func (s *String[S]) Split(sep string) Strings[S] {
 }
 
 // SplitN 返回字符串切片
-func (s *String[S]) SplitN(sep string, n int) Strings[S] {
+func (s *String[S]) SplitN(sep string, n int) *Strings[S] {
 	slice := strings.SplitN(string(s.str), sep, n)
 	rep := make([]S, len(slice))
 	for i, v := range slice {
@@ -307,7 +307,7 @@ func (s *String[S]) SplitN(sep string, n int) Strings[S] {
 }
 
 // Batched 将字符串按照指定长度分组，最后一组可能小于指定长度
-func (s *String[S]) Batched(size int) Strings[S] {
+func (s *String[S]) Batched(size int) *Strings[S] {
 	var str = string(s.str)
 	var result = make([]S, 0, len(str)/size+1)
 	for len(str) >= size {
