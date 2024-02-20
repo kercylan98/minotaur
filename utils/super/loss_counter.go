@@ -38,3 +38,17 @@ func (slf *LossCounter) String() string {
 	})
 	return strings.Join(lines, "\n")
 }
+
+// StopWatch 计时器，返回 fn 执行耗时
+func StopWatch(fn func()) time.Duration {
+	start := time.Now()
+	fn()
+	return time.Since(start)
+}
+
+// StopWatchAndPrintln 计时器，返回 fn 执行耗时，并打印耗时
+func StopWatchAndPrintln(name string, fn func()) time.Duration {
+	loss := StopWatch(fn)
+	fmt.Println(fmt.Sprintf("%s cost: %s", name, loss.String()))
+	return loss
+}
