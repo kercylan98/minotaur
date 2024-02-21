@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-// Circle 圆形
+// Circle 由多个点组成的圆形数据结构
 type Circle[V generic.SignedNumber] struct {
 	Shape[V]
 }

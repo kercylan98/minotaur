@@ -32,6 +32,8 @@ func GetOppositionDirection(direction Direction) Direction {
 		return DirectionRight
 	case DirectionRight:
 		return DirectionLeft
+	case DirectionUnknown:
+		return DirectionUnknown
 	}
 	return DirectionUnknown
 }
@@ -89,21 +91,14 @@ func GetDirectionNextWithPos[V generic.SignedNumber](direction Direction, width,
 
 // CalcDirection 计算点2位于点1的方向
 func CalcDirection[V generic.SignedNumber](x1, y1, x2, y2 V) Direction {
-	var oneEighty = 180
-	var fortyFive = 45
-	var oneThirtyFive = 135
-	var twoTwentyFive = 225
-	var threeFifteen = 315
-	var end = 360
-	var start = 0
-	angle := CalcAngle(x1, y1, x2, y2) + V(oneEighty)
-	if angle > V(oneThirtyFive) && angle <= V(twoTwentyFive) {
+	angle := CalcAngle(float64(x1), float64(y1), float64(x2), float64(y2)) + 180
+	if angle > 45 && angle <= 225 {
 		return DirectionRight
-	} else if (angle > V(threeFifteen) && angle <= V(end)) || (angle >= V(start) && angle <= V(fortyFive)) {
+	} else if (angle > 315 && angle <= 360) || (angle >= 0 && angle <= 45) {
 		return DirectionLeft
-	} else if angle > V(twoTwentyFive) && angle <= V(threeFifteen) {
+	} else if angle > 225 && angle <= 315 {
 		return DirectionUp
-	} else if angle > V(fortyFive) && angle <= V(oneThirtyFive) {
+	} else if angle > 45 && angle <= 134 {
 		return DirectionDown
 	}
 	return DirectionUnknown
@@ -141,20 +136,18 @@ func CalcNewCoordinate[V generic.SignedNumber](x, y, angle, distance V) (newX, n
 
 // CalcRadianWithAngle 根据角度 angle 计算弧度
 func CalcRadianWithAngle[V generic.SignedNumber](angle V) V {
-	var pi = math.Pi
-	var dividend = 180.0
-	return angle * V(pi) / V(dividend)
+	return V(float64(angle) * math.Pi / 180)
 }
 
 // CalcAngleDifference 计算两个角度之间的最小角度差
 func CalcAngleDifference[V generic.SignedNumber](angleA, angleB V) V {
 	pi := math.Pi
-	t := angleA - angleB
-	a := t + V(pi)
-	b := V(pi) * 2
-	t = V(math.Floor(float64(a/b))) * b
-	t -= V(pi)
-	return t
+	t := float64(angleA) - float64(angleB)
+	a := t + math.Pi
+	b := math.Pi * 2
+	t = math.Floor(a/b) * b
+	t -= pi
+	return V(t)
 }
 
 // CalcRayIsIntersect 根据给定的位置和角度生成射线，检测射线是否与多边形发生碰撞

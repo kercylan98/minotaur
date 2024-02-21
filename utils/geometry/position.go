@@ -84,6 +84,18 @@ func (slf Point[V]) Abs() Point[V] {
 	return NewPoint(V(math.Abs(float64(slf.GetX()))), V(math.Abs(float64(slf.GetY()))))
 }
 
+// Distance 返回两个点之间的距离
+func (slf Point[V]) Distance(point Point[V]) float64 {
+	return math.Sqrt(float64(slf.DistanceSquared(point)))
+}
+
+// DistanceSquared 返回两个点之间的距离的平方
+func (slf Point[V]) DistanceSquared(point Point[V]) V {
+	x, y := slf.GetXY()
+	px, py := point.GetXY()
+	return (x-px)*(x-px) + (y-py)*(y-py)
+}
+
 // Max 返回两个位置中每个维度的最大值组成的新的位置
 func (slf Point[V]) Max(point Point[V]) Point[V] {
 	x, y := slf.GetXY()

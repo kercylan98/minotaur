@@ -4,19 +4,20 @@ import "github.com/kercylan98/minotaur/utils/generic"
 
 // GetAdjacentTranslatePos 获取一个连续位置的矩阵中，特定位置相邻的最多四个平移方向（上下左右）的位置
 func GetAdjacentTranslatePos[T any, P generic.SignedNumber](matrix []T, width, pos P) (result []P) {
-	size := P(len(matrix))
-	currentRow := pos / width
-	if up := pos - width; up >= 0 {
-		result = append(result, up)
+	wf, pf := float64(width), float64(pos)
+	size := float64(len(matrix))
+	currentRow := pf / wf
+	if up := -wf; up >= 0 {
+		result = append(result, P(up))
 	}
-	if down := pos + width; down < size {
-		result = append(result, down)
+	if down := pf + wf; down < size {
+		result = append(result, P(down))
 	}
-	if left := pos - 1; left >= 0 && currentRow == (left/width) {
-		result = append(result, left)
+	if left := pf - 1; left >= 0 && currentRow == (left/wf) {
+		result = append(result, P(left))
 	}
-	if right := pos + 1; right < size && currentRow == (right/width) {
-		result = append(result, right)
+	if right := pf + 1; right < size && currentRow == (right/wf) {
+		result = append(result, P(right))
 	}
 	return
 }
@@ -61,19 +62,20 @@ func GetAdjacentTranslateCoordinateYX[T any, P generic.SignedNumber](matrix [][]
 
 // GetAdjacentDiagonalsPos 获取一个连续位置的矩阵中，特定位置相邻的对角线最多四个方向的位置
 func GetAdjacentDiagonalsPos[T any, P generic.SignedNumber](matrix []T, width, pos P) (result []P) {
-	size := P(len(matrix))
-	currentRow := pos / width
-	if topLeft := pos - width - 1; topLeft >= 0 && currentRow-1 == (topLeft/width) {
-		result = append(result, topLeft)
+	size := float64(len(matrix))
+	wf, pf := float64(width), float64(pos)
+	currentRow := pf / wf
+	if topLeft := pf - wf - 1; topLeft >= 0 && currentRow-1 == (topLeft/wf) {
+		result = append(result, P(topLeft))
 	}
-	if topRight := pos - width + 1; topRight >= 0 && currentRow-1 == (topRight/width) {
-		result = append(result, topRight)
+	if topRight := pf - wf + 1; topRight >= 0 && currentRow-1 == (topRight/wf) {
+		result = append(result, P(topRight))
 	}
-	if bottomLeft := pos + width - 1; bottomLeft < size && currentRow+1 == (bottomLeft/width) {
-		result = append(result, bottomLeft)
+	if bottomLeft := pf + wf - 1; bottomLeft < size && currentRow+1 == (bottomLeft/wf) {
+		result = append(result, P(bottomLeft))
 	}
-	if bottomRight := pos + width + 1; bottomRight < size && currentRow+1 == (bottomRight/width) {
-		result = append(result, bottomRight)
+	if bottomRight := pf + wf + 1; bottomRight < size && currentRow+1 == (bottomRight/wf) {
+		result = append(result, P(bottomRight))
 	}
 	return
 }
@@ -326,13 +328,13 @@ func GetRectangleFullPos[V generic.SignedNumber](width, height V) (result []V) {
 // CalcRectangleCentroid 计算矩形质心
 //   - 非多边形质心计算，仅为顶点的平均值 - 该区域中多边形因子的适当质心
 func CalcRectangleCentroid[V generic.SignedNumber](shape Shape[V]) Point[V] {
-	x, y := V(0), V(0)
-	length := V(shape.PointCount())
+	var x, y float64
+	length := float64(shape.PointCount())
 	for _, point := range shape.Points() {
-		x += point.GetX()
-		y += point.GetY()
+		x += float64(point.GetX())
+		y += float64(point.GetY())
 	}
 	x /= length
 	y /= length
-	return NewPoint(x, y)
+	return NewPoint(V(x), V(x))
 }
