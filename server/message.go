@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
+	"sync"
 )
 
 const (
@@ -87,6 +88,7 @@ type Message struct {
 	producer         string
 	name             string
 	t                MessageType
+	l                *sync.RWMutex
 }
 
 // bindDispatcher 绑定分发器
@@ -101,6 +103,10 @@ func (slf *Message) GetProducer() string {
 
 // reset 重置消息结构体
 func (slf *Message) reset() {
+	if slf.l != nil {
+		slf.l.Lock()
+		defer slf.l.Unlock()
+	}
 	slf.conn = nil
 	slf.ordinaryHandler = nil
 	slf.exceptionHandler = nil
