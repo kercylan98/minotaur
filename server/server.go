@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -437,13 +438,16 @@ func (srv *Server) dispatchMessage(dispatcherIns *dispatcher.Dispatcher[string, 
 		cancel context.CancelFunc
 	)
 	if srv.deadlockDetect > 0 {
+		msg.l = new(sync.RWMutex)
 		ctx, cancel = context.WithTimeout(context.Background(), srv.deadlockDetect)
 		go func(ctx context.Context, srv *Server, msg *Message) {
 			select {
 			case <-ctx.Done():
 				if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
-					log.Warn("Server", log.String("MessageType", messageNames[msg.t]), log.String("Info", msg.String()), log.Any("SuspectedDeadlock", msg))
+					msg.l.RLock()
+					log.Warn("Server", log.String("SuspectedDeadlock", msg.String()))
 					srv.OnDeadlockDetectEvent(msg)
+					msg.l.RUnlock()
 				}
 			}
 		}(ctx, srv, msg)

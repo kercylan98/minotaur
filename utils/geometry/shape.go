@@ -413,7 +413,7 @@ func (slf Shape[V]) getAllGraphicCompositionWithDesc(opt *shapeSearchOptions) (r
 	return
 }
 
-// CalcBoundingRadius 计算多边形转换为圆的半径
+// CalcBoundingRadius 计算多边形转换为圆的半径，即外接圆的半径
 func CalcBoundingRadius[V generic.SignedNumber](shape Shape[V]) V {
 	var boundingRadius V
 	var centroid = CalcRectangleCentroid(shape)
@@ -424,6 +424,11 @@ func CalcBoundingRadius[V generic.SignedNumber](shape Shape[V]) V {
 		}
 	}
 	return boundingRadius
+}
+
+// CalcBoundingRadiusWithWidthAndHeight 计算多边形转换为圆的半径，即外接圆的半径
+func CalcBoundingRadiusWithWidthAndHeight[V generic.SignedNumber](width, height V) V {
+	return V(math.Sqrt(float64(width*width+height*height)) / 2)
 }
 
 // CalcBoundingRadiusWithCentroid 计算多边形在特定质心下圆的半径

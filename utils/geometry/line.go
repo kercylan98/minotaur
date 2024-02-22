@@ -172,7 +172,7 @@ func CalcLineSegmentIsIntersect[V generic.SignedNumber](line1, line2 LineSegment
 
 // CalcLineSegmentSlope 计算线段的斜率
 func CalcLineSegmentSlope[V generic.SignedNumber](line LineSegment[V]) V {
-	return (line.GetEnd().GetY() - line.GetStart().GetY()) / (line.GetEnd().GetX() - line.GetStart().GetX())
+	return V((float64(line.GetEnd().GetY()) - float64(line.GetStart().GetY())) / (float64(line.GetEnd().GetX()) - float64(line.GetStart().GetX())))
 }
 
 // CalcLineSegmentIntercept 计算线段的截距

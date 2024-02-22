@@ -50,7 +50,7 @@ func newType(expr ast.Expr) *Type {
 					params = append(params, fmt.Sprintf("%s %s", f.Name, f.Type.Sign))
 				}
 				s = strings.Join(params, ", ")
-				if brackets {
+				if brackets && strings.HasSuffix(s, ")") && strings.HasPrefix(s, "(") {
 					s = "(" + s + ")"
 				}
 			}
