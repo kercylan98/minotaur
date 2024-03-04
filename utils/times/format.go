@@ -2,6 +2,7 @@ package times
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/utils/generic"
 	"math"
 	"strconv"
 	"time"
@@ -59,4 +60,9 @@ func IntervalFormat(time1, time2 time.Time) string {
 		break
 	}
 	return res
+}
+
+// ToSecDuration 转换为秒级 time.Duration
+func ToSecDuration[V generic.Number](v V) time.Duration {
+	return Second * time.Duration(int64(v))
 }

@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-// NewPrioritySlice 创建一个优先级切片
+// NewPrioritySlice 创建一个优先级切片，优先级越低越靠前
 func NewPrioritySlice[V any](lengthAndCap ...int) *PrioritySlice[V] {
 	p := &PrioritySlice[V]{}
 	if len(lengthAndCap) > 0 {
@@ -19,7 +19,7 @@ func NewPrioritySlice[V any](lengthAndCap ...int) *PrioritySlice[V] {
 	return p
 }
 
-// PrioritySlice 是一个优先级切片
+// PrioritySlice 是一个优先级切片，优先级越低越靠前
 type PrioritySlice[V any] struct {
 	items []*priorityItem[V]
 }
