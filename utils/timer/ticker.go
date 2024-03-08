@@ -16,8 +16,8 @@ type Ticker struct {
 	timers map[string]*Scheduler
 	lock   sync.RWMutex
 
-	handle func(name string, caller func())
-	mark   string
+	handler func(name string, caller func())
+	mark    string
 }
 
 // Mark 获取定时器的标记
@@ -33,6 +33,7 @@ func (slf *Ticker) Release() {
 
 	slf.lock.Lock()
 	slf.mark = ""
+	slf.handler = nil
 	for name, scheduler := range slf.timers {
 		scheduler.close()
 		delete(slf.timers, name)
@@ -94,8 +95,8 @@ func (slf *Ticker) CronByInstantly(name, expression string, handleFunc interface
 		f := reflect.ValueOf(handleFunc)
 		slf.lock.RLock()
 		defer slf.lock.RUnlock()
-		if slf.handle != nil {
-			slf.handle(name, func() {
+		if slf.handler != nil {
+			slf.handler(name, func() {
 				f.Call(values)
 			})
 		} else {
@@ -147,9 +148,9 @@ func (slf *Ticker) loop(name string, after, interval time.Duration, expr *cronex
 
 	slf.lock.Lock()
 	slf.timers[name] = scheduler
-	if slf.handle != nil {
+	if slf.handler != nil {
 		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, func() {
-			slf.handle(scheduler.Name(), scheduler.Caller)
+			slf.handler(scheduler.Name(), scheduler.Caller)
 		})
 	} else {
 		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, scheduler.Caller)

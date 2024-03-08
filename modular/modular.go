@@ -3,7 +3,6 @@ package modular
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/utils/log"
-	"reflect"
 	"sync"
 )
 
@@ -27,14 +26,12 @@ func (m *modular) RegisterServices(s ...Service) {
 func Run() {
 	m := application
 	var names = make(map[string]bool)
-	var tvm = make(map[reflect.Type]reflect.Value)
 	for i := 0; i < len(m.registerServices); i++ {
 		s := newService(m.registerServices[i])
 		if names[s.name] {
 			panic(fmt.Errorf("service %s is already registered", s.name))
 		}
 		names[s.name] = true
-		tvm[s.vof.Type()] = s.vof
 		m.services = append(m.services, s)
 	}
 
