@@ -150,7 +150,11 @@ func (slf *Ticker) loop(name string, after, interval time.Duration, expr *cronex
 	slf.timers[name] = scheduler
 	if slf.handler != nil {
 		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, func() {
-			slf.handler(scheduler.Name(), scheduler.Caller)
+			slf.lock.RLock()
+			defer slf.lock.RUnlock()
+			if slf.handler != nil {
+				slf.handler(scheduler.Name(), scheduler.Caller)
+			}
 		})
 	} else {
 		scheduler.timer = slf.wheel.ScheduleFunc(scheduler, scheduler.Caller)
