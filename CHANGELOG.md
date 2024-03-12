@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.5.4](https://github.com/kercylan98/minotaur/compare/v0.5.3...v0.5.4) (2024-03-12)
+
+
+### Other | 其他更改
+
+* 升级 go 版本至 1.22.0 ([7333101](https://github.com/kercylan98/minotaur/commit/7333101dc68142b02c28279306b3faa667d27b77))
+
+
+### Features | 新特性
+
+* geometry 包新增 SimpleCircle 结构体，用于表示仅由圆心及半径组成的圆形，包含投影、距离等常用函数。优化 geometry 中的计算函数，所有计算入参均会转换为 float64 运算，输出时转换回原有的泛型类型 ([6846c9d](https://github.com/kercylan98/minotaur/commit/6846c9dfc70b8eb6b326529908ef18f29e4a2a30))
+* modular 包新增 Block 接口，当模块化服务实现 modular.Service 后可选择的实现 Block 接口，该接口将适用于具有阻塞等待需求的服务，例如网络服务器。 ([3549fcc](https://github.com/kercylan98/minotaur/commit/3549fcca11691299e311928fb79ee15863a276cf))
+* modular 包新增 dimension 概念，适用于根据特定宿主进行模块化，例如房间与房间之间的各组件相互隔离 ([1402b85](https://github.com/kercylan98/minotaur/commit/1402b854c617af0217f25ff49099b650959b7d3f))
+* super 包新增 StopWatch 和 StopWatchAndPrintln 函数，用于追踪函数运行时间 ([7fa0e68](https://github.com/kercylan98/minotaur/commit/7fa0e6863613bbd137be98fa5f4d57345622e0c2))
+* 完善 stream 包对于 []string 的操作 ([a2695f4](https://github.com/kercylan98/minotaur/commit/a2695f4fcf2a266d3fc535d67d05d07259168d2f))
+
+
+### Bug Fixes | 修复
+
+* 修复 geometry 包 SimpleCircle.Projection 函数不正确的问题。优化部分注释及添加部分函数 ([f7c3701](https://github.com/kercylan98/minotaur/commit/f7c37016cef946c9e8e3a4366139c43fee5f8eb8))
+* 修复 server 包 WebSocket 路由兼容性问题 ([590d0a1](https://github.com/kercylan98/minotaur/commit/590d0a1887412d62831a2cbbe5e699ac3fd19a6c))
+* 修复 server 包死锁检测中 Message 读写的竞态问题 ([b81f972](https://github.com/kercylan98/minotaur/commit/b81f972fdadb5fb1e5d13667f558ef4c58788036))
+* 修复 timer.Ticker 并发问题 ([d1d5bd4](https://github.com/kercylan98/minotaur/commit/d1d5bd40d488bc1c7b2c4c1e0cbaa3b7190c87f4))
+* 移除 modular.go 中不必要的代码，修复 timer.Ticker 释放后 handler 指针污染的问题 ([17cdad2](https://github.com/kercylan98/minotaur/commit/17cdad2c6e00b2ddb405ff8ec23344be60757640))
+
+
+### Docs | 文档优化
+
+* 完善 README.md ([40acb56](https://github.com/kercylan98/minotaur/commit/40acb567a70ff3f577fb6f009ef7ec5faa52de8b))
+
 ## [0.5.3](https://github.com/kercylan98/minotaur/compare/v0.5.2...v0.5.3) (2024-02-04)
 
 
