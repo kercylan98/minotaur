@@ -29,6 +29,11 @@ func (sc SimpleCircle[V]) String() string {
 	return fmt.Sprintf("SimpleCircle{centroid: %v, %v, radius: %v}", sc.centroid.GetX(), sc.centroid.GetY(), sc.radius)
 }
 
+// IsZero 反映该圆形是否为零值的无效圆形
+func (sc SimpleCircle[V]) IsZero() bool {
+	return sc.radius == V(0)
+}
+
 // Centroid 获取圆形质心位置
 func (sc SimpleCircle[V]) Centroid() Point[V] {
 	return sc.centroid
@@ -74,15 +79,18 @@ func (sc SimpleCircle[V]) Area() V {
 	return sc.radius * sc.radius
 }
 
-// Projection 获取圆形投影到另一个圆形的特定比例下的位置和半径
+// Projection 获取圆形投影到另一个圆形的特定比例下的位置和半径（同心合并）
 func (sc SimpleCircle[V]) Projection(circle SimpleCircle[V], ratio float64) SimpleCircle[V] {
 	// 计算圆心朝目标按比例移动后的位置
-	distance := float64(sc.Centroid().Distance(circle.centroid))
+	distance := sc.Centroid().Distance(circle.Centroid())
 	moveDistance := distance * ratio
-	newX := float64(sc.CentroidX()) + moveDistance*(float64(circle.CentroidX())-float64(sc.CentroidX()))/distance
-	newY := float64(sc.CentroidY()) + moveDistance*(float64(circle.CentroidY())-float64(sc.CentroidY()))/distance
+	newX := float64(circle.CentroidX()) + moveDistance*(float64(sc.CentroidX())-float64(circle.CentroidX()))/distance
+	newY := float64(circle.CentroidY()) + moveDistance*(float64(sc.CentroidY())-float64(circle.CentroidY()))/distance
 
-	return NewSimpleCircle(V(float64(sc.radius)*ratio), NewPoint(V(newX), V(newY)))
+	// 计算新的半径
+	newRadius := float64(sc.radius) + (float64(circle.radius)-float64(sc.radius))*(1-ratio)
+
+	return NewSimpleCircle(V(newRadius), NewPoint(V(newX), V(newY)))
 }
 
 // Length 获取圆的周长

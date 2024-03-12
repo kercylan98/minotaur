@@ -109,6 +109,19 @@ func (slf Point[V]) Max(point Point[V]) Point[V] {
 	return NewPoint(x, y)
 }
 
+// Move 返回向特定角度移动特定距离后的新的位置，其中 angle 期待的角度范围是 -180~180
+func (slf Point[V]) Move(angle, direction V) Point[V] {
+	df := float64(direction)
+	// 将角度转换为弧度
+	radian := float64(angle) * (math.Pi / 180.0)
+
+	// 计算新的坐标
+	newX := float64(slf.GetX()) + df*math.Cos(radian)
+	newY := float64(slf.GetY()) + df*math.Sin(radian)
+
+	return NewPoint(V(newX), V(newY))
+}
+
 // Min 返回两个位置中每个维度的最小值组成的新的位置
 func (slf Point[V]) Min(point Point[V]) Point[V] {
 	x, y := slf.GetXY()

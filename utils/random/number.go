@@ -13,6 +13,30 @@ func Int64(min int64, max int64) int64 {
 	return min + rand.Int63n(max+1-min)
 }
 
+// Int32 返回一个介于min和max之间的的int32类型的随机数。
+func Int32(min int32, max int32) int32 {
+	if min == max {
+		return min
+	}
+	return int32(Int64(int64(min), int64(max)))
+}
+
+// Float32Range 返回一个介于min和max之间的的float32类型的随机数。
+func Float32Range(min float32, max float32) float32 {
+	if min == max {
+		return min
+	}
+	return min + rand.Float32()*(max-min)
+}
+
+// Float64Range 返回一个介于min和max之间的的float64类型的随机数。
+func Float64Range(min float64, max float64) float64 {
+	if min == max {
+		return min
+	}
+	return min + rand.Float64()*(max-min)
+}
+
 // Int 返回一个介于min和max之间的的int类型的随机数。
 func Int(min int, max int) int {
 	if min == max {
