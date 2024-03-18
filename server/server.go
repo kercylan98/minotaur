@@ -104,6 +104,11 @@ func BindData(srv *Server, name string, data any) {
 	srv.BindData(name, data)
 }
 
+// GetNetwork 返回服务器网络类型
+func (srv *Server) GetNetwork() Network {
+	return srv.network
+}
+
 // LoadData 加载绑定的服务器数据
 func (srv *Server) LoadData(name string, data any) any {
 	return srv.data[name]

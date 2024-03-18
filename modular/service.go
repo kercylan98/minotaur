@@ -27,6 +27,12 @@ func RegisterServices(s ...Service) {
 	application.RegisterServices(s...)
 }
 
+// RegisterService 注册服务
+func RegisterService[S Service](service S) S {
+	application.RegisterServices(service)
+	return service
+}
+
 func newService(instance Service) *service {
 	vof := reflect.ValueOf(instance)
 	return &service{

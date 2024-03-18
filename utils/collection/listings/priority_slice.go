@@ -56,6 +56,15 @@ func (slf *PrioritySlice[V]) Appends(priority int, vs ...V) {
 	slf.sort()
 }
 
+// AppendByOptionalPriority 添加元素
+func (slf *PrioritySlice[V]) AppendByOptionalPriority(v V, priority ...int) {
+	if len(priority) == 0 {
+		slf.Append(v, 0)
+	} else {
+		slf.Append(v, priority[0])
+	}
+}
+
 // Get 获取元素
 func (slf *PrioritySlice[V]) Get(index int) (V, int) {
 	i := slf.items[index]

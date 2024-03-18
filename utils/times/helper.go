@@ -15,32 +15,32 @@ const (
 	Week        = Day * 7
 )
 
-// GetCurrWeekDate 获取以 week 为周一的本周 week 时间
-func GetCurrWeekDate(now time.Time, week time.Weekday) time.Time {
+// GetWeekdayDateRelativeToNowWithOffset 获取相对于当前日期所在周的指定星期的日期，可以根据需要进行周数的偏移。
+//   - now：当前时间。
+//   - week：要获取日期的目标星期。
+//   - offsetWeeks：要偏移的周数，正数表示向未来偏移，负数表示向过去偏移。
+//
+// 该函数通常适用于排行榜等场景，例如排行榜为每周六更新，那么通过该函数可以获取到上周排行榜、本周排行榜的准确日期
+//
+// 该函数将不会保留 now 的时分秒信息，如果需要，可使用 GetWeekdayTimeRelativeToNowWithOffset 函数
+func GetWeekdayDateRelativeToNowWithOffset(now time.Time, week time.Weekday, offsetWeeks int) time.Time {
 	w := int(week)
 	monday := GetMondayZero(now)
 	var curr time.Time
 	if WeekDay(now) >= w {
-		curr = monday.AddDate(0, 0, w-1)
+		curr = monday.AddDate(0, 0, (w-1)+offsetWeeks*7)
 	} else {
-		curr = monday.AddDate(0, 0, w-1)
+		curr = monday.AddDate(0, 0, (w-1)+offsetWeeks*7)
 		curr = curr.AddDate(0, 0, -7)
 	}
 	return curr
 }
 
-// GetLastWeekDate 获取以 week 为周一的特定时间 now 的上周 week 时间
-func GetLastWeekDate(now time.Time, week time.Weekday) time.Time {
-	w := int(week)
-	monday := GetMondayZero(now)
-	var last time.Time
-	if WeekDay(now) >= w {
-		last = monday.AddDate(0, 0, -(7 - w + 1))
-	} else {
-		last = monday.AddDate(0, 0, -(7 - w + 1))
-		last = last.AddDate(0, 0, -7)
-	}
-	return last
+// GetWeekdayTimeRelativeToNowWithOffset 获取相对于当前日期所在周的指定星期的日期，并根据传入的 now 参数保留时、分、秒等时间信息。
+//   - 参数解释可参考 GetWeekdayDateRelativeToNowWithOffset 函数
+func GetWeekdayTimeRelativeToNowWithOffset(now time.Time, week time.Weekday, offsetWeeks int) time.Time {
+	curr := GetWeekdayDateRelativeToNowWithOffset(now, week, offsetWeeks)
+	return time.Date(curr.Year(), curr.Month(), curr.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
 }
 
 // GetMonthDays 获取一个时间当月共有多少天
