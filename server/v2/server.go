@@ -15,6 +15,6 @@ type Server struct {
 
 func (s *Server) Run(protoAddr string) (err error) {
 	var handler *eventHandler
-	handler, err = newEventHandler(s.trafficker)
+	handler, err = newEventHandler(new(Options), s.trafficker)
 	return gnet.Run(handler, protoAddr)
 }
