@@ -3,27 +3,24 @@ package server_test
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kercylan98/minotaur/server/v2"
-	"github.com/kercylan98/minotaur/server/v2/traffickers"
+	"github.com/kercylan98/minotaur/server/v2/network"
 	"net/http"
 	"testing"
 )
 
 func TestNewServer(t *testing.T) {
-	r := gin.New()
+	r := gin.Default()
 	r.GET("/", func(context *gin.Context) {
 		context.JSON(200, gin.H{
 			"ping": "pong",
 		})
 	})
-	srv := server.NewServer(traffickers.WebSocket(r, func(handler *gin.Engine, upgradeHandler func(writer http.ResponseWriter, request *http.Request) error) {
+	srv := server.NewServer(network.WebSocketWithHandler(":9999", r, func(handler *gin.Engine, ws http.HandlerFunc) {
 		handler.GET("/ws", func(context *gin.Context) {
-			if err := upgradeHandler(context.Writer, context.Request); err != nil {
-				context.AbortWithError(500, err)
-			}
+			ws(context.Writer, context.Request)
 		})
 	}))
-
-	if err := srv.Run("tcp://:8080"); err != nil {
+	if err := srv.Run(); err != nil {
 		panic(err)
 	}
 }
