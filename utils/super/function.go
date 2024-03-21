@@ -21,3 +21,15 @@ func HandleV[V any](v V, f func(v V)) {
 		f(v)
 	}
 }
+
+// SafeExec 安全的执行函数，当 f 为 nil 时，不执行，当 f 执行出错时，不会 panic，而是转化为 error 进行返回
+func SafeExec(f func()) (err error) {
+	if f == nil {
+		return
+	}
+	defer func() {
+		err = RecoverTransform(recover())
+	}()
+	f()
+	return
+}

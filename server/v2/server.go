@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"github.com/kercylan98/minotaur/utils/super"
-	"sync"
 )
 
 type Server interface {
@@ -12,48 +11,33 @@ type Server interface {
 }
 
 type server struct {
-	ctx         *super.CancelContext
-	networks    []Network
-	connections *connections
+	*networkCore
+	ctx     *super.CancelContext
+	network Network
 }
 
-func NewServer(networks ...Network) Server {
+func NewServer(network Network) Server {
 	srv := &server{
-		ctx:      super.WithCancelContext(context.Background()),
-		networks: networks,
+		ctx:     super.WithCancelContext(context.Background()),
+		network: network,
 	}
-	srv.connections = new(connections).init(srv.ctx)
+	srv.networkCore = new(networkCore).init(srv)
 	return srv
 }
 
 func (s *server) Run() (err error) {
-	for _, network := range s.networks {
-		if err = network.OnSetup(s.ctx, s.connections); err != nil {
-			return
-		}
+	if err = s.network.OnSetup(s.ctx, s); err != nil {
+		return
 	}
 
-	var group = new(sync.WaitGroup)
-	for _, network := range s.networks {
-		group.Add(1)
-		go func(ctx *super.CancelContext, group *sync.WaitGroup, network Network) {
-			defer group.Done()
-			if err = network.OnRun(ctx); err != nil {
-				panic(err)
-			}
-		}(s.ctx, group, network)
+	if err = s.network.OnRun(s.ctx); err != nil {
+		panic(err)
 	}
-	group.Wait()
-
 	return
 }
 
 func (s *server) Shutdown() (err error) {
 	defer s.ctx.Cancel()
-	for _, network := range s.networks {
-		if err = network.OnShutdown(); err != nil {
-			return
-		}
-	}
+	err = s.network.OnShutdown()
 	return
 }

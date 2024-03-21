@@ -1,11 +1,13 @@
 package server
 
-import "context"
+import (
+	"context"
+)
 
 type Network interface {
-	OnSetup(ctx context.Context, core Core) error
+	OnSetup(ctx context.Context, event NetworkCore) error
 
-	OnRun(ctx context.Context) error
+	OnRun() error
 
 	OnShutdown() error
 }

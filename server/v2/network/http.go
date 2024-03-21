@@ -30,16 +30,18 @@ type httpCore[H http.Handler] struct {
 	addr    string
 	handler H
 	srv     *http.Server
+	event   server.NetworkCore
 }
 
-func (h *httpCore[H]) OnSetup(ctx context.Context, core server.Core) (err error) {
+func (h *httpCore[H]) OnSetup(ctx context.Context, event server.NetworkCore) (err error) {
+	h.event = event
 	h.srv.BaseContext = func(listener net.Listener) context.Context {
 		return ctx
 	}
 	return
 }
 
-func (h *httpCore[H]) OnRun(ctx context.Context) (err error) {
+func (h *httpCore[H]) OnRun() (err error) {
 	if err = h.srv.ListenAndServe(); errors.Is(err, http.ErrServerClosed) {
 		err = nil
 	}

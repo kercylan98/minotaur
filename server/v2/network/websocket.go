@@ -3,55 +3,45 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server/v2"
-	"net/http"
+	"github.com/kercylan98/minotaur/utils/collection"
+	"github.com/panjf2000/gnet/v2"
+	"time"
 )
 
-func WebSocket(addr, pattern string) server.Network {
-	return WebSocketWithHandler[*HttpServe](addr, &HttpServe{ServeMux: http.NewServeMux()}, func(handler *HttpServe, ws http.HandlerFunc) {
-		handler.Handle(fmt.Sprintf("GET %s", pattern), ws)
-	})
-}
-
-func WebSocketWithHandler[H http.Handler](addr string, handler H, upgraderHandlerFunc WebSocketUpgraderHandlerFunc[H]) server.Network {
-	c := &websocketCore[H]{
-		httpCore:            HttpWithHandler(addr, handler).(*httpCore[H]),
-		upgraderHandlerFunc: upgraderHandlerFunc,
+func WebSocket(addr string, pattern ...string) server.Network {
+	ws := &websocketCore{
+		addr:    addr,
+		pattern: collection.FindFirstOrDefaultInSlice(pattern, "/"),
 	}
-	return c
+	return ws
 }
 
-type WebSocketUpgraderHandlerFunc[H http.Handler] func(handler H, ws http.HandlerFunc)
-
-type websocketCore[H http.Handler] struct {
-	*httpCore[H]
-	upgraderHandlerFunc WebSocketUpgraderHandlerFunc[H]
-	core                server.Core
+type websocketCore struct {
+	ctx     context.Context
+	core    server.NetworkCore
+	handler *websocketHandler
+	addr    string
+	pattern string
 }
 
-func (w *websocketCore[H]) OnSetup(ctx context.Context, core server.Core) (err error) {
+func (w *websocketCore) OnSetup(ctx context.Context, core server.NetworkCore) (err error) {
+	w.ctx = ctx
+	w.handler = newWebsocketHandler(w)
 	w.core = core
-	if err = w.httpCore.OnSetup(ctx, core); err != nil {
-		return
-	}
-	w.upgraderHandlerFunc(w.handler, w.onUpgrade)
 	return
 }
 
-func (w *websocketCore[H]) OnRun(ctx context.Context) error {
-	return w.httpCore.OnRun(ctx)
+func (w *websocketCore) OnRun() (err error) {
+	err = gnet.Run(w.handler, fmt.Sprintf("tcp://%s", w.addr))
+	return
 }
 
-func (w *websocketCore[H]) OnShutdown() error {
-	return w.httpCore.OnShutdown()
-}
-
-func (w *websocketCore[H]) onUpgrade(writer http.ResponseWriter, request *http.Request) {
-	conn, _, _, err := ws.UpgradeHTTP(request, writer)
-	if err != nil {
-		return
+func (w *websocketCore) OnShutdown() error {
+	if w.handler.engine != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return w.handler.engine.Stop(ctx)
 	}
-
-	w.core.Event() <- conn
+	return nil
 }
