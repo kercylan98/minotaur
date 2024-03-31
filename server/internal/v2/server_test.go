@@ -7,7 +7,12 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	srv := server.server.NewServer(network.WebSocket(":9999"))
+	srv := server.NewServer(network.WebSocket(":9999"))
+	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {
+		if err := conn.WritePacket(packet); err != nil {
+			panic(err)
+		}
+	})
 	if err := srv.Run(); err != nil {
 		panic(err)
 	}

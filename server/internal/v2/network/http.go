@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func Http(addr string) server.server {
+func Http(addr string) server.Network {
 	return HttpWithHandler(addr, &HttpServe{ServeMux: http.NewServeMux()})
 }
 
@@ -27,14 +27,14 @@ func HttpWithHandler[H http.Handler](addr string, handler H) server.Network {
 }
 
 type httpCore[H http.Handler] struct {
-	addr    string
-	handler H
-	srv     *http.Server
-	event   server.NetworkCore
+	addr       string
+	handler    H
+	srv        *http.Server
+	controller server.Controller
 }
 
-func (h *httpCore[H]) OnSetup(ctx context.Context, event server.NetworkCore) (err error) {
-	h.event = event
+func (h *httpCore[H]) OnSetup(ctx context.Context, controller server.Controller) (err error) {
+	h.controller = controller
 	h.srv.BaseContext = func(listener net.Listener) context.Context {
 		return ctx
 	}

@@ -12,14 +12,14 @@ import (
 
 func newWebsocketHandler(core *websocketCore) *websocketHandler {
 	return &websocketHandler{
-		core: core,
+		websocketCore: core,
 	}
 }
 
 type websocketHandler struct {
 	engine   *gnet.Engine
 	upgrader ws.Upgrader
-	core     *websocketCore
+	*websocketCore
 }
 
 func (w *websocketHandler) OnBoot(eng gnet.Engine) (action gnet.Action) {
@@ -33,17 +33,16 @@ func (w *websocketHandler) OnShutdown(eng gnet.Engine) {
 }
 
 func (w *websocketHandler) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
-	wrapper := newWebsocketWrapper(w.core.ctx, c)
+	wrapper := newWebsocketWrapper(c)
 	c.SetContext(wrapper)
-	w.core.core.OnConnectionOpened(wrapper.ctx, c, func(message server.server) error {
-		return wsutil.WriteServerMessage(c, message.GetContext().(ws.OpCode), message.GetBytes())
+	w.controller.RegisterConnection(c, func(packet server.Packet) error {
+		return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
 	})
 	return
 }
 
 func (w *websocketHandler) OnClose(c gnet.Conn, err error) (action gnet.Action) {
-	wrapper := c.Context().(*websocketWrapper)
-	wrapper.cancel()
+	w.controller.EliminateConnection(c, err)
 	return
 }
 
@@ -70,9 +69,9 @@ func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
 	}
 
 	for _, message := range messages {
-		packet := w.core.core.GeneratePacket(message.Payload)
+		packet := server.NewPacket(message.Payload)
 		packet.SetContext(message.OpCode)
-		w.core.core.OnReceivePacket(packet)
+		w.controller.ReactPacket(c, packet)
 	}
 
 	return
@@ -85,7 +84,7 @@ func (w *websocketHandler) OnTick() (delay time.Duration, action gnet.Action) {
 func (w *websocketHandler) initUpgrader() {
 	w.upgrader = ws.Upgrader{
 		OnRequest: func(uri []byte) (err error) {
-			if string(uri) != w.core.pattern {
+			if string(uri) != w.pattern {
 				err = errors.New("bad request")
 			}
 			return

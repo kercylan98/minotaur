@@ -8,26 +8,22 @@ import (
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/panjf2000/gnet/v2"
-	"golang.org/x/net/context"
 	"io"
 	"time"
 )
 
 // newWebsocketWrapper 创建 websocket 包装器
-func newWebsocketWrapper(ctx context.Context, conn gnet.Conn) *websocketWrapper {
+func newWebsocketWrapper(conn gnet.Conn) *websocketWrapper {
 	wrapper := &websocketWrapper{
 		conn:     conn,
 		upgraded: false,
 		active:   time.Now(),
 	}
-	wrapper.ctx, wrapper.cancel = context.WithCancel(ctx)
 	return wrapper
 }
 
 // websocketWrapper websocket 包装器
 type websocketWrapper struct {
-	ctx      context.Context
-	cancel   context.CancelFunc
 	conn     gnet.Conn    // 连接
 	upgraded bool         // 是否已经升级
 	hs       ws.Handshake // 握手信息

@@ -1,8 +1,12 @@
 package server
 
+func NewPacket(data []byte) Packet {
+	return new(packet).init(data)
+}
+
 type Packet interface {
 	GetBytes() []byte
-	SetContext(ctx any)
+	SetContext(ctx any) Packet
 	GetContext() any
 }
 
@@ -25,8 +29,9 @@ func (m *packet) GetBytes() []byte {
 	return m.data
 }
 
-func (m *packet) SetContext(ctx any) {
+func (m *packet) SetContext(ctx any) Packet {
 	m.ctx = ctx
+	return m
 }
 
 func (m *packet) GetContext() any {

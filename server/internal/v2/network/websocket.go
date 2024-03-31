@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func WebSocket(addr string, pattern ...string) server.server {
+func WebSocket(addr string, pattern ...string) server.Network {
 	ws := &websocketCore{
 		addr:    addr,
 		pattern: collection.FindFirstOrDefaultInSlice(pattern, "/"),
@@ -18,17 +18,17 @@ func WebSocket(addr string, pattern ...string) server.server {
 }
 
 type websocketCore struct {
-	ctx     context.Context
-	core    server.NetworkCore
-	handler *websocketHandler
-	addr    string
-	pattern string
+	ctx        context.Context
+	controller server.Controller
+	handler    *websocketHandler
+	addr       string
+	pattern    string
 }
 
-func (w *websocketCore) OnSetup(ctx context.Context, core server.NetworkCore) (err error) {
+func (w *websocketCore) OnSetup(ctx context.Context, controller server.Controller) (err error) {
 	w.ctx = ctx
 	w.handler = newWebsocketHandler(w)
-	w.core = core
+	w.controller = controller
 	return
 }
 
