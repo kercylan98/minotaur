@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/kercylan98/minotaur/server/v2"
+	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet/v2"
 	"time"
@@ -35,7 +35,7 @@ func (w *websocketHandler) OnShutdown(eng gnet.Engine) {
 func (w *websocketHandler) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	wrapper := newWebsocketWrapper(w.core.ctx, c)
 	c.SetContext(wrapper)
-	w.core.core.OnConnectionOpened(wrapper.ctx, c, func(message server.Packet) error {
+	w.core.core.OnConnectionOpened(wrapper.ctx, c, func(message server.server) error {
 		return wsutil.WriteServerMessage(c, message.GetContext().(ws.OpCode), message.GetBytes())
 	})
 	return

@@ -20,7 +20,7 @@ func (c *Counter[T]) Sub() *Counter[T] {
 func (c *Counter[T]) Add(delta T) {
 	c.rw.Lock()
 	c.v += delta
-	c.rw.RUnlock()
+	c.rw.Unlock()
 	if c.p != nil {
 		c.p.Add(delta)
 	}

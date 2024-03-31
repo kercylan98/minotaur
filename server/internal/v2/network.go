@@ -5,7 +5,7 @@ import (
 )
 
 type Network interface {
-	OnSetup(ctx context.Context, event NetworkCore) error
+	OnSetup(ctx context.Context, controller Controller) error
 
 	OnRun() error
 

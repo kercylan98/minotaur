@@ -3,13 +3,13 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/server/v2"
+	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/panjf2000/gnet/v2"
 	"time"
 )
 
-func WebSocket(addr string, pattern ...string) server.Network {
+func WebSocket(addr string, pattern ...string) server.server {
 	ws := &websocketCore{
 		addr:    addr,
 		pattern: collection.FindFirstOrDefaultInSlice(pattern, "/"),
