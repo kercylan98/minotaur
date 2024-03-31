@@ -1,9 +1,6 @@
 package server
 
-import (
-	"context"
-	"github.com/kercylan98/minotaur/utils/super"
-)
+import "golang.org/x/net/context"
 
 type Server interface {
 	Run() error
@@ -11,17 +8,18 @@ type Server interface {
 }
 
 type server struct {
-	*networkCore
-	ctx     *super.CancelContext
+	*controller
+	ctx     context.Context
+	cancel  context.CancelFunc
 	network Network
 }
 
 func NewServer(network Network) Server {
 	srv := &server{
-		ctx:     super.WithCancelContext(context.Background()),
 		network: network,
 	}
-	srv.networkCore = new(networkCore).init(srv)
+	srv.ctx, srv.cancel = context.WithCancel(context.Background())
+	srv.controller = new(controller).init(srv)
 	return srv
 }
 
@@ -30,14 +28,14 @@ func (s *server) Run() (err error) {
 		return
 	}
 
-	if err = s.network.OnRun(s.ctx); err != nil {
+	if err = s.network.OnRun(); err != nil {
 		panic(err)
 	}
 	return
 }
 
 func (s *server) Shutdown() (err error) {
-	defer s.ctx.Cancel()
+	defer s.server.cancel()
 	err = s.network.OnShutdown()
 	return
 }

@@ -2,14 +2,14 @@ package network
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/server/v2"
+	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	"time"
 )
 
-func Http(addr string) server.Network {
+func Http(addr string) server.server {
 	return HttpWithHandler(addr, &HttpServe{ServeMux: http.NewServeMux()})
 }
 
