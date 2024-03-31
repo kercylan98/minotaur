@@ -35,4 +35,5 @@ func (q *QueueState[M]) IsRunning() bool {
 // Close 关闭队列
 func (q *QueueState[M]) Close() {
 	atomic.CompareAndSwapInt32(&q.status, QueueStatusRunning, QueueStatusClosing)
+	q.queue.cond.Broadcast()
 }

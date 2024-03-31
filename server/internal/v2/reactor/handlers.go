@@ -1,6 +1,6 @@
 package reactor
 
-type queueMessageHandler[M any] func(q *queue[M], msg M)
+type queueMessageHandler[M any] func(q *queue[M], ident *identifiable, msg M)
 
 type MessageHandler[M any] func(msg M)
 

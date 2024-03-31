@@ -76,3 +76,23 @@ func (r *RoundRobin[Id, T]) Next() (t T) {
 	r.curr = r.curr.Next
 	return r.curr.Value
 }
+
+func (r *RoundRobin[Id, T]) Refresh() {
+	r.rw.Lock()
+	defer r.rw.Unlock()
+
+	if r.head == nil {
+		return
+	}
+
+	curr := r.head
+	for i := 0; i < r.size; i++ {
+		if curr.Value.Id() == r.curr.Value.Id() {
+			r.curr = curr
+			return
+		}
+		curr = curr.Next
+	}
+
+	r.curr = r.head
+}

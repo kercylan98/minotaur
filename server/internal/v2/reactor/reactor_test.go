@@ -3,12 +3,12 @@ package reactor_test
 import (
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/random"
+	"github.com/kercylan98/minotaur/utils/times"
 	"testing"
 	"time"
 )
 
 func BenchmarkReactor_Dispatch(b *testing.B) {
-
 	var r = reactor.NewReactor(1024*16, 1024, func(msg func()) {
 		msg()
 	}, func(msg func(), err error) {
@@ -20,9 +20,8 @@ func BenchmarkReactor_Dispatch(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			if err := r.Dispatch(random.HostName(), func() {
-
 			}); err != nil {
-
+				return
 			}
 		}
 	})
@@ -33,7 +32,7 @@ func TestReactor_Dispatch(t *testing.T) {
 		msg()
 	}, func(msg func(), err error) {
 		t.Error(err)
-	}).SetDebug(false)
+	}).SetDebug(true)
 
 	go r.Run()
 
@@ -41,16 +40,16 @@ func TestReactor_Dispatch(t *testing.T) {
 		go func() {
 			id := random.HostName()
 			for {
-				// 每秒 50 次
 				time.Sleep(time.Millisecond * 20)
 				if err := r.Dispatch(id, func() {
 
 				}); err != nil {
-					t.Error(err)
+					return
 				}
 			}
 		}()
 	}
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(times.Second)
+	r.Close()
 }

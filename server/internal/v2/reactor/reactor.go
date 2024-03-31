@@ -10,22 +10,43 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
-	"time"
+	"sync/atomic"
 )
 
+const (
+	StatusNone    = iota - 1 // 事件循环未运行
+	StatusRunning            // 事件循环运行中
+	StatusClosing            // 事件循环关闭中
+	StatusClosed             // 事件循环已关闭
+)
+
+var sysIdent = &identifiable{ident: "system"}
+
 // NewReactor 创建一个新的 Reactor 实例，初始化系统级别的队列和多个 Socket 对应的队列
-func NewReactor[M any](systemQueueSize, socketQueueSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
+func NewReactor[M any](systemQueueSize, queueSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
 	r := &Reactor[M]{
-		logger:          log.Default().Logger,
-		systemQueue:     newQueue[M](-1, systemQueueSize, 1024*16),
-		identifiers:     haxmap.New[string, int](),
-		lb:              loadbalancer.NewRoundRobin[int, *queue[M]](),
-		errorHandler:    errorHandler,
-		socketQueueSize: socketQueueSize,
+		logger:       log.Default().Logger,
+		systemQueue:  newQueue[M](-1, systemQueueSize, 1024),
+		identifiers:  haxmap.New[string, *identifiable](),
+		lb:           loadbalancer.NewRoundRobin[int, *queue[M]](),
+		errorHandler: errorHandler,
+		queueSize:    queueSize,
+		state:        StatusNone,
 	}
 
-	r.handler = func(q *queue[M], msg M) {
-		defer func(msg M) {
+	defaultNum := runtime.NumCPU()
+	if defaultNum < 1 {
+		defaultNum = 1
+	}
+
+	r.queueRW.Lock()
+	for i := 0; i < defaultNum; i++ {
+		r.noneLockAddQueue()
+	}
+	r.queueRW.Unlock()
+
+	r.handler = func(q *queue[M], ident *identifiable, msg M) {
+		defer func(ident *identifiable, msg M) {
 			if err := super.RecoverTransform(recover()); err != nil {
 				defer func(msg M) {
 					if err = super.RecoverTransform(recover()); err != nil {
@@ -40,12 +61,17 @@ func NewReactor[M any](systemQueueSize, socketQueueSize int, handler MessageHand
 					debug.PrintStack()
 				}
 			}
-		}(msg)
-		var startedAt = time.Now()
+
+			if atomic.AddInt64(&ident.n, -1) == 0 {
+				r.queueRW.Lock()
+				r.identifiers.Del(ident.ident)
+				r.queueRW.Unlock()
+			}
+
+		}(ident, msg)
 		if handler != nil {
 			handler(msg)
 		}
-		r.log(log.String("action", "handle"), log.Int("queue", q.Id()), log.Int64("cost/ns", time.Since(startedAt).Nanoseconds()))
 	}
 
 	return r
@@ -53,16 +79,19 @@ func NewReactor[M any](systemQueueSize, socketQueueSize int, handler MessageHand
 
 // Reactor 是一个消息反应器，管理系统级别的队列和多个 Socket 对应的队列
 type Reactor[M any] struct {
-	logger          *slog.Logger                             // 日志记录器
-	systemQueue     *queue[M]                                // 系统级别的队列
-	socketQueueSize int                                      // Socket 队列大小
-	queues          []*queue[M]                              // Socket 使用的队列
-	identifiers     *haxmap.Map[string, int]                 // 标识符到队列索引的映射
-	lb              *loadbalancer.RoundRobin[int, *queue[M]] // 负载均衡器
-	wg              sync.WaitGroup                           // 等待组
-	handler         queueMessageHandler[M]                   // 消息处理器
-	errorHandler    ErrorHandler[M]                          // 错误处理器
-	debug           bool                                     // 是否开启调试模式
+	logger       *slog.Logger                             // 日志记录器
+	state        int32                                    // 状态
+	systemQueue  *queue[M]                                // 系统级别的队列
+	queueSize    int                                      // Socket 队列大小
+	queues       []*queue[M]                              // Socket 使用的队列
+	queueRW      sync.RWMutex                             // 队列读写锁
+	identifiers  *haxmap.Map[string, *identifiable]       // 标识符到队列索引的映射及消息计数
+	lb           *loadbalancer.RoundRobin[int, *queue[M]] // 负载均衡器
+	wg           sync.WaitGroup                           // 等待组
+	cwg          sync.WaitGroup                           // 关闭等待组
+	handler      queueMessageHandler[M]                   // 消息处理器
+	errorHandler ErrorHandler[M]                          // 错误处理器
+	debug        bool                                     // 是否开启调试模式
 }
 
 // SetLogger 设置日志记录器
@@ -79,39 +108,49 @@ func (r *Reactor[M]) SetDebug(debug bool) *Reactor[M] {
 
 // SystemDispatch 将消息分发到系统级别的队列
 func (r *Reactor[M]) SystemDispatch(msg M) error {
-	return r.systemQueue.push(msg)
+	if atomic.LoadInt32(&r.state) > StatusRunning {
+		r.queueRW.RUnlock()
+		return fmt.Errorf("reactor closing or closed")
+	}
+	return r.systemQueue.push(sysIdent, msg)
 }
 
-// Dispatch 将消息分发到 identifier 使用的队列，当 identifier 首次使用时，将会根据负载均衡策略选择一个队列
-func (r *Reactor[M]) Dispatch(identifier string, msg M) error {
-	next := r.lb.Next()
-	if next == nil {
-		return r.Dispatch(identifier, msg)
+// Dispatch 将消息分发到 ident 使用的队列，当 ident 首次使用时，将会根据负载均衡策略选择一个队列
+func (r *Reactor[M]) Dispatch(ident string, msg M) error {
+	r.queueRW.RLock()
+	if atomic.LoadInt32(&r.state) > StatusRunning {
+		r.queueRW.RUnlock()
+		return fmt.Errorf("reactor closing or closed")
 	}
-	idx, _ := r.identifiers.GetOrSet(identifier, next.Id())
-	q := r.queues[idx]
-	r.log(log.String("action", "dispatch"), log.String("identifier", identifier), log.Int("queue", q.Id()))
-	return q.push(msg)
+	next := r.lb.Next()
+	i, _ := r.identifiers.GetOrSet(ident, &identifiable{ident: ident})
+	q := r.queues[next.Id()]
+	atomic.AddInt64(&i.n, 1)
+	r.queueRW.RUnlock()
+	return q.push(i, msg)
 }
 
 // Run 启动 Reactor，运行系统级别的队列和多个 Socket 对应的队列
 func (r *Reactor[M]) Run() {
-	r.initQueue(r.systemQueue)
-	for i := 0; i < runtime.NumCPU(); i++ {
-		r.addQueue()
+	if !atomic.CompareAndSwapInt32(&r.state, StatusNone, StatusRunning) {
+		return
 	}
+	r.queueRW.Lock()
+	r.runQueue(r.systemQueue)
+	for i := 0; i < len(r.queues); i++ {
+		r.runQueue(r.queues[i])
+	}
+	r.queueRW.Unlock()
 	r.wg.Wait()
 }
 
-func (r *Reactor[M]) addQueue() {
-	r.log(log.String("action", "add queue"), log.Int("queue", len(r.queues)))
-	r.wg.Add(1)
-	q := newQueue[M](len(r.queues), r.socketQueueSize, 1024*8)
-	r.initQueue(q)
+func (r *Reactor[M]) noneLockAddQueue() {
+	q := newQueue[M](len(r.queues), r.queueSize, 1024*8)
+	r.lb.Add(q) // 运行前添加到负载均衡器，未运行时允许接收消息
 	r.queues = append(r.queues, q)
 }
 
-func (r *Reactor[M]) removeQueue(q *queue[M]) {
+func (r *Reactor[M]) noneLockDelQueue(q *queue[M]) {
 	idx := q.Id()
 	if idx < 0 || idx >= len(r.queues) || r.queues[idx] != q {
 		return
@@ -120,34 +159,35 @@ func (r *Reactor[M]) removeQueue(q *queue[M]) {
 	for i := idx; i < len(r.queues); i++ {
 		r.queues[i].idx = i
 	}
-	r.log(log.String("action", "remove queue"), log.Int("queue", len(r.queues)))
 }
 
-func (r *Reactor[M]) initQueue(q *queue[M]) {
+func (r *Reactor[M]) runQueue(q *queue[M]) {
 	r.wg.Add(1)
+	q.setClosedHandler(func(q *queue[M]) {
+		// 关闭时正在等待关闭完成，外部已加锁，无需再次加锁
+		r.noneLockDelQueue(q)
+		r.cwg.Done()
+	})
+	go q.run()
+
 	go func(r *Reactor[M], q *queue[M]) {
 		defer r.wg.Done()
-		go q.run()
-		if q.idx >= 0 {
-			r.lb.Add(q)
-		}
 		for m := range q.read() {
-			r.handler(q, m)
+			r.handler(q, m.ident, m.msg)
 		}
 	}(r, q)
-	r.log(log.String("action", "run queue"), log.Int("queue", q.Id()))
 }
 
 func (r *Reactor[M]) Close() {
-	queues := append(r.queues, r.systemQueue)
-	for _, q := range queues {
-		q.Close()
-	}
-}
-
-func (r *Reactor[M]) log(args ...any) {
-	if !r.debug {
+	if !atomic.CompareAndSwapInt32(&r.state, StatusRunning, StatusClosing) {
 		return
 	}
-	r.logger.Debug("Reactor", args...)
+	r.queueRW.Lock()
+	r.cwg.Add(len(r.queues) + 1)
+	for _, q := range append(r.queues, r.systemQueue) {
+		q.Close()
+	}
+	r.cwg.Wait()
+	atomic.StoreInt32(&r.state, StatusClosed)
+	r.queueRW.Unlock()
 }
