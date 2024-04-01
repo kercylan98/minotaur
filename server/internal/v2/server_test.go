@@ -4,15 +4,24 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/server/internal/v2/network"
+	"github.com/kercylan98/minotaur/utils/times"
 	"testing"
 	"time"
 )
 
 func TestNewServer(t *testing.T) {
-	srv := server.NewServer(network.WebSocket(":9999"))
+	server.EnableHttpPProf(":9998", "/debug/pprof", func(err error) {
+		panic(err)
+	})
+
+	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Second*3))
 
 	srv.RegisterLaunchedEvent(func(srv server.Server, ip string, launchedAt time.Time) {
 		t.Log("launched", ip, launchedAt)
+	})
+
+	srv.RegisterShutdownEvent(func(srv server.Server) {
+		t.Log("shutdown")
 	})
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {

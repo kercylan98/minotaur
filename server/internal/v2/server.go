@@ -1,13 +1,11 @@
 package server
 
 import (
+	"context"
+	"time"
+
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/network"
-	"golang.org/x/net/context"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 type Server interface {
@@ -26,24 +24,36 @@ type Server interface {
 type server struct {
 	*controller
 	*events
+	*Options
 	state   *State
+	notify  *notify
 	ctx     context.Context
 	cancel  context.CancelFunc
 	network Network
 	reactor *reactor.Reactor[Message]
 }
 
-func NewServer(network Network) Server {
+func NewServer(network Network, options ...*Options) Server {
 	srv := &server{
 		network: network,
+		Options: DefaultOptions(),
 	}
 	srv.ctx, srv.cancel = context.WithCancel(context.Background())
+	srv.notify = new(notify).init(srv)
 	srv.controller = new(controller).init(srv)
 	srv.events = new(events).init(srv)
-	srv.reactor = reactor.NewReactor[Message](1024*8, 1024, func(msg Message) {
-		msg.Execute()
-	}, nil)
 	srv.state = new(State).init(srv)
+	srv.reactor = reactor.NewReactor[Message](
+		srv.getServerMessageChannelSize(), srv.getActorMessageChannelSize(),
+		srv.getServerMessageBufferInitialSize(), srv.getActorMessageBufferInitialSize(),
+		func(msg Message) {
+			msg.Execute()
+		}, func(msg Message, err error) {
+			if handler := srv.getMessageErrorHandler(); handler != nil {
+				handler(srv, msg, err)
+			}
+		})
+	srv.Options.init(srv).Apply(options...)
 	return srv
 }
 
@@ -61,17 +71,14 @@ func (s *server) Run() (err error) {
 		}
 	}(s)
 
-	var systemSignal = make(chan os.Signal)
-	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-	<-systemSignal
-	if err := s.Shutdown(); err != nil {
-		panic(err)
-	}
+	s.Options.active()
+	s.notify.run()
 	return
 }
 
 func (s *server) Shutdown() (err error) {
 	defer s.cancel()
+	s.events.onShutdown()
 	err = s.network.OnShutdown()
 	s.reactor.Close()
 	return

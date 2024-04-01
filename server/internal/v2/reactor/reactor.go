@@ -14,24 +14,25 @@ import (
 )
 
 const (
-	StatusNone    = iota - 1 // 事件循环未运行
-	StatusRunning            // 事件循环运行中
-	StatusClosing            // 事件循环关闭中
-	StatusClosed             // 事件循环已关闭
+	statusNone    = iota - 1 // 事件循环未运行
+	statusRunning            // 事件循环运行中
+	statusClosing            // 事件循环关闭中
+	statusClosed             // 事件循环已关闭
 )
 
 var sysIdent = &identifiable{ident: "system"}
 
 // NewReactor 创建一个新的 Reactor 实例，初始化系统级别的队列和多个 Socket 对应的队列
-func NewReactor[M any](systemQueueSize, queueSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
+func NewReactor[M any](systemQueueSize, queueSize, systemBufferSize, queueBufferSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
 	r := &Reactor[M]{
-		logger:       log.Default().Logger,
-		systemQueue:  newQueue[M](-1, systemQueueSize, 1024),
-		identifiers:  haxmap.New[string, *identifiable](),
-		lb:           loadbalancer.NewRoundRobin[int, *queue[M]](),
-		errorHandler: errorHandler,
-		queueSize:    queueSize,
-		state:        StatusNone,
+		logger:          log.Default().Logger,
+		systemQueue:     newQueue[M](-1, systemQueueSize, systemBufferSize),
+		identifiers:     haxmap.New[string, *identifiable](),
+		lb:              loadbalancer.NewRoundRobin[int, *queue[M]](),
+		errorHandler:    errorHandler,
+		queueSize:       queueSize,
+		queueBufferSize: queueBufferSize,
+		state:           statusNone,
 	}
 
 	defaultNum := runtime.NumCPU()
@@ -79,25 +80,20 @@ func NewReactor[M any](systemQueueSize, queueSize int, handler MessageHandler[M]
 
 // Reactor 是一个消息反应器，管理系统级别的队列和多个 Socket 对应的队列
 type Reactor[M any] struct {
-	logger       *slog.Logger                             // 日志记录器
-	state        int32                                    // 状态
-	systemQueue  *queue[M]                                // 系统级别的队列
-	queueSize    int                                      // Socket 队列大小
-	queues       []*queue[M]                              // Socket 使用的队列
-	queueRW      sync.RWMutex                             // 队列读写锁
-	identifiers  *haxmap.Map[string, *identifiable]       // 标识符到队列索引的映射及消息计数
-	lb           *loadbalancer.RoundRobin[int, *queue[M]] // 负载均衡器
-	wg           sync.WaitGroup                           // 等待组
-	cwg          sync.WaitGroup                           // 关闭等待组
-	handler      queueMessageHandler[M]                   // 消息处理器
-	errorHandler ErrorHandler[M]                          // 错误处理器
-	debug        bool                                     // 是否开启调试模式
-}
-
-// SetLogger 设置日志记录器
-func (r *Reactor[M]) SetLogger(logger *slog.Logger) *Reactor[M] {
-	r.logger = logger
-	return r
+	logger          *slog.Logger                             // 日志记录器
+	state           int32                                    // 状态
+	systemQueue     *queue[M]                                // 系统级别的队列
+	queueSize       int                                      // 队列管道大小
+	queueBufferSize int                                      // 队列缓冲区大小
+	queues          []*queue[M]                              // 所有使用的队列
+	queueRW         sync.RWMutex                             // 队列读写锁
+	identifiers     *haxmap.Map[string, *identifiable]       // 标识符到队列索引的映射及消息计数
+	lb              *loadbalancer.RoundRobin[int, *queue[M]] // 负载均衡器
+	wg              sync.WaitGroup                           // 等待组
+	cwg             sync.WaitGroup                           // 关闭等待组
+	handler         queueMessageHandler[M]                   // 消息处理器
+	errorHandler    ErrorHandler[M]                          // 错误处理器
+	debug           bool                                     // 是否开启调试模式
 }
 
 // SetDebug 设置是否开启调试模式
@@ -116,7 +112,7 @@ func (r *Reactor[M]) AutoDispatch(ident string, msg M) error {
 
 // SystemDispatch 将消息分发到系统级别的队列
 func (r *Reactor[M]) SystemDispatch(msg M) error {
-	if atomic.LoadInt32(&r.state) > StatusRunning {
+	if atomic.LoadInt32(&r.state) > statusRunning {
 		r.queueRW.RUnlock()
 		return fmt.Errorf("reactor closing or closed")
 	}
@@ -126,7 +122,7 @@ func (r *Reactor[M]) SystemDispatch(msg M) error {
 // Dispatch 将消息分发到 ident 使用的队列，当 ident 首次使用时，将会根据负载均衡策略选择一个队列
 func (r *Reactor[M]) Dispatch(ident string, msg M) error {
 	r.queueRW.RLock()
-	if atomic.LoadInt32(&r.state) > StatusRunning {
+	if atomic.LoadInt32(&r.state) > statusRunning {
 		r.queueRW.RUnlock()
 		return fmt.Errorf("reactor closing or closed")
 	}
@@ -140,7 +136,7 @@ func (r *Reactor[M]) Dispatch(ident string, msg M) error {
 
 // Run 启动 Reactor，运行系统级别的队列和多个 Socket 对应的队列
 func (r *Reactor[M]) Run() {
-	if !atomic.CompareAndSwapInt32(&r.state, StatusNone, StatusRunning) {
+	if !atomic.CompareAndSwapInt32(&r.state, statusNone, statusRunning) {
 		return
 	}
 	r.queueRW.Lock()
@@ -153,7 +149,7 @@ func (r *Reactor[M]) Run() {
 }
 
 func (r *Reactor[M]) noneLockAddQueue() {
-	q := newQueue[M](len(r.queues), r.queueSize, 1024*8)
+	q := newQueue[M](len(r.queues), r.queueSize, r.queueBufferSize)
 	r.lb.Add(q) // 运行前添加到负载均衡器，未运行时允许接收消息
 	r.queues = append(r.queues, q)
 }
@@ -187,7 +183,7 @@ func (r *Reactor[M]) runQueue(q *queue[M]) {
 }
 
 func (r *Reactor[M]) Close() {
-	if !atomic.CompareAndSwapInt32(&r.state, StatusRunning, StatusClosing) {
+	if !atomic.CompareAndSwapInt32(&r.state, statusRunning, statusClosing) {
 		return
 	}
 	r.queueRW.Lock()
@@ -196,6 +192,6 @@ func (r *Reactor[M]) Close() {
 		q.Close()
 	}
 	r.cwg.Wait()
-	atomic.StoreInt32(&r.state, StatusClosed)
+	atomic.StoreInt32(&r.state, statusClosed)
 	r.queueRW.Unlock()
 }
