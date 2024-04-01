@@ -5,7 +5,6 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/server/internal/v2"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/panjf2000/gnet/v2"
 	"time"
 )
@@ -35,9 +34,6 @@ func (w *websocketHandler) OnShutdown(eng gnet.Engine) {
 func (w *websocketHandler) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	wrapper := newWebsocketWrapper(c)
 	c.SetContext(wrapper)
-	w.controller.RegisterConnection(c, func(packet server.Packet) error {
-		return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
-	})
 	return
 }
 
@@ -49,15 +45,16 @@ func (w *websocketHandler) OnClose(c gnet.Conn, err error) (action gnet.Action) 
 func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
 	wrapper := c.Context().(*websocketWrapper)
 
-	// read to buffer
 	if err := wrapper.readToBuffer(); err != nil {
-		log.Error("websocket", log.Err(err))
 		return gnet.Close
 	}
 
-	// check or upgrade
-	if err := wrapper.upgrade(w.upgrader); err != nil {
-		log.Error("websocket", log.Err(err))
+	if err := wrapper.upgrade(w.upgrader, func() {
+		// 协议升级成功后视为连接建立
+		w.controller.RegisterConnection(c, func(packet server.Packet) error {
+			return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
+		})
+	}); err != nil {
 		return gnet.Close
 	}
 	wrapper.active = time.Now()
@@ -65,7 +62,7 @@ func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
 	// decode
 	messages, err := wrapper.decode()
 	if err != nil {
-		log.Error("websocket", log.Err(err))
+		return gnet.Close
 	}
 
 	for _, message := range messages {
@@ -73,7 +70,6 @@ func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		packet.SetContext(message.OpCode)
 		w.controller.ReactPacket(c, packet)
 	}
-
 	return
 }
 

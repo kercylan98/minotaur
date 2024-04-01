@@ -50,7 +50,7 @@ func (w *websocketWrapper) readToBuffer() error {
 }
 
 // upgrade 升级
-func (w *websocketWrapper) upgrade(upgrader ws.Upgrader) (err error) {
+func (w *websocketWrapper) upgrade(upgrader ws.Upgrader, upgradedHandler func()) (err error) {
 	if w.upgraded {
 		return
 	}
@@ -73,6 +73,7 @@ func (w *websocketWrapper) upgrade(upgrader ws.Upgrader) (err error) {
 	}
 	buf.Next(skip)
 	w.upgraded = true
+	upgradedHandler()
 	return
 }
 

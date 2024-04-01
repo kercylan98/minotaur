@@ -20,33 +20,35 @@ func (s *controller) init(srv *server) *controller {
 }
 
 func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
-	if err := s.server.reactor.SystemDispatch(HandlerMessage(s.server, func(srv *server) {
-		srv.connections[conn] = newConn(conn, writer)
+	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+		c := newConn(conn, writer)
+		srv.connections[conn] = c
+		s.events.onConnectionOpened(c)
 	})); err != nil {
 		panic(err)
 	}
 }
 
 func (s *controller) EliminateConnection(conn net.Conn, err error) {
-	if err := s.server.reactor.SystemDispatch(HandlerMessage(s.server, func(srv *server) {
+	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+		c, exist := srv.connections[conn]
+		if !exist {
+			return
+		}
 		delete(srv.connections, conn)
+		srv.events.onConnectionClosed(c, err)
 	})); err != nil {
 		panic(err)
 	}
 }
 
 func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
-	if err := s.server.reactor.SystemDispatch(HandlerMessage(s.server, func(srv *server) {
+	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
 		c, exist := srv.connections[conn]
 		if !exist {
 			return
 		}
-
-		if err := srv.reactor.Dispatch(c.GetActor(), HandlerMessage(srv, func(srv *server) {
-			srv.events.onConnectionReceivePacket(c, packet)
-		})); err != nil {
-			panic(err)
-		}
+		srv.events.onConnectionReceivePacket(c, packet)
 	})); err != nil {
 		panic(err)
 	}

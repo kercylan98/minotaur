@@ -21,6 +21,9 @@ type Conn interface {
 
 	// WriteBytes 写入数据
 	WriteBytes(data []byte) error
+
+	// WriteContext 写入数据
+	WriteContext(data []byte, context interface{}) error
 }
 
 func newConn(c net.Conn, connWriter ConnWriter) *conn {
@@ -31,9 +34,9 @@ func newConn(c net.Conn, connWriter ConnWriter) *conn {
 }
 
 type conn struct {
-	conn   net.Conn
-	writer ConnWriter
-	actor  string
+	conn   net.Conn   // 连接
+	writer ConnWriter // 写入器
+	actor  string     // Actor 名称
 }
 
 func (c *conn) SetActor(actor string) {
@@ -55,4 +58,8 @@ func (c *conn) Write(data []byte) (n int, err error) {
 func (c *conn) WriteBytes(data []byte) error {
 	_, err := c.conn.Write(data)
 	return err
+}
+
+func (c *conn) WriteContext(data []byte, context interface{}) error {
+	return c.writer(NewPacket(data).SetContext(context))
 }

@@ -1,19 +1,39 @@
 package server
 
-import "github.com/kercylan98/minotaur/utils/collection/listings"
+import (
+	"github.com/kercylan98/minotaur/utils/collection/listings"
+	"time"
+)
 
 type (
+	LaunchedEventHandler                func(srv Server, ip string, t time.Time)
+	ConnectionOpenedEventHandler        func(srv Server, conn Conn)
+	ConnectionClosedEventHandler        func(srv Server, conn Conn, err error)
 	ConnectionReceivePacketEventHandler func(srv Server, conn Conn, packet Packet)
 )
 
 type Events interface {
+	// RegisterLaunchedEvent 注册服务器启动事件，当服务器启动后将会触发该事件
+	//  - 该事件将在系统级 Actor 中运行，该事件中阻塞会导致服务器启动延迟
+	RegisterLaunchedEvent(handler LaunchedEventHandler, priority ...int)
+	// RegisterConnectionOpenedEvent 注册连接打开事件，当新连接创建完毕时将会触发该事件
+	//  - 该事件将在系统级 Actor 中运行，不应执行阻塞操作
+	RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHandler, priority ...int)
+	// RegisterConnectionClosedEvent 注册连接关闭事件，当连接关闭后将会触发该事件
+	//  - 该事件将在系统级 Actor 中运行，不应执行阻塞操作
+	RegisterConnectionClosedEvent(handler ConnectionClosedEventHandler, priority ...int)
+	// RegisterConnectionReceivePacketEvent 注册连接接收数据包事件，当连接接收到数据包后将会触发该事件
+	//  - 该事件将在连接的 Actor 中运行，不应执行阻塞操作
 	RegisterConnectionReceivePacketEvent(handler ConnectionReceivePacketEventHandler, priority ...int)
 }
 
 type events struct {
 	*server
 
-	connectionReceivePacketEventHandlers listings.PrioritySlice[ConnectionReceivePacketEventHandler]
+	launchedEventHandlers                listings.SyncPrioritySlice[LaunchedEventHandler]
+	connectionOpenedEventHandlers        listings.SyncPrioritySlice[ConnectionOpenedEventHandler]
+	connectionClosedEventHandlers        listings.SyncPrioritySlice[ConnectionClosedEventHandler]
+	connectionReceivePacketEventHandlers listings.SyncPrioritySlice[ConnectionReceivePacketEventHandler]
 }
 
 func (s *events) init(srv *server) *events {
@@ -21,13 +41,54 @@ func (s *events) init(srv *server) *events {
 	return s
 }
 
+func (s *events) RegisterLaunchedEvent(handler LaunchedEventHandler, priority ...int) {
+	s.launchedEventHandlers.AppendByOptionalPriority(handler, priority...)
+}
+
+func (s *events) onLaunched() {
+	_ = s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
+			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
+			return true
+		})
+	}))
+}
+
+func (s *events) RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHandler, priority ...int) {
+	s.connectionOpenedEventHandlers.AppendByOptionalPriority(handler, priority...)
+}
+
+func (s *events) onConnectionOpened(conn Conn) {
+	_ = s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+		s.connectionOpenedEventHandlers.RangeValue(func(index int, value ConnectionOpenedEventHandler) bool {
+			value(s.server, conn)
+			return true
+		})
+	}))
+}
+
+func (s *events) RegisterConnectionClosedEvent(handler ConnectionClosedEventHandler, priority ...int) {
+	s.connectionClosedEventHandlers.AppendByOptionalPriority(handler, priority...)
+}
+
+func (s *events) onConnectionClosed(conn Conn, err error) {
+	_ = s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+		s.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
+			value(s.server, conn, err)
+			return true
+		})
+	}))
+}
+
 func (s *events) RegisterConnectionReceivePacketEvent(handler ConnectionReceivePacketEventHandler, priority ...int) {
 	s.connectionReceivePacketEventHandlers.AppendByOptionalPriority(handler, priority...)
 }
 
 func (s *events) onConnectionReceivePacket(conn Conn, packet Packet) {
-	s.connectionReceivePacketEventHandlers.RangeValue(func(index int, value ConnectionReceivePacketEventHandler) bool {
-		value(s.server, conn, packet)
-		return true
-	})
+	_ = s.server.reactor.AutoDispatch(conn.GetActor(), NativeMessage(s.server, func(srv *server) {
+		s.connectionReceivePacketEventHandlers.RangeValue(func(index int, value ConnectionReceivePacketEventHandler) bool {
+			value(s.server, conn, packet)
+			return true
+		})
+	}))
 }

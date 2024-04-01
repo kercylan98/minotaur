@@ -106,6 +106,14 @@ func (r *Reactor[M]) SetDebug(debug bool) *Reactor[M] {
 	return r
 }
 
+// AutoDispatch 自动分发，当 ident 为空字符串时，分发到系统级别的队列，否则分发到 ident 使用的队列
+func (r *Reactor[M]) AutoDispatch(ident string, msg M) error {
+	if ident == "" {
+		return r.SystemDispatch(msg)
+	}
+	return r.Dispatch(ident, msg)
+}
+
 // SystemDispatch 将消息分发到系统级别的队列
 func (r *Reactor[M]) SystemDispatch(msg M) error {
 	if atomic.LoadInt32(&r.state) > StatusRunning {
