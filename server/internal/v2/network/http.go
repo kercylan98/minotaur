@@ -53,3 +53,11 @@ func (h *httpCore[H]) OnShutdown() error {
 	defer cancel()
 	return h.srv.Shutdown(ctx)
 }
+
+func (h *httpCore[H]) Schema() string {
+	return "http(s)"
+}
+
+func (h *httpCore[H]) Address() string {
+	return h.srv.Addr
+}

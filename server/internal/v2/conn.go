@@ -4,6 +4,7 @@ import (
 	"net"
 )
 
+// ConnWriter 用于兼容不同 Network 的连接数据写入器
 type ConnWriter func(packet Packet) error
 
 type Conn interface {

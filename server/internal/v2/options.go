@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/utils/log/v2"
 	"sync"
 	"time"
 )
@@ -11,24 +12,27 @@ func NewOptions() *Options {
 
 func DefaultOptions() *Options {
 	return &Options{
-		ServerMessageChannelSize:       1024 * 4,
-		ActorMessageChannelSize:        1024,
-		ServerMessageBufferInitialSize: 1024,
-		ActorMessageBufferInitialSize:  1024,
-		MessageErrorHandler:            nil,
-		LifeCycleLimit:                 0,
+		serverMessageChannelSize:       1024 * 4,
+		actorMessageChannelSize:        1024,
+		serverMessageBufferInitialSize: 1024,
+		actorMessageBufferInitialSize:  1024,
+		messageErrorHandler:            nil,
+		lifeCycleLimit:                 0,
+		logger:                         log.GetLogger(),
 	}
 }
 
 type Options struct {
 	server                         *server
 	rw                             sync.RWMutex
-	ServerMessageChannelSize       int                                          // 服务器 Actor 消息处理管道大小
-	ActorMessageChannelSize        int                                          // Actor 消息处理管道大小
-	ServerMessageBufferInitialSize int                                          // 服务器 Actor 消息写入缓冲区初始化大小
-	ActorMessageBufferInitialSize  int                                          // Actor 消息写入缓冲区初始化大小
-	MessageErrorHandler            func(srv Server, message Message, err error) // 消息错误处理器
-	LifeCycleLimit                 time.Duration                                // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	serverMessageChannelSize       int                                          // 服务器 Actor 消息处理管道大小
+	actorMessageChannelSize        int                                          // Actor 消息处理管道大小
+	serverMessageBufferInitialSize int                                          // 服务器 Actor 消息写入缓冲区初始化大小
+	actorMessageBufferInitialSize  int                                          // Actor 消息写入缓冲区初始化大小
+	messageErrorHandler            func(srv Server, message Message, err error) // 消息错误处理器
+	lifeCycleLimit                 time.Duration                                // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	logger                         *log.Logger                                  // 日志记录器
+	debug                          bool                                         // Debug 模式
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -42,12 +46,13 @@ func (opt *Options) Apply(options ...*Options) {
 	for _, option := range options {
 		option.rw.RLock()
 
-		opt.ServerMessageChannelSize = option.ServerMessageChannelSize
-		opt.ActorMessageChannelSize = option.ActorMessageChannelSize
-		opt.ServerMessageBufferInitialSize = option.ServerMessageBufferInitialSize
-		opt.ActorMessageBufferInitialSize = option.ActorMessageBufferInitialSize
-		opt.MessageErrorHandler = option.MessageErrorHandler
-		opt.LifeCycleLimit = option.LifeCycleLimit
+		opt.serverMessageChannelSize = option.serverMessageChannelSize
+		opt.actorMessageChannelSize = option.actorMessageChannelSize
+		opt.serverMessageBufferInitialSize = option.serverMessageBufferInitialSize
+		opt.actorMessageBufferInitialSize = option.actorMessageBufferInitialSize
+		opt.messageErrorHandler = option.messageErrorHandler
+		opt.lifeCycleLimit = option.lifeCycleLimit
+		opt.logger = option.logger
 
 		option.rw.RUnlock()
 	}
@@ -57,32 +62,62 @@ func (opt *Options) Apply(options ...*Options) {
 }
 
 func (opt *Options) active() {
-	opt.server.notify.lifeCycleTime <- opt.getLifeCycleLimit()
+	opt.server.notify.lifeCycleTime <- opt.GetLifeCycleLimit()
+}
+
+// WithDebug 设置 Debug 模式是否开启
+//   - 该函数支持运行时设置
+func (opt *Options) WithDebug(debug bool) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.debug = true
+	})
+}
+
+// IsDebug 获取当前服务器是否是 Debug 模式
+func (opt *Options) IsDebug() bool {
+	return getOptionsValue(opt, func(opt *Options) bool {
+		return opt.debug
+	})
+}
+
+// WithLogger 设置服务器的日志记录器
+//   - 该函数支持运行时设置
+func (opt *Options) WithLogger(logger *log.Logger) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.logger = logger
+	})
+}
+
+// GetLogger 获取服务器的日志记录器
+func (opt *Options) GetLogger() *log.Logger {
+	return getOptionsValue(opt, func(opt *Options) *log.Logger {
+		return opt.logger
+	})
 }
 
 // WithServerMessageChannelSize 设置服务器 Actor 用于处理消息的管道大小，当管道由于逻辑阻塞而导致满载时，会导致新消息无法及时从缓冲区拿出，从而增加内存的消耗，但是并不会影响消息的写入
 func (opt *Options) WithServerMessageChannelSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.ServerMessageChannelSize = size
+		opt.serverMessageChannelSize = size
 	})
 }
 
-func (opt *Options) getServerMessageChannelSize() int {
+func (opt *Options) GetServerMessageChannelSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.ServerMessageChannelSize
+		return opt.serverMessageChannelSize
 	})
 }
 
 // WithActorMessageChannelSize 设置 Actor 用于处理消息的管道大小，当管道由于逻辑阻塞而导致满载时，会导致新消息无法及时从缓冲区拿出，从而增加内存的消耗，但是并不会影响消息的写入
 func (opt *Options) WithActorMessageChannelSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.ActorMessageChannelSize = size
+		opt.actorMessageChannelSize = size
 	})
 }
 
-func (opt *Options) getActorMessageChannelSize() int {
+func (opt *Options) GetActorMessageChannelSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.ActorMessageChannelSize
+		return opt.actorMessageChannelSize
 	})
 }
 
@@ -90,13 +125,13 @@ func (opt *Options) getActorMessageChannelSize() int {
 //   - 由于扩容是按照当前大小的 2 倍进行扩容，过大的值也可能会导致内存消耗过高
 func (opt *Options) WithServerMessageBufferInitialSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.ServerMessageBufferInitialSize = size
+		opt.serverMessageBufferInitialSize = size
 	})
 }
 
-func (opt *Options) getServerMessageBufferInitialSize() int {
+func (opt *Options) GetServerMessageBufferInitialSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.ServerMessageBufferInitialSize
+		return opt.serverMessageBufferInitialSize
 	})
 }
 
@@ -104,13 +139,13 @@ func (opt *Options) getServerMessageBufferInitialSize() int {
 //   - 由于扩容是按照当前大小的 2 倍进行扩容，过大的值也可能会导致内存消耗过高
 func (opt *Options) WithActorMessageBufferInitialSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.ActorMessageBufferInitialSize = size
+		opt.actorMessageBufferInitialSize = size
 	})
 }
 
-func (opt *Options) getActorMessageBufferInitialSize() int {
+func (opt *Options) GetActorMessageBufferInitialSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.ActorMessageBufferInitialSize
+		return opt.actorMessageBufferInitialSize
 	})
 }
 
@@ -118,13 +153,13 @@ func (opt *Options) getActorMessageBufferInitialSize() int {
 //   - 如果在运行时设置，后续消息错误将会使用新的 handler 进行处理
 func (opt *Options) WithMessageErrorHandler(handler func(srv Server, message Message, err error)) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.MessageErrorHandler = handler
+		opt.messageErrorHandler = handler
 	})
 }
 
-func (opt *Options) getMessageErrorHandler() func(srv Server, message Message, err error) {
+func (opt *Options) GetMessageErrorHandler() func(srv Server, message Message, err error) {
 	return getOptionsValue(opt, func(opt *Options) func(srv Server, message Message, err error) {
-		return opt.MessageErrorHandler
+		return opt.messageErrorHandler
 	})
 }
 
@@ -133,7 +168,7 @@ func (opt *Options) getMessageErrorHandler() func(srv Server, message Message, e
 //   - 该函数支持运行时设置
 func (opt *Options) WithLifeCycleLimit(limit time.Duration) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.LifeCycleLimit = limit
+		opt.lifeCycleLimit = limit
 	})
 }
 
@@ -144,17 +179,16 @@ func (opt *Options) WithLifeCycleEnd(end time.Time) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
 		now := time.Now()
 		if end.Before(now) {
-			opt.LifeCycleLimit = 0
+			opt.lifeCycleLimit = 0
 			return
 		}
-		opt.LifeCycleLimit = end.Sub(now)
+		opt.lifeCycleLimit = end.Sub(now)
 	})
 }
 
-// getLifeCycleLimit 获取服务器生命周期上限
-func (opt *Options) getLifeCycleLimit() time.Duration {
+func (opt *Options) GetLifeCycleLimit() time.Duration {
 	return getOptionsValue(opt, func(opt *Options) time.Duration {
-		return opt.LifeCycleLimit
+		return opt.lifeCycleLimit
 	})
 }
 
@@ -163,6 +197,12 @@ func (opt *Options) modifyOptionsValue(handler func(opt *Options)) *Options {
 	handler(opt)
 	opt.rw.Unlock()
 	return opt
+}
+
+func (opt *Options) getManyOptions(handler func(opt *Options)) {
+	opt.rw.RLock()
+	defer opt.rw.RUnlock()
+	handler(opt)
 }
 
 func getOptionsValue[V any](opt *Options, handler func(opt *Options) V) V {

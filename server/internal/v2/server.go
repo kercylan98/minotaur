@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/utils/log/v2"
 	"time"
 
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
@@ -44,12 +45,12 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
 	srv.reactor = reactor.NewReactor[Message](
-		srv.getServerMessageChannelSize(), srv.getActorMessageChannelSize(),
-		srv.getServerMessageBufferInitialSize(), srv.getActorMessageBufferInitialSize(),
+		srv.GetServerMessageChannelSize(), srv.GetActorMessageChannelSize(),
+		srv.GetServerMessageBufferInitialSize(), srv.GetActorMessageBufferInitialSize(),
 		func(msg Message) {
 			msg.Execute()
 		}, func(msg Message, err error) {
-			if handler := srv.getMessageErrorHandler(); handler != nil {
+			if handler := srv.GetMessageErrorHandler(); handler != nil {
 				handler(srv, msg, err)
 			}
 		})
@@ -77,7 +78,13 @@ func (s *server) Run() (err error) {
 }
 
 func (s *server) Shutdown() (err error) {
+	s.GetLogger().Info("Minotaur Server", log.String("", "ShutdownInfo"), log.String("state", "start"))
+	defer func(startAt time.Time) {
+		s.GetLogger().Info("Minotaur Server", log.String("", "ShutdownInfo"), log.String("state", "done"), log.String("cost", time.Since(startAt).String()))
+	}(time.Now())
+
 	defer s.cancel()
+	DisableHttpPProf()
 	s.events.onShutdown()
 	err = s.network.OnShutdown()
 	s.reactor.Close()

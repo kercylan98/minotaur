@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -12,8 +13,8 @@ var (
 	httpPProfMutex sync.Mutex   // HTTP PProf 服务器互斥锁
 )
 
-// EnableHttpPProf 设置启用 http pprof
-//   - 该函数支持运行时调用
+// EnableHttpPProf 设置启用 HTTP PProf
+//   - 该函数支持运行时调用且支持重复调用，重复调用不会重复开启
 func EnableHttpPProf(addr, prefix string, errorHandler func(err error)) {
 	httpPProfMutex.Lock()
 	defer httpPProfMutex.Unlock()
@@ -36,14 +37,15 @@ func EnableHttpPProf(addr, prefix string, errorHandler func(err error)) {
 	srv := &http.Server{Addr: addr, Handler: mux}
 	httpPProf = srv
 	go func(srv *http.Server, errHandler func(err error)) {
-		if err := srv.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errorHandler(err)
 		}
 	}(srv, errorHandler)
 }
 
-// DisableHttpPProf 设置禁用 http pprof
-//   - 该函数支持运行时调用
+// DisableHttpPProf 设置禁用 HTTP PProf
+//   - 当 HTTP PProf 未启用时不会产生任何效果
+//   - 该函数支持运行时调用且支持重复调用，重复调用不会重复禁用
 func DisableHttpPProf() {
 	httpPProfMutex.Lock()
 	defer httpPProfMutex.Unlock()

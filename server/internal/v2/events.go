@@ -1,6 +1,9 @@
 package server
 
 import (
+	"fmt"
+	"github.com/kercylan98/minotaur/utils/log"
+	"reflect"
 	"time"
 
 	"github.com/kercylan98/minotaur/utils/collection/listings"
@@ -57,6 +60,12 @@ func (s *events) RegisterLaunchedEvent(handler LaunchedEventHandler, priority ..
 }
 
 func (s *events) onLaunched() {
+	s.Options.getManyOptions(func(opt *Options) {
+		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
+		opt.logger.Info("Minotaur Server", log.String("", "RunningInfo"), log.String("network", reflect.TypeOf(s.network).String()), log.String("listen", fmt.Sprintf("%s://%s%s", s.network.Schema(), s.server.state.Ip, s.network.Address())))
+		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
+	})
+
 	_ = s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
 		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
 			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)

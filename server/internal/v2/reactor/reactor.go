@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/server/internal/v2/loadbalancer"
-	"github.com/kercylan98/minotaur/utils/log"
 	"github.com/kercylan98/minotaur/utils/super"
-	"log/slog"
 	"runtime"
 	"runtime/debug"
 	"sync"
@@ -25,7 +23,6 @@ var sysIdent = &identifiable{ident: "system"}
 // NewReactor 创建一个新的 Reactor 实例，初始化系统级别的队列和多个 Socket 对应的队列
 func NewReactor[M any](systemQueueSize, queueSize, systemBufferSize, queueBufferSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
 	r := &Reactor[M]{
-		logger:          log.Default().Logger,
 		systemQueue:     newQueue[M](-1, systemQueueSize, systemBufferSize),
 		identifiers:     haxmap.New[string, *identifiable](),
 		lb:              loadbalancer.NewRoundRobin[int, *queue[M]](),
@@ -80,7 +77,6 @@ func NewReactor[M any](systemQueueSize, queueSize, systemBufferSize, queueBuffer
 
 // Reactor 是一个消息反应器，管理系统级别的队列和多个 Socket 对应的队列
 type Reactor[M any] struct {
-	logger          *slog.Logger                             // 日志记录器
 	state           int32                                    // 状态
 	systemQueue     *queue[M]                                // 系统级别的队列
 	queueSize       int                                      // 队列管道大小
@@ -93,13 +89,6 @@ type Reactor[M any] struct {
 	cwg             sync.WaitGroup                           // 关闭等待组
 	handler         queueMessageHandler[M]                   // 消息处理器
 	errorHandler    ErrorHandler[M]                          // 错误处理器
-	debug           bool                                     // 是否开启调试模式
-}
-
-// SetDebug 设置是否开启调试模式
-func (r *Reactor[M]) SetDebug(debug bool) *Reactor[M] {
-	r.debug = debug
-	return r
 }
 
 // AutoDispatch 自动分发，当 ident 为空字符串时，分发到系统级别的队列，否则分发到 ident 使用的队列

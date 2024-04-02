@@ -45,3 +45,14 @@ func (w *websocketCore) OnShutdown() error {
 	}
 	return nil
 }
+
+func (w *websocketCore) Schema() string {
+	return "ws"
+}
+
+func (w *websocketCore) Address() string {
+	if w.pattern == "/" {
+		return w.addr
+	}
+	return fmt.Sprintf("%s:%s", w.addr, w.pattern)
+}
