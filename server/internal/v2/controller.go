@@ -20,8 +20,8 @@ func (s *controller) init(srv *server) *controller {
 }
 
 func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
-	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
-		c := newConn(conn, writer)
+	if err := s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
+		c := newConn(s.server, conn, writer)
 		srv.connections[conn] = c
 		s.events.onConnectionOpened(c)
 	})); err != nil {
@@ -30,7 +30,7 @@ func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
 }
 
 func (s *controller) EliminateConnection(conn net.Conn, err error) {
-	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+	if err := s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
 		c, exist := srv.connections[conn]
 		if !exist {
 			return
@@ -43,7 +43,7 @@ func (s *controller) EliminateConnection(conn net.Conn, err error) {
 }
 
 func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
-	if err := s.server.reactor.SystemDispatch(NativeMessage(s.server, func(srv *server) {
+	if err := s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
 		c, exist := srv.connections[conn]
 		if !exist {
 			return

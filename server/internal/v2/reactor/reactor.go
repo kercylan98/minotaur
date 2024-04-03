@@ -2,8 +2,10 @@ package reactor
 
 import (
 	"fmt"
-	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/server/internal/v2/loadbalancer"
+	"github.com/kercylan98/minotaur/server/internal/v2/queue"
+	"github.com/kercylan98/minotaur/utils/log/v2"
+	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"runtime"
 	"runtime/debug"
@@ -18,109 +20,116 @@ const (
 	statusClosed             // 事件循环已关闭
 )
 
-var sysIdent = &identifiable{ident: "system"}
+const SysIdent = str.None
 
 // NewReactor 创建一个新的 Reactor 实例，初始化系统级别的队列和多个 Socket 对应的队列
-func NewReactor[M any](systemQueueSize, queueSize, systemBufferSize, queueBufferSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
+func NewReactor[M queue.Message](systemQueueSize, queueSize, systemBufferSize, queueBufferSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
+	if handler == nil {
+
+	}
 	r := &Reactor[M]{
-		systemQueue:     newQueue[M](-1, systemQueueSize, systemBufferSize),
-		identifiers:     haxmap.New[string, *identifiable](),
-		lb:              loadbalancer.NewRoundRobin[int, *queue[M]](),
+		systemQueue:     queue.New[int, string, M](-1, systemQueueSize, systemBufferSize),
+		lb:              loadbalancer.NewRoundRobin[int, *queue.Queue[int, string, M]](),
 		errorHandler:    errorHandler,
 		queueSize:       queueSize,
 		queueBufferSize: queueBufferSize,
 		state:           statusNone,
+		handler:         handler,
+		location:        make(map[string]int),
 	}
+	r.logger.Store(log.GetLogger())
 
 	defaultNum := runtime.NumCPU()
-	if defaultNum < 1 {
-		defaultNum = 1
-	}
-
 	r.queueRW.Lock()
 	for i := 0; i < defaultNum; i++ {
 		r.noneLockAddQueue()
 	}
 	r.queueRW.Unlock()
 
-	r.handler = func(q *queue[M], ident *identifiable, msg M) {
-		defer func(ident *identifiable, msg M) {
-			if err := super.RecoverTransform(recover()); err != nil {
-				defer func(msg M) {
-					if err = super.RecoverTransform(recover()); err != nil {
-						fmt.Println(err)
-						debug.PrintStack()
-					}
-				}(msg)
-				if r.errorHandler != nil {
-					r.errorHandler(msg, err)
-				} else {
-					fmt.Println(err)
-					debug.PrintStack()
-				}
-			}
-
-			if atomic.AddInt64(&ident.n, -1) == 0 {
-				r.queueRW.Lock()
-				r.identifiers.Del(ident.ident)
-				r.queueRW.Unlock()
-			}
-
-		}(ident, msg)
-		if handler != nil {
-			handler(msg)
-		}
-	}
-
 	return r
 }
 
 // Reactor 是一个消息反应器，管理系统级别的队列和多个 Socket 对应的队列
-type Reactor[M any] struct {
-	state           int32                                    // 状态
-	systemQueue     *queue[M]                                // 系统级别的队列
-	queueSize       int                                      // 队列管道大小
-	queueBufferSize int                                      // 队列缓冲区大小
-	queues          []*queue[M]                              // 所有使用的队列
-	queueRW         sync.RWMutex                             // 队列读写锁
-	identifiers     *haxmap.Map[string, *identifiable]       // 标识符到队列索引的映射及消息计数
-	lb              *loadbalancer.RoundRobin[int, *queue[M]] // 负载均衡器
-	wg              sync.WaitGroup                           // 等待组
-	cwg             sync.WaitGroup                           // 关闭等待组
-	handler         queueMessageHandler[M]                   // 消息处理器
-	errorHandler    ErrorHandler[M]                          // 错误处理器
+type Reactor[M queue.Message] struct {
+	logger          atomic.Pointer[log.Logger]                                  // 日志记录器
+	state           int32                                                       // 状态
+	systemQueue     *queue.Queue[int, string, M]                                // 系统级别的队列
+	queueSize       int                                                         // 队列管道大小
+	queueBufferSize int                                                         // 队列缓冲区大小
+	queues          []*queue.Queue[int, string, M]                              // 所有使用的队列
+	queueRW         sync.RWMutex                                                // 队列读写锁
+	location        map[string]int                                              // 所在队列 ID 映射
+	locationRW      sync.RWMutex                                                // 所在队列 ID 映射锁
+	lb              *loadbalancer.RoundRobin[int, *queue.Queue[int, string, M]] // 负载均衡器
+	wg              sync.WaitGroup                                              // 等待组
+	cwg             sync.WaitGroup                                              // 关闭等待组
+	handler         MessageHandler[M]                                           // 消息处理器
+	errorHandler    ErrorHandler[M]                                             // 错误处理器
+}
+
+// process 消息处理
+func (r *Reactor[M]) process(msg queue.MessageWrapper[int, string, M]) {
+	defer func(msg queue.MessageWrapper[int, string, M]) {
+		if err := super.RecoverTransform(recover()); err != nil {
+			if r.errorHandler != nil {
+				r.errorHandler(msg, err)
+			} else {
+				r.logger.Load().Error("Reactor", log.Int("queue", msg.Queue().Id()), log.String("ident", msg.Ident()), log.Err(err))
+				debug.PrintStack()
+			}
+		}
+	}(msg)
+	r.handler(msg)
 }
 
 // AutoDispatch 自动分发，当 ident 为空字符串时，分发到系统级别的队列，否则分发到 ident 使用的队列
 func (r *Reactor[M]) AutoDispatch(ident string, msg M) error {
-	if ident == "" {
-		return r.SystemDispatch(msg)
+	if ident == str.None {
+		return r.DispatchWithSystem(msg)
 	}
 	return r.Dispatch(ident, msg)
 }
 
-// SystemDispatch 将消息分发到系统级别的队列
-func (r *Reactor[M]) SystemDispatch(msg M) error {
-	if atomic.LoadInt32(&r.state) > statusRunning {
+// DispatchWithSystem 将消息分发到系统级别的队列
+func (r *Reactor[M]) DispatchWithSystem(msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
+	if atomic.LoadInt32(&r.state) > statusClosing {
 		r.queueRW.RUnlock()
 		return fmt.Errorf("reactor closing or closed")
 	}
-	return r.systemQueue.push(sysIdent, msg)
+	for _, f := range beforeHandler {
+		f(r.systemQueue, msg)
+	}
+	return r.systemQueue.Push(SysIdent, msg)
 }
 
 // Dispatch 将消息分发到 ident 使用的队列，当 ident 首次使用时，将会根据负载均衡策略选择一个队列
-func (r *Reactor[M]) Dispatch(ident string, msg M) error {
+//   - 设置 count 会增加消息的外部计数，当 Reactor 关闭时会等待外部计数归零
+func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
 	r.queueRW.RLock()
-	if atomic.LoadInt32(&r.state) > statusRunning {
+	if atomic.LoadInt32(&r.state) > statusClosing {
 		r.queueRW.RUnlock()
 		return fmt.Errorf("reactor closing or closed")
 	}
-	next := r.lb.Next()
-	i, _ := r.identifiers.GetOrSet(ident, &identifiable{ident: ident})
-	q := r.queues[next.Id()]
-	atomic.AddInt64(&i.n, 1)
+
+	var next *queue.Queue[int, string, M]
+	r.locationRW.RLock()
+	i, exist := r.location[ident]
+	r.locationRW.RUnlock()
+	if !exist {
+		r.locationRW.Lock()
+		if i, exist = r.location[ident]; !exist {
+			next = r.lb.Next()
+			r.location[ident] = next.Id()
+		}
+		r.locationRW.Unlock()
+	} else {
+		next = r.queues[i]
+	}
 	r.queueRW.RUnlock()
-	return q.push(i, msg)
+	for _, f := range beforeHandler {
+		f(next, msg)
+	}
+	return next.Push(ident, msg)
 }
 
 // Run 启动 Reactor，运行系统级别的队列和多个 Socket 对应的队列
@@ -138,35 +147,41 @@ func (r *Reactor[M]) Run() {
 }
 
 func (r *Reactor[M]) noneLockAddQueue() {
-	q := newQueue[M](len(r.queues), r.queueSize, r.queueBufferSize)
+	q := queue.New[int, string, M](len(r.queues), r.queueSize, r.queueBufferSize)
 	r.lb.Add(q) // 运行前添加到负载均衡器，未运行时允许接收消息
 	r.queues = append(r.queues, q)
 }
 
-func (r *Reactor[M]) noneLockDelQueue(q *queue[M]) {
+func (r *Reactor[M]) noneLockDelQueue(q *queue.Queue[int, string, M]) {
 	idx := q.Id()
 	if idx < 0 || idx >= len(r.queues) || r.queues[idx] != q {
 		return
 	}
 	r.queues = append(r.queues[:idx], r.queues[idx+1:]...)
 	for i := idx; i < len(r.queues); i++ {
-		r.queues[i].idx = i
+		r.queues[i].SetId(i)
 	}
 }
 
-func (r *Reactor[M]) runQueue(q *queue[M]) {
+func (r *Reactor[M]) runQueue(q *queue.Queue[int, string, M]) {
 	r.wg.Add(1)
-	q.setClosedHandler(func(q *queue[M]) {
+	q.SetClosedHandler(func(q *queue.Queue[int, string, M]) {
 		// 关闭时正在等待关闭完成，外部已加锁，无需再次加锁
 		r.noneLockDelQueue(q)
 		r.cwg.Done()
 	})
-	go q.run()
+	go q.Run()
 
-	go func(r *Reactor[M], q *queue[M]) {
+	go func(r *Reactor[M], q *queue.Queue[int, string, M]) {
 		defer r.wg.Done()
-		for m := range q.read() {
-			r.handler(q, m.ident, m.msg)
+		for m := range q.Read() {
+			m(r.process, func(m queue.MessageWrapper[int, string, M], last bool) {
+				if last {
+					r.queueRW.Lock()
+					defer r.queueRW.Unlock()
+					delete(r.location, m.Ident())
+				}
+			})
 		}
 	}(r, q)
 }

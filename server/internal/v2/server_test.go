@@ -23,7 +23,7 @@ func TestNewServer(t *testing.T) {
 		})
 	}()
 
-	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Second*3))
+	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Day*3))
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
 		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
@@ -35,6 +35,14 @@ func TestNewServer(t *testing.T) {
 		if err := conn.WritePacket(packet); err != nil {
 			panic(err)
 		}
+		srv.PushAsyncMessage(func(srv server.Server) error {
+			for i := 0; i < 3; i++ {
+				time.Sleep(time.Second)
+			}
+			return nil
+		}, func(srv server.Server, err error) {
+			t.Log("callback")
+		})
 	})
 
 	if err := srv.Run(); err != nil {

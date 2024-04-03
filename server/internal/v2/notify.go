@@ -29,11 +29,18 @@ func (n *notify) init(srv *server) *notify {
 	return n
 }
 
+func (n *notify) close() {
+	close(n.systemSignal)
+	close(n.lifeCycleLimit)
+	close(n.lifeCycleTime)
+}
+
 func (n *notify) run() {
 	defer func() {
 		if err := n.server.Shutdown(); err != nil {
 			panic(err)
 		}
+		n.close()
 	}()
 	for {
 		select {

@@ -1,6 +1,7 @@
 package reactor_test
 
 import (
+	"github.com/kercylan98/minotaur/server/internal/v2/queue"
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/times"
@@ -9,11 +10,11 @@ import (
 )
 
 func BenchmarkReactor_Dispatch(b *testing.B) {
-	var r = reactor.NewReactor(1024*16, 1024, func(msg func()) {
-		msg()
-	}, func(msg func(), err error) {
-		b.Error(err)
-	}).SetDebug(false)
+	var r = reactor.NewReactor(1024*16, 1024, 1024, 1024, func(message queue.MessageWrapper[int, string, func()]) {
+		message.Message()
+	}, func(message queue.MessageWrapper[int, string, func()], err error) {
+
+	})
 
 	go r.Run()
 
@@ -28,11 +29,11 @@ func BenchmarkReactor_Dispatch(b *testing.B) {
 }
 
 func TestReactor_Dispatch(t *testing.T) {
-	var r = reactor.NewReactor(1024*16, 1024, func(msg func()) {
-		msg()
-	}, func(msg func(), err error) {
-		t.Error(err)
-	}).SetDebug(true)
+	var r = reactor.NewReactor(1024*16, 1024, 1024, 1024, func(message queue.MessageWrapper[int, string, func()]) {
+		message.Message()
+	}, func(message queue.MessageWrapper[int, string, func()], err error) {
+
+	})
 
 	go r.Run()
 

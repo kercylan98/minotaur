@@ -25,16 +25,22 @@ type Conn interface {
 
 	// WriteContext 写入数据
 	WriteContext(data []byte, context interface{}) error
+
+	PushSyncMessage(handler func(srv Server, conn Conn))
+
+	PushAsyncMessage(handler func(srv Server, conn Conn) error, callbacks ...func(srv Server, conn Conn, err error))
 }
 
-func newConn(c net.Conn, connWriter ConnWriter) *conn {
+func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
 	return &conn{
+		server: srv,
 		conn:   c,
 		writer: connWriter,
 	}
 }
 
 type conn struct {
+	server *server
 	conn   net.Conn   // 连接
 	writer ConnWriter // 写入器
 	actor  string     // Actor 名称
@@ -63,4 +69,24 @@ func (c *conn) WriteBytes(data []byte) error {
 
 func (c *conn) WriteContext(data []byte, context interface{}) error {
 	return c.writer(NewPacket(data).SetContext(context))
+}
+
+func (c *conn) PushSyncMessage(handler func(srv Server, conn Conn)) {
+	if err := c.server.reactor.Dispatch(c.actor, SyncMessage(c.server, func(srv *server) {
+		handler(srv, c)
+	})); err != nil {
+		panic(err)
+	}
+}
+
+func (c *conn) PushAsyncMessage(handler func(srv Server, conn Conn) error, callbacks ...func(srv Server, conn Conn, err error)) {
+	if err := c.server.reactor.Dispatch(c.actor, AsyncMessage(c.server, c.actor, func(srv *server) error {
+		return handler(srv, c)
+	}, func(srv *server, err error) {
+		for _, callback := range callbacks {
+			callback(srv, c, err)
+		}
+	})); err != nil {
+		panic(err)
+	}
 }

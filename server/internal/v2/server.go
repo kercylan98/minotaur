@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/server/internal/v2/queue"
 	"github.com/kercylan98/minotaur/utils/log/v2"
+	"github.com/panjf2000/ants/v2"
 	"time"
 
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
@@ -20,12 +22,19 @@ type Server interface {
 
 	// GetStatus 获取服务器状态
 	GetStatus() *State
+
+	// PushSyncMessage 推送同步消息
+	PushSyncMessage(handler func(srv Server))
+
+	// PushAsyncMessage 推送异步消息
+	PushAsyncMessage(handler func(srv Server) error, callbacks ...func(srv Server, err error))
 }
 
 type server struct {
 	*controller
 	*events
 	*Options
+	ants    *ants.Pool
 	state   *State
 	notify  *notify
 	ctx     context.Context
@@ -47,14 +56,26 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.reactor = reactor.NewReactor[Message](
 		srv.GetServerMessageChannelSize(), srv.GetActorMessageChannelSize(),
 		srv.GetServerMessageBufferInitialSize(), srv.GetActorMessageBufferInitialSize(),
-		func(msg Message) {
-			msg.Execute()
-		}, func(msg Message, err error) {
+		func(message queue.MessageWrapper[int, string, Message]) {
+			message.Message().Execute()
+		}, func(message queue.MessageWrapper[int, string, Message], err error) {
 			if handler := srv.GetMessageErrorHandler(); handler != nil {
-				handler(srv, msg, err)
+				handler(srv, message.Message(), err)
 			}
 		})
 	srv.Options.init(srv).Apply(options...)
+	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
+		ExpiryDuration: 10 * time.Second,
+		Nonblocking:    true,
+		//Logger:         &antsLogger{logging.GetDefaultLogger()},
+		//PanicHandler: func(i interface{}) {
+		//logging.Errorf("goroutine pool panic: %v", i)
+		//},
+	}))
+	if err != nil {
+		panic(err)
+	}
+	srv.ants = antsPool
 	return srv
 }
 
@@ -89,6 +110,26 @@ func (s *server) Shutdown() (err error) {
 	err = s.network.OnShutdown()
 	s.reactor.Close()
 	return
+}
+
+func (s *server) PushSyncMessage(handler func(srv Server)) {
+	if err := s.reactor.DispatchWithSystem(SyncMessage(s, func(srv *server) {
+		handler(srv)
+	})); err != nil {
+		panic(err)
+	}
+}
+
+func (s *server) PushAsyncMessage(handler func(srv Server) error, callbacks ...func(srv Server, err error)) {
+	if err := s.reactor.DispatchWithSystem(AsyncMessage(s, reactor.SysIdent, func(srv *server) error {
+		return handler(srv)
+	}, func(srv *server, err error) {
+		for _, callback := range callbacks {
+			callback(srv, err)
+		}
+	})); err != nil {
+		panic(err)
+	}
 }
 
 func (s *server) GetStatus() *State {
