@@ -103,17 +103,14 @@ func (q *Queue[Id, Ident, M]) Run() {
 }
 
 // Push 向队列中推送来自 ident 的消息 m，当队列已关闭时将会返回 ErrorQueueClosed
-func (q *Queue[Id, Ident, M]) Push(ident Ident, m M) error {
+func (q *Queue[Id, Ident, M]) Push(hasIdent bool, ident Ident, m M) error {
 	if atomic.LoadInt32(&q.state.status) > StatusClosing {
 		return ErrorQueueClosed
 	}
 	q.cond.L.Lock()
 	q.identifiers[ident]++
 	q.state.total++
-	q.buf.Write(MessageWrapper[Id, Ident, M]{
-		ident: ident,
-		msg:   m,
-	})
+	q.buf.Write(messageWrapper(q, hasIdent, ident, m))
 	//log.Info("消息总计数", log.Int64("计数", q.state.total))
 	q.cond.Signal()
 	q.cond.L.Unlock()

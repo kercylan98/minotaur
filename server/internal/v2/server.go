@@ -23,11 +23,14 @@ type Server interface {
 	// GetStatus 获取服务器状态
 	GetStatus() *State
 
-	// PushSyncMessage 推送同步消息
+	// PushMessage 推送特定消息到系统队列中进行处理
+	PushMessage(message Message)
+
+	// PushSyncMessage 是 PushMessage 中对于 GenerateSystemSyncMessage 的快捷方式
 	PushSyncMessage(handler func(srv Server))
 
-	// PushAsyncMessage 推送异步消息
-	PushAsyncMessage(handler func(srv Server) error, callbacks ...func(srv Server, err error))
+	// PushAsyncMessage 是 PushMessage 中对于 GenerateSystemAsyncMessage 的快捷方式，当 callback 传入多个时，将仅有首个生效
+	PushAsyncMessage(handler func(srv Server) error, callback ...func(srv Server, err error))
 }
 
 type server struct {
@@ -56,9 +59,8 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.reactor = reactor.NewReactor[Message](
 		srv.GetServerMessageChannelSize(), srv.GetActorMessageChannelSize(),
 		srv.GetServerMessageBufferInitialSize(), srv.GetActorMessageBufferInitialSize(),
-		func(message queue.MessageWrapper[int, string, Message]) {
-			message.Message().OnExecute()
-		}, func(message queue.MessageWrapper[int, string, Message], err error) {
+		srv.onProcessMessage,
+		func(message queue.MessageWrapper[int, string, Message], err error) {
 			if handler := srv.GetMessageErrorHandler(); handler != nil {
 				handler(srv, message.Message(), err)
 			}
@@ -121,26 +123,31 @@ func (s *server) Shutdown() (err error) {
 	return
 }
 
-func (s *server) PushSyncMessage(handler func(srv Server)) {
-	if err := s.reactor.DispatchWithSystem(SyncMessage(s, func(srv *server) {
-		handler(srv)
-	})); err != nil {
-		panic(err)
-	}
+func (s *server) PushMessage(message Message) {
+	s.controller.PushSystemMessage(message)
 }
 
-func (s *server) PushAsyncMessage(handler func(srv Server) error, callbacks ...func(srv Server, err error)) {
-	if err := s.reactor.DispatchWithSystem(AsyncMessage(s, reactor.SysIdent, func(srv *server) error {
-		return handler(srv)
-	}, func(srv *server, err error) {
-		for _, callback := range callbacks {
-			callback(srv, err)
-		}
-	})); err != nil {
-		panic(err)
+func (s *server) PushSyncMessage(handler func(srv Server)) {
+	s.PushMessage(GenerateSystemSyncMessage(handler))
+}
+
+func (s *server) PushAsyncMessage(handler func(srv Server) error, callback ...func(srv Server, err error)) {
+	var cb func(srv Server, err error)
+	if len(callback) > 0 {
+		cb = callback[0]
 	}
+	s.PushMessage(GenerateSystemAsyncMessage(handler, cb))
 }
 
 func (s *server) GetStatus() *State {
 	return s.state.Status()
+}
+
+func (s *server) onProcessMessage(message queue.MessageWrapper[int, string, Message]) {
+	s.getManyOptions(func(opt *Options) {
+		m := message.Message()
+		m.OnInitialize(s, s.reactor, message)
+		m.OnProcess()
+	})
+
 }

@@ -64,6 +64,9 @@ func (opt *Options) Apply(options ...*Options) {
 	}
 	if opt.server != nil && !opt.server.state.LaunchedAt.IsZero() {
 		opt.active()
+		if opt.server.reactor != nil {
+			opt.server.reactor.SetLogger(opt.logger)
+		}
 	}
 }
 
@@ -117,7 +120,9 @@ func (opt *Options) IsDebug() bool {
 func (opt *Options) WithLogger(logger *log.Logger) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
 		opt.logger = logger
-		opt.server.reactor.SetLogger(opt.logger)
+		if opt.server != nil && opt.server.reactor != nil {
+			opt.server.reactor.SetLogger(opt.logger)
+		}
 	})
 }
 

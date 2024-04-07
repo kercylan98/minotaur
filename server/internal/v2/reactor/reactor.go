@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/server/internal/v2/loadbalancer"
 	"github.com/kercylan98/minotaur/server/internal/v2/queue"
 	"github.com/kercylan98/minotaur/utils/log/v2"
-	"github.com/kercylan98/minotaur/utils/str"
 	"github.com/kercylan98/minotaur/utils/super"
 	"runtime"
 	"runtime/debug"
@@ -19,8 +18,6 @@ const (
 	statusClosing            // 事件循环关闭中
 	statusClosed             // 事件循环已关闭
 )
-
-const SysIdent = str.None
 
 // NewReactor 创建一个新的 Reactor 实例，初始化系统级别的队列和多个 Socket 对应的队列
 func NewReactor[M queue.Message](systemQueueSize, queueSize, systemBufferSize, queueBufferSize int, handler MessageHandler[M], errorHandler ErrorHandler[M]) *Reactor[M] {
@@ -84,7 +81,7 @@ func (r *Reactor[M]) process(msg queue.MessageWrapper[int, string, M]) {
 			if r.errorHandler != nil {
 				r.errorHandler(msg, err)
 			} else {
-				r.GetLogger().Error("Reactor", log.String("action", "process"), log.String("ident", msg.Ident()), log.Int("queue", msg.Queue().Id()), log.Err(err))
+				r.GetLogger().Error("Reactor", log.String("action", "process"), log.Any("ident", msg.Ident()), log.Int("queue", msg.Queue().Id()), log.Err(err))
 				debug.PrintStack()
 			}
 		}
@@ -93,29 +90,18 @@ func (r *Reactor[M]) process(msg queue.MessageWrapper[int, string, M]) {
 	r.handler(msg)
 }
 
-// AutoDispatch 自动分发，当 ident 为空字符串时，分发到系统级别的队列，否则分发到 ident 使用的队列
-func (r *Reactor[M]) AutoDispatch(ident string, msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
-	if ident == str.None {
-		return r.DispatchWithSystem(msg, beforeHandler...)
-	}
-	return r.Dispatch(ident, msg, beforeHandler...)
-}
-
-// DispatchWithSystem 将消息分发到系统级别的队列
-func (r *Reactor[M]) DispatchWithSystem(msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
+// SystemDispatch 将消息分发到系统级别的队列
+func (r *Reactor[M]) SystemDispatch(msg M) error {
 	if atomic.LoadInt32(&r.state) > statusClosing {
 		r.queueRW.RUnlock()
 		return fmt.Errorf("reactor closing or closed")
 	}
-	for _, f := range beforeHandler {
-		f(r.systemQueue, msg)
-	}
-	return r.systemQueue.Push(SysIdent, msg)
+	return r.systemQueue.Push(false, "", msg)
 }
 
-// Dispatch 将消息分发到 ident 使用的队列，当 ident 首次使用时，将会根据负载均衡策略选择一个队列
+// IdentDispatch 将消息分发到 ident 使用的队列，当 ident 首次使用时，将会根据负载均衡策略选择一个队列
 //   - 设置 count 会增加消息的外部计数，当 Reactor 关闭时会等待外部计数归零
-func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
+func (r *Reactor[M]) IdentDispatch(ident string, msg M) error {
 	r.queueRW.RLock()
 	if atomic.LoadInt32(&r.state) > statusClosing {
 		r.queueRW.RUnlock()
@@ -131,7 +117,7 @@ func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *
 		if i, exist = r.location[ident]; !exist {
 			next = r.lb.Next()
 			r.location[ident] = next.Id()
-			r.logger.Load().Debug("Reactor", log.String("action", "bind"), log.String("ident", ident), log.Any("queue", next.Id()))
+			r.logger.Load().Debug("Reactor", log.String("action", "bind"), log.Any("ident", ident), log.Any("queue", next.Id()))
 		} else {
 			next = r.queues[i]
 		}
@@ -140,10 +126,7 @@ func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *
 		next = r.queues[i]
 	}
 	r.queueRW.RUnlock()
-	for _, f := range beforeHandler {
-		f(next, msg)
-	}
-	return next.Push(ident, msg)
+	return next.Push(true, ident, msg)
 }
 
 // Run 启动 Reactor，运行系统级别的队列和多个 Socket 对应的队列
@@ -207,7 +190,7 @@ func (r *Reactor[M]) runQueue(q *queue.Queue[int, string, M]) {
 							r.queueRW.RLock()
 							mq := r.queues[mq]
 							r.queueRW.RUnlock()
-							r.logger.Load().Debug("Reactor", log.String("action", "unbind"), log.String("ident", m.Ident()), log.Any("queue", mq.Id()))
+							r.logger.Load().Debug("Reactor", log.String("action", "unbind"), log.Any("ident", m.Ident()), log.Any("queue", mq.Id()))
 						}
 					}
 				}

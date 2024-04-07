@@ -24,7 +24,7 @@ func BenchmarkReactor_Dispatch(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if err := r.Dispatch(random.HostName(), func() {
+			if err := r.IdentDispatch(random.HostName(), func() {
 			}); err != nil {
 				return
 			}
@@ -46,7 +46,7 @@ func TestReactor_Dispatch(t *testing.T) {
 			id := random.HostName()
 			for {
 				time.Sleep(time.Millisecond * 20)
-				if err := r.Dispatch(id, func() {
+				if err := r.IdentDispatch(id, func() {
 
 				}); err != nil {
 					return

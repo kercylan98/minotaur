@@ -66,7 +66,7 @@ func (s *events) onLaunched() {
 		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
 	})
 
-	_ = s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
+	s.PushMessage(GenerateSystemSyncMessage(func(srv Server) {
 		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
 			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
 			return true
@@ -79,7 +79,7 @@ func (s *events) RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHand
 }
 
 func (s *events) onConnectionOpened(conn Conn) {
-	_ = s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
+	s.PushMessage(GenerateSystemSyncMessage(func(srv Server) {
 		s.connectionOpenedEventHandlers.RangeValue(func(index int, value ConnectionOpenedEventHandler) bool {
 			value(s.server, conn)
 			return true
@@ -92,7 +92,7 @@ func (s *events) RegisterConnectionClosedEvent(handler ConnectionClosedEventHand
 }
 
 func (s *events) onConnectionClosed(conn Conn, err error) {
-	_ = s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
+	s.PushMessage(GenerateSystemSyncMessage(func(srv Server) {
 		s.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
 			value(s.server, conn, err)
 			return true
@@ -104,8 +104,8 @@ func (s *events) RegisterConnectionReceivePacketEvent(handler ConnectionReceiveP
 	s.connectionReceivePacketEventHandlers.AppendByOptionalPriority(handler, priority...)
 }
 
-func (s *events) onConnectionReceivePacket(conn Conn, packet Packet) {
-	_ = s.server.reactor.AutoDispatch(conn.GetActor(), SyncMessage(s.server, func(srv *server) {
+func (s *events) onConnectionReceivePacket(conn *conn, packet Packet) {
+	conn.getDispatchHandler()(GenerateConnSyncMessage(conn, func(srv Server, conn Conn) {
 		s.connectionReceivePacketEventHandlers.RangeValue(func(index int, value ConnectionReceivePacketEventHandler) bool {
 			value(s.server, conn, packet)
 			return true
@@ -118,7 +118,7 @@ func (s *events) RegisterShutdownEvent(handler ShutdownEventHandler, priority ..
 }
 
 func (s *events) onShutdown() {
-	_ = s.server.reactor.DispatchWithSystem(SyncMessage(s.server, func(srv *server) {
+	s.PushSystemMessage(GenerateSystemSyncMessage(func(srv Server) {
 		s.shutdownEventHandlers.RangeValue(func(index int, value ShutdownEventHandler) bool {
 			value(s.server)
 			return true

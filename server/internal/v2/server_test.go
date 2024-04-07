@@ -4,6 +4,7 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/server/internal/v2/network"
+	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/times"
 	"testing"
@@ -24,7 +25,7 @@ func TestNewServer(t *testing.T) {
 		})
 	}()
 
-	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Day*3))
+	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Day*3).WithLogger(log.GetLogger()))
 
 	var tm = make(map[string]bool)
 
@@ -34,7 +35,10 @@ func TestNewServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		conn.PushSyncMessage(func(srv server.Server, conn server.Conn) {
+		conn.PushAsyncMessage(func(srv server.Server, conn server.Conn) error {
+			time.Sleep(time.Second * 5)
+			return nil
+		}, func(srv server.Server, conn server.Conn, err error) {
 			for i := 0; i < 10000000; i++ {
 				_ = tm["1"]
 				tm["1"] = random.Bool()
@@ -46,14 +50,14 @@ func TestNewServer(t *testing.T) {
 		if err := conn.WritePacket(packet); err != nil {
 			panic(err)
 		}
-		srv.PushAsyncMessage(func(srv server.Server) error {
-			for i := 0; i < 3; i++ {
-				time.Sleep(time.Second)
-			}
-			return nil
-		}, func(srv server.Server, err error) {
-			t.Log("callback")
-		})
+		//srv.PushAsyncMessage(func(srv server.Server) error {
+		//	for i := 0; i < 3; i++ {
+		//		time.Sleep(time.Second)
+		//	}
+		//	return nil
+		//}, func(srv server.Server, err error) {
+		//	t.Log("callback")
+		//})
 	})
 
 	if err := srv.Run(); err != nil {

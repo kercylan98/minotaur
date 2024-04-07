@@ -12,8 +12,11 @@ type Conn interface {
 	// SetActor 设置连接使用的 Actor 名称
 	SetActor(actor string)
 
-	// GetActor 获取连接使用的 Actor 名称
-	GetActor() string
+	// DelActor 删除连接使用的 Actor
+	DelActor()
+
+	// GetActor 获取连接使用的 Actor 名称及是否拥有 Actor 名称的状态
+	GetActor() (string, bool)
 
 	// WritePacket 写入一个 Packet
 	WritePacket(packet Packet) error
@@ -27,9 +30,14 @@ type Conn interface {
 	// WriteContext 写入数据
 	WriteContext(data []byte, context interface{}) error
 
+	// PushMessage 通过连接推送特定消息到队列中进行处理
+	PushMessage(message Message)
+
+	// PushSyncMessage 是 PushMessage 中对于 GenerateConnSyncMessage 的快捷方式
 	PushSyncMessage(handler func(srv Server, conn Conn))
 
-	PushAsyncMessage(handler func(srv Server, conn Conn) error, callbacks ...func(srv Server, conn Conn, err error))
+	// PushAsyncMessage 是 PushMessage 中对于 GenerateConnAsyncMessage 的快捷方式，当 callback 传入多个时，将仅有首个生效
+	PushAsyncMessage(handler func(srv Server, conn Conn) error, callback ...func(srv Server, conn Conn, err error))
 }
 
 func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
@@ -42,17 +50,25 @@ func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
 
 type conn struct {
 	server *server
-	conn   net.Conn      // 连接
-	writer ConnWriter    // 写入器
-	actor  atomic.String // Actor 名称
+	conn   net.Conn               // 连接
+	writer ConnWriter             // 写入器
+	actor  atomic.Pointer[string] // Actor 名称
 }
 
 func (c *conn) SetActor(actor string) {
-	c.actor.Store(actor)
+	c.actor.Store(&actor)
 }
 
-func (c *conn) GetActor() string {
-	return c.actor.Load()
+func (c *conn) DelActor() {
+	c.actor.Store(nil)
+}
+
+func (c *conn) GetActor() (string, bool) {
+	ident := c.actor.Load()
+	if ident == nil {
+		return "", false
+	}
+	return *ident, true
 }
 
 func (c *conn) WritePacket(packet Packet) error {
@@ -72,22 +88,29 @@ func (c *conn) WriteContext(data []byte, context interface{}) error {
 	return c.writer(NewPacket(data).SetContext(context))
 }
 
-func (c *conn) PushSyncMessage(handler func(srv Server, conn Conn)) {
-	if err := c.server.reactor.AutoDispatch(c.GetActor(), SyncMessage(c.server, func(srv *server) {
-		handler(srv, c)
-	})); err != nil {
-		panic(err)
-	}
+func (c *conn) PushMessage(message Message) {
+	c.getDispatchHandler()(message)
 }
 
-func (c *conn) PushAsyncMessage(handler func(srv Server, conn Conn) error, callbacks ...func(srv Server, conn Conn, err error)) {
-	if err := c.server.reactor.AutoDispatch(c.GetActor(), AsyncMessage(c.server, c.GetActor(), func(srv *server) error {
-		return handler(srv, c)
-	}, func(srv *server, err error) {
-		for _, callback := range callbacks {
-			callback(srv, c, err)
+func (c *conn) PushSyncMessage(handler func(srv Server, conn Conn)) {
+	c.PushMessage(GenerateConnSyncMessage(c, handler))
+}
+
+func (c *conn) PushAsyncMessage(handler func(srv Server, conn Conn) error, callback ...func(srv Server, conn Conn, err error)) {
+	var cb func(srv Server, conn Conn, err error)
+	if len(callback) > 0 {
+		cb = callback[0]
+	}
+	c.PushMessage(GenerateConnAsyncMessage(c, handler, cb))
+}
+
+func (c *conn) getDispatchHandler() func(message Message) {
+	var ident, exist = c.GetActor()
+	return func(message Message) {
+		if !exist {
+			c.server.PushSystemMessage(message)
+		} else {
+			c.server.PushIdentMessage(ident, message)
 		}
-	})); err != nil {
-		panic(err)
 	}
 }
