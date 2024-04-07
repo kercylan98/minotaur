@@ -64,6 +64,7 @@ func NewServer(network Network, options ...*Options) Server {
 			}
 		})
 	srv.Options.init(srv).Apply(options...)
+	srv.reactor.SetLogger(srv.Options.GetLogger())
 	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
 		ExpiryDuration: 10 * time.Second,
 		Nonblocking:    true,
@@ -80,7 +81,15 @@ func NewServer(network Network, options ...*Options) Server {
 }
 
 func (s *server) Run() (err error) {
-	go s.reactor.Run()
+	var queueWait = make(chan struct{})
+	go s.reactor.Run(func(queues []*queue.Queue[int, string, Message]) {
+		for _, q := range queues {
+			s.GetLogger().Debug("Reactor", log.String("action", "run"), log.Any("queue", q.Id()))
+		}
+		close(queueWait)
+	})
+	<-queueWait
+
 	if err = s.network.OnSetup(s.ctx, s); err != nil {
 		return
 	}

@@ -67,6 +67,16 @@ type Reactor[M queue.Message] struct {
 	errorHandler    ErrorHandler[M]                                             // 错误处理器
 }
 
+// SetLogger 设置日志记录器
+func (r *Reactor[M]) SetLogger(logger *log.Logger) {
+	r.logger.Store(logger)
+}
+
+// GetLogger 获取日志记录器
+func (r *Reactor[M]) GetLogger() *log.Logger {
+	return r.logger.Load()
+}
+
 // process 消息处理
 func (r *Reactor[M]) process(msg queue.MessageWrapper[int, string, M]) {
 	defer func(msg queue.MessageWrapper[int, string, M]) {
@@ -74,20 +84,21 @@ func (r *Reactor[M]) process(msg queue.MessageWrapper[int, string, M]) {
 			if r.errorHandler != nil {
 				r.errorHandler(msg, err)
 			} else {
-				r.logger.Load().Error("Reactor", log.Int("queue", msg.Queue().Id()), log.String("ident", msg.Ident()), log.Err(err))
+				r.GetLogger().Error("Reactor", log.String("action", "process"), log.String("ident", msg.Ident()), log.Int("queue", msg.Queue().Id()), log.Err(err))
 				debug.PrintStack()
 			}
 		}
 	}(msg)
+
 	r.handler(msg)
 }
 
 // AutoDispatch 自动分发，当 ident 为空字符串时，分发到系统级别的队列，否则分发到 ident 使用的队列
-func (r *Reactor[M]) AutoDispatch(ident string, msg M) error {
+func (r *Reactor[M]) AutoDispatch(ident string, msg M, beforeHandler ...func(queue *queue.Queue[int, string, M], msg M)) error {
 	if ident == str.None {
-		return r.DispatchWithSystem(msg)
+		return r.DispatchWithSystem(msg, beforeHandler...)
 	}
-	return r.Dispatch(ident, msg)
+	return r.Dispatch(ident, msg, beforeHandler...)
 }
 
 // DispatchWithSystem 将消息分发到系统级别的队列
@@ -120,6 +131,9 @@ func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *
 		if i, exist = r.location[ident]; !exist {
 			next = r.lb.Next()
 			r.location[ident] = next.Id()
+			r.logger.Load().Debug("Reactor", log.String("action", "bind"), log.String("ident", ident), log.Any("queue", next.Id()))
+		} else {
+			next = r.queues[i]
 		}
 		r.locationRW.Unlock()
 	} else {
@@ -133,16 +147,19 @@ func (r *Reactor[M]) Dispatch(ident string, msg M, beforeHandler ...func(queue *
 }
 
 // Run 启动 Reactor，运行系统级别的队列和多个 Socket 对应的队列
-func (r *Reactor[M]) Run() {
+func (r *Reactor[M]) Run(callbacks ...func(queues []*queue.Queue[int, string, M])) {
 	if !atomic.CompareAndSwapInt32(&r.state, statusNone, statusRunning) {
 		return
 	}
 	r.queueRW.Lock()
-	r.runQueue(r.systemQueue)
-	for i := 0; i < len(r.queues); i++ {
-		r.runQueue(r.queues[i])
+	queues := append([]*queue.Queue[int, string, M]{r.systemQueue}, r.queues...)
+	for _, q := range queues {
+		r.runQueue(q)
 	}
 	r.queueRW.Unlock()
+	for _, callback := range callbacks {
+		callback(queues)
+	}
 	r.wg.Wait()
 }
 
@@ -169,6 +186,7 @@ func (r *Reactor[M]) runQueue(q *queue.Queue[int, string, M]) {
 		// 关闭时正在等待关闭完成，外部已加锁，无需再次加锁
 		r.noneLockDelQueue(q)
 		r.cwg.Done()
+		r.logger.Load().Debug("Reactor", log.String("action", "close"), log.Any("queue", q.Id()))
 	})
 	go q.Run()
 
@@ -177,9 +195,21 @@ func (r *Reactor[M]) runQueue(q *queue.Queue[int, string, M]) {
 		for m := range q.Read() {
 			m(r.process, func(m queue.MessageWrapper[int, string, M], last bool) {
 				if last {
-					r.queueRW.Lock()
-					defer r.queueRW.Unlock()
-					delete(r.location, m.Ident())
+					r.locationRW.RLock()
+					mq, exist := r.location[m.Ident()]
+					r.locationRW.RUnlock()
+					if exist {
+						r.locationRW.Lock()
+						defer r.locationRW.Unlock()
+						mq, exist = r.location[m.Ident()]
+						if exist {
+							delete(r.location, m.Ident())
+							r.queueRW.RLock()
+							mq := r.queues[mq]
+							r.queueRW.RUnlock()
+							r.logger.Load().Debug("Reactor", log.String("action", "unbind"), log.String("ident", m.Ident()), log.Any("queue", mq.Id()))
+						}
+					}
 				}
 			})
 		}

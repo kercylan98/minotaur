@@ -4,6 +4,7 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/server/internal/v2/network"
+	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/times"
 	"testing"
 	"time"
@@ -25,10 +26,20 @@ func TestNewServer(t *testing.T) {
 
 	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Day*3))
 
+	var tm = make(map[string]bool)
+
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
+		conn.SetActor("12321")
 		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
 			t.Error(err)
 		}
+
+		conn.PushSyncMessage(func(srv server.Server, conn server.Conn) {
+			for i := 0; i < 10000000; i++ {
+				_ = tm["1"]
+				tm["1"] = random.Bool()
+			}
+		})
 	})
 
 	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {

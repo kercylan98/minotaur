@@ -3,8 +3,10 @@ package reactor_test
 import (
 	"github.com/kercylan98/minotaur/server/internal/v2/queue"
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
+	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/kercylan98/minotaur/utils/times"
+	"os"
 	"testing"
 	"time"
 )
@@ -15,6 +17,8 @@ func BenchmarkReactor_Dispatch(b *testing.B) {
 	}, func(message queue.MessageWrapper[int, string, func()], err error) {
 
 	})
+
+	r.SetLogger(log.NewLogger(log.NewHandler(os.Stdout, log.DefaultOptions().WithLevel(log.LevelInfo))))
 
 	go r.Run()
 

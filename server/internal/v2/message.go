@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/server/internal/v2/queue"
-	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/super"
 	"runtime/debug"
@@ -44,11 +43,7 @@ type asyncMessage struct {
 func (s *asyncMessage) Execute() {
 	var q *queue.Queue[int, string, Message]
 	var dispatch = func(ident string, message Message, beforeHandler ...func(queue *queue.Queue[int, string, Message], msg Message)) {
-		if ident == "" {
-			_ = s.srv.reactor.DispatchWithSystem(message, beforeHandler...)
-		} else {
-			_ = s.srv.reactor.Dispatch(ident, message, beforeHandler...)
-		}
+		_ = s.srv.reactor.AutoDispatch(ident, message, beforeHandler...)
 	}
 
 	dispatch(
@@ -89,7 +84,7 @@ func (s *asyncMessage) Execute() {
 			})
 		}),
 		func(queue *queue.Queue[int, string, Message], msg Message) {
-			queue.WaitAdd(reactor.SysIdent, 1)
+			queue.WaitAdd(s.ident, 1)
 			q = queue
 		},
 	)

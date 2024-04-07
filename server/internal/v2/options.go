@@ -85,6 +85,7 @@ func (opt *Options) IsDebug() bool {
 func (opt *Options) WithLogger(logger *log.Logger) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
 		opt.logger = logger
+		opt.server.reactor.SetLogger(opt.logger)
 	})
 }
 

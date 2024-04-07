@@ -1,6 +1,7 @@
 package server
 
 import (
+	"go.uber.org/atomic"
 	"net"
 )
 
@@ -41,17 +42,17 @@ func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
 
 type conn struct {
 	server *server
-	conn   net.Conn   // 连接
-	writer ConnWriter // 写入器
-	actor  string     // Actor 名称
+	conn   net.Conn      // 连接
+	writer ConnWriter    // 写入器
+	actor  atomic.String // Actor 名称
 }
 
 func (c *conn) SetActor(actor string) {
-	c.actor = actor
+	c.actor.Store(actor)
 }
 
 func (c *conn) GetActor() string {
-	return c.actor
+	return c.actor.Load()
 }
 
 func (c *conn) WritePacket(packet Packet) error {
@@ -72,7 +73,7 @@ func (c *conn) WriteContext(data []byte, context interface{}) error {
 }
 
 func (c *conn) PushSyncMessage(handler func(srv Server, conn Conn)) {
-	if err := c.server.reactor.Dispatch(c.actor, SyncMessage(c.server, func(srv *server) {
+	if err := c.server.reactor.AutoDispatch(c.GetActor(), SyncMessage(c.server, func(srv *server) {
 		handler(srv, c)
 	})); err != nil {
 		panic(err)
@@ -80,7 +81,7 @@ func (c *conn) PushSyncMessage(handler func(srv Server, conn Conn)) {
 }
 
 func (c *conn) PushAsyncMessage(handler func(srv Server, conn Conn) error, callbacks ...func(srv Server, conn Conn, err error)) {
-	if err := c.server.reactor.Dispatch(c.actor, AsyncMessage(c.server, c.actor, func(srv *server) error {
+	if err := c.server.reactor.AutoDispatch(c.GetActor(), AsyncMessage(c.server, c.GetActor(), func(srv *server) error {
 		return handler(srv, c)
 	}, func(srv *server, err error) {
 		for _, callback := range callbacks {
