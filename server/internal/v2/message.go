@@ -2,13 +2,22 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/server/internal/v2/queue"
+	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/super"
 	"runtime/debug"
 )
 
+type MessageI interface {
+	// OnInitialize 消息初始化阶段将会被告知消息所在服务器、反应器、队列及标识信息
+	OnInitialize(srv Server, reactor *reactor.Reactor[Message], queue *queue.Queue[int, string, Message], ident string)
+
+	// OnProcess 消息处理阶段需要完成对消息的处理，并返回处理结果
+	OnProcess(finish func(err error))
+}
+
 type Message interface {
-	Execute()
+	OnExecute()
 }
 
 func SyncMessage(srv *server, handler func(srv *server)) Message {
@@ -20,7 +29,7 @@ type syncMessage struct {
 	handler func(srv *server)
 }
 
-func (s *syncMessage) Execute() {
+func (s *syncMessage) OnExecute() {
 	s.handler(s.srv)
 }
 
@@ -40,7 +49,7 @@ type asyncMessage struct {
 	callback func(srv *server, err error)
 }
 
-func (s *asyncMessage) Execute() {
+func (s *asyncMessage) OnExecute() {
 	var q *queue.Queue[int, string, Message]
 	var dispatch = func(ident string, message Message, beforeHandler ...func(queue *queue.Queue[int, string, Message], msg Message)) {
 		_ = s.srv.reactor.AutoDispatch(ident, message, beforeHandler...)

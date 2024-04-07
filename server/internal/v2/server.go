@@ -57,7 +57,7 @@ func NewServer(network Network, options ...*Options) Server {
 		srv.GetServerMessageChannelSize(), srv.GetActorMessageChannelSize(),
 		srv.GetServerMessageBufferInitialSize(), srv.GetActorMessageBufferInitialSize(),
 		func(message queue.MessageWrapper[int, string, Message]) {
-			message.Message().Execute()
+			message.Message().OnExecute()
 		}, func(message queue.MessageWrapper[int, string, Message], err error) {
 			if handler := srv.GetMessageErrorHandler(); handler != nil {
 				handler(srv, message.Message(), err)

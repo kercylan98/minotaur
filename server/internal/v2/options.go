@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/utils/log/v2"
+	"os"
 	"sync"
 	"time"
 )
@@ -18,7 +19,7 @@ func DefaultOptions() *Options {
 		actorMessageBufferInitialSize:  1024,
 		messageErrorHandler:            nil,
 		lifeCycleLimit:                 0,
-		logger:                         log.GetLogger(),
+		logger:                         log.NewLogger(log.NewHandler(os.Stdout, log.DefaultOptions().WithCallerSkip(-1).WithLevel(log.LevelInfo))),
 	}
 }
 
@@ -33,6 +34,8 @@ type Options struct {
 	lifeCycleLimit                 time.Duration                                // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
 	logger                         *log.Logger                                  // 日志记录器
 	debug                          bool                                         // Debug 模式
+	syncLowMessageDuration         time.Duration                                // 同步慢消息时间
+	asyncLowMessageDuration        time.Duration                                // 异步慢消息时间
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -53,6 +56,9 @@ func (opt *Options) Apply(options ...*Options) {
 		opt.messageErrorHandler = option.messageErrorHandler
 		opt.lifeCycleLimit = option.lifeCycleLimit
 		opt.logger = option.logger
+		opt.debug = option.debug
+		opt.syncLowMessageDuration = option.syncLowMessageDuration
+		opt.asyncLowMessageDuration = option.asyncLowMessageDuration
 
 		option.rw.RUnlock()
 	}
@@ -63,6 +69,32 @@ func (opt *Options) Apply(options ...*Options) {
 
 func (opt *Options) active() {
 	opt.server.notify.lifeCycleTime <- opt.GetLifeCycleLimit()
+}
+
+// WithSyncLowMessageMonitor 设置同步消息的慢消息监测时间
+func (opt *Options) WithSyncLowMessageMonitor(duration time.Duration) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.syncLowMessageDuration = duration
+	})
+}
+
+func (opt *Options) GetSyncLowMessageDuration() time.Duration {
+	return getOptionsValue(opt, func(opt *Options) time.Duration {
+		return opt.syncLowMessageDuration
+	})
+}
+
+// WithAsyncLowMessageMonitor 设置异步消息的慢消息监测时间
+func (opt *Options) WithAsyncLowMessageMonitor(duration time.Duration) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.asyncLowMessageDuration = duration
+	})
+}
+
+func (opt *Options) GetAsyncLowMessageDuration() time.Duration {
+	return getOptionsValue(opt, func(opt *Options) time.Duration {
+		return opt.asyncLowMessageDuration
+	})
 }
 
 // WithDebug 设置 Debug 模式是否开启
