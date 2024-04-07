@@ -213,3 +213,37 @@ func (m *connAsyncCallbackMessage) OnProcess() {
 		m.handler(m.controller.GetServer(), m.conn, m.err)
 	}
 }
+
+// GenerateCrossQueueMessage 生成跨队列消息，该消息将会把消息传入对应 ident 所在队列进行处理，并在处理完成时进行回调
+func GenerateCrossQueueMessage(targetIdent string, handler func(srv Server), callback func(srv Server)) Message {
+	return &crossQueueMessage{
+		targetIdent: targetIdent,
+		handler:     handler,
+		callback:    callback,
+	}
+}
+
+type crossQueueMessage struct {
+	controller  Controller
+	message     queue.MessageWrapper[int, string, Message]
+	handler     func(srv Server)
+	callback    func(srv Server)
+	targetIdent string
+}
+
+func (m *crossQueueMessage) OnInitialize(controller Controller, reactor *reactor.Reactor[Message], message queue.MessageWrapper[int, string, Message]) {
+	m.controller = controller
+	m.message = message
+}
+
+func (m *crossQueueMessage) OnProcess() {
+	m.controller.PushIdentMessage(m.targetIdent, GenerateSystemSyncMessage(func(srv Server) {
+		m.handler(srv)
+
+		if m.message.HasIdent() {
+			m.controller.PushIdentMessage(m.message.Ident(), GenerateSystemSyncMessage(m.callback))
+		} else {
+			m.controller.PushSystemMessage(GenerateSystemSyncMessage(m.callback))
+		}
+	}))
+}

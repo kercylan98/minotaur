@@ -30,20 +30,19 @@ func TestNewServer(t *testing.T) {
 	var tm = make(map[string]bool)
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
-		conn.SetActor("12321")
+		conn.SetActor(random.HostName())
 		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
 			t.Error(err)
 		}
 
-		conn.PushAsyncMessage(func(srv server.Server, conn server.Conn) error {
-			time.Sleep(time.Second * 5)
-			return nil
-		}, func(srv server.Server, conn server.Conn, err error) {
+		conn.PushMessage(server.GenerateCrossQueueMessage("target", func(srv server.Server) {
 			for i := 0; i < 10000000; i++ {
 				_ = tm["1"]
 				tm["1"] = random.Bool()
 			}
-		})
+		}, func(srv server.Server) {
+
+		}))
 	})
 
 	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {
