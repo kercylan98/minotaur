@@ -176,25 +176,7 @@ func (r *Reactor[M]) runQueue(q *queue.Queue[int, string, M]) {
 	go func(r *Reactor[M], q *queue.Queue[int, string, M]) {
 		defer r.wg.Done()
 		for m := range q.Read() {
-			m(r.process, func(m queue.MessageWrapper[int, string, M], last bool) {
-				if last {
-					r.locationRW.RLock()
-					mq, exist := r.location[m.Ident()]
-					r.locationRW.RUnlock()
-					if exist {
-						r.locationRW.Lock()
-						defer r.locationRW.Unlock()
-						mq, exist = r.location[m.Ident()]
-						if exist {
-							delete(r.location, m.Ident())
-							r.queueRW.RLock()
-							mq := r.queues[mq]
-							r.queueRW.RUnlock()
-							r.logger.Load().Debug("Reactor", log.String("action", "unbind"), log.Any("ident", m.Ident()), log.Any("queue", mq.Id()))
-						}
-					}
-				}
-			})
+			m(r.process, r.processFinish)
 		}
 	}(r, q)
 }
@@ -211,4 +193,24 @@ func (r *Reactor[M]) Close() {
 	r.cwg.Wait()
 	atomic.StoreInt32(&r.state, statusClosed)
 	r.queueRW.Unlock()
+}
+
+func (r *Reactor[M]) processFinish(m queue.MessageWrapper[int, string, M], last bool) {
+	if last {
+		r.locationRW.RLock()
+		mq, exist := r.location[m.Ident()]
+		r.locationRW.RUnlock()
+		if exist {
+			r.locationRW.Lock()
+			defer r.locationRW.Unlock()
+			mq, exist = r.location[m.Ident()]
+			if exist {
+				delete(r.location, m.Ident())
+				r.queueRW.RLock()
+				mq := r.queues[mq]
+				r.queueRW.RUnlock()
+				r.logger.Load().Debug("Reactor", log.String("action", "unbind"), log.Any("ident", m.Ident()), log.Any("queue", mq.Id()))
+			}
+		}
+	}
 }
