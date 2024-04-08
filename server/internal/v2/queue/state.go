@@ -11,24 +11,24 @@ const (
 	StatusClosed             // 队列已关闭
 )
 
-type State[Id, Ident comparable, M Message] struct {
-	queue  *Queue[Id, Ident, M]
+type State[Id, Q comparable, M Message[Q]] struct {
+	queue  *Queue[Id, Q, M]
 	id     Id    // 队列 ID
 	status int32 // 状态标志
 	total  int64 // 消息总计数
 }
 
 // IsClosed 判断队列是否已关闭
-func (q *State[Id, Ident, M]) IsClosed() bool {
+func (q *State[Id, Q, M]) IsClosed() bool {
 	return atomic.LoadInt32(&q.status) == StatusClosed
 }
 
 // IsClosing 判断队列是否正在关闭
-func (q *State[Id, Ident, M]) IsClosing() bool {
+func (q *State[Id, Q, M]) IsClosing() bool {
 	return atomic.LoadInt32(&q.status) == StatusClosing
 }
 
 // IsRunning 判断队列是否正在运行
-func (q *State[Id, Ident, M]) IsRunning() bool {
+func (q *State[Id, Q, M]) IsRunning() bool {
 	return atomic.LoadInt32(&q.status) == StatusRunning
 }

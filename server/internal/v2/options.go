@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/kercylan98/minotaur/server/internal/v2/message"
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"os"
 	"sync"
@@ -26,16 +27,16 @@ func DefaultOptions() *Options {
 type Options struct {
 	server                         *server
 	rw                             sync.RWMutex
-	serverMessageChannelSize       int                                          // 服务器 Actor 消息处理管道大小
-	actorMessageChannelSize        int                                          // Actor 消息处理管道大小
-	serverMessageBufferInitialSize int                                          // 服务器 Actor 消息写入缓冲区初始化大小
-	actorMessageBufferInitialSize  int                                          // Actor 消息写入缓冲区初始化大小
-	messageErrorHandler            func(srv Server, message Message, err error) // 消息错误处理器
-	lifeCycleLimit                 time.Duration                                // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
-	logger                         *log.Logger                                  // 日志记录器
-	debug                          bool                                         // Debug 模式
-	syncLowMessageDuration         time.Duration                                // 同步慢消息时间
-	asyncLowMessageDuration        time.Duration                                // 异步慢消息时间
+	serverMessageChannelSize       int                                                                    // 服务器 Actor 消息处理管道大小
+	actorMessageChannelSize        int                                                                    // Actor 消息处理管道大小
+	serverMessageBufferInitialSize int                                                                    // 服务器 Actor 消息写入缓冲区初始化大小
+	actorMessageBufferInitialSize  int                                                                    // Actor 消息写入缓冲区初始化大小
+	messageErrorHandler            func(srv Server, message message.Message[Producer, string], err error) // 消息错误处理器
+	lifeCycleLimit                 time.Duration                                                          // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	logger                         *log.Logger                                                            // 日志记录器
+	debug                          bool                                                                   // Debug 模式
+	syncLowMessageDuration         time.Duration                                                          // 同步慢消息时间
+	asyncLowMessageDuration        time.Duration                                                          // 异步慢消息时间
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -189,14 +190,14 @@ func (opt *Options) GetActorMessageBufferInitialSize() int {
 
 // WithMessageErrorHandler 设置消息错误处理器，当消息处理出现错误时，会调用该处理器进行处理
 //   - 如果在运行时设置，后续消息错误将会使用新的 handler 进行处理
-func (opt *Options) WithMessageErrorHandler(handler func(srv Server, message Message, err error)) *Options {
+func (opt *Options) WithMessageErrorHandler(handler func(srv Server, message message.Message[Producer, string], err error)) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
 		opt.messageErrorHandler = handler
 	})
 }
 
-func (opt *Options) GetMessageErrorHandler() func(srv Server, message Message, err error) {
-	return getOptionsValue(opt, func(opt *Options) func(srv Server, message Message, err error) {
+func (opt *Options) GetMessageErrorHandler() func(srv Server, message message.Message[Producer, string], err error) {
+	return getOptionsValue(opt, func(opt *Options) func(srv Server, message message.Message[Producer, string], err error) {
 		return opt.messageErrorHandler
 	})
 }

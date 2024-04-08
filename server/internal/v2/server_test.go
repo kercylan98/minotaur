@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/server/internal/v2/network"
@@ -30,19 +31,18 @@ func TestNewServer(t *testing.T) {
 	var tm = make(map[string]bool)
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
-		conn.SetActor(random.HostName())
 		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
 			t.Error(err)
 		}
 
-		conn.PushMessage(server.GenerateCrossQueueMessage("target", func(srv server.Server) {
+		srv.PublishAsyncMessage("123", func(ctx context.Context, s server.Server) error {
+			return nil
+		}, func(ctx context.Context, s server.Server, err error) {
 			for i := 0; i < 10000000; i++ {
 				_ = tm["1"]
 				tm["1"] = random.Bool()
 			}
-		}, func(srv server.Server) {
-
-		}))
+		})
 	})
 
 	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {

@@ -2,9 +2,15 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"github.com/kercylan98/minotaur/server/internal/v2/message"
+	"github.com/kercylan98/minotaur/server/internal/v2/message/messages"
 	"github.com/kercylan98/minotaur/server/internal/v2/queue"
+	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log/v2"
+	"github.com/kercylan98/minotaur/utils/random"
 	"github.com/panjf2000/ants/v2"
+	"reflect"
 	"time"
 
 	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
@@ -13,6 +19,7 @@ import (
 
 type Server interface {
 	Events
+	message.Broker[Producer, string]
 
 	// Run 运行服务器
 	Run() error
@@ -23,46 +30,45 @@ type Server interface {
 	// GetStatus 获取服务器状态
 	GetStatus() *State
 
-	// PushMessage 推送特定消息到系统队列中进行处理
-	PushMessage(message Message)
+	// PublishSyncMessage 发布同步消息
+	PublishSyncMessage(queue string, handler messages.SynchronousHandler[Producer, string, Server])
 
-	// PushSyncMessage 是 PushMessage 中对于 GenerateSystemSyncMessage 的快捷方式
-	PushSyncMessage(handler func(srv Server))
-
-	// PushAsyncMessage 是 PushMessage 中对于 GenerateSystemAsyncMessage 的快捷方式，当 callback 传入多个时，将仅有首个生效
-	PushAsyncMessage(handler func(srv Server) error, callback ...func(srv Server, err error))
+	// PublishAsyncMessage 发布异步消息，当包含多个 callback 时，仅首个生效
+	PublishAsyncMessage(queue string, handler messages.AsynchronousHandler[Producer, string, Server], callback ...messages.AsynchronousCallbackHandler[Producer, string, Server])
 }
 
 type server struct {
 	*controller
 	*events
 	*Options
+	queue   string
 	ants    *ants.Pool
 	state   *State
 	notify  *notify
 	ctx     context.Context
 	cancel  context.CancelFunc
 	network Network
-	reactor *reactor.Reactor[Message]
+	reactor *reactor.Reactor[string, message.Message[Producer, string]]
 }
 
 func NewServer(network Network, options ...*Options) Server {
 	srv := &server{
 		network: network,
 		Options: DefaultOptions(),
+		queue:   fmt.Sprintf("%s:%s", reflect.TypeOf(new(server)).String(), random.HostName()),
 	}
 	srv.ctx, srv.cancel = context.WithCancel(context.Background())
 	srv.notify = new(notify).init(srv)
 	srv.controller = new(controller).init(srv)
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
-	srv.reactor = reactor.NewReactor[Message](
-		srv.GetServerMessageChannelSize(), srv.GetActorMessageChannelSize(),
-		srv.GetServerMessageBufferInitialSize(), srv.GetActorMessageBufferInitialSize(),
+	srv.reactor = reactor.NewReactor[string, message.Message[Producer, string]](
+		srv.GetActorMessageChannelSize(),
+		srv.GetActorMessageBufferInitialSize(),
 		srv.onProcessMessage,
-		func(message queue.MessageWrapper[int, string, Message], err error) {
+		func(message message.Message[Producer, string], err error) {
 			if handler := srv.GetMessageErrorHandler(); handler != nil {
-				handler(srv, message.Message(), err)
+				handler(srv, message, err)
 			}
 		})
 	srv.Options.init(srv).Apply(options...)
@@ -84,7 +90,7 @@ func NewServer(network Network, options ...*Options) Server {
 
 func (s *server) Run() (err error) {
 	var queueWait = make(chan struct{})
-	go s.reactor.Run(func(queues []*queue.Queue[int, string, Message]) {
+	go s.reactor.Run(func(queues []*queue.Queue[int, string, message.Message[Producer, string]]) {
 		for _, q := range queues {
 			s.GetLogger().Debug("Reactor", log.String("action", "run"), log.Any("queue", q.Id()))
 		}
@@ -123,31 +129,42 @@ func (s *server) Shutdown() (err error) {
 	return
 }
 
-func (s *server) PushMessage(message Message) {
-	s.controller.PushSystemMessage(message)
+func (s *server) getSysQueue() string {
+	return s.queue
 }
 
-func (s *server) PushSyncMessage(handler func(srv Server)) {
-	s.PushMessage(GenerateSystemSyncMessage(handler))
+func (s *server) PublishMessage(msg message.Message[Producer, string]) {
+	s.reactor.Dispatch(msg.GetQueue(), msg)
 }
 
-func (s *server) PushAsyncMessage(handler func(srv Server) error, callback ...func(srv Server, err error)) {
-	var cb func(srv Server, err error)
-	if len(callback) > 0 {
-		cb = callback[0]
-	}
-	s.PushMessage(GenerateSystemAsyncMessage(handler, cb))
+func (s *server) PublishSyncMessage(queue string, handler messages.SynchronousHandler[Producer, string, Server]) {
+	s.PublishMessage(messages.Synchronous[Producer, string, Server](
+		s, newProducer(s, nil), queue,
+		handler,
+	))
+}
+
+func (s *server) PublishAsyncMessage(queue string, handler messages.AsynchronousHandler[Producer, string, Server], callback ...messages.AsynchronousCallbackHandler[Producer, string, Server]) {
+	s.PublishMessage(messages.Asynchronous[Producer, string, Server](
+		s, newProducer(s, nil), queue,
+		func(ctx context.Context, srv Server, f func(context.Context, Server)) {
+			s.ants.Submit(func() {
+				f(ctx, s)
+			})
+		},
+		handler,
+		collection.FindFirstOrDefaultInSlice(callback, nil),
+	))
 }
 
 func (s *server) GetStatus() *State {
 	return s.state.Status()
 }
 
-func (s *server) onProcessMessage(message queue.MessageWrapper[int, string, Message]) {
+func (s *server) onProcessMessage(m message.Message[Producer, string]) {
 	s.getManyOptions(func(opt *Options) {
-		m := message.Message()
-		m.OnInitialize(s, s.reactor, message)
+		ctx := context.Background()
+		m.OnInitialize(ctx)
 		m.OnProcess()
 	})
-
 }
