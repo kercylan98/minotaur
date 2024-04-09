@@ -2,7 +2,7 @@ package queues
 
 import (
 	"errors"
-	"github.com/kercylan98/minotaur/toolkit/message"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"github.com/kercylan98/minotaur/utils/buffer"
 	"sync"
 	"sync/atomic"
@@ -25,25 +25,25 @@ type NonBlockingRWState = int32
 
 type nonBlockingRWEventInfo[I, T comparable] struct {
 	topic T
-	event message.Event[I, T]
-	exec  func(handler message.EventHandler[T], finisher message.EventFinisher[I, T])
+	event nexus.Event[I, T]
+	exec  func(handler nexus.EventHandler[T], finisher nexus.EventFinisher[I, T])
 }
 
 func (e *nonBlockingRWEventInfo[I, T]) GetTopic() T {
 	return e.topic
 }
 
-func (e *nonBlockingRWEventInfo[I, T]) Exec(handler message.EventHandler[T], finisher message.EventFinisher[I, T]) {
+func (e *nonBlockingRWEventInfo[I, T]) Exec(handler nexus.EventHandler[T], finisher nexus.EventFinisher[I, T]) {
 	e.exec(handler, finisher)
 }
 
 // NewNonBlockingRW 创建一个并发安全的队列 NonBlockingRW，该队列支持通过 chanSize 自定义读取 channel 的大小，同支持使用 bufferSize 指定 buffer.Ring 的初始大小
 //   - closedHandler 可选的设置队列关闭处理函数，在队列关闭后将执行该函数。此刻队列不再可用
-func NewNonBlockingRW[I, T comparable](id I, chanSize, bufferSize int) message.Queue[I, T] {
+func NewNonBlockingRW[I, T comparable](id I, chanSize, bufferSize int) nexus.Queue[I, T] {
 	q := &NonBlockingRW[I, T]{
 		id:     id,
 		status: NonBlockingRWStatusNone,
-		c:      make(chan message.EventInfo[I, T], chanSize),
+		c:      make(chan nexus.EventInfo[I, T], chanSize),
 		buf:    buffer.NewRing[nonBlockingRWEventInfo[I, T]](bufferSize),
 		condRW: &sync.RWMutex{},
 		topics: make(map[T]int64),
@@ -62,7 +62,7 @@ type NonBlockingRW[I, T comparable] struct {
 	total  int64                                      // 消息总计数
 	topics map[T]int64                                // 主题对应的消息计数映射
 	buf    *buffer.Ring[nonBlockingRWEventInfo[I, T]] // 消息缓冲区
-	c      chan message.EventInfo[I, T]               // 消息读取通道
+	c      chan nexus.EventInfo[I, T]                 // 消息读取通道
 	cs     chan struct{}                              // 关闭信号
 	cond   *sync.Cond                                 // 条件变量
 	condRW *sync.RWMutex                              // 条件变量的读写锁
@@ -101,7 +101,7 @@ func (n *NonBlockingRW[I, T]) Run() {
 }
 
 // Consume 获取队列消息的只读通道，
-func (n *NonBlockingRW[I, T]) Consume() <-chan message.EventInfo[I, T] {
+func (n *NonBlockingRW[I, T]) Consume() <-chan nexus.EventInfo[I, T] {
 	return n.c
 }
 
@@ -128,7 +128,7 @@ func (n *NonBlockingRW[I, T]) GetTopicMessageCount(topic T) int64 {
 	return n.topics[topic]
 }
 
-func (n *NonBlockingRW[I, T]) Publish(topic T, event message.Event[I, T]) error {
+func (n *NonBlockingRW[I, T]) Publish(topic T, event nexus.Event[I, T]) error {
 	if atomic.LoadInt32(&n.status) > NonBlockingRWStatusClosing {
 		return ErrorQueueClosed
 	}
@@ -136,7 +136,7 @@ func (n *NonBlockingRW[I, T]) Publish(topic T, event message.Event[I, T]) error 
 	ei := nonBlockingRWEventInfo[I, T]{
 		topic: topic,
 		event: event,
-		exec: func(handler message.EventHandler[T], finisher message.EventFinisher[I, T]) {
+		exec: func(handler nexus.EventHandler[T], finisher nexus.EventFinisher[I, T]) {
 			defer func() {
 				event.OnProcessed(topic, n, time.Now())
 

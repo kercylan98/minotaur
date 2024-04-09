@@ -2,7 +2,7 @@ package events
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/toolkit/message"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"time"
 )
 
@@ -27,7 +27,7 @@ func Asynchronous[I, T comparable](
 	actuator AsynchronousActuator,
 	handler AsynchronousHandler,
 	callback AsynchronousCallbackHandler,
-) message.Event[I, T] {
+) nexus.Event[I, T] {
 	m := &asynchronous[I, T]{
 		actuator: actuator,
 		handler:  handler,
@@ -44,22 +44,22 @@ func Asynchronous[I, T comparable](
 
 type asynchronous[I, T comparable] struct {
 	ctx      context.Context
-	broker   message.Broker[I, T]
+	broker   nexus.Broker[I, T]
 	actuator AsynchronousActuator
 	handler  AsynchronousHandler
 	callback AsynchronousCallbackHandler
 }
 
-func (s *asynchronous[I, T]) OnInitialize(ctx context.Context, broker message.Broker[I, T]) {
+func (s *asynchronous[I, T]) OnInitialize(ctx context.Context, broker nexus.Broker[I, T]) {
 	s.ctx = ctx
 	s.broker = broker
 }
 
-func (s *asynchronous[I, T]) OnPublished(topic T, queue message.Queue[I, T]) {
+func (s *asynchronous[I, T]) OnPublished(topic T, queue nexus.Queue[I, T]) {
 	queue.IncrementCustomMessageCount(topic, 1)
 }
 
-func (s *asynchronous[I, T]) OnProcess(topic T, queue message.Queue[I, T], startAt time.Time) {
+func (s *asynchronous[I, T]) OnProcess(topic T, queue nexus.Queue[I, T], startAt time.Time) {
 	s.actuator(s.ctx, func(ctx context.Context) {
 		var err error
 		if s.handler != nil {
@@ -74,6 +74,6 @@ func (s *asynchronous[I, T]) OnProcess(topic T, queue message.Queue[I, T], start
 	})
 }
 
-func (s *asynchronous[I, T]) OnProcessed(topic T, queue message.Queue[I, T], endAt time.Time) {
+func (s *asynchronous[I, T]) OnProcessed(topic T, queue nexus.Queue[I, T], endAt time.Time) {
 	queue.IncrementCustomMessageCount(topic, -1)
 }

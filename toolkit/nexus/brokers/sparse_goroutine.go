@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/loadbalancer"
-	"github.com/kercylan98/minotaur/toolkit/message"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -18,13 +18,13 @@ const (
 )
 
 type (
-	SparseGoroutineMessageHandler func(handler message.EventExecutor)
+	SparseGoroutineMessageHandler func(handler nexus.EventExecutor)
 )
 
-func NewSparseGoroutine[I, T comparable](queueFactory func(index int) message.Queue[I, T], handler SparseGoroutineMessageHandler) message.Broker[I, T] {
+func NewSparseGoroutine[I, T comparable](queueFactory func(index int) nexus.Queue[I, T], handler SparseGoroutineMessageHandler) nexus.Broker[I, T] {
 	s := &SparseGoroutine[I, T]{
-		lb:           loadbalancer.NewRoundRobin[I, message.Queue[I, T]](),
-		queues:       make(map[I]message.Queue[I, T]),
+		lb:           loadbalancer.NewRoundRobin[I, nexus.Queue[I, T]](),
+		queues:       make(map[I]nexus.Queue[I, T]),
 		state:        sparseGoroutineStatusNone,
 		location:     make(map[T]I),
 		handler:      handler,
@@ -47,18 +47,18 @@ func NewSparseGoroutine[I, T comparable](queueFactory func(index int) message.Qu
 }
 
 type SparseGoroutine[I, T comparable] struct {
-	state           int32                                            // 状态
-	queueSize       int                                              // 队列管道大小
-	queueBufferSize int                                              // 队列缓冲区大小
-	queues          map[I]message.Queue[I, T]                        // 所有使用的队列
-	queueRW         sync.RWMutex                                     // 队列读写锁
-	location        map[T]I                                          // Topic 所在队列 Id 映射
-	locationRW      sync.RWMutex                                     // 所在队列 ID 映射锁
-	lb              *loadbalancer.RoundRobin[I, message.Queue[I, T]] // 负载均衡器
-	wg              sync.WaitGroup                                   // 等待组
-	handler         SparseGoroutineMessageHandler                    // 消息处理器
+	state           int32                                          // 状态
+	queueSize       int                                            // 队列管道大小
+	queueBufferSize int                                            // 队列缓冲区大小
+	queues          map[I]nexus.Queue[I, T]                        // 所有使用的队列
+	queueRW         sync.RWMutex                                   // 队列读写锁
+	location        map[T]I                                        // Topic 所在队列 Id 映射
+	locationRW      sync.RWMutex                                   // 所在队列 ID 映射锁
+	lb              *loadbalancer.RoundRobin[I, nexus.Queue[I, T]] // 负载均衡器
+	wg              sync.WaitGroup                                 // 等待组
+	handler         SparseGoroutineMessageHandler                  // 消息处理器
 
-	queueFactory func(index int) message.Queue[I, T]
+	queueFactory func(index int) nexus.Queue[I, T]
 }
 
 // Run 启动 Reactor，运行队列
@@ -72,12 +72,12 @@ func (s *SparseGoroutine[I, T]) Run() {
 		s.wg.Add(1)
 		go queue.Run()
 
-		go func(r *SparseGoroutine[I, T], queue message.Queue[I, T]) {
+		go func(r *SparseGoroutine[I, T], queue nexus.Queue[I, T]) {
 			defer r.wg.Done()
 			for h := range queue.Consume() {
 				h.Exec(
 					// onProcess
-					func(topic T, event message.EventExecutor) {
+					func(topic T, event nexus.EventExecutor) {
 						s.handler(event)
 					},
 					// onFinish
@@ -105,7 +105,7 @@ func (s *SparseGoroutine[I, T]) Close() {
 	var wg sync.WaitGroup
 	wg.Add(len(s.queues))
 	for _, queue := range s.queues {
-		go func(queue message.Queue[I, T]) {
+		go func(queue nexus.Queue[I, T]) {
 			defer wg.Done()
 			queue.Close()
 		}(queue)
@@ -117,14 +117,14 @@ func (s *SparseGoroutine[I, T]) Close() {
 
 // Publish 将消息分发到特定 topic，当 topic 首次使用时，将会根据负载均衡策略选择一个队列
 //   - 设置 count 会增加消息的外部计数，当 SparseGoroutine 关闭时会等待外部计数归零
-func (s *SparseGoroutine[I, T]) Publish(topic T, event message.Event[I, T]) error {
+func (s *SparseGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) error {
 	s.queueRW.RLock()
 	if atomic.LoadInt32(&s.state) > sparseGoroutineStatusClosing {
 		s.queueRW.RUnlock()
 		return fmt.Errorf("broker closing or closed")
 	}
 
-	var next message.Queue[I, T]
+	var next nexus.Queue[I, T]
 	s.locationRW.RLock()
 	i, exist := s.location[topic]
 	s.locationRW.RUnlock()

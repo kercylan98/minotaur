@@ -1,4 +1,4 @@
-package message
+package nexus
 
 type Queue[I, T comparable] interface {
 	// GetId 获取队列 Id

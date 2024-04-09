@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/toolkit/message"
-	"github.com/kercylan98/minotaur/toolkit/message/brokers"
-	messageEvents "github.com/kercylan98/minotaur/toolkit/message/events"
-	"github.com/kercylan98/minotaur/toolkit/message/queues"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
+	"github.com/kercylan98/minotaur/toolkit/nexus/brokers"
+	messageEvents "github.com/kercylan98/minotaur/toolkit/nexus/events"
+	"github.com/kercylan98/minotaur/toolkit/nexus/queues"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/random"
@@ -47,7 +47,7 @@ type server struct {
 	ctx     context.Context
 	cancel  context.CancelFunc
 	network Network
-	broker  message.Broker[int, string]
+	broker  nexus.Broker[int, string]
 }
 
 func NewServer(network Network, options ...*Options) Server {
@@ -61,9 +61,9 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.controller = new(controller).init(srv)
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
-	srv.broker = brokers.NewSparseGoroutine(func(index int) message.Queue[int, string] {
+	srv.broker = brokers.NewSparseGoroutine(func(index int) nexus.Queue[int, string] {
 		return queues.NewNonBlockingRW[int, string](index, 1024*8, 1024)
-	}, func(handler message.EventExecutor) {
+	}, func(handler nexus.EventExecutor) {
 		handler()
 	})
 	srv.Options.init(srv).Apply(options...)
@@ -119,7 +119,7 @@ func (s *server) getSysQueue() string {
 	return s.queue
 }
 
-func (s *server) PublishMessage(topic string, event message.Event[int, string]) {
+func (s *server) PublishMessage(topic string, event nexus.Event[int, string]) {
 	s.broker.Publish(topic, event)
 }
 
