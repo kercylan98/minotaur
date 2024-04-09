@@ -3,9 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/server/internal/v2/message"
-	"github.com/kercylan98/minotaur/server/internal/v2/message/messages"
-	"github.com/kercylan98/minotaur/server/internal/v2/queue"
+	"github.com/kercylan98/minotaur/toolkit/message"
+	"github.com/kercylan98/minotaur/toolkit/message/brokers"
+	messageEvents "github.com/kercylan98/minotaur/toolkit/message/events"
+	"github.com/kercylan98/minotaur/toolkit/message/queues"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"github.com/kercylan98/minotaur/utils/random"
@@ -13,13 +14,11 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/kercylan98/minotaur/server/internal/v2/reactor"
 	"github.com/kercylan98/minotaur/utils/network"
 )
 
 type Server interface {
 	Events
-	message.Broker[Producer, string]
 
 	// Run 运行服务器
 	Run() error
@@ -31,10 +30,10 @@ type Server interface {
 	GetStatus() *State
 
 	// PublishSyncMessage 发布同步消息
-	PublishSyncMessage(queue string, handler messages.SynchronousHandler[Producer, string, Server])
+	PublishSyncMessage(topic string, handler messageEvents.SynchronousHandler)
 
 	// PublishAsyncMessage 发布异步消息，当包含多个 callback 时，仅首个生效
-	PublishAsyncMessage(queue string, handler messages.AsynchronousHandler[Producer, string, Server], callback ...messages.AsynchronousCallbackHandler[Producer, string, Server])
+	PublishAsyncMessage(topic string, handler messageEvents.AsynchronousHandler, callback ...messageEvents.AsynchronousCallbackHandler)
 }
 
 type server struct {
@@ -48,7 +47,7 @@ type server struct {
 	ctx     context.Context
 	cancel  context.CancelFunc
 	network Network
-	reactor *reactor.Reactor[string, message.Message[Producer, string]]
+	broker  message.Broker[int, string]
 }
 
 func NewServer(network Network, options ...*Options) Server {
@@ -62,17 +61,12 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.controller = new(controller).init(srv)
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
-	srv.reactor = reactor.NewReactor[string, message.Message[Producer, string]](
-		srv.GetActorMessageChannelSize(),
-		srv.GetActorMessageBufferInitialSize(),
-		srv.onProcessMessage,
-		func(message message.Message[Producer, string], err error) {
-			if handler := srv.GetMessageErrorHandler(); handler != nil {
-				handler(srv, message, err)
-			}
-		})
+	srv.broker = brokers.NewSparseGoroutine(func(index int) message.Queue[int, string] {
+		return queues.NewNonBlockingRW[int, string](index, 1024*8, 1024)
+	}, func(handler message.EventExecutor) {
+		handler()
+	})
 	srv.Options.init(srv).Apply(options...)
-	srv.reactor.SetLogger(srv.Options.GetLogger())
 	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
 		ExpiryDuration: 10 * time.Second,
 		Nonblocking:    true,
@@ -89,15 +83,7 @@ func NewServer(network Network, options ...*Options) Server {
 }
 
 func (s *server) Run() (err error) {
-	var queueWait = make(chan struct{})
-	go s.reactor.Run(func(queues []*queue.Queue[int, string, message.Message[Producer, string]]) {
-		for _, q := range queues {
-			s.GetLogger().Debug("Reactor", log.String("action", "run"), log.Any("queue", q.Id()))
-		}
-		close(queueWait)
-	})
-	<-queueWait
-
+	go s.broker.Run()
 	if err = s.network.OnSetup(s.ctx, s); err != nil {
 		return
 	}
@@ -125,7 +111,7 @@ func (s *server) Shutdown() (err error) {
 	DisableHttpPProf()
 	s.events.onShutdown()
 	err = s.network.OnShutdown()
-	s.reactor.Close()
+	s.broker.Close()
 	return
 }
 
@@ -133,38 +119,22 @@ func (s *server) getSysQueue() string {
 	return s.queue
 }
 
-func (s *server) PublishMessage(msg message.Message[Producer, string]) {
-	s.reactor.Dispatch(msg.GetQueue(), msg)
+func (s *server) PublishMessage(topic string, event message.Event[int, string]) {
+	s.broker.Publish(topic, event)
 }
 
-func (s *server) PublishSyncMessage(queue string, handler messages.SynchronousHandler[Producer, string, Server]) {
-	s.PublishMessage(messages.Synchronous[Producer, string, Server](
-		s, newProducer(s, nil), queue,
-		handler,
-	))
+func (s *server) PublishSyncMessage(topic string, handler messageEvents.SynchronousHandler) {
+	s.PublishMessage(topic, messageEvents.Synchronous[int, string](handler))
 }
 
-func (s *server) PublishAsyncMessage(queue string, handler messages.AsynchronousHandler[Producer, string, Server], callback ...messages.AsynchronousCallbackHandler[Producer, string, Server]) {
-	s.PublishMessage(messages.Asynchronous[Producer, string, Server](
-		s, newProducer(s, nil), queue,
-		func(ctx context.Context, srv Server, f func(context.Context, Server)) {
-			s.ants.Submit(func() {
-				f(ctx, s)
-			})
-		},
-		handler,
-		collection.FindFirstOrDefaultInSlice(callback, nil),
-	))
+func (s *server) PublishAsyncMessage(topic string, handler messageEvents.AsynchronousHandler, callback ...messageEvents.AsynchronousCallbackHandler) {
+	s.PublishMessage(topic, messageEvents.Asynchronous[int, string](func(ctx context.Context, f func(context.Context)) {
+		s.ants.Submit(func() {
+			f(ctx)
+		})
+	}, handler, collection.FindFirstOrDefaultInSlice(callback, nil)))
 }
 
 func (s *server) GetStatus() *State {
 	return s.state.Status()
-}
-
-func (s *server) onProcessMessage(m message.Message[Producer, string]) {
-	s.getManyOptions(func(opt *Options) {
-		ctx := context.Background()
-		m.OnInitialize(ctx)
-		m.OnProcess()
-	})
 }

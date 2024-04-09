@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/server/internal/v2/message/messages"
 	"github.com/kercylan98/minotaur/utils/log"
 	"reflect"
 	"time"
@@ -68,17 +67,12 @@ func (s *events) onLaunched() {
 		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
 	})
 
-	s.PublishMessage(messages.Synchronous(
-		Server(s.server),
-		newProducer(s.server, nil),
-		s.server.getSysQueue(),
-		func(ctx context.Context, broker Server) {
-			s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
-				value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
-				return true
-			})
-		},
-	))
+	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
+		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
+			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
+			return true
+		})
+	})
 }
 
 func (s *events) RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHandler, priority ...int) {
@@ -86,9 +80,9 @@ func (s *events) RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHand
 }
 
 func (s *events) onConnectionOpened(conn Conn) {
-	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.connectionOpenedEventHandlers.RangeValue(func(index int, value ConnectionOpenedEventHandler) bool {
-			value(srv, conn)
+			value(s, conn)
 			return true
 		})
 	})
@@ -99,9 +93,9 @@ func (s *events) RegisterConnectionClosedEvent(handler ConnectionClosedEventHand
 }
 
 func (s *events) onConnectionClosed(conn Conn, err error) {
-	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.connectionClosedEventHandlers.RangeValue(func(index int, value ConnectionClosedEventHandler) bool {
-			value(srv, conn, err)
+			value(s, conn, err)
 			return true
 		})
 	})
@@ -112,9 +106,9 @@ func (s *events) RegisterConnectionReceivePacketEvent(handler ConnectionReceiveP
 }
 
 func (s *events) onConnectionReceivePacket(conn *conn, packet Packet) {
-	s.PublishSyncMessage(conn.GetActor(), func(ctx context.Context, srv Server) {
+	s.PublishSyncMessage(conn.GetQueue(), func(ctx context.Context) {
 		s.connectionReceivePacketEventHandlers.RangeValue(func(index int, value ConnectionReceivePacketEventHandler) bool {
-			value(srv, conn, packet)
+			value(s, conn, packet)
 			return true
 		})
 	})
@@ -125,9 +119,9 @@ func (s *events) RegisterShutdownEvent(handler ShutdownEventHandler, priority ..
 }
 
 func (s *events) onShutdown() {
-	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.shutdownEventHandlers.RangeValue(func(index int, value ShutdownEventHandler) bool {
-			value(srv)
+			value(s)
 			return true
 		})
 	})

@@ -9,14 +9,14 @@ import (
 type ConnWriter func(packet Packet) error
 
 type Conn interface {
-	// SetActor 设置连接使用的 Actor 名称
-	SetActor(actor string)
+	// SetQueue 设置连接使用的消息队列名称
+	SetQueue(queue string)
 
-	// DelActor 删除连接使用的 Actor
-	DelActor()
+	// DelQueue 删除连接使用的消息队列，删除后连接将在系统队列执行消息
+	DelQueue()
 
-	// GetActor 获取连接使用的 Actor 名称
-	GetActor() string
+	// GetQueue 获取连接使用的消息队列名称
+	GetQueue() string
 
 	// WritePacket 写入一个 Packet
 	WritePacket(packet Packet) error
@@ -43,19 +43,19 @@ type conn struct {
 	server *server
 	conn   net.Conn               // 连接
 	writer ConnWriter             // 写入器
-	actor  atomic.Pointer[string] // Actor 名称
+	queue  atomic.Pointer[string] // Actor 名称
 }
 
-func (c *conn) SetActor(actor string) {
-	c.actor.Store(&actor)
+func (c *conn) SetQueue(queue string) {
+	c.queue.Store(&queue)
 }
 
-func (c *conn) DelActor() {
-	c.actor.Store(nil)
+func (c *conn) DelQueue() {
+	c.queue.Store(nil)
 }
 
-func (c *conn) GetActor() string {
-	ident := c.actor.Load()
+func (c *conn) GetQueue() string {
+	ident := c.queue.Load()
 	if ident == nil {
 		return ""
 	}

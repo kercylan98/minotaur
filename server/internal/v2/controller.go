@@ -40,7 +40,7 @@ func (s *controller) GetAnts() *ants.Pool {
 }
 
 func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
-	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c := newConn(s.server, conn, writer)
 		s.server.connections[conn] = c
 		s.events.onConnectionOpened(c)
@@ -48,7 +48,7 @@ func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
 }
 
 func (s *controller) EliminateConnection(conn net.Conn, err error) {
-	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c, exist := s.server.connections[conn]
 		if !exist {
 			return
@@ -59,12 +59,12 @@ func (s *controller) EliminateConnection(conn net.Conn, err error) {
 }
 
 func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
-	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context, srv Server) {
+	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c, exist := s.server.connections[conn]
 		if !exist {
 			return
 		}
-		s.PublishSyncMessage(c.GetActor(), func(ctx context.Context, srv Server) {
+		s.PublishSyncMessage(c.GetQueue(), func(ctx context.Context) {
 			s.events.onConnectionReceivePacket(c, packet)
 		})
 	})

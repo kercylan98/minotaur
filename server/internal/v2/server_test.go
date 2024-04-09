@@ -35,9 +35,9 @@ func TestNewServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		srv.PublishAsyncMessage("123", func(ctx context.Context, s server.Server) error {
+		srv.PublishAsyncMessage("123", func(ctx context.Context) error {
 			return nil
-		}, func(ctx context.Context, s server.Server, err error) {
+		}, func(ctx context.Context, err error) {
 			for i := 0; i < 10000000; i++ {
 				_ = tm["1"]
 				tm["1"] = random.Bool()
