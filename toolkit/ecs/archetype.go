@@ -1,60 +1,40 @@
 package ecs
 
 import (
-	"github.com/kercylan98/minotaur/utils/super"
 	"reflect"
 )
 
-func newArchetype(world *World, mask *super.BitSet[ComponentId]) *archetype {
-	arch := &archetype{
-		world:      world,
-		mask:       mask,
-		entityData: make(map[ComponentId][]reflect.Value),
-	}
+type archetypeId = string
 
-	return arch
-}
-
-// archetype 原型是一种实体的集合，它们都包含了相同的组件
 type archetype struct {
-	world      *World
-	mask       *super.BitSet[ComponentId]
-	entities   []Entity
-	entityData map[ComponentId][]reflect.Value
+	id archetypeId
+
+	entityIndex map[EntityId]int
+	entityData  map[ComponentId][]any
 }
 
-func (a *archetype) addEntity(entity Entity) Entity {
-	entity.setArchetypeIndex(len(a.entities))
-	a.entities = append(a.entities, entity)
-	for _, componentId := range a.mask.Bits() {
-		t := a.world.getComponentTypeById(componentId)
-		if t == nil {
-			continue
-		}
-
-		v := reflect.New(t)
-		a.entityData[componentId] = append(a.entityData[componentId], v)
+func (a *archetype) init(world *World, id archetypeId, componentIds []ComponentId) {
+	a.id = id
+	a.entityIndex = make(map[EntityId]int)
+	a.entityData = make(map[ComponentId][]any)
+	for _, componentId := range componentIds {
+		a.entityData[componentId] = make([]any, 0)
 	}
-	return entity
 }
 
-func (a *archetype) removeEntity(entity Entity) {
-	idx := entity.GetArchetypeIndex()
-	for componentId, values := range a.entityData {
-		a.entityData[componentId] = append(values[:idx], values[idx+1:]...)
+func (a *archetype) addEntity(world *World, entityId EntityId) {
+	a.entityIndex[entityId] = len(a.entityIndex)
+
+	for componentId, data := range a.entityData {
+		componentType := world.componentTypes[componentId]
+		data = append(data, reflect.New(componentType).Interface())
+		a.entityData[componentId] = data
 	}
-	a.entities = append(a.entities[:idx], a.entities[idx+1:]...)
 }
 
-func (a *archetype) getEntityComponentData(entity Entity, componentId ComponentId) reflect.Value {
-	return a.entityData[componentId][entity.GetArchetypeIndex()]
-}
-
-func (a *archetype) getEntityData(entity Entity) []reflect.Value {
-	var idx = entity.GetArchetypeIndex()
-	var data []reflect.Value
-	for _, componentId := range a.mask.Bits() {
-		data = append(data, a.entityData[componentId][idx])
+func (a *archetype) getEntityData(entityId EntityId, id ComponentId) any {
+	if idx, ok := a.entityIndex[entityId]; ok {
+		return a.entityData[id][idx]
 	}
-	return data
+	return nil
 }

@@ -189,7 +189,7 @@ func (slf *BitSet[Bit]) Clone() *BitSet[Bit] {
 }
 
 // Equal 检查当前 BitSet 是否与另一个 BitSet 相等
-func (slf *BitSet[Bit]) Equal(other *BitSet[Bit]) bool {
+func (slf *BitSet[Bit]) Equal(other BitSet[Bit]) bool {
 	if len(slf.set) != len(other.set) {
 		return false
 	}
@@ -202,7 +202,7 @@ func (slf *BitSet[Bit]) Equal(other *BitSet[Bit]) bool {
 }
 
 // Contains 检查当前 BitSet 是否包含另一个 BitSet
-func (slf *BitSet[Bit]) Contains(other *BitSet[Bit]) bool {
+func (slf *BitSet[Bit]) Contains(other BitSet[Bit]) bool {
 	for i, word := range other.set {
 		if i >= len(slf.set) || slf.set[i]&word != word {
 			return false
@@ -212,7 +212,7 @@ func (slf *BitSet[Bit]) Contains(other *BitSet[Bit]) bool {
 }
 
 // ContainsAny 检查当前 BitSet 是否包含另一个 BitSet 中的任意比特位
-func (slf *BitSet[Bit]) ContainsAny(other *BitSet[Bit]) bool {
+func (slf *BitSet[Bit]) ContainsAny(other BitSet[Bit]) bool {
 	for i, word := range other.set {
 		if i < len(slf.set) && slf.set[i]&word != 0 {
 			return true
@@ -222,7 +222,7 @@ func (slf *BitSet[Bit]) ContainsAny(other *BitSet[Bit]) bool {
 }
 
 // ContainsAll 检查当前 BitSet 是否包含另一个 BitSet 中的所有比特位
-func (slf *BitSet[Bit]) ContainsAll(other *BitSet[Bit]) bool {
+func (slf *BitSet[Bit]) ContainsAll(other BitSet[Bit]) bool {
 	for i, word := range other.set {
 		if i >= len(slf.set) || slf.set[i]&word != word {
 			return false
@@ -232,7 +232,7 @@ func (slf *BitSet[Bit]) ContainsAll(other *BitSet[Bit]) bool {
 }
 
 // Intersect 检查当前 BitSet 是否与另一个 BitSet 有交集
-func (slf *BitSet[Bit]) Intersect(other *BitSet[Bit]) bool {
+func (slf *BitSet[Bit]) Intersect(other BitSet[Bit]) bool {
 	for i, word := range other.set {
 		if i < len(slf.set) && slf.set[i]&word != 0 {
 			return true

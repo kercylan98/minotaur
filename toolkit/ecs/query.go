@@ -1,69 +1,9 @@
 package ecs
 
-import (
-	"github.com/kercylan98/minotaur/utils/super"
-	"reflect"
-)
+// QueryComponent 查询特定世界中的特定实体的特定组件，如果组件未注册或实体不存在，则返回 nil
+func QueryComponent[C any](world *World, id EntityId) (component *C) {
+	componentId := Component[C](world)
 
-func QueryEntity[C any](world *World, entity Entity) *C {
-	t := reflect.TypeOf((*C)(nil)).Elem()
-	id, exist := world.components[t]
-	if !exist {
-		var ids []ComponentId
-		for i := range t.NumField() {
-			ids = append(ids, world.ComponentId(t.Field(i).Type.Elem()))
-		}
-		mask := super.NewBitSet(ids...)
-		for _, arch := range world.archetypes {
-			if !arch.mask.ContainsAll(mask) {
-				continue
-			}
-
-			values := arch.getEntityData(entity)
-			fields := make(map[reflect.Type]reflect.Value)
-			for _, value := range values {
-				fields[value.Type()] = value
-			}
-
-			result := reflect.New(t)
-			for i := range t.NumField() {
-				f := result.Elem().Field(i)
-				f.Set(fields[f.Type()])
-			}
-			return result.Interface().(*C)
-		}
-		return nil
-	}
-
-	for _, arch := range world.archetypes {
-		if !arch.mask.Has(id) {
-			continue
-		}
-
-		for _, e := range arch.entities {
-			if e == entity {
-				return arch.getEntityComponentData(entity, id).Interface().(*C)
-			}
-		}
-	}
-
-	return nil
-}
-
-func QueryEntitiesByComponentId[T any](world *World, id ComponentId) []*T {
-	t := reflect.TypeOf((*T)(nil)).Elem()
-	if world.components[t] != id {
-		return nil
-	}
-
-	var cs []*T
-	for _, arch := range world.archetypes {
-		if arch.mask.Has(id) {
-			for _, entity := range arch.entities {
-				arch.getEntityComponentData(entity, id)
-				cs = append(cs, arch.getEntityComponentData(entity, id).Interface().(*T))
-			}
-		}
-	}
-	return cs
+	arch := world.findOrCreateArchetype(componentId)
+	return arch.getEntityData(id, componentId).(*C)
 }
