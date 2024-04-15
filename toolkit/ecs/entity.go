@@ -17,6 +17,10 @@ func (e *EntityId) init(id uint32, generation uint32) {
 	*e = EntityId(id) | (EntityId(generation) << entityGenerationShift)
 }
 
+func (e *EntityId) initFromId(id uint32) {
+	*e = EntityId(id)
+}
+
 func (e *EntityId) getId() uint32 {
 	return uint32(*e & entityIdMask)
 }

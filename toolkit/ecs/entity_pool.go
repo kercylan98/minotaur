@@ -15,12 +15,25 @@ func (p *entityPool) init(pageSize int) {
 	return
 }
 
+// GetN 返回多个新的实体
+func (p *entityPool) GetN(n int) []EntityId {
+	var entities = make([]EntityId, n)
+	var length = uint32(p.entities.Len())
+	for i := uint32(0); i < uint32(n); i++ {
+		var entity EntityId
+		entity.initFromId(length + i)
+		p.entities.Add(entity)
+		entities[i] = entity
+	}
+	return entities
+}
+
 // Get 返回一个新的或者已经回收的实体
 func (p *entityPool) Get() EntityId {
 	if p.available == 0 {
 		// 如果没有可用的实体，则创建一个新的实体
 		var entity EntityId
-		entity.init(uint32(p.entities.Len()), 0)
+		entity.initFromId(uint32(p.entities.Len()))
 		p.entities.Add(entity)
 		return entity
 	}

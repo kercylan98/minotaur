@@ -47,13 +47,7 @@ func (w *World) CreateEntity(componentIds ...ComponentId) EntityId {
 // CreateEntities 创建多个实体
 func (w *World) CreateEntities(count int, componentIds []ComponentId) []EntityId {
 	arch, _ := w.findOrCreateArchetype(componentIds...)
-	var ids = make([]EntityId, count)
-	for i := 0; i < count; i++ {
-		entityId := w.entityPool.Get()
-		ids[i] = entityId
-		arch.addEntity(entityId)
-	}
-	arch.addEntities(ids...)
+	arch.addEntities(w.entityPool.GetN(count)...)
 	return nil
 }
 
