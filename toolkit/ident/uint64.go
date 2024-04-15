@@ -25,8 +25,7 @@ func GenerateOrderedUniqueIdentStringWithUInt64(is ...uint64) string {
 		}
 		return string(b)
 	default:
-		totalBytes := len(is) * 8
-		result := make([]byte, totalBytes)
+		result := make([]byte, len(is)*8)
 		ptr := unsafe.Pointer(&result[0])
 		for _, v := range is {
 			*(*uint64)(ptr) = v
