@@ -6,8 +6,6 @@ import (
 	"unsafe"
 )
 
-type archetypeId = string
-
 type archetype struct {
 	archetypeSize  uintptr // 表示了该原型内所有组件的大小总和
 	archetypeAlign uintptr // 表示了该原型内所有组件的对齐方式

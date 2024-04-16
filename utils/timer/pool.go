@@ -46,6 +46,9 @@ func (slf *Pool) GetTicker(size int, options ...Option) *Ticker {
 	if len(slf.tickers) > 0 {
 		ticker = slf.tickers[0]
 		slf.tickers = slf.tickers[1:]
+		for _, option := range options {
+			option(ticker)
+		}
 		return ticker
 	}
 
