@@ -13,12 +13,12 @@ import (
 //   - 越大的掩码会导致越多的内存占用
 type DynamicMask struct {
 	data      unsafe.Pointer
-	length    int
+	length    uint64
 	bitsCache []uint64
 }
 
 // scaling 伸缩掩码的大小
-func (m *DynamicMask) scaling(newSize int) {
+func (m *DynamicMask) scaling(newSize uint64) {
 	if newSize <= m.length {
 		return
 	}
@@ -33,7 +33,7 @@ func (m *DynamicMask) scaling(newSize int) {
 }
 
 // Set 设置指定位置的位
-func (m *DynamicMask) Set(bit int) {
+func (m *DynamicMask) Set(bit uint64) {
 	index := bit >> 6
 	offset := bit & 63
 
@@ -46,7 +46,7 @@ func (m *DynamicMask) Set(bit int) {
 }
 
 // Del 删除指定位置的位
-func (m *DynamicMask) Del(bit int) {
+func (m *DynamicMask) Del(bit uint64) {
 	index := bit >> 6
 	offset := bit & 63
 
@@ -59,7 +59,7 @@ func (m *DynamicMask) Del(bit int) {
 }
 
 // Has 检查指定位是否存在
-func (m *DynamicMask) Has(bit int) bool {
+func (m *DynamicMask) Has(bit uint64) bool {
 	index := bit >> 6
 	offset := bit & 63
 
@@ -71,7 +71,7 @@ func (m *DynamicMask) Has(bit int) bool {
 }
 
 // HasAll 检查所有位是否均存在
-func (m *DynamicMask) HasAll(bits []int) bool {
+func (m *DynamicMask) HasAll(bits []uint64) bool {
 	if len(bits) == 0 {
 		return m.length == 0
 	}
@@ -84,7 +84,7 @@ func (m *DynamicMask) HasAll(bits []int) bool {
 }
 
 // HasAny 检查是否有任意一个位存在
-func (m *DynamicMask) HasAny(bits []int) bool {
+func (m *DynamicMask) HasAny(bits []uint64) bool {
 	for _, bit := range bits {
 		if m.Has(bit) {
 			return true
@@ -94,7 +94,7 @@ func (m *DynamicMask) HasAny(bits []int) bool {
 }
 
 // EqualBits 检查是否匹配所有位
-func (m *DynamicMask) EqualBits(bits []int) bool {
+func (m *DynamicMask) EqualBits(bits []uint64) bool {
 	if m.length == 0 && len(bits) == 0 {
 		return true
 	}
@@ -103,7 +103,7 @@ func (m *DynamicMask) EqualBits(bits []int) bool {
 		return false
 	}
 	for i, bit := range bits {
-		if m.bitsCache[i] != uint64(bit) {
+		if m.bitsCache[i] != bit {
 			return false
 		}
 	}
@@ -122,7 +122,7 @@ func (m *DynamicMask) Equal(other DynamicMask) bool {
 		return false
 	}
 
-	for i := 0; i < m.length; i++ {
+	for i := uint64(0); i < m.length; i++ {
 		if mSlice[i] != oSlice[i] {
 			return false
 		}
@@ -137,11 +137,11 @@ func (m *DynamicMask) Bits() []uint64 {
 		return m.bitsCache
 	}
 	var bits = make([]uint64, 0, m.length<<6)
-	for i := 0; i < m.length; i++ {
+	for i := uint64(0); i < m.length; i++ {
 		mask := *(*uint64)(unsafe.Pointer(uintptr(m.data) + uintptr(i)<<3))
-		for j := 0; j < 64; j++ {
+		for j := uint64(0); j < 64; j++ {
 			if mask&(1<<uint(j)) != 0 {
-				bits = append(bits, uint64(i<<6+j))
+				bits = append(bits, i<<6+j)
 			}
 		}
 	}
@@ -199,7 +199,7 @@ func (m *DynamicMask) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	m.scaling(len(slice))
+	m.scaling(uint64(len(slice)))
 	copy((*[1 << 30]uint64)(m.data)[:m.length], slice)
 	return nil
 }
