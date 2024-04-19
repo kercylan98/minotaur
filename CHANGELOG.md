@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.5.5](https://github.com/kercylan98/minotaur/compare/v0.5.4...v0.5.5) (2024-04-10)
+
+
+### Other | 其他更改
+
+* ecs 基本实现 ([dff6faa](https://github.com/kercylan98/minotaur/commit/dff6faa834318048356c44f06ebc38ccaa71c0a3))
+* reactor 内存优化 ([5b0ea56](https://github.com/kercylan98/minotaur/commit/5b0ea566d5ded2a8506c9f115eaf3e54485463ad))
+* reactor 实现 ([1408fdc](https://github.com/kercylan98/minotaur/commit/1408fdcff0e2595b7a09289952c1af7e0fe7faec))
+* server/v2 基本通讯模型实现 ([89e868b](https://github.com/kercylan98/minotaur/commit/89e868bd1c7712374041608bf563a77a0caa261c))
+* 优化 ([64c1653](https://github.com/kercylan98/minotaur/commit/64c165317bb50fe7e63593353843c5a31b50aee2))
+* 优化消息分发 ([e84a6ee](https://github.com/kercylan98/minotaur/commit/e84a6ee1aea38150f771f75f790b8648c3a0df99))
+* 新 server 包调整 ([7239a27](https://github.com/kercylan98/minotaur/commit/7239a278ee7c0db55b701510c5ff477ba4f666b5))
+* 新版 server 包完善 ([ffc3421](https://github.com/kercylan98/minotaur/commit/ffc3421b29e00eaf509a18b1a0a99e8952d72011))
+* 新版 server 同步、异步消息实现 ([7cb5dd0](https://github.com/kercylan98/minotaur/commit/7cb5dd069a015c2322045e2a156c64998fc51f50))
+* 新版 server 完善通知、事件 ([49b8efd](https://github.com/kercylan98/minotaur/commit/49b8efd9b2b02dcfba2137301a1255a465b72f51))
+* 新版 server 消息并发安全控制完善 ([ac929b6](https://github.com/kercylan98/minotaur/commit/ac929b6fcd10d2b9d6afde4ed5e57b253aedc897))
+* 新版 server、logger 完善 ([e4eee31](https://github.com/kercylan98/minotaur/commit/e4eee31ede332b22796e6f47ace0a4e5481a62db))
+* 更新 protobuf 版本至 v1.33.0，以解决 CVE-2024-24786 问题 ([31caa80](https://github.com/kercylan98/minotaur/commit/31caa80e2905c4a1aecc799c4908630b525810cd))
+* 服务器消息优化 ([35e13d9](https://github.com/kercylan98/minotaur/commit/35e13d9cd5e055746f6f8da3a966876a67b7415d))
+* 服务器消息优化前 ([16704bf](https://github.com/kercylan98/minotaur/commit/16704bfbb603b532c86eb2d6c717fe5313586fb8))
+* 服务器消息组件抽离 ([cc3573b](https://github.com/kercylan98/minotaur/commit/cc3573b792e93210c3acd929596587d45454102a))
+* 服务器消息组件抽离 ([7ecb13b](https://github.com/kercylan98/minotaur/commit/7ecb13b7c8ed8ba9a3bafdecdf537e8552f6fc83))
+* 跨队列消息 ([409350f](https://github.com/kercylan98/minotaur/commit/409350f530ca370c84e43d2b99df0516c63c56a8))
+
+
+### Features | 新特性
+
+* super 包新增 WaitGroup 结构，用法同 sync.WaitGroup，包含一个额外的 Exec 函数，用于便捷的执行异步函数。移除 stack.go 相关的无用代码 ([c98d15b](https://github.com/kercylan98/minotaur/commit/c98d15b0f242cff42f8114f03105b147a5a563c6))
+* times 包新增 GetWeekdayDateRelativeToNowWithOffset 及 GetWeekdayTimeRelativeToNowWithOffset 函数，用于取代 GetCurrWeekDate 和 GetLastWeekDate 函数 ([92d6c56](https://github.com/kercylan98/minotaur/commit/92d6c5680d1a97540b5c00fe7643fa657e7c20f7))
+* 新增 chrono 包，用于替代原本的 timer 及 times 包 ([e608e92](https://github.com/kercylan98/minotaur/commit/e608e9257ef2f3031319f586fcb2738c65214fb1))
+* 新版 server 包 HTTP 基础实现 ([b2c0bb0](https://github.com/kercylan98/minotaur/commit/b2c0bb0da3dd87520fa5fcf574d88c47f5a26a4a))
+* 新版 server 包 HTTP 基础实现 ([37f35aa](https://github.com/kercylan98/minotaur/commit/37f35aa602e7172a5719ec35f17e99744be9c483))
+* 新版 server 包 websocket 基础实现、actor 模型实现 ([92c4280](https://github.com/kercylan98/minotaur/commit/92c42800f13391940b8fc7c36eb0fb3b99f066ae))
+* 新版 server 包 websocket 基础实现、actor 模型实现 ([ef1bb32](https://github.com/kercylan98/minotaur/commit/ef1bb321d7b38b3353ed9095c87cff9228f2dbfc))
+
+
+### Bug Fixes | 修复
+
+* 修复循环依赖问题 ([6d8258b](https://github.com/kercylan98/minotaur/commit/6d8258b153fb7d3354d910d0d31e5cdf790364a0))
+
 ## [0.5.4](https://github.com/kercylan98/minotaur/compare/v0.5.3...v0.5.4) (2024-03-12)
 
 
