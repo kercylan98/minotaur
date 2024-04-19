@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/kercylan98/minotaur/compare/v0.5.5...v0.5.6) (2024-04-19)
+
+
+### Bug Fixes | 修复
+
+* 修复 timer.Ticker 死锁 ([45024f3](https://github.com/kercylan98/minotaur/commit/45024f3b9fe41131dab65ba0ead4361ad0a0d23b))
+
 ## [0.5.5](https://github.com/kercylan98/minotaur/compare/v0.5.4...v0.5.5) (2024-04-10)
 
 
