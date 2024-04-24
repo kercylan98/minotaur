@@ -21,7 +21,9 @@ type (
 	SparseGoroutineMessageHandler func(handler nexus.EventExecutor)
 )
 
-func NewSparseGoroutine[I, T comparable](queueFactory func(index int) nexus.Queue[I, T], handler SparseGoroutineMessageHandler) nexus.Broker[I, T] {
+// NewSparseGoroutine 创建一个 SparseGoroutine，该 SparseGoroutine 支持通过 goroutineNum 指定并发数，queueFactory 指定队列工厂函数，handler 指定消息处理器
+//   - 当 goroutineNum 小于等于 0 时，默认使用 CPU 核心数
+func NewSparseGoroutine[I, T comparable](goroutineNum int, queueFactory func(index int) nexus.Queue[I, T], handler SparseGoroutineMessageHandler) nexus.Broker[I, T] {
 	s := &SparseGoroutine[I, T]{
 		lb:           loadbalancer.NewRoundRobin[I, nexus.Queue[I, T]](),
 		queues:       make(map[I]nexus.Queue[I, T]),
@@ -30,9 +32,11 @@ func NewSparseGoroutine[I, T comparable](queueFactory func(index int) nexus.Queu
 		handler:      handler,
 		queueFactory: queueFactory,
 	}
-	defaultNum := runtime.NumCPU()
+	if goroutineNum <= 0 {
+		goroutineNum = runtime.NumCPU()
+	}
 	s.queueRW.Lock()
-	for i := 0; i < defaultNum; i++ {
+	for i := 0; i < goroutineNum; i++ {
 		queue := s.queueFactory(i)
 		s.lb.Add(queue) // 运行前添加到负载均衡器，未运行时允许接收消息
 		queueId := queue.GetId()

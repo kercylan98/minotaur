@@ -166,7 +166,6 @@ func (n *NonBlockingRW[I, T]) Publish(topic T, event nexus.Event[I, T]) error {
 	n.topics[topic]++
 	n.total++
 	n.buf.Write(ei)
-	//log.Info("消息总计数", log.Int64("计数", q.state.total))
 	n.cond.Signal()
 	n.cond.L.Unlock()
 
