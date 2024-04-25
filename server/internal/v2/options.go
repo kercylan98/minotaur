@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/kercylan98/minotaur/utils/log/v2"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -13,27 +14,25 @@ func NewOptions() *Options {
 
 func DefaultOptions() *Options {
 	return &Options{
-		serverMessageChannelSize:       1024 * 4,
-		actorMessageChannelSize:        1024,
-		serverMessageBufferInitialSize: 1024,
-		actorMessageBufferInitialSize:  1024,
-		lifeCycleLimit:                 0,
-		logger:                         log.NewLogger(log.NewHandler(os.Stdout, log.DefaultOptions().WithCallerSkip(-1).WithLevel(log.LevelInfo))),
+		messageChannelSize:       1024 * 4,
+		messageBufferInitialSize: 1024,
+		lifeCycleLimit:           0,
+		logger:                   log.NewLogger(log.NewHandler(os.Stdout, log.DefaultOptions().WithCallerSkip(-1).WithLevel(log.LevelInfo))),
+		sparseGoroutineNum:       runtime.NumCPU(),
 	}
 }
 
 type Options struct {
-	server                         *server
-	rw                             sync.RWMutex
-	serverMessageChannelSize       int           // 服务器 Actor 消息处理管道大小
-	actorMessageChannelSize        int           // Actor 消息处理管道大小
-	serverMessageBufferInitialSize int           // 服务器 Actor 消息写入缓冲区初始化大小
-	actorMessageBufferInitialSize  int           // Actor 消息写入缓冲区初始化大小
-	lifeCycleLimit                 time.Duration // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
-	logger                         *log.Logger   // 日志记录器
-	debug                          bool          // Debug 模式
-	syncLowMessageDuration         time.Duration // 同步慢消息时间
-	asyncLowMessageDuration        time.Duration // 异步慢消息时间
+	server                   *server
+	rw                       sync.RWMutex
+	messageChannelSize       int           // 服务器消息处理管道大小
+	messageBufferInitialSize int           // 服务器消息写入缓冲区初始化大小
+	lifeCycleLimit           time.Duration // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	logger                   *log.Logger   // 日志记录器
+	debug                    bool          // Debug 模式
+	syncLowMessageDuration   time.Duration // 同步慢消息时间
+	asyncLowMessageDuration  time.Duration // 异步慢消息时间
+	sparseGoroutineNum       int           // 稀疏 goroutine 数量
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -47,15 +46,14 @@ func (opt *Options) Apply(options ...*Options) {
 	for _, option := range options {
 		option.rw.RLock()
 
-		opt.serverMessageChannelSize = option.serverMessageChannelSize
-		opt.actorMessageChannelSize = option.actorMessageChannelSize
-		opt.serverMessageBufferInitialSize = option.serverMessageBufferInitialSize
-		opt.actorMessageBufferInitialSize = option.actorMessageBufferInitialSize
+		opt.messageChannelSize = option.messageChannelSize
+		opt.messageBufferInitialSize = option.messageBufferInitialSize
 		opt.lifeCycleLimit = option.lifeCycleLimit
 		opt.logger = option.logger
 		opt.debug = option.debug
 		opt.syncLowMessageDuration = option.syncLowMessageDuration
 		opt.asyncLowMessageDuration = option.asyncLowMessageDuration
+		opt.sparseGoroutineNum = option.sparseGoroutineNum
 
 		option.rw.RUnlock()
 	}
@@ -66,6 +64,20 @@ func (opt *Options) Apply(options ...*Options) {
 
 func (opt *Options) active() {
 	opt.server.notify.lifeCycleTime <- opt.GetLifeCycleLimit()
+}
+
+// WithSparseGoroutineNum 设置服务器稀疏 goroutine 数量
+//   - 该函数在运行时设置无效
+func (opt *Options) WithSparseGoroutineNum(num int) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.sparseGoroutineNum = num
+	})
+}
+
+func (opt *Options) GetSparseGoroutineNum() int {
+	return getOptionsValue(opt, func(opt *Options) int {
+		return opt.sparseGoroutineNum
+	})
 }
 
 // WithSyncLowMessageMonitor 设置同步消息的慢消息监测时间
@@ -102,13 +114,6 @@ func (opt *Options) WithDebug(debug bool) *Options {
 	})
 }
 
-// IsDebug 获取当前服务器是否是 Debug 模式
-func (opt *Options) IsDebug() bool {
-	return getOptionsValue(opt, func(opt *Options) bool {
-		return opt.debug
-	})
-}
-
 // WithLogger 设置服务器的日志记录器
 //   - 该函数支持运行时设置
 func (opt *Options) WithLogger(logger *log.Logger) *Options {
@@ -124,57 +129,30 @@ func (opt *Options) GetLogger() *log.Logger {
 	})
 }
 
-// WithServerMessageChannelSize 设置服务器 Actor 用于处理消息的管道大小，当管道由于逻辑阻塞而导致满载时，会导致新消息无法及时从缓冲区拿出，从而增加内存的消耗，但是并不会影响消息的写入
-func (opt *Options) WithServerMessageChannelSize(size int) *Options {
+// WithMessageChannelSize 设置服务器 Actor 用于处理消息的管道大小，当管道由于逻辑阻塞而导致满载时，会导致新消息无法及时从缓冲区拿出，从而增加内存的消耗，但是并不会影响消息的写入
+func (opt *Options) WithMessageChannelSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.serverMessageChannelSize = size
+		opt.messageChannelSize = size
 	})
 }
 
 func (opt *Options) GetServerMessageChannelSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.serverMessageChannelSize
+		return opt.messageChannelSize
 	})
 }
 
-// WithActorMessageChannelSize 设置 Actor 用于处理消息的管道大小，当管道由于逻辑阻塞而导致满载时，会导致新消息无法及时从缓冲区拿出，从而增加内存的消耗，但是并不会影响消息的写入
-func (opt *Options) WithActorMessageChannelSize(size int) *Options {
-	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.actorMessageChannelSize = size
-	})
-}
-
-func (opt *Options) GetActorMessageChannelSize() int {
-	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.actorMessageChannelSize
-	})
-}
-
-// WithServerMessageBufferInitialSize 设置服务器 Actor 消息环形缓冲区 buffer.Ring 的初始大小，适当的值可以避免频繁扩容
+// WithMessageBufferInitialSize 设置服务器 Actor 消息环形缓冲区 buffer.Ring 的初始大小，适当的值可以避免频繁扩容
 //   - 由于扩容是按照当前大小的 2 倍进行扩容，过大的值也可能会导致内存消耗过高
-func (opt *Options) WithServerMessageBufferInitialSize(size int) *Options {
+func (opt *Options) WithMessageBufferInitialSize(size int) *Options {
 	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.serverMessageBufferInitialSize = size
+		opt.messageBufferInitialSize = size
 	})
 }
 
 func (opt *Options) GetServerMessageBufferInitialSize() int {
 	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.serverMessageBufferInitialSize
-	})
-}
-
-// WithActorMessageBufferInitialSize 设置 Actor 消息环形缓冲区 buffer.Ring 的初始大小，适当的值可以避免频繁扩容
-//   - 由于扩容是按照当前大小的 2 倍进行扩容，过大的值也可能会导致内存消耗过高
-func (opt *Options) WithActorMessageBufferInitialSize(size int) *Options {
-	return opt.modifyOptionsValue(func(opt *Options) {
-		opt.actorMessageBufferInitialSize = size
-	})
-}
-
-func (opt *Options) GetActorMessageBufferInitialSize() int {
-	return getOptionsValue(opt, func(opt *Options) int {
-		return opt.actorMessageBufferInitialSize
+		return opt.messageBufferInitialSize
 	})
 }
 

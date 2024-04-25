@@ -2,9 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"github.com/kercylan98/minotaur/utils/log"
-	"reflect"
 	"time"
 
 	"github.com/kercylan98/minotaur/utils/collection/listings"
@@ -14,6 +11,7 @@ type (
 	LaunchedEventHandler                func(srv Server, ip string, t time.Time)
 	ShutdownEventHandler                func(srv Server)
 	ConnectionOpenedEventHandler        func(srv Server, conn Conn)
+	ConnectionOpenedAfterEventHandler   func(srv Server, conn Conn)
 	ConnectionClosedEventHandler        func(srv Server, conn Conn, err error)
 	ConnectionReceivePacketEventHandler func(srv Server, conn Conn, packet Packet)
 )
@@ -32,6 +30,10 @@ type Events interface {
 	//  - 该事件将在系统级 Actor 中运行，不应执行阻塞操作
 	RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHandler, priority ...int)
 
+	// RegisterConnectionOpenedAfterEvent 注册连接打开后事件，当新连接创建完毕后将会触发该事件
+	//  - 该事件将在连接的 Actor 中运行，由于多个连接将使用同一个消息队列，不建议执行阻塞操作，当连接没有设置消息队列时，将在系统队列中执行
+	RegisterConnectionOpenedAfterEvent(handler ConnectionOpenedAfterEventHandler, priority ...int)
+
 	// RegisterConnectionClosedEvent 注册连接关闭事件，当连接关闭后将会触发该事件
 	//  - 该事件将在系统级 Actor 中运行，不应执行阻塞操作
 	RegisterConnectionClosedEvent(handler ConnectionClosedEventHandler, priority ...int)
@@ -47,6 +49,7 @@ type events struct {
 	launchedEventHandlers                listings.SyncPrioritySlice[LaunchedEventHandler]
 	shutdownEventHandlers                listings.SyncPrioritySlice[ShutdownEventHandler]
 	connectionOpenedEventHandlers        listings.SyncPrioritySlice[ConnectionOpenedEventHandler]
+	connectionOpenedAfterEventHandlers   listings.SyncPrioritySlice[ConnectionOpenedAfterEventHandler]
 	connectionClosedEventHandlers        listings.SyncPrioritySlice[ConnectionClosedEventHandler]
 	connectionReceivePacketEventHandlers listings.SyncPrioritySlice[ConnectionReceivePacketEventHandler]
 }
@@ -61,16 +64,10 @@ func (s *events) RegisterLaunchedEvent(handler LaunchedEventHandler, priority ..
 }
 
 func (s *events) onLaunched() {
-	s.Options.getManyOptions(func(opt *Options) {
-		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
-		opt.logger.Info("Minotaur Server", log.String("", "RunningInfo"), log.String("network", reflect.TypeOf(s.network).String()), log.String("listen", fmt.Sprintf("%s://%s%s", s.network.Schema(), s.server.state.Ip, s.network.Address())))
-		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
-	})
-
 	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
 			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
-			return true
+		return true
 		})
 	})
 }
@@ -82,6 +79,19 @@ func (s *events) RegisterConnectionOpenedEvent(handler ConnectionOpenedEventHand
 func (s *events) onConnectionOpened(conn Conn) {
 	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.connectionOpenedEventHandlers.RangeValue(func(index int, value ConnectionOpenedEventHandler) bool {
+			value(s, conn)
+			return true
+		})
+	})
+}
+
+func (s *events) RegisterConnectionOpenedAfterEvent(handler ConnectionOpenedAfterEventHandler, priority ...int) {
+	s.connectionOpenedAfterEventHandlers.AppendByOptionalPriority(handler, priority...)
+}
+
+func (s *events) onConnectionOpenedAfter(conn Conn) {
+	s.PublishSyncMessage(conn.GetQueue(), func(ctx context.Context) {
+		s.connectionOpenedAfterEventHandlers.RangeValue(func(index int, value ConnectionOpenedAfterEventHandler) bool {
 			value(s, conn)
 			return true
 		})
