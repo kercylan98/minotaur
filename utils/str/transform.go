@@ -44,7 +44,7 @@ func HideSensitivity(str string) (result string) {
 			result = string(nameRune[:1]) + "*" + string(nameRune[2:3])
 		} else if lens == 4 {
 			result = string(nameRune[:1]) + "**" + string(nameRune[lens-1:lens])
-		} else if lens > 4 {
+		} else {
 			result = string(nameRune[:2]) + "***" + string(nameRune[lens-2:lens])
 		}
 		return
