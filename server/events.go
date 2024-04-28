@@ -2,9 +2,8 @@ package server
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/collection/listings"
 	"time"
-
-	"github.com/kercylan98/minotaur/utils/collection/listings"
 )
 
 type (
@@ -67,7 +66,7 @@ func (s *events) onLaunched() {
 	s.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		s.launchedEventHandlers.RangeValue(func(index int, value LaunchedEventHandler) bool {
 			value(s.server, s.server.state.Ip, s.server.state.LaunchedAt)
-		return true
+			return true
 		})
 	})
 }

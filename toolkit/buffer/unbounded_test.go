@@ -2,7 +2,7 @@ package buffer_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/buffer"
+	"github.com/kercylan98/minotaur/toolkit/buffer"
 	"testing"
 )
 

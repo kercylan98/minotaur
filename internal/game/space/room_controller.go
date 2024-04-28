@@ -1,9 +1,9 @@
 package space
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"sync"
 )
 
 const UnknownSeat = -1 // 未知座位号

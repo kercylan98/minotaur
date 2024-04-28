@@ -2,10 +2,9 @@ package server
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sync"
 )
-
 type connMgr struct {
 	connections map[string]*Conn // 所有连接
 

@@ -1,9 +1,9 @@
 package space
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"sync"
 )
 
 // NewRoomManager 创建房间管理器 RoomManager 的实例

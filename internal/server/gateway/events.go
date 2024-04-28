@@ -2,10 +2,9 @@ package gateway
 
 import (
 	"github.com/kercylan98/minotaur/server"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/collection/listings"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/collection/listings"
 )
-
 type (
 	ConnectionOpenedEventHandle             func(gateway *Gateway, conn *server.Conn)
 	ConnectionClosedEventHandle             func(gateway *Gateway, conn *server.Conn)

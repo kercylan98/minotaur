@@ -1,11 +1,11 @@
 package aoi
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/geometry"
-	"math"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"github.com/kercylan98/minotaur/utils/geometry"
+"math"
+"sync"
 )
 
 func NewTwoDimensional[EID generic.Basic, PosType generic.SignedNumber, E TwoDimensionalEntity[EID, PosType]](width, height, areaWidth, areaHeight int) *TwoDimensional[EID, PosType, E] {

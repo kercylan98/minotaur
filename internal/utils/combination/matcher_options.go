@@ -1,10 +1,10 @@
 package combination
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"reflect"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"reflect"
+"sort"
 )
 
 // MatcherOption 匹配器选项

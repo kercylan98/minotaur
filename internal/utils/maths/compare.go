@@ -1,9 +1,9 @@
 package maths
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"sort"
 )
 
 const (

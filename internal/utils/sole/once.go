@@ -1,7 +1,7 @@
 package sole
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
 // NewOnce 创建一个用于数据取值去重的结构实例

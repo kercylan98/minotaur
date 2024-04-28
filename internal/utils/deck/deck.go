@@ -1,7 +1,7 @@
 package deck
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
 // NewDeck 创建一个新的甲板

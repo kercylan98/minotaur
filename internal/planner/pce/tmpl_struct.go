@@ -1,7 +1,7 @@
 package pce
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
 // TmplStruct 模板结构

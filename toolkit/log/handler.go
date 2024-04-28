@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding"
 	"fmt"
+	"github.com/kercylan98/minotaur/internal/utils/str"
+	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"io"
 	"log/slog"
 	"runtime"
@@ -11,8 +13,6 @@ import (
 	"strings"
 	"sync"
 	"unicode"
-
-	"github.com/kercylan98/minotaur/utils/str"
 )
 
 func NewHandler(w io.Writer, opts ...*Options) *MinotaurHandler {
@@ -120,7 +120,7 @@ func processTime(buffer *strings.Builder, record slog.Record, opt *Options) {
 func processLevel(buffer *strings.Builder, record slog.Record, opt *Options) {
 	var levelColor = opt.levelColor[record.Level]
 	var levelText = opt.levelText[record.Level]
-	if levelText == str.None {
+	if levelText == charproc.None {
 		return
 	}
 

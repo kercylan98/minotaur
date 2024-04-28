@@ -1,9 +1,9 @@
 package collection_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"reflect"
-	"testing"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"reflect"
+"testing"
 )
 
 func TestConvertSliceToBatches(t *testing.T) {

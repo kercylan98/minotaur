@@ -2,10 +2,10 @@ package times
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"strings"
-	"time"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"strings"
+"time"
 )
 
 // NewStateLine 创建一个从左向右由早到晚的状态时间线

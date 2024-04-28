@@ -2,7 +2,7 @@ package log
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/utils/super"
+	"fmt"
 	"log/slog"
 )
 
@@ -32,7 +32,14 @@ func (h MultiHandler) Handle(ctx context.Context, record slog.Record) (err error
 		if h.handlers[i].Enabled(ctx, record.Level) {
 			err = func() error {
 				defer func() {
-					err = super.RecoverTransform(recover())
+					if v := recover(); v != nil {
+						switch v.(type) {
+						case error:
+							err = v.(error)
+						default:
+							err = fmt.Errorf("recover from panic: %v", v)
+						}
+					}
 				}()
 				return h.handlers[i].Handle(ctx, record.Clone())
 			}()

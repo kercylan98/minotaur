@@ -3,11 +3,11 @@ package geometry
 import (
 	"bytes"
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"math"
-	"sort"
-	"strings"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"math"
+"sort"
+"strings"
 )
 
 var (

@@ -2,8 +2,8 @@ package collection_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sort"
 )
 
 func ExampleDescBy() {

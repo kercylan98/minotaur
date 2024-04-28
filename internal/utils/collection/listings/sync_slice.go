@@ -1,8 +1,8 @@
 package listings
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sync"
 )
 
 // NewSyncSlice 创建一个 SyncSlice

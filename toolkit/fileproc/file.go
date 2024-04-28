@@ -2,10 +2,11 @@ package fileproc
 
 import (
 	"bufio"
-	"github.com/kercylan98/minotaur/toolkit/collection"
-	"io"
-	"os"
-	"sync"
+	""
+"github.com/kercylan98/minotaur/toolkit/collection"
+"io"
+"os"
+"sync"
 )
 
 // WriteToFile 向特定文件写入内容，如果文件不存在则创建

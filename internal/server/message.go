@@ -2,10 +2,10 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/server/internal/dispatcher"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/super"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/log"
+"github.com/kercylan98/minotaur/utils/super"
+"sync"
 )
 
 const (

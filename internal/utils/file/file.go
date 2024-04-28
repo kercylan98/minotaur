@@ -2,11 +2,11 @@ package file
 
 import (
 	"bufio"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"io"
-	"os"
-	"path/filepath"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"io"
+"os"
+"path/filepath"
+"sync"
 )
 
 // PathExist 路径是否存在

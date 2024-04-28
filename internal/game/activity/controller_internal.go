@@ -2,11 +2,11 @@ package activity
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/generic"
-	"github.com/kercylan98/minotaur/utils/times"
-	"reflect"
-	"time"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/generic"
+"github.com/kercylan98/minotaur/utils/times"
+"reflect"
+"time"
 )
 
 var (

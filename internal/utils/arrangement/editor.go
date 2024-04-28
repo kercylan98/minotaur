@@ -1,8 +1,8 @@
 package arrangement
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sort"
 )
 
 // Editor 提供了大量辅助函数的编辑器

@@ -27,7 +27,7 @@ func (slf *Golang) Render(templates ...*pce.TmplStruct) (string, error) {
 		import (
 			jsonIter "github.com/json-iterator/go"
 			"github.com/kercylan98/minotaur/utils/log"
-			"github.com/kercylan98/minotaur/utils/collection"
+			"github.com/kercylan98/minotaur/toolkit/collection"
 			"sync"
 			"sync/atomic"
 		)

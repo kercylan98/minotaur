@@ -2,7 +2,8 @@ package collection_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
+	""
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
 // 在该示例中，将 slice 克隆后将会得到一个新的 slice result，而 result 和 slice 将不会有任何关联，但是如果 slice 中的元素是引用类型，那么 result 中的元素将会和 slice 中的元素指向同一个地址

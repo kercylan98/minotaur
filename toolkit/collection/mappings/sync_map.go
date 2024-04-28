@@ -2,8 +2,8 @@ package mappings
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sync"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sync"
 )
 
 // NewSyncMap 创建一个 SyncMap

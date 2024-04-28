@@ -1,9 +1,9 @@
 package collection_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sort"
-	"testing"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sort"
+"testing"
 )
 
 func TestDescBy(t *testing.T) {

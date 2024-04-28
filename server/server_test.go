@@ -3,11 +3,11 @@ package server_test
 import (
 	"context"
 	"github.com/gobwas/ws"
-	"github.com/kercylan98/minotaur/server/internal/v2"
-	"github.com/kercylan98/minotaur/server/internal/v2/network"
-	"github.com/kercylan98/minotaur/utils/log/v2"
-	"github.com/kercylan98/minotaur/utils/random"
-	"github.com/kercylan98/minotaur/utils/times"
+	"github.com/kercylan98/minotaur/server"
+	"github.com/kercylan98/minotaur/server/network"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
+	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/random"
 	"testing"
 	"time"
 )
@@ -26,7 +26,7 @@ func TestNewServer(t *testing.T) {
 		})
 	}()
 
-	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(times.Day*3).WithLogger(log.GetLogger()))
+	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(chrono.Day*3).WithLogger(log.GetLogger()))
 
 	var tm = make(map[string]bool)
 

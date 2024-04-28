@@ -1,7 +1,7 @@
 package arrangement
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
 // Area 编排区域

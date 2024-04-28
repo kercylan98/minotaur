@@ -2,8 +2,8 @@ package hub_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/hub"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/hub"
 )
 
 func ExampleNewObjectPool() {

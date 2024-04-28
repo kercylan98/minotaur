@@ -2,9 +2,9 @@ package pce
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/str"
-	"strings"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/str"
+"strings"
 )
 
 // TmplField 模板字段

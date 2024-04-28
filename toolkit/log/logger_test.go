@@ -2,7 +2,7 @@ package log_test
 
 import (
 	"errors"
-	"github.com/kercylan98/minotaur/utils/log/v2"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"testing"
 )
 

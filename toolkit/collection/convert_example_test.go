@@ -2,9 +2,9 @@ package collection_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"reflect"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"reflect"
+"sort"
 )
 
 func ExampleConvertSliceToBatches() {

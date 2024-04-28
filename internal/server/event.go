@@ -2,20 +2,19 @@ package server
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection"
-	"github.com/kercylan98/minotaur/utils/collection/listings"
-	"github.com/kercylan98/minotaur/utils/log"
-	"github.com/kercylan98/minotaur/utils/runtimes"
-	"golang.org/x/crypto/ssh/terminal"
-	"net/url"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"strings"
-	"sync"
-	"time"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"github.com/kercylan98/minotaur/utils/collection/listings"
+"github.com/kercylan98/minotaur/utils/log"
+"github.com/kercylan98/minotaur/utils/runtimes"
+"golang.org/x/crypto/ssh/terminal"
+"net/url"
+"os"
+"reflect"
+"runtime/debug"
+"strings"
+"sync"
+"time"
 )
-
 type (
 	MessageReadyEventHandler func(srv *Server)
 	StartBeforeEventHandler  func(srv *Server)

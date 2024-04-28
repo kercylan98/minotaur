@@ -1,8 +1,8 @@
 package arrangement
 
 import (
-	"github.com/kercylan98/minotaur/utils/collection"
-	"sort"
+"github.com/kercylan98/minotaur/toolkit/collection"
+"sort"
 )
 
 // NewArrangement 创建一个新的编排

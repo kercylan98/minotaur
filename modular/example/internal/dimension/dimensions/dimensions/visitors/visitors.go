@@ -5,9 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/modular/example/internal/dimension/core"
 	"github.com/kercylan98/minotaur/modular/example/internal/dimension/dimensions/exposes"
 	"github.com/kercylan98/minotaur/modular/example/internal/dimension/dimensions/models"
-	"github.com/kercylan98/minotaur/utils/collection"
+"github.com/kercylan98/minotaur/toolkit/collection"
 )
-
 type Dimension struct {
 	*core.Room                                   // 房间 Id
 	visitors   map[string]*models.VisitorsMember // 所有访客

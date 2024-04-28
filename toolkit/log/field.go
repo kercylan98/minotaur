@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/pkg/errors"
 	"log/slog"
 	"time"
@@ -53,12 +53,12 @@ func StringP(key string, val *string) Field {
 }
 
 // Int 构造一个带有整数值的字段
-func Int[I generic.Integer](key string, val I) Field {
+func Int[I constraints.Int](key string, val I) Field {
 	return slog.Int(key, int(val))
 }
 
 // IntP 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func IntP[I generic.Integer](key string, val *I) Field {
+func IntP[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -66,12 +66,12 @@ func IntP[I generic.Integer](key string, val *I) Field {
 }
 
 // Int8 构造一个带有整数值的字段
-func Int8[I generic.Integer](key string, val I) Field {
+func Int8[I constraints.Int](key string, val I) Field {
 	return slog.Int(key, int(val))
 }
 
 // Int8P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Int8P[I generic.Integer](key string, val *I) Field {
+func Int8P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -79,12 +79,12 @@ func Int8P[I generic.Integer](key string, val *I) Field {
 }
 
 // Int16 构造一个带有整数值的字段
-func Int16[I generic.Integer](key string, val I) Field {
+func Int16[I constraints.Int](key string, val I) Field {
 	return slog.Int(key, int(val))
 }
 
 // Int16P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Int16P[I generic.Integer](key string, val *I) Field {
+func Int16P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -92,12 +92,12 @@ func Int16P[I generic.Integer](key string, val *I) Field {
 }
 
 // Int32 构造一个带有整数值的字段
-func Int32[I generic.Integer](key string, val I) Field {
+func Int32[I constraints.Int](key string, val I) Field {
 	return slog.Int(key, int(val))
 }
 
 // Int32P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Int32P[I generic.Integer](key string, val *I) Field {
+func Int32P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -105,12 +105,12 @@ func Int32P[I generic.Integer](key string, val *I) Field {
 }
 
 // Int64 构造一个带有整数值的字段
-func Int64[I generic.Integer](key string, val I) Field {
+func Int64[I constraints.Int](key string, val I) Field {
 	return slog.Int64(key, int64(val))
 }
 
 // Int64P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Int64P[I generic.Integer](key string, val *I) Field {
+func Int64P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -118,12 +118,12 @@ func Int64P[I generic.Integer](key string, val *I) Field {
 }
 
 // Uint 构造一个带有整数值的字段
-func Uint[I generic.Integer](key string, val I) Field {
+func Uint[I constraints.Int](key string, val I) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
 // UintP 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func UintP[I generic.Integer](key string, val *I) Field {
+func UintP[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -131,12 +131,12 @@ func UintP[I generic.Integer](key string, val *I) Field {
 }
 
 // Uint8 构造一个带有整数值的字段
-func Uint8[I generic.Integer](key string, val I) Field {
+func Uint8[I constraints.Int](key string, val I) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
 // Uint8P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Uint8P[I generic.Integer](key string, val *I) Field {
+func Uint8P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -144,12 +144,12 @@ func Uint8P[I generic.Integer](key string, val *I) Field {
 }
 
 // Uint16 构造一个带有整数值的字段
-func Uint16[I generic.Integer](key string, val I) Field {
+func Uint16[I constraints.Int](key string, val I) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
 // Uint16P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Uint16P[I generic.Integer](key string, val *I) Field {
+func Uint16P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -157,12 +157,12 @@ func Uint16P[I generic.Integer](key string, val *I) Field {
 }
 
 // Uint32 构造一个带有整数值的字段
-func Uint32[I generic.Integer](key string, val I) Field {
+func Uint32[I constraints.Int](key string, val I) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
 // Uint32P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Uint32P[I generic.Integer](key string, val *I) Field {
+func Uint32P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -170,12 +170,12 @@ func Uint32P[I generic.Integer](key string, val *I) Field {
 }
 
 // Uint64 构造一个带有整数值的字段
-func Uint64[I generic.Integer](key string, val I) Field {
+func Uint64[I constraints.Int](key string, val I) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
 // Uint64P 构造一个带有整数值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Uint64P[I generic.Integer](key string, val *I) Field {
+func Uint64P[I constraints.Int](key string, val *I) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -183,12 +183,12 @@ func Uint64P[I generic.Integer](key string, val *I) Field {
 }
 
 // Float 构造一个带有浮点值的字段
-func Float[F generic.Float](key string, val F) Field {
+func Float[F constraints.Float](key string, val F) Field {
 	return slog.Float64(key, float64(val))
 }
 
 // FloatP 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func FloatP[F generic.Float](key string, val *F) Field {
+func FloatP[F constraints.Float](key string, val *F) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -196,12 +196,12 @@ func FloatP[F generic.Float](key string, val *F) Field {
 }
 
 // Float32 构造一个带有浮点值的字段
-func Float32[F generic.Float](key string, val F) Field {
+func Float32[F constraints.Float](key string, val F) Field {
 	return slog.Float64(key, float64(val))
 }
 
 // Float32P 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Float32P[F generic.Float](key string, val *F) Field {
+func Float32P[F constraints.Float](key string, val *F) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
@@ -209,12 +209,12 @@ func Float32P[F generic.Float](key string, val *F) Field {
 }
 
 // Float64 构造一个带有浮点值的字段
-func Float64[F generic.Float](key string, val F) Field {
+func Float64[F constraints.Float](key string, val F) Field {
 	return slog.Float64(key, float64(val))
 }
 
 // Float64P 构造一个带有浮点值的字段。返回的 Field 将在适当的时候安全且显式地表示 "null"
-func Float64P[F generic.Float](key string, val *F) Field {
+func Float64P[F constraints.Float](key string, val *F) Field {
 	if val == nil {
 		return slog.Any(key, nil)
 	}
