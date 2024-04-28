@@ -16,7 +16,7 @@ func Run(application *Application) {
 //
 // 通过该函数注册的服务将会在应用程序启动时被实例化，并且在整个应用程序的生命周期中只存在一个实例
 func RegisterService[Instance GlobalService, Exposer any](application *Application) {
-	tof := reflect.TypeOf((*Instance)(nil)).Elem()
+	tof := reflect.TypeOf(new(Instance)).Elem().Elem()
 	vof := reflect.New(tof).Interface()
 	service := vof.(GlobalService)
 	exposer := vof.(Exposer)

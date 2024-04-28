@@ -2,7 +2,7 @@ package collection
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/random"
+	"github.com/kercylan98/minotaur/toolkit/random"
 )
 
 // ChooseRandomSliceElementRepeatN 返回 slice 中的 n 个可重复随机元素

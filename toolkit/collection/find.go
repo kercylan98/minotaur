@@ -1,7 +1,7 @@
 package collection
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 )
 
 // FindLoopedNextInSlice 返回 i 的下一个数组成员，当 i 达到数组长度时从 0 开始
@@ -146,7 +146,7 @@ func FindIndexInComparableSlice[S ~[]V, V comparable](slice S, v V) int {
 }
 
 // FindMinimumInComparableSlice 获取切片中的最小值
-func FindMinimumInComparableSlice[S ~[]V, V generic.Ordered](slice S) (result V) {
+func FindMinimumInComparableSlice[S ~[]V, V constraints.Ordered](slice S) (result V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -160,7 +160,7 @@ func FindMinimumInComparableSlice[S ~[]V, V generic.Ordered](slice S) (result V)
 }
 
 // FindMinimumInSlice 获取切片中的最小值
-func FindMinimumInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler OrderedValueGetter[V, N]) (result V) {
+func FindMinimumInSlice[S ~[]V, V any, N constraints.Ordered](slice S, handler OrderedValueGetter[V, N]) (result V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -174,7 +174,7 @@ func FindMinimumInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler Order
 }
 
 // FindMaximumInComparableSlice 获取切片中的最大值
-func FindMaximumInComparableSlice[S ~[]V, V generic.Ordered](slice S) (result V) {
+func FindMaximumInComparableSlice[S ~[]V, V constraints.Ordered](slice S) (result V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -188,7 +188,7 @@ func FindMaximumInComparableSlice[S ~[]V, V generic.Ordered](slice S) (result V)
 }
 
 // FindMaximumInSlice 获取切片中的最大值
-func FindMaximumInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler OrderedValueGetter[V, N]) (result V) {
+func FindMaximumInSlice[S ~[]V, V any, N constraints.Ordered](slice S, handler OrderedValueGetter[V, N]) (result V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -202,7 +202,7 @@ func FindMaximumInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler Order
 }
 
 // FindMin2MaxInComparableSlice 获取切片中的最小值和最大值
-func FindMin2MaxInComparableSlice[S ~[]V, V generic.Ordered](slice S) (min, max V) {
+func FindMin2MaxInComparableSlice[S ~[]V, V constraints.Ordered](slice S) (min, max V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -220,7 +220,7 @@ func FindMin2MaxInComparableSlice[S ~[]V, V generic.Ordered](slice S) (min, max 
 }
 
 // FindMin2MaxInSlice 获取切片中的最小值和最大值
-func FindMin2MaxInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler OrderedValueGetter[V, N]) (min, max V) {
+func FindMin2MaxInSlice[S ~[]V, V any, N constraints.Ordered](slice S, handler OrderedValueGetter[V, N]) (min, max V) {
 	if len(slice) == 0 {
 		return
 	}
@@ -238,7 +238,7 @@ func FindMin2MaxInSlice[S ~[]V, V any, N generic.Ordered](slice S, handler Order
 }
 
 // FindMinFromComparableMap 获取 map 中的最小值
-func FindMinFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m M) (result V) {
+func FindMinFromComparableMap[M ~map[K]V, K comparable, V constraints.Ordered](m M) (result V) {
 	if m == nil {
 		return
 	}
@@ -257,7 +257,7 @@ func FindMinFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m M) 
 }
 
 // FindMinFromMap 获取 map 中的最小值
-func FindMinFromMap[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, handler OrderedValueGetter[V, N]) (result V) {
+func FindMinFromMap[M ~map[K]V, K comparable, V any, N constraints.Ordered](m M, handler OrderedValueGetter[V, N]) (result V) {
 	if m == nil {
 		return
 	}
@@ -276,7 +276,7 @@ func FindMinFromMap[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, han
 }
 
 // FindMaxFromComparableMap 获取 map 中的最大值
-func FindMaxFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m M) (result V) {
+func FindMaxFromComparableMap[M ~map[K]V, K comparable, V constraints.Ordered](m M) (result V) {
 	if m == nil {
 		return
 	}
@@ -289,7 +289,7 @@ func FindMaxFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m M) 
 }
 
 // FindMaxFromMap 获取 map 中的最大值
-func FindMaxFromMap[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, handler OrderedValueGetter[V, N]) (result V) {
+func FindMaxFromMap[M ~map[K]V, K comparable, V any, N constraints.Ordered](m M, handler OrderedValueGetter[V, N]) (result V) {
 	if m == nil {
 		return
 	}
@@ -302,7 +302,7 @@ func FindMaxFromMap[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, han
 }
 
 // FindMin2MaxFromComparableMap 获取 map 中的最小值和最大值
-func FindMin2MaxFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m M) (min, max V) {
+func FindMin2MaxFromComparableMap[M ~map[K]V, K comparable, V constraints.Ordered](m M) (min, max V) {
 	if m == nil {
 		return
 	}
@@ -325,7 +325,7 @@ func FindMin2MaxFromComparableMap[M ~map[K]V, K comparable, V generic.Ordered](m
 }
 
 // FindMin2MaxFromMap 获取 map 中的最小值和最大值
-func FindMin2MaxFromMap[M ~map[K]V, K comparable, V generic.Ordered](m M) (min, max V) {
+func FindMin2MaxFromMap[M ~map[K]V, K comparable, V constraints.Ordered](m M) (min, max V) {
 	if m == nil {
 		return
 	}

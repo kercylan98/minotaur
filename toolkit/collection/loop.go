@@ -1,7 +1,7 @@
 package collection
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"sort"
 )
 
@@ -42,7 +42,7 @@ func LoopMap[M ~map[K]V, K comparable, V any](m M, f func(i int, key K, val V) b
 // LoopMapByOrderedKeyAsc 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByOrderedKeyAsc[M ~map[K]V, K generic.Ordered, V any](m M, f func(i int, key K, val V) bool) {
+func LoopMapByOrderedKeyAsc[M ~map[K]V, K constraints.Ordered, V any](m M, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)
@@ -60,7 +60,7 @@ func LoopMapByOrderedKeyAsc[M ~map[K]V, K generic.Ordered, V any](m M, f func(i 
 // LoopMapByOrderedKeyDesc 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByOrderedKeyDesc[M ~map[K]V, K generic.Ordered, V any](m M, f func(i int, key K, val V) bool) {
+func LoopMapByOrderedKeyDesc[M ~map[K]V, K constraints.Ordered, V any](m M, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)
@@ -78,7 +78,7 @@ func LoopMapByOrderedKeyDesc[M ~map[K]V, K generic.Ordered, V any](m M, f func(i
 // LoopMapByOrderedValueAsc 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByOrderedValueAsc[M ~map[K]V, K comparable, V generic.Ordered](m M, f func(i int, key K, val V) bool) {
+func LoopMapByOrderedValueAsc[M ~map[K]V, K comparable, V constraints.Ordered](m M, f func(i int, key K, val V) bool) {
 	var keys []K
 	var values []V
 	for k, v := range m {
@@ -98,7 +98,7 @@ func LoopMapByOrderedValueAsc[M ~map[K]V, K comparable, V generic.Ordered](m M, 
 // LoopMapByOrderedValueDesc 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByOrderedValueDesc[M ~map[K]V, K comparable, V generic.Ordered](m M, f func(i int, key K, val V) bool) {
+func LoopMapByOrderedValueDesc[M ~map[K]V, K comparable, V constraints.Ordered](m M, f func(i int, key K, val V) bool) {
 	var keys []K
 	var values []V
 	for k, v := range m {
@@ -118,7 +118,7 @@ func LoopMapByOrderedValueDesc[M ~map[K]V, K comparable, V generic.Ordered](m M,
 // LoopMapByKeyGetterAsc 按照键的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByKeyGetterAsc[M ~map[K]V, K comparable, V comparable, N generic.Ordered](m M, getter func(k K) N, f func(i int, key K, val V) bool) {
+func LoopMapByKeyGetterAsc[M ~map[K]V, K comparable, V comparable, N constraints.Ordered](m M, getter func(k K) N, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)
@@ -136,7 +136,7 @@ func LoopMapByKeyGetterAsc[M ~map[K]V, K comparable, V comparable, N generic.Ord
 // LoopMapByValueGetterAsc 按照值的升序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByValueGetterAsc[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, getter func(v V) N, f func(i int, key K, val V) bool) {
+func LoopMapByValueGetterAsc[M ~map[K]V, K comparable, V any, N constraints.Ordered](m M, getter func(v V) N, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)
@@ -154,7 +154,7 @@ func LoopMapByValueGetterAsc[M ~map[K]V, K comparable, V any, N generic.Ordered]
 // LoopMapByKeyGetterDesc 按照键的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByKeyGetterDesc[M ~map[K]V, K comparable, V comparable, N generic.Ordered](m M, getter func(k K) N, f func(i int, key K, val V) bool) {
+func LoopMapByKeyGetterDesc[M ~map[K]V, K comparable, V comparable, N constraints.Ordered](m M, getter func(k K) N, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)
@@ -172,7 +172,7 @@ func LoopMapByKeyGetterDesc[M ~map[K]V, K comparable, V comparable, N generic.Or
 // LoopMapByValueGetterDesc 按照值的降序迭代 m 中的每一个函数，并将键和值传递给 f 函数
 //   - 该函数会在 f 中传入一个从 0 开始的索引，用于表示当前迭代的次数
 //   - 迭代过程将在 f 函数返回 false 时中断
-func LoopMapByValueGetterDesc[M ~map[K]V, K comparable, V any, N generic.Ordered](m M, getter func(v V) N, f func(i int, key K, val V) bool) {
+func LoopMapByValueGetterDesc[M ~map[K]V, K comparable, V any, N constraints.Ordered](m M, getter func(v V) N, f func(i int, key K, val V) bool) {
 	var keys []K
 	for k := range m {
 		keys = append(keys, k)

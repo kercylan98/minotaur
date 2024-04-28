@@ -1,12 +1,11 @@
 package log
 
 import (
-	""
-"github.com/kercylan98/minotaur/toolkit/collection"
-"path/filepath"
-"strconv"
-"sync"
-"time"
+	"github.com/kercylan98/minotaur/toolkit/collection"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"time"
 )
 
 const basicCallSkip = 8
