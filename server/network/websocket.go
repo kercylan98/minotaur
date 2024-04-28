@@ -3,7 +3,6 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/kercylan98/minotaur/utils/collection"
 	"github.com/panjf2000/gnet/v2"
 	"time"

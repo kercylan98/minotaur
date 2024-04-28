@@ -2,7 +2,6 @@ package network
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"

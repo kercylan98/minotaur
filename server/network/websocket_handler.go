@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/kercylan98/minotaur/server/internal/v2"
 	"github.com/panjf2000/gnet/v2"
 	"time"
 )
