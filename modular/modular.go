@@ -39,14 +39,12 @@ func Run() {
 	for i := 0; i < len(m.services); i++ {
 		s := m.services[i]
 		s.instance.OnInit()
-		log.Info(fmt.Sprintf("service %s initialized", s.name))
 	}
 
 	// OnPreload
 	for i := 0; i < len(m.services); i++ {
 		s := m.services[i]
 		s.instance.OnPreload()
-		log.Info(fmt.Sprintf("service %s preloaded", s.name))
 	}
 
 	// OnMount
@@ -67,6 +65,21 @@ func Run() {
 			}(wait)
 		}
 	}
+
+	// OnRunning
+	for i := 0; i < len(m.services); i++ {
+		s := m.services[i]
+		if running, ok := s.instance.(Running); ok {
+			running.OnRunning()
+		}
+	}
+
+	// done
+	for i := 0; i < len(m.services); i++ {
+		s := m.services[i]
+		log.Info("modular", log.String("status", "init"), log.String("service", s.name))
+	}
+
 	wait.Wait()
-	log.Info("all services exited")
+	log.Info("modular", log.String("status", "existed"))
 }
