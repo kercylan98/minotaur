@@ -1,4 +1,4 @@
-package leaderboard
+package ranking
 
 import (
 	"encoding/json"
@@ -8,15 +8,15 @@ import (
 
 // NewBinarySearch 创建一个基于内存的二分查找排行榜
 func NewBinarySearch[CompetitorID comparable, Score generic.Ordered](options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score] {
-	leaderboard := &BinarySearch[CompetitorID, Score]{
+	r := &BinarySearch[CompetitorID, Score]{
 		binarySearchEvent: new(binarySearchEvent[CompetitorID, Score]),
 		rankCount:         100,
 		competitors:       mappings.NewSyncMap[CompetitorID, Score](),
 	}
 	for _, option := range options {
-		option(leaderboard)
+		option(r)
 	}
-	return leaderboard
+	return r
 }
 
 type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {

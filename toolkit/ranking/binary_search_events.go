@@ -1,10 +1,10 @@
-package leaderboard
+package ranking
 
 import "github.com/kercylan98/minotaur/utils/generic"
 
 type (
-	BinarySearchRankChangeEventHandle[CompetitorID comparable, Score generic.Ordered]      func(leaderboard *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
-	BinarySearchRankClearBeforeEventHandle[CompetitorID comparable, Score generic.Ordered] func(leaderboard *BinarySearch[CompetitorID, Score])
+	BinarySearchRankChangeEventHandle[CompetitorID comparable, Score generic.Ordered]      func(ranking *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
+	BinarySearchRankClearBeforeEventHandle[CompetitorID comparable, Score generic.Ordered] func(ranking *BinarySearch[CompetitorID, Score])
 )
 
 type binarySearchEvent[CompetitorID comparable, Score generic.Ordered] struct {

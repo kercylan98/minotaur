@@ -1,4 +1,4 @@
-package leaderboard
+package ranking
 
 import "github.com/kercylan98/minotaur/utils/generic"
 
