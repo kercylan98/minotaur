@@ -1,85 +1,30 @@
 package modular
 
 import (
-	"fmt"
-	"github.com/kercylan98/minotaur/utils/log"
-	"sync"
+	"github.com/samber/do/v2"
+	"reflect"
 )
 
-var application *modular
-
-func init() {
-	application = &modular{}
+// Run 运行应用程序
+func Run(application *Application) {
+	application.run()
 }
 
-type modular struct {
-	registerServices []Service
-	services         []*service
+// RegisterService 注冊一个全局服务
+//   - Instance 是服务的实例类型，该类型必须是一个实现了 GlobalService 接口的结构体指针类型，用于提供服务的具体实现
+//   - Exposer 是服务的暴露接口，用于提供服务的对外接口
+//
+// 通过该函数注册的服务将会在应用程序启动时被实例化，并且在整个应用程序的生命周期中只存在一个实例
+func RegisterService[Instance GlobalService, Exposer any](application *Application) {
+	tof := reflect.TypeOf((*Instance)(nil)).Elem()
+	vof := reflect.New(tof).Interface()
+	service := vof.(GlobalService)
+	exposer := vof.(Exposer)
+	application.services = append(application.services, service)
+	do.ProvideValue[Exposer](application.injector, exposer)
 }
 
-// RegisterServices 注册服务
-func (m *modular) RegisterServices(s ...Service) {
-	application.registerServices = append(application.registerServices, s...)
-}
-
-// Run 运行模块化应用程序
-func Run() {
-	m := application
-	var names = make(map[string]bool)
-	for i := 0; i < len(m.registerServices); i++ {
-		s := newService(m.registerServices[i])
-		if names[s.name] {
-			panic(fmt.Errorf("service %s is already registered", s.name))
-		}
-		names[s.name] = true
-		m.services = append(m.services, s)
-	}
-
-	// OnInit
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		s.instance.OnInit()
-	}
-
-	// OnPreload
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		s.instance.OnPreload()
-	}
-
-	// OnMount
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		s.instance.OnMount()
-	}
-
-	// OnBlock
-	var wait = new(sync.WaitGroup)
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		if block, ok := s.instance.(Block); ok {
-			wait.Add(1)
-			go func(wait *sync.WaitGroup) {
-				defer wait.Done()
-				block.OnBlock()
-			}(wait)
-		}
-	}
-
-	// OnRunning
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		if running, ok := s.instance.(Running); ok {
-			running.OnRunning()
-		}
-	}
-
-	// done
-	for i := 0; i < len(m.services); i++ {
-		s := m.services[i]
-		log.Info("modular", log.String("status", "init"), log.String("service", s.name))
-	}
-
-	wait.Wait()
-	log.Info("modular", log.String("status", "existed"))
+// InvokeService 获取特定全局服务的实例
+func InvokeService[Expose any](application *Application) Expose {
+	return do.MustInvoke[Expose](application.injector)
 }

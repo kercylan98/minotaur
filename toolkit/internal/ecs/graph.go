@@ -19,16 +19,16 @@ func (g *graph) generate(ids []ComponentId, exclude ComponentId) {
 	}
 
 	// 模拟一下这个函数，当 ids = [1, 2, 3] 时，exclude = 0
-	// mask: 0 [Next: 1, 2, 3]
-	//   - mask: 1 [Next: 2]
-	//       - mask: 1, 2 [Next: 3]
-	//           - mask: 1, 2, 3 [Next: ]
-	//   - mask: 2 [Next: 1]
-	//       - mask: 2, 1 [Next: 3]
-	//           - mask: 2, 1, 3 [Next: ]
-	//   - mask: 3 [Next: 1]
-	//       - mask: 3, 1 [Next: 2]
-	//           - mask: 3, 1, 2 [Next: ]
+	// mask: 0 [next: 1, 2, 3]
+	//   - mask: 1 [next: 2]
+	//       - mask: 1, 2 [next: 3]
+	//           - mask: 1, 2, 3 [next: ]
+	//   - mask: 2 [next: 1]
+	//       - mask: 2, 1 [next: 3]
+	//           - mask: 2, 1, 3 [next: ]
+	//   - mask: 3 [next: 1]
+	//       - mask: 3, 1 [next: 2]
+	//           - mask: 3, 1, 2 [next: ]
 
 	for _, id := range ids {
 		if id == exclude {

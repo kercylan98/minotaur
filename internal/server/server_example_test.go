@@ -43,7 +43,7 @@ func ExampleServer_Run() {
 	// Output:
 }
 
-// RunNone 函数并没有特殊的意义，该函数内部调用了 `srv.Run("")` 函数，仅是一个语法糖，用来表示服务器不需要监听任何地址
+// RunNone 函数并没有特殊的意义，该函数内部调用了 `srv.run("")` 函数，仅是一个语法糖，用来表示服务器不需要监听任何地址
 func ExampleServer_RunNone() {
 	srv := server.New(server.NetworkNone)
 	if err := srv.RunNone(); err != nil {

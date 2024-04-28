@@ -55,6 +55,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/samber/do/v2 v2.0.0-beta.5 // indirect
+	github.com/samber/go-type-to-string v1.2.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/templexxx/cpu v0.1.0 // indirect

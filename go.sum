@@ -142,6 +142,10 @@ github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTE
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
+github.com/samber/do/v2 v2.0.0-beta.5 h1:KpQhVkkzDlsLSDC5WXgyCL8Q3SqOYoInFJIbvntPazM=
+github.com/samber/do/v2 v2.0.0-beta.5/go.mod h1:FNMy1RSKMX11Ag8v4KW95n9k+ZkCXn8GuvDKufVKN9E=
+github.com/samber/go-type-to-string v1.2.0 h1:Pvdqx3r/EHn9/DTKoW6RoHz/850s5yV1vA6MqKKG5Ys=
+github.com/samber/go-type-to-string v1.2.0/go.mod h1:jpU77vIDoIxkahknKDoEx9C8bQ1ADnh2sotZ8I4QqBU=
 github.com/smarty/assertions v1.15.0 h1:cR//PqUBUiQRakZWqBiFFQ9wb8emQGDb0HeGdqGByCY=
 github.com/smarty/assertions v1.15.0/go.mod h1:yABtdzeQs6l1brC900WlRNwj6ZR55d7B+E8C6HtKdec=
 github.com/smartystreets/goconvey v1.8.1 h1:qGjIddxOk4grTu9JPOU31tVfq3cNdBlNa5sSznIX1xY=
