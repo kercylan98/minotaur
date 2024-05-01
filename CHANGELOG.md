@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.7](https://github.com/kercylan98/minotaur/compare/v0.5.6...v0.5.7) (2024-04-23)
+
+
+### Bug Fixes | 修复
+
+* 修复 timer.Pool 在获取到池中 Ticker 时，可选项不生效的问题 ([be6af14](https://github.com/kercylan98/minotaur/commit/be6af14261a200ac3911ebdef1edf2cae2e35f3d))
+
 ## [0.5.6](https://github.com/kercylan98/minotaur/compare/v0.5.5...v0.5.6) (2024-04-19)
 
 
