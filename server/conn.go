@@ -14,6 +14,7 @@ import (
 	"github.com/panjf2000/gnet"
 	"github.com/xtaci/kcp-go/v5"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -83,6 +84,26 @@ func newWebsocketConn(server *Server, ws *websocket.Conn, ip string) *Conn {
 	return c
 }
 
+// NewOfflineConn 创建一个离线连接
+func NewOfflineConn(server *Server) *Conn {
+	addr := &net.TCPAddr{
+		IP:   net.ParseIP(random.IPv4()),
+		Port: random.Int(65536, math.MaxInt),
+	}
+	c := &Conn{
+		ctx: server.ctx,
+		connection: &connection{
+			server:     server,
+			remoteAddr: addr,
+			ip:         addr.String(),
+			data:       map[any]any{},
+			openTime:   time.Now(),
+			offline:    true,
+		},
+	}
+	return c
+}
+
 // newBotConn 创建一个适用于测试等情况的机器人连接
 func newBotConn(server *Server) *Conn {
 	ip, port := random.NetIP(), random.Port()
@@ -132,6 +153,7 @@ type connection struct {
 	delay       time.Duration
 	fluctuation time.Duration
 	botWriter   atomic.Pointer[io.Writer]
+	offline     bool
 }
 
 // Ticker 获取定时器
@@ -257,6 +279,9 @@ func (slf *Conn) PushUniqueAsyncMessage(name string, caller func() error, callba
 
 // Write 向连接中写入数据
 func (slf *Conn) Write(packet []byte, callback ...func(err error)) {
+	if slf.offline {
+		return
+	}
 	if slf.gw != nil {
 		slf.gw(packet)
 		return
@@ -333,6 +358,10 @@ func (slf *Conn) init() {
 
 // Close 关闭连接
 func (slf *Conn) Close(err ...error) {
+	if slf.offline {
+		slf.server.dispatcherMgr.UnBindProducer(slf.GetID())
+		return
+	}
 	slf.mu.Lock()
 	if slf.closed {
 		if slf.ticker != nil {
