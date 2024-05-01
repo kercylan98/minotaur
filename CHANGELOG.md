@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.8](https://github.com/kercylan98/minotaur/compare/v0.5.7...v0.5.8) (2024-05-01)
+
+
+### Features | 新特性
+
+* server 新增 NewOfflineConn 函数，兼容部分特殊操作 ([147f0a3](https://github.com/kercylan98/minotaur/commit/147f0a31a0859502cc32775751cadb48fd31181f))
+
 ## [0.5.7](https://github.com/kercylan98/minotaur/compare/v0.5.6...v0.5.7) (2024-04-23)
 
 
