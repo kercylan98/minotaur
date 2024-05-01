@@ -3,9 +3,10 @@ package network
 import (
 	"context"
 	"fmt"
-"github.com/kercylan98/minotaur/toolkit/collection"
-"github.com/panjf2000/gnet/v2"
-"time"
+	"github.com/kercylan98/minotaur/server"
+	"github.com/kercylan98/minotaur/toolkit/collection"
+	"github.com/panjf2000/gnet/v2"
+	"time"
 )
 
 func WebSocket(addr string, pattern ...string) server.Network {

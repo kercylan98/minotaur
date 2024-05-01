@@ -5,6 +5,13 @@ import (
 	"strconv"
 )
 
+var (
+	romeThousands = []string{"", "M", "MM", "MMM"}
+	romeHundreds  = []string{"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"}
+	romeTens      = []string{"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"}
+	romeOnes      = []string{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"}
+)
+
 // IntToString 将 int 转换为 string 类型
 func IntToString(i int) string {
 	return strconv.Itoa(i)
@@ -58,4 +65,9 @@ func Uint64ToString(i uint64) string {
 // IntToBoolean 将 int 转换为 bool 类型
 func IntToBoolean[I constraints.Int](i I) bool {
 	return i != 0
+}
+
+// IntToRome 将数字转换为罗马数字
+func IntToRome[I constraints.Int](num I) string {
+	return romeThousands[num/1000] + romeHundreds[num%1000/100] + romeTens[num%100/10] + romeOnes[num%10]
 }

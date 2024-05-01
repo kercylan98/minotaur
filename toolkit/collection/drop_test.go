@@ -1,8 +1,8 @@
 package collection_test
 
 import (
-"github.com/kercylan98/minotaur/toolkit/collection"
-"testing"
+	"github.com/kercylan98/minotaur/toolkit/collection"
+	"testing"
 )
 
 func TestClearSlice(t *testing.T) {

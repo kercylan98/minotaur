@@ -2,8 +2,8 @@ package queues
 
 import (
 	"errors"
+	"github.com/kercylan98/minotaur/toolkit/buffer"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
-	"github.com/kercylan98/minotaur/utils/buffer"
 	"sync"
 	"sync/atomic"
 	"time"

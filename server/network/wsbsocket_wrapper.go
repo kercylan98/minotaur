@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/kercylan98/minotaur/utils/super"
 	"github.com/panjf2000/gnet/v2"
 	"io"
 	"time"
@@ -59,7 +58,7 @@ func (w *websocketWrapper) upgrade(upgrader ws.Upgrader, upgradedHandler func())
 	reader := bytes.NewReader(buf.Bytes())
 	n := reader.Len()
 
-	w.hs, err = upgrader.Upgrade(super.ReadWriter{
+	w.hs, err = upgrader.Upgrade(ReadWriter{
 		Reader: reader,
 		Writer: w.conn,
 	})

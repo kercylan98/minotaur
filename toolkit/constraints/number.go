@@ -9,3 +9,7 @@ type Float interface {
 	float32 | float64
 	~float32 | ~float64
 }
+
+type Number interface {
+	Int | Float
+}
