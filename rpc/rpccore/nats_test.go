@@ -15,19 +15,34 @@ type TestService struct {
 
 func (t *TestService) OnRPCSetup(router rpc.Router) {
 	t.router = router
-	router.Route("account", t.onAccount)
+	router.Route("system", t.onSystem)
+	router.Register("account", "login").Bind(t.onAccountLogin)
 }
 
 func (t *TestService) testCall() {
-	if err := t.router.Call("account")(123); err != nil {
+	if err := t.router.Call("system")(123); err != nil {
+		panic(err)
+	}
+	if err := t.router.Call("account", "login")(struct {
+		Username, Password string
+	}{Username: "username", Password: "pwd"}); err != nil {
 		panic(err)
 	}
 }
 
-func (t *TestService) onAccount(reader rpc.Reader) {
+func (t *TestService) onSystem(reader rpc.Reader) {
 	var id int
 	reader.ReadTo(&id)
-	fmt.Println("call account", id)
+	fmt.Println("call system", id)
+}
+
+func (t *TestService) onAccountLogin(reader rpc.Reader) {
+	var params struct {
+		Username string
+		Password string
+	}
+	reader.ReadTo(&params)
+	fmt.Println("call account login", params.Username, params.Password)
 }
 
 func TestNats_OnServiceRegister(t *testing.T) {

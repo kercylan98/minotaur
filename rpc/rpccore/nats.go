@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/codec"
 	"github.com/nats-io/nats.go"
+	"sync"
 	"time"
 )
 
@@ -49,6 +50,7 @@ type Nats struct {
 	base64       codec.Base64
 
 	curr     natsService
+	rw       sync.RWMutex
 	services map[string]map[string]natsService
 	targets  map[string]natsService
 }
@@ -86,7 +88,9 @@ func (n *Nats) OnCall(routes ...rpc.Route) func(request any) error {
 		if err != nil {
 			return err
 		}
+		n.rw.RLock()
 		target := n.targets[string(b64)]
+		n.rw.RUnlock()
 		return n.conn.Publish("services.rpc."+target.ServerInfo.UniqueId, toolkit.MarshalJSON(packet))
 	}
 }
@@ -96,11 +100,13 @@ func (n *Nats) Close() {
 }
 
 func (n *Nats) refresh() error {
-	_, err := n.kv.Put("services."+n.info.UniqueId, toolkit.MarshalJSON(n.info))
+	_, err := n.kv.Put("services."+n.info.UniqueId, toolkit.MarshalJSON(n.curr))
 	return err
 }
 
 func (n *Nats) update(info natsService) {
+	n.rw.Lock()
+	defer n.rw.Unlock()
 	nodes, exist := n.services[info.ServerInfo.Name]
 	if !exist {
 		nodes = make(map[string]natsService)
@@ -148,10 +154,12 @@ func (n *Nats) loop() {
 				case nats.KeyValueDelete:
 					var info natsService
 					toolkit.UnmarshalJSON(entry.Value(), &info)
+					n.rw.Lock()
 					delete(n.services[info.ServerInfo.Name], info.ServerInfo.UniqueId)
 					if len(n.services[info.ServerInfo.Name]) == 0 {
 						delete(n.services, info.ServerInfo.Name)
 					}
+					n.rw.Unlock()
 				default:
 				}
 
