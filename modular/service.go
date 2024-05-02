@@ -1,6 +1,6 @@
 package modular
 
-// GlobalService 模块化全局服务接口，所有的服务均需要实现该接口，在服务的生命周期内发生任何错误均应通过 panic 阻止服务继续运行
+// BasicService 模块化基本服务接口，所有的服务均需要实现该接口，在服务的生命周期内发生任何错误均应通过 panic 阻止服务继续运行
 //
 // 在 Golang 中，包与包之间互相引用会导致循环依赖，因此在模块化应用程序中，所有的服务均不应该直接引用其他服务。
 //
@@ -8,7 +8,7 @@ package modular
 //   - 暴露方式可参考 modular/example
 //
 // 在 OnPreload 阶段，服务应该完成对其依赖服务的依赖注入，最终在 OnMount 阶段完成对服务功能的定义、路由的声明等。
-type GlobalService interface {
+type BasicService interface {
 	// OnInit 服务初始化阶段，该阶段不应该依赖其他任何服务
 	OnInit(application *Application)
 
@@ -25,11 +25,11 @@ type GlobalService interface {
 	OnStart(application *Application)
 }
 
-// BlockService 标识模块化服务为阻塞进程的服务，当实现了 GlobalService 且实现了 BlockService 接口时，模块化应用程序会在 GlobalService.OnStart 阶段完成后执行 OnBlock 函数
+// BlockService 标识模块化服务为阻塞进程的服务，当实现了 BasicService 且实现了 BlockService 接口时，模块化应用程序会在 BasicService.OnStart 阶段完成后执行 OnBlock 函数
 //
-// 该接口适用于 Http 服务、WebSocket 服务等需要阻塞进程的服务。需要注意的是， OnBlock 的执行不能保证按照 GlobalService 的注册顺序执行
+// 该接口适用于 Http 服务、WebSocket 服务等需要阻塞进程的服务。需要注意的是， OnBlock 的执行不能保证按照 BasicService 的注册顺序执行
 type BlockService interface {
-	GlobalService
+	BasicService
 	// OnBlock 阻塞进程逻辑
 	OnBlock(application *Application)
 }

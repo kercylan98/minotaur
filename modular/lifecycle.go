@@ -6,7 +6,7 @@ import (
 )
 
 // startLifecycle 开始生命周期
-func startLifecycle(services []GlobalService) *lifecycle {
+func startLifecycle(services []BasicService) *lifecycle {
 	l := &lifecycle{services: services, wait: new(sync.WaitGroup)}
 	l.root = l
 	return l
@@ -14,18 +14,18 @@ func startLifecycle(services []GlobalService) *lifecycle {
 
 // lifecycle 生命周期函数
 type lifecycle struct {
-	name     string                           // 生命周期名称
-	services []GlobalService                  // 生命周期服务
-	handler  func(service GlobalService) bool // 生命周期处理函数
-	n        *lifecycle                       // 下一个生命周期
-	wait     *sync.WaitGroup                  // 等待组
-	last     bool                             // 是否是最后一个生命周期
-	root     *lifecycle                       // 根生命周期
-	running  bool                             // 是否正在运行
+	name     string                          // 生命周期名称
+	services []BasicService                  // 生命周期服务
+	handler  func(service BasicService) bool // 生命周期处理函数
+	n        *lifecycle                      // 下一个生命周期
+	wait     *sync.WaitGroup                 // 等待组
+	last     bool                            // 是否是最后一个生命周期
+	root     *lifecycle                      // 根生命周期
+	running  bool                            // 是否正在运行
 }
 
 // next 设置下一个生命周期
-func (l *lifecycle) next(name string, handler func(service GlobalService) bool) *lifecycle {
+func (l *lifecycle) next(name string, handler func(service BasicService) bool) *lifecycle {
 	l.last = false
 	l.n = &lifecycle{name: name, services: l.services, handler: handler, wait: l.wait, last: true, root: l.root}
 	return l.n

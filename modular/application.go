@@ -14,30 +14,30 @@ func NewApplication() *Application {
 
 // Application 模块化应用程序
 type Application struct {
-	injector *do.RootScope   // 依赖注入器
-	services []GlobalService // 服务列表
+	injector *do.RootScope  // 依赖注入器
+	services []BasicService // 服务列表
 }
 
 // run 启动应用程序
 func (a *Application) run() {
 	startLifecycle(a.services).
-		next("onInit", func(service GlobalService) bool {
+		next("onInit", func(service BasicService) bool {
 			service.OnInit(a)
 			return true
 		}).
-		next("onPreload", func(service GlobalService) bool {
+		next("onPreload", func(service BasicService) bool {
 			service.OnPreload(a)
 			return true
 		}).
-		next("onMount", func(service GlobalService) bool {
+		next("onMount", func(service BasicService) bool {
 			service.OnMount(a)
 			return true
 		}).
-		next("onStart", func(service GlobalService) bool {
+		next("onStart", func(service BasicService) bool {
 			service.OnStart(a)
 			return true
 		}).
-		next("onBlock", func(service GlobalService) bool {
+		next("onBlock", func(service BasicService) bool {
 			block, ok := service.(BlockService)
 			if ok {
 				block.OnBlock(a)
