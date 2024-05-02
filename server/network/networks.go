@@ -72,3 +72,9 @@ func Udp6(addr string) server.Network {
 func Unix(addr string) server.Network {
 	return newGNetCore(new(gNetGenericHandler), schemaUnix, addr)
 }
+
+// Kcp 创建一个 KCP 网络
+//   - addr 期望为类似于 127.0.0.1:1234 或 :1234 的地址
+func Kcp(addr string) server.Network {
+	return newKcpCore(addr)
+}

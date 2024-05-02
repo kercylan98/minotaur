@@ -97,6 +97,9 @@ type Conn interface {
 
 	// Close 关闭连接
 	Close()
+
+	// IsClosed 是否已关闭
+	IsClosed() bool
 }
 
 func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
@@ -288,4 +291,8 @@ func (c *conn) Close() {
 
 	// 清理资源
 	_ = c.conn.Close()
+}
+
+func (c *conn) IsClosed() bool {
+	return atomic.LoadInt32(&c.state) == ConnStatusClosed
 }
