@@ -7,12 +7,13 @@ import (
 )
 
 type (
-	LaunchedEventHandler                func(srv Server, ip string, t time.Time)
-	ShutdownEventHandler                func(srv Server)
-	ConnectionOpenedEventHandler        func(srv Server, conn Conn)
-	ConnectionOpenedAfterEventHandler   func(srv Server, conn Conn)
-	ConnectionClosedEventHandler        func(srv Server, conn Conn, err error)
-	ConnectionReceivePacketEventHandler func(srv Server, conn Conn, packet Packet)
+	LaunchedEventHandler                  func(srv Server, ip string, t time.Time)
+	ShutdownEventHandler                  func(srv Server)
+	ConnectionOpenedEventHandler          func(srv Server, conn Conn)
+	ConnectionOpenedAfterEventHandler     func(srv Server, conn Conn)
+	ConnectionClosedEventHandler          func(srv Server, conn Conn, err error)
+	ConnectionReceivePacketEventHandler   func(srv Server, conn Conn, packet Packet)
+	ConnectionAsyncWriteErrorEventHandler func(srv Server, conn Conn, packet Packet, err error)
 )
 
 type Events interface {
@@ -40,17 +41,22 @@ type Events interface {
 	// RegisterConnectionReceivePacketEvent 注册连接接收数据包事件，当连接接收到数据包后将会触发该事件
 	//  - 该事件将在连接的 Actor 中运行，不应执行阻塞操作
 	RegisterConnectionReceivePacketEvent(handler ConnectionReceivePacketEventHandler, priority ...int)
+
+	// RegisterConnectionAsyncWriteErrorEvent 注册连接异步写入数据错误事件，当连接异步写入数据失败时将会触发该事件
+	//  - 该事件将在连接的 Actor 中运行，不应执行阻塞操作
+	RegisterConnectionAsyncWriteErrorEvent(handler ConnectionAsyncWriteErrorEventHandler, priority ...int)
 }
 
 type events struct {
 	*server
 
-	launchedEventHandlers                listings.SyncPrioritySlice[LaunchedEventHandler]
-	shutdownEventHandlers                listings.SyncPrioritySlice[ShutdownEventHandler]
-	connectionOpenedEventHandlers        listings.SyncPrioritySlice[ConnectionOpenedEventHandler]
-	connectionOpenedAfterEventHandlers   listings.SyncPrioritySlice[ConnectionOpenedAfterEventHandler]
-	connectionClosedEventHandlers        listings.SyncPrioritySlice[ConnectionClosedEventHandler]
-	connectionReceivePacketEventHandlers listings.SyncPrioritySlice[ConnectionReceivePacketEventHandler]
+	launchedEventHandlers                  listings.SyncPrioritySlice[LaunchedEventHandler]
+	shutdownEventHandlers                  listings.SyncPrioritySlice[ShutdownEventHandler]
+	connectionOpenedEventHandlers          listings.SyncPrioritySlice[ConnectionOpenedEventHandler]
+	connectionOpenedAfterEventHandlers     listings.SyncPrioritySlice[ConnectionOpenedAfterEventHandler]
+	connectionClosedEventHandlers          listings.SyncPrioritySlice[ConnectionClosedEventHandler]
+	connectionReceivePacketEventHandlers   listings.SyncPrioritySlice[ConnectionReceivePacketEventHandler]
+	connectionAsyncWriteErrorEventHandlers listings.SyncPrioritySlice[ConnectionAsyncWriteErrorEventHandler]
 }
 
 func (s *events) init(srv *server) *events {
@@ -118,6 +124,19 @@ func (s *events) onConnectionReceivePacket(conn *conn, packet Packet) {
 	s.PublishSyncMessage(conn.GetQueue(), func(ctx context.Context) {
 		s.connectionReceivePacketEventHandlers.RangeValue(func(index int, value ConnectionReceivePacketEventHandler) bool {
 			value(s, conn, packet)
+			return true
+		})
+	})
+}
+
+func (s *events) RegisterConnectionAsyncWriteErrorEvent(handler ConnectionAsyncWriteErrorEventHandler, priority ...int) {
+	s.connectionAsyncWriteErrorEventHandlers.AppendByOptionalPriority(handler, priority...)
+}
+
+func (s *events) onConnectionAsyncWriteError(conn Conn, packet Packet, err error) {
+	s.PublishSyncMessage(conn.GetQueue(), func(ctx context.Context) {
+		s.connectionAsyncWriteErrorEventHandlers.RangeValue(func(index int, value ConnectionAsyncWriteErrorEventHandler) bool {
+			value(s, conn, packet, err)
 			return true
 		})
 	})

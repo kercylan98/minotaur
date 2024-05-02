@@ -75,13 +75,13 @@ func (n *NonBlockingRW[I, T]) GetId() I {
 
 // Run 阻塞的运行队列，当队列非首次运行时，将会引发来自 ErrorQueueInvalid 的 panic
 func (n *NonBlockingRW[I, T]) Run() {
-	if atomic.LoadInt32(&n.status) != NonBlockingRWStatusNone {
+	if !atomic.CompareAndSwapInt32(&n.status, NonBlockingRWStatusNone, NonBlockingRWStatusRunning) {
 		panic(ErrorQueueInvalid)
 	}
-	atomic.StoreInt32(&n.status, NonBlockingRWStatusRunning)
 	for {
 		n.cond.L.Lock()
-		for n.buf.IsEmpty() {
+		if n.buf.IsEmpty() {
+			// 当队列为空时检查是否需要关闭队列，如果不需要关闭则等待新消息
 			if atomic.LoadInt32(&n.status) >= NonBlockingRWStatusClosing && n.total == 0 {
 				n.cond.L.Unlock()
 				atomic.StoreInt32(&n.status, NonBlockingRWStatusClosed)

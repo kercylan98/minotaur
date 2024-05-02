@@ -55,6 +55,7 @@ func (s *controller) EliminateConnection(conn net.Conn, err error) {
 		}
 		delete(s.server.connections, conn)
 		s.server.events.onConnectionClosed(c, err)
+		c.Close()
 	})
 }
 
