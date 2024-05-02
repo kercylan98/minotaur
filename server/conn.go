@@ -117,12 +117,13 @@ func newConn(srv *server, c net.Conn, connWriter ConnWriter) *conn {
 }
 
 type conn struct {
-	server *server                // 连接所属服务器
-	conn   net.Conn               // 连接
-	writer ConnWriter             // 写入器
-	queue  atomic.Pointer[string] // Actor 名称
-	ctx    context.Context        // 连接上下文
-	cancel context.CancelFunc     // 连接上下文取消函数
+	descriptor ConnDescriptor         // 连接描述符
+	server     *server                // 连接所属服务器
+	conn       net.Conn               // 连接
+	writer     ConnWriter             // 写入器
+	queue      atomic.Pointer[string] // Actor 名称
+	ctx        context.Context        // 连接上下文
+	cancel     context.CancelFunc     // 连接上下文取消函数
 
 	// 写分离队列相关
 	state         int32                // 连接状态

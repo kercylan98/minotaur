@@ -51,7 +51,10 @@ func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		// 协议升级成功后视为连接建立
 		w.controller.RegisterConnection(c, func(packet server.Packet) error {
 			return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
-		}, nil)
+		}, func(conn server.Conn, descriptor *server.ConnDescriptor) {
+			descriptor.SetInvalidWriteDeadline()
+			descriptor.SetInvalidReadDeadline()
+		})
 	}); err != nil {
 		return gnet.Close
 	}

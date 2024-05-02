@@ -31,8 +31,10 @@ func (t *gNetGenericHandler) OnOpen(c gnet.Conn) (out []byte, action gnet.Action
 				t.controller.OnConnectionAsyncWriteError(c.Context().(server.Conn), packet, err)
 				return nil
 			})
-		}, func(conn server.Conn) {
+		}, func(conn server.Conn, descriptor *server.ConnDescriptor) {
 			c.SetContext(conn)
+			descriptor.SetInvalidWriteDeadline()
+			descriptor.SetInvalidReadDeadline()
 		})
 	return
 }

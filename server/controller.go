@@ -11,7 +11,7 @@ type Controller interface {
 	// GetServer 获取服务器
 	GetServer() Server
 	// RegisterConnection 注册连接
-	RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn))
+	RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn, descriptor *ConnDescriptor))
 	// EliminateConnection 消除连接
 	EliminateConnection(conn net.Conn, err error)
 	// ReactPacket 反应连接数据包
@@ -41,12 +41,12 @@ func (s *controller) GetAnts() *ants.Pool {
 	return s.server.ants
 }
 
-func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn)) {
+func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn, descriptor *ConnDescriptor)) {
 	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c := newConn(s.server, conn, writer)
 		s.server.connections[conn] = c
 		if callback != nil {
-			callback(c)
+			callback(c, &c.descriptor)
 		}
 		s.events.onConnectionOpened(c)
 	})

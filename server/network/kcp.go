@@ -62,7 +62,7 @@ func (k *kcpCore) OnRun() error {
 					k.controller.OnConnectionAsyncWriteError(srvConn, packet, err)
 				}
 				return
-			}, func(conn server.Conn) {
+			}, func(conn server.Conn, descriptor *server.ConnDescriptor) {
 				srvConn = conn
 			},
 		)
