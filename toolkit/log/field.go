@@ -2,8 +2,8 @@ package log
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/constraints"
-	"github.com/pkg/errors"
 	"log/slog"
+	"runtime/debug"
 	"time"
 )
 
@@ -246,7 +246,7 @@ func Group(key string, args ...any) Field {
 
 // Stack 返回堆栈字段
 func Stack(key string) Field {
-	return slog.Any(key, errors.New(""))
+	return slog.String(key, string(debug.Stack()))
 }
 
 // Err 构造一个带有错误值的字段

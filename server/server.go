@@ -75,9 +75,7 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.Options.init(srv).Apply(options...)
 	srv.broker = brokers.NewSparseGoroutine(srv.Options.GetSparseGoroutineNum(), func(index int) nexus.Queue[int, string] {
 		return queues.NewNonBlockingRW[int, string](index, srv.Options.GetServerMessageChannelSize(), srv.Options.GetServerMessageBufferInitialSize())
-	}, func(handler nexus.EventExecutor) {
-		handler()
-	})
+	}, srv.onEventProcess)
 	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
 		ExpiryDuration: 10 * time.Second,
 		Nonblocking:    true,
@@ -171,4 +169,18 @@ func (s *server) PublishSystemAsyncMessage(handler messageEvents.AsynchronousHan
 
 func (s *server) GetStatus() *State {
 	return s.state.Status()
+}
+
+func (s *server) onEventProcess(handler nexus.EventExecutor) {
+	defer func(s *server) {
+		if v := recover(); v != nil {
+			switch err := v.(type) {
+			case error:
+				s.GetLogger().Error("onEventProcess", log.Err(err), log.Stack("stack"))
+			default:
+				s.GetLogger().Error("onEventProcess", log.Any("recover", v), log.Stack("stack"))
+			}
+		}
+	}(s)
+	handler()
 }
