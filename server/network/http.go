@@ -2,28 +2,12 @@ package network
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/server"
 	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	"time"
 )
-
-func Http(addr string) server.Network {
-	return HttpWithHandler(addr, &HttpServe{ServeMux: http.NewServeMux()})
-}
-
-func HttpWithHandler[H http.Handler](addr string, handler H) server.Network {
-	c := &httpCore[H]{
-		addr:    addr,
-		handler: handler,
-		srv: &http.Server{
-			Addr:                         addr,
-			Handler:                      handler,
-			DisableGeneralOptionsHandler: false,
-		},
-	}
-	return c
-}
 
 type httpCore[H http.Handler] struct {
 	addr       string

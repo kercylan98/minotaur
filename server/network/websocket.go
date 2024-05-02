@@ -1,58 +1,91 @@
 package network
 
 import (
-	"context"
-	"fmt"
+	"errors"
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/server"
-	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/panjf2000/gnet/v2"
 	"time"
 )
 
-func WebSocket(addr string, pattern ...string) server.Network {
-	ws := &websocketCore{
-		addr:    addr,
-		pattern: collection.FindFirstOrDefaultInSlice(pattern, "/"),
-	}
-	return ws
+type websocketHandler struct {
+	engine   *gnet.Engine
+	upgrader ws.Upgrader
+	*gNetCore
 }
 
-type websocketCore struct {
-	ctx        context.Context
-	controller server.Controller
-	handler    *websocketHandler
-	addr       string
-	pattern    string
+func (w *websocketHandler) OnInit(core *gNetCore) {
+	w.gNetCore = core
 }
 
-func (w *websocketCore) OnSetup(ctx context.Context, controller server.Controller) (err error) {
-	w.ctx = ctx
-	w.handler = newWebsocketHandler(w)
-	w.controller = controller
+func (w *websocketHandler) OnBoot(eng gnet.Engine) (action gnet.Action) {
+	w.engine = &eng
+	w.initUpgrader()
 	return
 }
 
-func (w *websocketCore) OnRun() (err error) {
-	err = gnet.Run(w.handler, fmt.Sprintf("tcp://%s", w.addr))
+func (w *websocketHandler) OnShutdown(eng gnet.Engine) {
+
+}
+
+func (w *websocketHandler) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
+	wrapper := newWebsocketWrapper(c)
+	c.SetContext(wrapper)
 	return
 }
 
-func (w *websocketCore) OnShutdown() error {
-	if w.handler.engine != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		return w.handler.engine.Stop(ctx)
-	}
-	return nil
+func (w *websocketHandler) OnClose(c gnet.Conn, err error) (action gnet.Action) {
+	w.controller.EliminateConnection(c, err)
+	return
 }
 
-func (w *websocketCore) Schema() string {
-	return "ws"
+func (w *websocketHandler) OnTraffic(c gnet.Conn) (action gnet.Action) {
+	wrapper := c.Context().(*websocketWrapper)
+
+	if err := wrapper.readToBuffer(); err != nil {
+		return gnet.Close
+	}
+
+	if err := wrapper.upgrade(w.upgrader, func() {
+		// 协议升级成功后视为连接建立
+		w.controller.RegisterConnection(c, func(packet server.Packet) error {
+			return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
+		}, nil)
+	}); err != nil {
+		return gnet.Close
+	}
+	wrapper.active = time.Now()
+
+	// decode
+	messages, err := wrapper.decode()
+	if err != nil {
+		return gnet.Close
+	}
+
+	for _, message := range messages {
+		packet := server.NewPacket(message.Payload)
+		packet.SetContext(message.OpCode)
+		w.controller.ReactPacket(c, packet)
+	}
+	return
 }
 
-func (w *websocketCore) Address() string {
-	if w.pattern == "/" {
-		return w.addr
+func (w *websocketHandler) OnTick() (delay time.Duration, action gnet.Action) {
+	return
+}
+
+func (w *websocketHandler) initUpgrader() {
+	w.upgrader = ws.Upgrader{
+		OnRequest: func(uri []byte) (err error) {
+			if string(uri) != w.pattern {
+				err = errors.New("bad request")
+			}
+			return
+		},
 	}
-	return fmt.Sprintf("%s:%s", w.addr, w.pattern)
+}
+
+func (w *websocketHandler) GetEngine() *gnet.Engine {
+	return w.engine
 }

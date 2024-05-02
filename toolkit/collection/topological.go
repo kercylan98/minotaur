@@ -1,6 +1,8 @@
 package collection
 
-import "github.com/kercylan98/minotaur/internal/utils/sorts"
+import "errors"
+
+var ErrCircularDependencyDetected = errors.New("circular dependency detected")
 
 type topologicalSortNode[V any] struct {
 	value      V
@@ -54,7 +56,7 @@ func TopologicalSort[S ~[]V, Index comparable, V any](slice S, queryIndexHandler
 	}
 
 	if len(sorted) != len(slice) {
-		return nil, sorts.ErrCircularDependencyDetected
+		return nil, ErrCircularDependencyDetected
 	}
 
 	return sorted, nil

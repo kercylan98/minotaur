@@ -2,14 +2,13 @@ package chrono
 
 import (
 	"fmt"
-"github.com/kercylan98/minotaur/toolkit/collection"
-"github.com/kercylan98/minotaur/utils/generic"
-"strings"
-"time"
+	"github.com/kercylan98/minotaur/toolkit/collection"
+	"strings"
+	"time"
 )
 
 // NewStateLine 创建一个从左向右由早到晚的状态时间线
-func NewStateLine[State generic.Basic](zero State) *StateLine[State] {
+func NewStateLine[State comparable](zero State) *StateLine[State] {
 	return &StateLine[State]{
 		states:  []State{zero},
 		points:  []time.Time{{}},
@@ -19,7 +18,7 @@ func NewStateLine[State generic.Basic](zero State) *StateLine[State] {
 
 // StateLine 表示一个状态时间线，它记录了一系列时间点及其对应的状态和触发器。
 // 在时间线中，每个时间点都与一个状态和一组触发器相关联，可以通过时间点查找状态，并触发与之相关联的触发器。
-type StateLine[State generic.Basic] struct {
+type StateLine[State comparable] struct {
 	states  []State     // 每个时间点对应的状态
 	points  []time.Time // 每个时间点
 	trigger [][]func()  // 每个时间点对应的触发器

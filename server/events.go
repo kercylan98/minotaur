@@ -133,7 +133,7 @@ func (s *events) RegisterConnectionAsyncWriteErrorEvent(handler ConnectionAsyncW
 	s.connectionAsyncWriteErrorEventHandlers.AppendByOptionalPriority(handler, priority...)
 }
 
-func (s *events) onConnectionAsyncWriteError(conn Conn, packet Packet, err error) {
+func (s *events) OnConnectionAsyncWriteError(conn Conn, packet Packet, err error) {
 	s.PublishSyncMessage(conn.GetQueue(), func(ctx context.Context) {
 		s.connectionAsyncWriteErrorEventHandlers.RangeValue(func(index int, value ConnectionAsyncWriteErrorEventHandler) bool {
 			value(s, conn, packet, err)

@@ -1,7 +1,7 @@
 package chrono
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"math"
 	"time"
 )
@@ -316,7 +316,7 @@ func GetMonthDays(t time.Time) int {
 }
 
 // ToDuration 将一个数值转换为 time.Duration 类型，当 unit 为空时，默认为纳秒单位
-func ToDuration[V generic.Number](v V, unit ...time.Duration) time.Duration {
+func ToDuration[V constraints.Number](v V, unit ...time.Duration) time.Duration {
 	var u = Nanosecond
 	if len(unit) > 0 {
 		u = unit[0]
@@ -325,26 +325,26 @@ func ToDuration[V generic.Number](v V, unit ...time.Duration) time.Duration {
 }
 
 // ToDurationSecond 将一个数值转换为秒的 time.Duration 类型
-func ToDurationSecond[V generic.Number](v V) time.Duration {
+func ToDurationSecond[V constraints.Number](v V) time.Duration {
 	return ToDuration(v, Second)
 }
 
 // ToDurationMinute 将一个数值转换为分钟的 time.Duration 类型
-func ToDurationMinute[V generic.Number](v V) time.Duration {
+func ToDurationMinute[V constraints.Number](v V) time.Duration {
 	return ToDuration(v, Minute)
 }
 
 // ToDurationHour 将一个数值转换为小时的 time.Duration 类型
-func ToDurationHour[V generic.Number](v V) time.Duration {
+func ToDurationHour[V constraints.Number](v V) time.Duration {
 	return ToDuration(v, Hour)
 }
 
 // ToDurationDay 将一个数值转换为天的 time.Duration 类型
-func ToDurationDay[V generic.Number](v V) time.Duration {
+func ToDurationDay[V constraints.Number](v V) time.Duration {
 	return ToDuration(v, Day)
 }
 
 // ToDurationWeek 将一个数值转换为周的 time.Duration 类型
-func ToDurationWeek[V generic.Number](v V) time.Duration {
+func ToDurationWeek[V constraints.Number](v V) time.Duration {
 	return ToDuration(v, Week)
 }

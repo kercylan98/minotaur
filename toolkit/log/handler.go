@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding"
 	"fmt"
-	"github.com/kercylan98/minotaur/internal/utils/str"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"io"
 	"log/slog"
@@ -141,7 +140,7 @@ func processCaller(buffer *strings.Builder, record slog.Record, opt *Options) {
 	runtime.CallersFrames(pcs[:runtime.Callers(opt.callerSkip, pcs)])
 	fs := runtime.CallersFrames(pcs)
 	f, _ := fs.Next()
-	if f.File == str.None {
+	if f.File == charproc.None {
 		return
 	}
 
@@ -225,7 +224,7 @@ func processAttrsString(s string, quote bool) string {
 }
 
 func processAttrsKey(buffer *strings.Builder, opt *Options, key, groups string, replaceColor ...*Color) {
-	if key == str.None {
+	if key == charproc.None {
 		return
 	}
 	color := opt.keyColor[AttrTypeField]
@@ -239,7 +238,7 @@ func processAttrsKey(buffer *strings.Builder, opt *Options, key, groups string, 
 	}
 
 	delimiterText := opt.delimiterText[AttrTypeField]
-	if delimiterText != str.None {
+	if delimiterText != charproc.None {
 		delimiterColor := opt.delimiterColor[AttrTypeField]
 		if len(replaceColor) > 1 {
 			delimiterColor = replaceColor[1]
@@ -294,7 +293,7 @@ func processAttrsValue(buffer *strings.Builder, opt *Options, v slog.Value, quot
 		}
 	default:
 	}
-	if text == str.None {
+	if text == charproc.None {
 		return
 	}
 
@@ -312,7 +311,7 @@ func processAttrType(buffer *strings.Builder, opt *Options, attrType AttrType, v
 	delimiterColor := opt.delimiterColor[attrType]
 	valueColor := opt.valueColor[attrType]
 
-	if prefixText != str.None {
+	if prefixText != charproc.None {
 		// 前缀
 		if opt.disabledColor || prefixColor == nil {
 			buffer.WriteString(prefixText)
@@ -321,7 +320,7 @@ func processAttrType(buffer *strings.Builder, opt *Options, attrType AttrType, v
 		}
 
 		// 分隔符
-		if delimiterText != str.None {
+		if delimiterText != charproc.None {
 			if opt.disabledColor || delimiterColor == nil {
 				buffer.WriteString(delimiterText)
 			} else {

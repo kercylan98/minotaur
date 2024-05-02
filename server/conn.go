@@ -156,7 +156,7 @@ func (c *conn) initWriteQueue() {
 					if atomic.LoadInt32(&c.state) == ConnStatusClosed {
 						break // 连接已关闭，退出写入循环，交给下一次循环处理关闭
 					}
-					c.server.events.onConnectionAsyncWriteError(c, p, err)
+					c.server.events.OnConnectionAsyncWriteError(c, p, err)
 				}
 			}
 		}

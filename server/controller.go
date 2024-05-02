@@ -11,13 +11,15 @@ type Controller interface {
 	// GetServer 获取服务器
 	GetServer() Server
 	// RegisterConnection 注册连接
-	RegisterConnection(conn net.Conn, writer ConnWriter)
+	RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn))
 	// EliminateConnection 消除连接
 	EliminateConnection(conn net.Conn, err error)
 	// ReactPacket 反应连接数据包
 	ReactPacket(conn net.Conn, packet Packet)
 	// GetAnts 获取服务器异步池
 	GetAnts() *ants.Pool
+	// OnConnectionAsyncWriteError 注册连接异步写入数据错误事件
+	OnConnectionAsyncWriteError(conn Conn, packet Packet, err error)
 }
 
 type controller struct {
@@ -39,10 +41,13 @@ func (s *controller) GetAnts() *ants.Pool {
 	return s.server.ants
 }
 
-func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter) {
+func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn)) {
 	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c := newConn(s.server, conn, writer)
 		s.server.connections[conn] = c
+		if callback != nil {
+			callback(c)
+		}
 		s.events.onConnectionOpened(c)
 	})
 }

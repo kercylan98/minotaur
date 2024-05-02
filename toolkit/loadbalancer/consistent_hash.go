@@ -1,7 +1,7 @@
 package loadbalancer
 
 import (
-	"github.com/kercylan98/minotaur/utils/super"
+	"github.com/kercylan98/minotaur/toolkit/convert"
 	"hash/fnv"
 	"sort"
 	"sync"
@@ -29,7 +29,7 @@ func (c *ConsistentHash) Add(node string) {
 	defer c.mutex.Unlock()
 
 	for i := 0; i < c.replicas; i++ {
-		hash := c.hash(node + super.IntToString(i))
+		hash := c.hash(node + convert.IntToString(i))
 		c.keys = append(c.keys, hash)
 		c.hashMap[hash] = node
 	}
@@ -42,7 +42,7 @@ func (c *ConsistentHash) Remove(node string) {
 	defer c.mutex.Unlock()
 
 	for i := 0; i < c.replicas; i++ {
-		hash := c.hash(node + super.IntToString(i))
+		hash := c.hash(node + convert.IntToString(i))
 		delete(c.hashMap, hash)
 		// 从 keys 中移除节点的哈希值
 		for j, k := range c.keys {

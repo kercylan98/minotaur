@@ -66,8 +66,3 @@ func Uint64ToString(i uint64) string {
 func IntToBoolean[I constraints.Int](i I) bool {
 	return i != 0
 }
-
-// IntToRome 将数字转换为罗马数字
-func IntToRome[I constraints.Int](num I) string {
-	return romeThousands[num/1000] + romeHundreds[num%1000/100] + romeTens[num%100/10] + romeOnes[num%10]
-}
