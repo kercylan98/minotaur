@@ -1,16 +1,12 @@
 package rpc
 
-type (
-	// NonBlockingCaller 非阻塞 RPC 调用器，用于在不关心调用结果的情况下进行异步调用
-	//   - 该调用器不一定能够成功执行
-	NonBlockingCaller func(param any) error
+type Caller interface {
+	// GetRoute 获取调用路由
+	GetRoute() []Route
 
-	// BlockingCaller 阻塞 RPC 调用器，用于在不关心调用结果的情况下进行同步调用，除了与 NonBlockingCaller 的区别外，该函数可以保证调用成功
-	BlockingCaller func(param any) error
+	// GetPacket 获取数据包
+	GetPacket() []byte
 
-	// NonBlockingRequestCaller 非阻塞 RPC 请求调用器，该调用器会在调用成功后将结果通过 Reader 返回到回调函数中
-	NonBlockingRequestCaller func(param any, callback func(reader Reader)) error
-
-	// BlockingRequestCaller 阻塞 RPC 请求调用器，该调用器会在调用成功后将结果通过 Reader 返回到调用方
-	BlockingRequestCaller func(param any) (Reader, error)
-)
+	// Respond 响应调用
+	Respond(packet []byte) error
+}
