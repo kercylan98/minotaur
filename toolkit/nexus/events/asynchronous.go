@@ -2,8 +2,10 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
+	"runtime/debug"
 	"time"
 )
 
@@ -28,11 +30,25 @@ func Asynchronous[I constraints.Ordered, T comparable](
 	actuator AsynchronousActuator,
 	handler AsynchronousHandler,
 	callback AsynchronousCallbackHandler,
+	opts ...*nexus.EventOptions,
 ) nexus.Event[I, T] {
+	var opt *nexus.EventOptions
+	var stack []byte
+	if len(opts) > 0 {
+		opt = opts[0]
+		for i := 1; i < len(opts); i++ {
+			opt.Apply(opts[i])
+		}
+		if opt != nil && opt.LowHandlerTrace && opt.LowHandlerTraceHandler != nil {
+			stack = debug.Stack()
+		}
+	}
 	m := &asynchronous[I, T]{
 		actuator: actuator,
 		handler:  handler,
 		callback: callback,
+		opt:      opt,
+		stack:    stack,
 	}
 	if m.actuator == nil {
 		m.actuator = func(ctx context.Context, f func(context.Context)) {
@@ -49,6 +65,8 @@ type asynchronous[I constraints.Ordered, T comparable] struct {
 	actuator AsynchronousActuator
 	handler  AsynchronousHandler
 	callback AsynchronousCallbackHandler
+	opt      *nexus.EventOptions
+	stack    []byte
 }
 
 func (s *asynchronous[I, T]) OnInitialize(ctx context.Context, broker nexus.Broker[I, T]) {
@@ -63,18 +81,42 @@ func (s *asynchronous[I, T]) OnPublished(topic T, queue nexus.Queue[I, T]) {
 func (s *asynchronous[I, T]) OnProcess(topic T, queue nexus.Queue[I, T], startAt time.Time) {
 	s.actuator(s.ctx, func(ctx context.Context) {
 		var err error
+		defer func() {
+			queue.IncrementCustomMessageCount(topic, -1)
+
+			var cost = time.Since(startAt)
+			if s.opt != nil && cost >= s.opt.LowHandlerThreshold {
+				if s.opt.LowHandlerTrace && s.opt.LowHandlerTraceHandler != nil {
+					s.opt.LowHandlerTraceHandler(cost, s.stack)
+				} else if s.opt.LowHandlerThresholdHandler != nil {
+					s.opt.LowHandlerThresholdHandler(cost)
+				}
+			}
+
+			if recoverErr := recover(); recoverErr != nil {
+				switch recoverErr.(type) {
+				case error:
+					err = recoverErr.(error)
+				default:
+					err = fmt.Errorf("asynchronous panic: %v", recoverErr)
+				}
+			}
+
+			s.broker.Publish(topic, Synchronous[I, T](
+				func(ctx context.Context) {
+					if s.callback != nil {
+						s.callback(ctx, err)
+					}
+				},
+				s.opt,
+			))
+		}()
 		if s.handler != nil {
 			err = s.handler(s.ctx)
 		}
-
-		s.broker.Publish(topic, Synchronous[I, T](func(ctx context.Context) {
-			if s.callback != nil {
-				s.callback(ctx, err)
-			}
-		}))
 	})
 }
 
 func (s *asynchronous[I, T]) OnProcessed(topic T, queue nexus.Queue[I, T], endAt time.Time) {
-	queue.IncrementCustomMessageCount(topic, -1)
+
 }

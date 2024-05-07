@@ -73,9 +73,13 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
 	srv.Options.init(srv).Apply(options...)
-	srv.broker = brokers.NewSparseGoroutine(srv.Options.GetSparseGoroutineNum(), func(index int) nexus.Queue[int, string] {
-		return queues.NewNonBlockingRW[int, string](index, srv.Options.GetServerMessageChannelSize(), srv.Options.GetServerMessageBufferInitialSize())
-	}, srv.onEventProcess)
+	srv.broker = brokers.NewSparseGoroutine(
+		srv.Options.GetSparseGoroutineNum(),
+		func(index int) nexus.Queue[int, string] {
+			return queues.NewNonBlockingRW[int, string](index, srv.Options.GetServerMessageChannelSize(), srv.Options.GetServerMessageBufferInitialSize())
+		},
+		srv.onEventProcess,
+	)
 	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
 		ExpiryDuration: 10 * time.Second,
 		Nonblocking:    true,
@@ -145,7 +149,7 @@ func (s *server) PublishSystemMessage(event nexus.Event[int, string]) {
 }
 
 func (s *server) PublishSyncMessage(topic string, handler messageEvents.SynchronousHandler) {
-	s.PublishMessage(topic, messageEvents.Synchronous[int, string](handler))
+	s.PublishMessage(topic, messageEvents.Synchronous[int, string](handler, s.GetEventOptions()))
 }
 
 func (s *server) PublishAsyncMessage(topic string, handler messageEvents.AsynchronousHandler, callback ...messageEvents.AsynchronousCallbackHandler) {
@@ -156,7 +160,7 @@ func (s *server) PublishAsyncMessage(topic string, handler messageEvents.Asynchr
 			s.GetLogger().Warn("Minotaur Server", log.String("topic", topic), log.String("error", err.Error()))
 			go f(ctx)
 		}
-	}, handler, collection.FindFirstOrDefaultInSlice(callback, nil)))
+	}, handler, collection.FindFirstOrDefaultInSlice(callback, nil), s.GetEventOptions()))
 }
 
 func (s *server) PublishSystemSyncMessage(handler messageEvents.SynchronousHandler) {

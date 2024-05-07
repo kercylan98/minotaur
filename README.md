@@ -15,37 +15,23 @@ Minotaur 是一个用于服务端开发的支持库，其中采用了大量泛�
 ![qq-group](https://img.shields.io/badge/QQ%20Group-758219443-green.svg?style=flat&logo=tencent-qq&link=https://qm.qq.com/cgi-bin/qm/qr?k=WzRWJIDLzuJbH6-VjdFiTCd1_qA_Ug-D&jump_from=webapi&authKey=ktLEw3XyY9yO+i9rPbI6Fk0UA0uEhACcUidOFdblaiToZtbHcXyU7sFb31FEc9JJ&noverify=0)
 ![telegram](https://img.shields.io/badge/Telegram-ziv__siren-green.svg?style=flat&logo=telegram&link=https://telegram.me/ziv_siren)
 
-> - 这是支持快速搭建多功能游戏服务器及 HTTP 服务器的 `Golang` 服务端框架；
-> - 网络传输基于 [`gorilla/websocket`](https://github.com/gorilla/websocket)、[`gin-gonic/gin`](https://github.com/gin-gonic/gin)、[`grpc/grpc-go`](https://github.com/grpc/grpc-go)、[`panjf2000/gnet`](https://github.com/panjf2000/gnet)、[`xtaci/kcp-go`](https://github.com/xtaci/kcp-go) 构建；
+> - 这是支持快速搭建多功能服务器的 `Golang` 服务端框架，支持 WebSocket、TCP、UDP、KCP、HTTP 等常见网络协议；
+> - 网络传输基于 [`panjf2000/gnet`](https://github.com/panjf2000/gnet)、[`xtaci/kcp-go`](https://github.com/xtaci/kcp-go) 构建；
 > - 该项目的目标是提供一个简单、高效、可扩展的游戏服务器框架，让开发者可以专注于游戏逻辑的开发，而不用花费大量时间在网络传输、配置导表、日志、监控等基础功能的开发上；
 
-***
-在 Minotaur 中不包括任何跨服实现，但支持基于多级路由器快速实现跨服功能。推荐使用 [`NATS.io`](https://nats.io/) 作为跨服消息中间件。
-  - 目前已实践的弹幕游戏项目以 `NATS.io` 作为消息队列，实现了跨服、埋点日志收集等功能，部署在 `Kubernetes` 集群中；
-  - 该项目客户端与服务端采用 `WebSocket` 进行通讯，服务端暴露 `HTTP` 接口接收互动数据消息回调，通过负载均衡器进入 `Kubernetes` 集群中的 `Minotaur` 服务，最终通过 `NATS.io` 消息队列转发至对应所在的 `Pod` 中进行处理；
-
-<details>
-<summary>关于 Pod 配置参数及非极限压测数据</summary>
-
-> 本次压测 `Pod` 扩容数量为 1，但由于压测连接是最开始就建立好的，所以该扩容的 `Pod` 并没有接受到压力。
-> 理论上来说该 `Pod` 也应该接受 `HTTP` 回调压力，实测过程中，这个扩容的 `Pod` 没有接受到任何压力
-
-**Pod 配置参数**
-
-![pod](.github/images/pod.png)
-
-**压测结果**
-
-![压测数据](.github/images/yc1.png)
-![压测数据](.github/images/yc2.png)
-
-**监控数据**
-
-![事件](./.github/images/yc-event.png)
-![CPU](./.github/images/yc-cpu.png)
-![内存](./.github/images/yc-memory.png)
-
-</details>
+#### v0.5.X 之后的版本为重构后的版本，重构后的版本主要有以下特点：
+- 移除了大量的无用或不合理的实现，减少了代码的复杂度；
+- 所有设计均优先考虑了泛型的使用，提高了代码的复用性；
+- 关于 `server` 包，对于整体进行了重构，具体如下：
+  - 移除了对于 `gRPC` 的支持及依赖；
+  - 移除了对于 `gin` 的依赖，默认的 HTTP 服务将采用 `http.ServeMux` 进行处理，支持使用自定义 `http.Handler`；
+  - 关于 `WebSocket` 更改为使用 `gnet` 和 `github.com/gobwas/ws` 进行处理；
+  - 开放 `server.Network` 接口，支持自定义网络协议；
+  - `pprof` 支持运行时动态开关；
+  - 基于 `shunt` 分流概念的 `actor` 模型整体重构、解耦，并将名称调整为 `queue`，连接所在队列不再与连接绑定，现在支持直接向特定队列发送消息；
+  - 对外开放服务器消息驱动模型接口，支持自定义消息驱动模型；
+  - 将 `utils` 包更名为 `toolkit`，并对其中的大量函数、设计、目录结构进行了调整；
+  - 内置了基于 `nats.io` 的 `rpc` 支持；
 
 ***
 

@@ -49,6 +49,7 @@ type gNetCore struct {
 func (w *gNetCore) OnSetup(ctx context.Context, controller server.Controller) (err error) {
 	w.ctx = ctx
 	w.controller = controller
+	w.handler.OnInit(w)
 	return
 }
 

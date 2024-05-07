@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"os"
 	"runtime"
 	"sync"
@@ -25,14 +26,15 @@ func DefaultOptions() *Options {
 type Options struct {
 	server                   *server
 	rw                       sync.RWMutex
-	messageChannelSize       int           // 服务器消息处理管道大小
-	messageBufferInitialSize int           // 服务器消息写入缓冲区初始化大小
-	lifeCycleLimit           time.Duration // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
-	logger                   *log.Logger   // 日志记录器
-	debug                    bool          // Debug 模式
-	syncLowMessageDuration   time.Duration // 同步慢消息时间
-	asyncLowMessageDuration  time.Duration // 异步慢消息时间
-	sparseGoroutineNum       int           // 稀疏 goroutine 数量
+	messageChannelSize       int                 // 服务器消息处理管道大小
+	messageBufferInitialSize int                 // 服务器消息写入缓冲区初始化大小
+	lifeCycleLimit           time.Duration       // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	logger                   *log.Logger         // 日志记录器
+	debug                    bool                // Debug 模式
+	syncLowMessageDuration   time.Duration       // 同步慢消息时间
+	asyncLowMessageDuration  time.Duration       // 异步慢消息时间
+	sparseGoroutineNum       int                 // 稀疏 goroutine 数量
+	eventOptions             *nexus.EventOptions // 事件选项
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -54,6 +56,7 @@ func (opt *Options) Apply(options ...*Options) {
 		opt.syncLowMessageDuration = option.syncLowMessageDuration
 		opt.asyncLowMessageDuration = option.asyncLowMessageDuration
 		opt.sparseGoroutineNum = option.sparseGoroutineNum
+		opt.eventOptions = option.eventOptions
 
 		option.rw.RUnlock()
 	}
@@ -64,6 +67,20 @@ func (opt *Options) Apply(options ...*Options) {
 
 func (opt *Options) active() {
 	opt.server.notify.lifeCycleTime <- opt.GetLifeCycleLimit()
+}
+
+// WithEventOptions 设置服务器事件选项
+//   - 该函数支持运行时设置
+func (opt *Options) WithEventOptions(eventOptions *nexus.EventOptions) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.eventOptions = eventOptions
+	})
+}
+
+func (opt *Options) GetEventOptions() *nexus.EventOptions {
+	return getOptionsValue(opt, func(opt *Options) *nexus.EventOptions {
+		return opt.eventOptions
+	})
 }
 
 // WithSparseGoroutineNum 设置服务器稀疏 goroutine 数量

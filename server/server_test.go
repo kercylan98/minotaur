@@ -2,33 +2,27 @@ package server_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/network"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"github.com/kercylan98/minotaur/toolkit/random"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"testing"
 	"time"
 )
 
 func TestNewServer(t *testing.T) {
-	server.EnableHttpPProf(":9998", "/debug/pprof", func(err error) {
-		panic(err)
-	})
-
-	go func() {
-		time.Sleep(time.Second * 5)
-		server.DisableHttpPProf()
-		time.Sleep(time.Second * 5)
-		server.EnableHttpPProf(":9998", "/debug/pprof", func(err error) {
-			panic(err)
-		})
-	}()
-
-	srv := server.NewServer(network.WebSocket(":9999"), server.NewOptions().WithLifeCycleLimit(chrono.Day*3).WithLogger(log.GetLogger()))
-
-	var tm = make(map[string]bool)
+	srv := server.NewServer(network.WebSocket(":9999"),
+		server.NewOptions().
+			WithLifeCycleLimit(chrono.Day*3).
+			WithLogger(log.GetLogger()).
+			WithEventOptions(nexus.NewEventOptions().WithLowHandlerTrace(true, func(cost time.Duration, stack []byte) {
+				t.Log("low handler trace", cost.String())
+				fmt.Println(string(stack))
+			})),
+	)
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
 		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
@@ -38,13 +32,10 @@ func TestNewServer(t *testing.T) {
 		conn.WriteWebSocketText([]byte("hello text"))
 
 		srv.PublishAsyncMessage("123", func(ctx context.Context) error {
+			time.Sleep(time.Second)
 			return nil
 		}, func(ctx context.Context, err error) {
-			for i := 0; i < 10000000; i++ {
-				_ = tm["1"]
-				tm["1"] = random.Bool()
-				conn.WriteWebSocketText([]byte("hello text"))
-			}
+			time.Sleep(time.Second)
 		})
 	})
 

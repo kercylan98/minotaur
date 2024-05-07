@@ -26,11 +26,7 @@ func TestClient(t *testing.T) {
 		panic(err)
 	}
 
-	discovery, err := rpcbuiltin.NewDiscoveryWithNats(conn, js)
-	if err != nil {
-		panic(err)
-	}
-	var cli = rpc.NewClient(discovery)
+	var cli = rpc.NewClient(rpcbuiltin.NewDiscoveryWithNats(conn, js))
 
 	for {
 		if err := func() error {
@@ -76,15 +72,10 @@ func TestApplication(t *testing.T) {
 		panic(err)
 	}
 
-	registry, err := rpcbuiltin.NewRegistryWithNats(conn, js)
-	if err != nil {
-		panic(err)
-	}
-
 	var app = rpc.NewApplication(rpc.Service{
 		Name:       "test-app",
 		InstanceId: "test-app-1",
-	}, registry)
+	}, rpcbuiltin.NewRegistryWithNats(conn, js))
 	app.Register("account", "login").Unary(func(reader rpc.Reader) any {
 		var params struct {
 			Username string `json:"username"`
