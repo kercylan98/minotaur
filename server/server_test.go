@@ -18,8 +18,8 @@ func TestNewServer(t *testing.T) {
 		server.NewOptions().
 			WithLifeCycleLimit(chrono.Day*3).
 			WithLogger(log.GetLogger()).
-			WithEventOptions(nexus.NewEventOptions().WithLowHandlerTrace(true, func(cost time.Duration, stack []byte) {
-				t.Log("low handler trace", cost.String())
+			WithEventOptions(nexus.NewEventOptions().WithDeadLockThreshold(time.Second*5, func(stack []byte) {
+				t.Log("dead lock")
 				fmt.Println(string(stack))
 			})),
 	)
@@ -32,10 +32,9 @@ func TestNewServer(t *testing.T) {
 		conn.WriteWebSocketText([]byte("hello text"))
 
 		srv.PublishAsyncMessage("123", func(ctx context.Context) error {
-			time.Sleep(time.Second)
 			return nil
 		}, func(ctx context.Context, err error) {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 6)
 		})
 	})
 

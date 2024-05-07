@@ -20,6 +20,7 @@ func DefaultOptions() *Options {
 		lifeCycleLimit:           0,
 		logger:                   log.NewLogger(log.NewHandler(os.Stdout, log.DefaultOptions().WithCallerSkip(-1).WithLevel(log.LevelInfo))),
 		sparseGoroutineNum:       runtime.NumCPU(),
+		eventOptions:             nexus.NewEventOptions().WithLowHandlerThreshold(0, nil),
 	}
 }
 
