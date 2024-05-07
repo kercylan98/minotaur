@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"time"
 )
@@ -23,7 +24,7 @@ type (
 // 该函数除了 handler，其他所有处理器均为同步执行
 //
 // 返回值为一个实现了 Event 接口的异步消息实例。
-func Asynchronous[I, T comparable](
+func Asynchronous[I constraints.Ordered, T comparable](
 	actuator AsynchronousActuator,
 	handler AsynchronousHandler,
 	callback AsynchronousCallbackHandler,
@@ -42,7 +43,7 @@ func Asynchronous[I, T comparable](
 	return m
 }
 
-type asynchronous[I, T comparable] struct {
+type asynchronous[I constraints.Ordered, T comparable] struct {
 	ctx      context.Context
 	broker   nexus.Broker[I, T]
 	actuator AsynchronousActuator

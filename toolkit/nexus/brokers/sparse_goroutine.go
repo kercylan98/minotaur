@@ -3,7 +3,8 @@ package brokers
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/toolkit/loadbalancer"
+	"github.com/kercylan98/minotaur/toolkit/balancer"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"runtime"
 	"sync"
@@ -23,9 +24,9 @@ type (
 
 // NewSparseGoroutine 创建一个 SparseGoroutine，该 SparseGoroutine 支持通过 goroutineNum 指定并发数，queueFactory 指定队列工厂函数，handler 指定消息处理器
 //   - 当 goroutineNum 小于等于 0 时，默认使用 CPU 核心数
-func NewSparseGoroutine[I, T comparable](goroutineNum int, queueFactory func(index int) nexus.Queue[I, T], handler SparseGoroutineMessageHandler) nexus.Broker[I, T] {
+func NewSparseGoroutine[I constraints.Ordered, T comparable](goroutineNum int, queueFactory func(index int) nexus.Queue[I, T], handler SparseGoroutineMessageHandler) nexus.Broker[I, T] {
 	s := &SparseGoroutine[I, T]{
-		lb:           loadbalancer.NewRoundRobin[I, nexus.Queue[I, T]](),
+		lb:           balancer.NewRoundRobin[I, nexus.Queue[I, T]](),
 		queues:       make(map[I]nexus.Queue[I, T]),
 		state:        sparseGoroutineStatusNone,
 		location:     make(map[T]I),
@@ -50,17 +51,17 @@ func NewSparseGoroutine[I, T comparable](goroutineNum int, queueFactory func(ind
 	return s
 }
 
-type SparseGoroutine[I, T comparable] struct {
-	state           int32                                          // 状态
-	queueSize       int                                            // 队列管道大小
-	queueBufferSize int                                            // 队列缓冲区大小
-	queues          map[I]nexus.Queue[I, T]                        // 所有使用的队列
-	queueRW         sync.RWMutex                                   // 队列读写锁
-	location        map[T]I                                        // Topic 所在队列 Id 映射
-	locationRW      sync.RWMutex                                   // 所在队列 ID 映射锁
-	lb              *loadbalancer.RoundRobin[I, nexus.Queue[I, T]] // 负载均衡器
-	wg              sync.WaitGroup                                 // 等待组
-	handler         SparseGoroutineMessageHandler                  // 消息处理器
+type SparseGoroutine[I constraints.Ordered, T comparable] struct {
+	state           int32                                   // 状态
+	queueSize       int                                     // 队列管道大小
+	queueBufferSize int                                     // 队列缓冲区大小
+	queues          map[I]nexus.Queue[I, T]                 // 所有使用的队列
+	queueRW         sync.RWMutex                            // 队列读写锁
+	location        map[T]I                                 // Topic 所在队列 Id 映射
+	locationRW      sync.RWMutex                            // 所在队列 ID 映射锁
+	lb              balancer.Balancer[I, nexus.Queue[I, T]] // 负载均衡器
+	wg              sync.WaitGroup                          // 等待组
+	handler         SparseGoroutineMessageHandler           // 消息处理器
 
 	queueFactory func(index int) nexus.Queue[I, T]
 }
@@ -121,7 +122,7 @@ func (s *SparseGoroutine[I, T]) Close() {
 
 // Publish 将消息分发到特定 topic，当 topic 首次使用时，将会根据负载均衡策略选择一个队列
 //   - 设置 count 会增加消息的外部计数，当 SparseGoroutine 关闭时会等待外部计数归零
-func (s *SparseGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) error {
+func (s *SparseGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) (err error) {
 	s.queueRW.RLock()
 	if atomic.LoadInt32(&s.state) > sparseGoroutineStatusClosing {
 		s.queueRW.RUnlock()
@@ -135,7 +136,11 @@ func (s *SparseGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) error 
 	if !exist {
 		s.locationRW.Lock()
 		if i, exist = s.location[topic]; !exist {
-			next = s.lb.Next()
+			if next, err = s.lb.Select(); err != nil {
+				s.locationRW.Unlock()
+				s.queueRW.RUnlock()
+				return err
+			}
 			s.location[topic] = next.GetId()
 		} else {
 			next = s.queues[i]

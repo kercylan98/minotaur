@@ -2,6 +2,9 @@ package rpc
 
 import "context"
 
+type ServiceName = string
+type InstanceId = string
+
 type (
 	// UnaryCaller 该调用器将同步的发起一个仅由一个处理器响应的调用，被调用方的响应将存储在 Reader 中进行返回
 	UnaryCaller func(ctx context.Context, params any) (Reader, error)
@@ -14,8 +17,8 @@ type (
 )
 
 type Service struct {
-	Name       string            `json:"name"`        // 服务名称
-	InstanceId string            `json:"instance_id"` // 全局唯一的服务实例标识符
+	Name       ServiceName       `json:"name"`        // 服务名称
+	InstanceId InstanceId        `json:"instance_id"` // 全局唯一的服务实例标识符
 	Host       string            `json:"host"`        // 服务主机
 	Port       int               `json:"port"`        // 服务端口
 	Metadata   map[string]string `json:"metadata"`    // 服务元数据

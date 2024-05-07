@@ -6,7 +6,6 @@ import (
 	"github.com/kercylan98/minotaur/rpc/internal/utils"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/nats-io/nats.go"
-	"sync"
 	"time"
 )
 
@@ -14,7 +13,6 @@ func NewNats(conn *nats.Conn, js nats.JetStreamContext, bucketName, bucketDesc, 
 	n = &Nats{
 		conn:         conn,
 		js:           js,
-		services:     make(map[string]map[string]rpc.Service),
 		registerCh:   make(chan rpc.CallableService, 128),
 		unregisterCh: make(chan rpc.CallableService, 128),
 		keyPrefix:    keyPrefix,
@@ -22,6 +20,9 @@ func NewNats(conn *nats.Conn, js nats.JetStreamContext, bucketName, bucketDesc, 
 	}
 	n.ctx, n.cancel = context.WithCancel(context.Background())
 	n.kv, err = utils.InitNatsBucket(js, bucketName, bucketDesc, ttl)
+	if err = n.scanAllServices(); err != nil {
+		return nil, err
+	}
 	starter, err := n.watch()
 	if err != nil {
 		return nil, err
@@ -36,12 +37,31 @@ type Nats struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	kv           nats.KeyValue
-	servicesRW   sync.RWMutex
-	services     map[string]map[string]rpc.Service // serviceName -> instanceId -> service
 	registerCh   chan rpc.CallableService
 	unregisterCh chan rpc.CallableService
 	keyPrefix    string
 	watchKey     string
+}
+
+func (n *Nats) scanAllServices() error {
+	keys, err := n.kv.ListKeys(nats.IgnoreDeletes())
+	if err != nil {
+		return err
+	}
+
+	for key := range keys.Keys() {
+		entry, err := n.kv.Get(key)
+		if err != nil {
+			continue
+		}
+
+		var service rpc.Service
+		toolkit.UnmarshalJSON(entry.Value(), &service)
+		var cs = new(NatsDiscoveryService).init(service, n.conn, n.keyPrefix+".call."+service.InstanceId)
+		n.registerCh <- cs
+	}
+
+	return nil
 }
 
 func (n *Nats) WatchRegister() <-chan rpc.CallableService {

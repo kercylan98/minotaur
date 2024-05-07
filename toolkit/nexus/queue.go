@@ -1,6 +1,11 @@
 package nexus
 
-type Queue[I, T comparable] interface {
+import (
+	"github.com/kercylan98/minotaur/toolkit/balancer"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
+)
+
+type Queue[I constraints.Ordered, T comparable] interface {
 	// GetId 获取队列 Id
 	GetId() I
 	// Publish 向队列中推送消息
@@ -13,4 +18,6 @@ type Queue[I, T comparable] interface {
 	Consume() <-chan EventInfo[I, T]
 	// Close 关闭队列
 	Close()
+
+	balancer.Item[I]
 }

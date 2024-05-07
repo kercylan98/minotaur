@@ -39,8 +39,8 @@ type Nats struct {
 
 func (n *Nats) OnRegister(service rpc.Service) error {
 	n.service = service
-	n.key = n.key + "." + service.InstanceId
 	n.subject = n.key + ".call." + service.InstanceId
+	n.key = n.key + "." + service.InstanceId
 	n.serviceCache = toolkit.MarshalJSON(service)
 
 	// 创建订阅

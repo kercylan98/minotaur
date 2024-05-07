@@ -3,6 +3,7 @@ package queues
 import (
 	"errors"
 	"github.com/kercylan98/minotaur/toolkit/buffer"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"sync"
 	"sync/atomic"
@@ -23,7 +24,7 @@ var (
 
 type NonBlockingRWState = int32
 
-type nonBlockingRWEventInfo[I, T comparable] struct {
+type nonBlockingRWEventInfo[I constraints.Ordered, T comparable] struct {
 	topic T
 	event nexus.Event[I, T]
 	exec  func(handler nexus.EventHandler[T], finisher nexus.EventFinisher[I, T])
@@ -39,7 +40,7 @@ func (e *nonBlockingRWEventInfo[I, T]) Exec(handler nexus.EventHandler[T], finis
 
 // NewNonBlockingRW 创建一个并发安全的队列 NonBlockingRW，该队列支持通过 chanSize 自定义读取 channel 的大小，同支持使用 bufferSize 指定 buffer.Ring 的初始大小
 //   - closedHandler 可选的设置队列关闭处理函数，在队列关闭后将执行该函数。此刻队列不再可用
-func NewNonBlockingRW[I, T comparable](id I, chanSize, bufferSize int) nexus.Queue[I, T] {
+func NewNonBlockingRW[I constraints.Ordered, T comparable](id I, chanSize, bufferSize int) nexus.Queue[I, T] {
 	q := &NonBlockingRW[I, T]{
 		id:     id,
 		status: NonBlockingRWStatusNone,
@@ -56,7 +57,7 @@ func NewNonBlockingRW[I, T comparable](id I, chanSize, bufferSize int) nexus.Que
 //   - 该队列接收自定义的消息 M，并将消息有序的传入 Read 函数所返回的 channel 中以供处理
 //   - 该结构主要实现目标为读写分离且并发安全的非阻塞传输队列，当消费阻塞时以牺牲内存为代价换取消息的生产不阻塞，适用于服务器消息处理等
 //   - 该队列保证了消息的完整性，确保消息不丢失，在队列关闭后会等待所有消息处理完毕后进行关闭，并提供 SetClosedHandler 函数来监听队列的关闭信号
-type NonBlockingRW[I, T comparable] struct {
+type NonBlockingRW[I constraints.Ordered, T comparable] struct {
 	id     I                                          // 队列 ID
 	status int32                                      // 状态标志
 	total  int64                                      // 消息总计数
@@ -71,6 +72,11 @@ type NonBlockingRW[I, T comparable] struct {
 // GetId 获取队列 Id
 func (n *NonBlockingRW[I, T]) GetId() I {
 	return n.id
+}
+
+// GetWeight 获取队列权重
+func (n *NonBlockingRW[I, T]) GetWeight() int {
+	return 0
 }
 
 // Run 阻塞的运行队列，当队列非首次运行时，将会引发来自 ErrorQueueInvalid 的 panic

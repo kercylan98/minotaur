@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"time"
 )
@@ -10,13 +11,13 @@ type (
 	SynchronousHandler func(context.Context)
 )
 
-func Synchronous[I, T comparable](handler SynchronousHandler) nexus.Event[I, T] {
+func Synchronous[I constraints.Ordered, T comparable](handler SynchronousHandler) nexus.Event[I, T] {
 	return &synchronous[I, T]{
 		handler: handler,
 	}
 }
 
-type synchronous[I, T comparable] struct {
+type synchronous[I constraints.Ordered, T comparable] struct {
 	ctx     context.Context
 	handler SynchronousHandler
 }

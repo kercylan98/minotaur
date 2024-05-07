@@ -2,10 +2,11 @@ package nexus
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"time"
 )
 
-type Event[I, T comparable] interface {
+type Event[I constraints.Ordered, T comparable] interface {
 	// OnInitialize 消息初始化
 	OnInitialize(ctx context.Context, broker Broker[I, T])
 
@@ -21,9 +22,9 @@ type Event[I, T comparable] interface {
 
 type EventExecutor func()
 type EventHandler[T comparable] func(topic T, event EventExecutor)
-type EventFinisher[I, T comparable] func(topic T, last bool)
+type EventFinisher[I constraints.Ordered, T comparable] func(topic T, last bool)
 
-type EventInfo[I, T comparable] interface {
+type EventInfo[I constraints.Ordered, T comparable] interface {
 	GetTopic() T
 	Exec(
 		handler EventHandler[T],

@@ -1,6 +1,9 @@
-package rpc
+package rpcbuiltin
 
-import "time"
+import (
+	"github.com/kercylan98/minotaur/rpc"
+	"time"
+)
 
 type NatsDiscoveryOptions struct {
 	BucketName string        // 用于存储服务信息的 Bucket 名称，默认为 NatsDefaultBucketName
@@ -11,10 +14,10 @@ type NatsDiscoveryOptions struct {
 
 func NewNatsDiscoveryOptions() *NatsDiscoveryOptions {
 	return &NatsDiscoveryOptions{
-		BucketName: NatsDefaultBucketName,
-		BucketDesc: NatsDefaultBucketDesc,
-		KeyPrefix:  NatsDefaultBkvBucketPrefix,
-		TTL:        NatsDefaultTTL,
+		BucketName: rpc.NatsDefaultBucketName,
+		BucketDesc: rpc.NatsDefaultBucketDesc,
+		KeyPrefix:  rpc.NatsDefaultBkvBucketPrefix,
+		TTL:        rpc.NatsDefaultTTL,
 	}
 }
 

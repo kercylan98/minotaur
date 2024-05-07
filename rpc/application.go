@@ -7,10 +7,11 @@ import (
 )
 
 // NewApplication 创建一个新的 RPC 应用程序
-func NewApplication(service Service) *Application {
+func NewApplication(service Service, registry Registry) *Application {
 	var a = &Application{
-		service: service,
-		router:  router.NewTypeFixedMultistage[Route, any](),
+		service:  service,
+		router:   router.NewTypeFixedMultistage[Route, any](),
+		registry: registry,
 	}
 	a.ctx, a.cancel = context.WithCancel(context.Background())
 
