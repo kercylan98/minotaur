@@ -222,3 +222,33 @@ func (v Vector2) GetY() float64 {
 func (v Vector3) GetZ() float64 {
 	return v[2]
 }
+
+// Quadrant 获取向量所在象限
+func (v Vector2) Quadrant() int {
+	if len(v) != 2 {
+		panic("vector size mismatch")
+	}
+	x, y := v.GetXY()
+	switch {
+	case x > 0 && y > 0:
+		return 1
+	case x < 0 && y > 0:
+		return 2
+	case x < 0 && y < 0:
+		return 3
+	case x > 0 && y < 0:
+		return 4
+	default:
+		return 0
+	}
+}
+
+// GetXY 返回该点的 x、y 坐标
+func (v Vector2) GetXY() (x, y float64) {
+	return v.GetX(), v.GetY()
+}
+
+// GetXYZ 返回该点的 x、y、z 坐标
+func (v Vector3) GetXYZ() (x, y, z float64) {
+	return v.GetX(), v.GetY(), v.GetZ()
+}

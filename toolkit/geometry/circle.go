@@ -59,10 +59,10 @@ func (c Circle) Intersect(c2 Circle) bool {
 	return c.GetCenter().Sub(c2.GetCenter()).Length() <= c.GetRadius()+c2.GetRadius()
 }
 
-// GetIntersectionPoints 获取两个圆的交点
+// GetIntersectionPoints 获取两个圆的交点，如果没有交点则返回两个零向量
 func (c Circle) GetIntersectionPoints(c2 Circle) (Vector2, Vector2) {
 	if !c.Intersect(c2) {
-		panic("circles do not intersect")
+		return Vector2Zero(), Vector2Zero()
 	}
 	d := c.GetCenter().Sub(c2.GetCenter()).Length()
 	a := (c.GetRadius()*c.GetRadius() - c2.GetRadius()*c2.GetRadius() + d*d) / (2 * d)
@@ -73,4 +73,14 @@ func (c Circle) GetIntersectionPoints(c2 Circle) (Vector2, Vector2) {
 	x4 := p2.GetX() - h*(c.GetCenter().GetY()-c2.GetCenter().GetY())/d
 	y4 := p2.GetY() - h*(c2.GetCenter().GetX()-c.GetCenter().GetX())/d
 	return NewVector(x3, y3), NewVector(x4, y4)
+}
+
+// GetCenterDistance 计算两个圆心之间的距离
+func (c Circle) GetCenterDistance(c2 Circle) float64 {
+	return c.GetCenter().Sub(c2.GetCenter()).Length()
+}
+
+// Overlap 计算两个圆是否发生重叠
+func (c Circle) Overlap(c2 Circle) bool {
+	return c.GetCenterDistance(c2) < c.GetRadius()+c2.GetRadius()
 }
