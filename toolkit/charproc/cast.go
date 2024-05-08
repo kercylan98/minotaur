@@ -36,6 +36,11 @@ func Snake(str string) string {
 	return snakeStr
 }
 
+// BigCamel 大驼峰字符串
+func BigCamel(str string) string {
+	return FirstUpper(Camel(str))
+}
+
 // Camel 驼峰字符串
 func Camel(str string) string {
 	var camelStr string

@@ -56,7 +56,7 @@ func Reg(name string, flusher Flusher, options ...Option) {
 	}
 
 	survey[name] = logger
-	log.Info("Survey", log.String("Action", "Reg"), log.String("Name", name), log.String("Info", logger.flusher.Info()))
+	log.Info("Survey", log.String("Action", "Reg"), log.String("GetName", name), log.String("Info", logger.flusher.Info()))
 }
 
 // Record 记录一条运营日志
