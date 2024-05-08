@@ -1,62 +1,76 @@
 package geometry
 
-import (
-	"github.com/kercylan98/minotaur/utils/generic"
-	"math"
-)
+import "math"
 
-// Circle 由多个点组成的圆形数据结构
-type Circle[V generic.SignedNumber] struct {
-	Shape[V]
-}
-
-// Radius 获取圆形半径
-func (slf Circle[V]) Radius() V {
-	for _, point := range slf.Points() {
-		return CalcDistanceWithPoint(slf.Centroid(), point)
+// NewCircle 创建一个圆
+func NewCircle(center Vector2, radius float64) Circle {
+	if len(center) != 2 {
+		panic("vector size mismatch")
 	}
-	panic("circle without any points")
-}
-
-// Centroid 获取圆形质心位置
-func (slf Circle[V]) Centroid() Point[V] {
-	return CalcRectangleCentroid(slf.Shape)
-}
-
-// Overlap 与另一个圆是否发生重叠
-func (slf Circle[V]) Overlap(circle Circle[V]) bool {
-	return slf.CentroidDistance(circle) < slf.Radius()+circle.Radius()
-}
-
-// Area 获取圆形面积
-func (slf Circle[V]) Area() V {
-	return V(math.Pi * math.Pow(float64(slf.Radius()), 2))
-}
-
-// Length 获取圆的周长
-func (slf Circle[V]) Length() V {
-	return V(2 * math.Pi * float64(slf.Radius()))
-}
-
-// CentroidDistance 计算与另一个圆的质心距离
-func (slf Circle[V]) CentroidDistance(circle Circle[V]) V {
-	return CalcCircleCentroidDistance(slf, circle)
-}
-
-// NewCircle 通过传入圆的半径和需要的点数量，生成一个圆
-func NewCircle[V generic.SignedNumber](radius V, points int) Circle[V] {
-	angle := 2.0 * math.Pi / float64(points)
-	var shape = make(Shape[V], points)
-	for i := 0; i < points; i++ {
-		curAngle := float64(i) * angle
-		x := radius * V(math.Cos(curAngle))
-		y := radius * V(math.Sin(curAngle))
-		shape = append(shape, NewPoint(x, y))
+	return Circle{
+		Center: center,
+		Radius: radius,
 	}
-	return shape.ToCircle()
 }
 
-// CalcCircleCentroidDistance 计算两个圆质心距离
-func CalcCircleCentroidDistance[V generic.SignedNumber](circle1, circle2 Circle[V]) V {
-	return CalcDistanceWithPoint(circle1.Centroid(), circle2.Centroid())
+type Circle struct {
+	Center Vector2
+	Radius float64
+}
+
+// GetCenter 获取圆心
+func (c Circle) GetCenter() Vector2 {
+	if len(c.Center) != 2 {
+		panic("vector size mismatch")
+	}
+	return c.Center
+}
+
+// GetRadius 获取半径
+func (c Circle) GetRadius() float64 {
+	return c.Radius
+}
+
+// GetDiameter 获取直径
+func (c Circle) GetDiameter() float64 {
+	return c.GetRadius() * 2
+}
+
+// GetCircumference 获取周长
+func (c Circle) GetCircumference() float64 {
+	return 2 * math.Pi * c.GetRadius()
+}
+
+// GetArea 获取面积
+func (c Circle) GetArea() float64 {
+	return math.Pi * c.GetRadius() * c.GetRadius()
+}
+
+// Contains 判断点是否在圆内
+func (c Circle) Contains(point Vector2) bool {
+	if len(point) != 2 {
+		panic("vector size mismatch")
+	}
+	return c.GetCenter().Sub(point).Length() <= c.GetRadius()
+}
+
+// Intersect 判断两个圆是否相交
+func (c Circle) Intersect(c2 Circle) bool {
+	return c.GetCenter().Sub(c2.GetCenter()).Length() <= c.GetRadius()+c2.GetRadius()
+}
+
+// GetIntersectionPoints 获取两个圆的交点
+func (c Circle) GetIntersectionPoints(c2 Circle) (Vector2, Vector2) {
+	if !c.Intersect(c2) {
+		panic("circles do not intersect")
+	}
+	d := c.GetCenter().Sub(c2.GetCenter()).Length()
+	a := (c.GetRadius()*c.GetRadius() - c2.GetRadius()*c2.GetRadius() + d*d) / (2 * d)
+	h := math.Sqrt(c.GetRadius()*c.GetRadius() - a*a)
+	p2 := c.GetCenter().Add(c2.GetCenter().Sub(c.GetCenter()).Mul(a / d))
+	x3 := p2.GetX() + h*(c.GetCenter().GetY()-c2.GetCenter().GetY())/d
+	y3 := p2.GetY() + h*(c2.GetCenter().GetX()-c.GetCenter().GetX())/d
+	x4 := p2.GetX() - h*(c.GetCenter().GetY()-c2.GetCenter().GetY())/d
+	y4 := p2.GetY() - h*(c2.GetCenter().GetX()-c.GetCenter().GetX())/d
+	return NewVector(x3, y3), NewVector(x4, y4)
 }
