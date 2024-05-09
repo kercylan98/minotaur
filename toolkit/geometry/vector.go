@@ -2,6 +2,7 @@ package geometry
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/constraints"
+	"github.com/kercylan98/minotaur/toolkit/ident"
 	"math"
 )
 
@@ -67,6 +68,16 @@ func NewVector[T constraints.Number](v ...T) Vector {
 	return vec
 }
 
+// NewVector2 创建一个二维向量
+func NewVector2[T constraints.Number](x, y T) Vector2 {
+	return NewVector(x, y)
+}
+
+// NewVector3 创建一个三维向量
+func NewVector3[T constraints.Number](x, y, z T) Vector3 {
+	return NewVector(x, y, z)
+}
+
 // Add 向量相加
 func (v Vector) Add(v2 Vector) Vector {
 	if len(v) != len(v2) {
@@ -121,16 +132,26 @@ func (v Vector) Dot(v2 Vector) float64 {
 	return result
 }
 
-// Cross 对三维向量进行叉乘
-func (v Vector) Cross(v2 Vector3) Vector {
+// Cross3D 对三维向量进行叉乘
+func (v Vector) Cross3D(v2 Vector3) Vector {
 	if len(v) != 3 || len(v2) != 3 {
 		panic("vector size mismatch")
 	}
+
 	return NewVector(
 		v[1]*v2[2]-v[2]*v2[1],
 		v[2]*v2[0]-v[0]*v2[2],
 		v[0]*v2[1]-v[1]*v2[0],
 	)
+}
+
+// Cross2D 对二维向量进行叉乘
+func (v Vector2) Cross2D(v2 Vector2) float64 {
+	if len(v) != 2 || len(v2) != 2 {
+		panic("vector size mismatch")
+	}
+
+	return v[0]*v2[1] - v[1]*v2[0]
 }
 
 // Length 向量长度
@@ -146,6 +167,11 @@ func (v Vector) Normalize() Vector {
 // Angle 向量夹角
 func (v Vector) Angle(v2 Vector) float64 {
 	return math.Acos(v.Dot(v2) / (v.Length() * v2.Length()))
+}
+
+// PolarAngle 极坐标角度，即点在极坐标系中的角度
+func (v Vector2) PolarAngle(v2 Vector2) float64 {
+	return math.Atan2(v2.GetY()-v.GetY(), v2.GetX()-v.GetX())
 }
 
 // Equal 判断两个向量是否相等
@@ -178,9 +204,14 @@ func (v Vector) IsZero() bool {
 	return true
 }
 
+// Key 返回向量的键值
+func (v Vector) Key() string {
+	return ident.GenerateOrderedUniqueIdentStringWithUInt64()
+}
+
 // IsParallel 判断两个向量是否平行
-func (v Vector) IsParallel(v2 Vector3) bool {
-	return v.Cross(v2).IsZero()
+func (v Vector3) IsParallel(v2 Vector3) bool {
+	return v.Cross3D(v2).IsZero()
 }
 
 // IsOrthogonal 判断两个向量是否垂直
@@ -225,9 +256,7 @@ func (v Vector3) GetZ() float64 {
 
 // Quadrant 获取向量所在象限
 func (v Vector2) Quadrant() int {
-	if len(v) != 2 {
-		panic("vector size mismatch")
-	}
+	AssertVector2Valid(v)
 	x, y := v.GetXY()
 	switch {
 	case x > 0 && y > 0:
@@ -241,6 +270,21 @@ func (v Vector2) Quadrant() int {
 	default:
 		return 0
 	}
+}
+
+// Distance2D 计算二维向量之间的距离
+func (v Vector2) Distance2D(v2 Vector2) float64 {
+	x1, y1 := v.GetXY()
+	x2, y2 := v2.GetXY()
+	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
+}
+
+// DistanceSquared2D 计算二维向量之间的距离的平方
+//   - 用于比较距离，避免开方运算
+func (v Vector2) DistanceSquared2D(v2 Vector2) float64 {
+	x1, y1 := v.GetXY()
+	x2, y2 := v2.GetXY()
+	return math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2)
 }
 
 // GetXY 返回该点的 x、y 坐标
