@@ -1,7 +1,7 @@
 package random_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/random"
+	"github.com/kercylan98/minotaur/toolkit/random"
 	"testing"
 )
 

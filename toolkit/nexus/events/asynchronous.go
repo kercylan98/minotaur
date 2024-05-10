@@ -126,7 +126,8 @@ func (s *asynchronous[I, T]) OnProcess(topic T, queue nexus.Queue[I, T], startAt
 				}
 			}
 
-			s.broker.Publish(topic, Synchronous[I, T](
+			// 忽略该错误，错误由于消息队列已关闭而导致，消息队列关闭时会等候所有消息处理完成，异步消息由于额外的占用计数，未执行完毕消息队列不会关闭，因此不应出现该错误
+			_ = s.broker.Publish(topic, Synchronous[I, T](
 				func(ctx context.Context) {
 					if s.callback != nil {
 						s.callback(ctx, err)

@@ -1,7 +1,7 @@
 package collection_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/sorts"
+	"github.com/kercylan98/minotaur/toolkit/collection"
 	"testing"
 )
 
@@ -19,7 +19,7 @@ func TestTopological(t *testing.T) {
 		{ID: 5, Depends: []int{}},
 	}
 
-	var sorted, err = sorts.Topological(items, func(item Item) int {
+	var sorted, err = collection.TopologicalSort(items, func(item Item) int {
 		return item.ID
 	}, func(item Item) []int {
 		return item.Depends

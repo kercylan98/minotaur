@@ -2,7 +2,7 @@ package rpcbuiltin
 
 import (
 	"github.com/kercylan98/minotaur/rpc"
-	"github.com/kercylan98/minotaur/rpc/internal/registry"
+	"github.com/kercylan98/minotaur/rpc/registry"
 	"github.com/nats-io/nats.go"
 )
 

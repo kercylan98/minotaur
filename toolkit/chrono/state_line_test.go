@@ -1,7 +1,7 @@
 package chrono_test
 
 import (
-	"github.com/kercylan98/minotaur/utils/chrono"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"testing"
 	"time"
 )

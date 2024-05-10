@@ -16,7 +16,7 @@ type Queue[I constraints.Ordered, T comparable] interface {
 	Run()
 	// Consume 消费消息
 	Consume() <-chan EventInfo[I, T]
-	// Close 关闭队列
+	// Close 关闭队列，关闭后依旧持续接收消息，待所有消息处理完毕后关闭，整个过程为同步的
 	Close()
 
 	balancer.Item[I]

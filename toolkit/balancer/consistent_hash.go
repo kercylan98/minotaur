@@ -7,6 +7,7 @@ import (
 	"sort"
 )
 
+// NewConsistentHash 创建一个一致性哈希负载均衡器
 func NewConsistentHash[I constraints.Ordered, T Item[I]]() *ConsistentHash[I, T] {
 	return &ConsistentHash[I, T]{}
 }

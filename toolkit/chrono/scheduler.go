@@ -3,10 +3,10 @@ package chrono
 import (
 	"github.com/RussellLuo/timingwheel"
 	"github.com/gorhill/cronexpr"
-"github.com/kercylan98/minotaur/toolkit/collection"
-"reflect"
-"sync"
-"time"
+	"github.com/kercylan98/minotaur/toolkit/collection"
+	"reflect"
+	"sync"
+	"time"
 )
 
 const (
@@ -145,7 +145,7 @@ func (s *Scheduler) RegisterRepeatedTask(name string, after, interval time.Durat
 //   - 当上次执行时间被错过时，将会立即执行一次
 func (s *Scheduler) RegisterDayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function interface{}, args ...interface{}) {
 	now := time.Now().Add(offset)
-	if IsMomentReached(now, lastExecuted, hour, min, sec) {
+	if lastExecuted.Before(now) && now.Sub(lastExecuted) > Day {
 		s.call(name, function, args...)
 	}
 

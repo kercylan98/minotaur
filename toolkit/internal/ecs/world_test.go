@@ -2,7 +2,7 @@ package ecs
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/super"
+	"github.com/kercylan98/minotaur/toolkit"
 	"testing"
 )
 
@@ -27,5 +27,5 @@ func TestWorld_AddComponent(t *testing.T) {
 	t.Log(QueryComponent[Position](&w, e))
 	t.Log(QueryComponent[Velocity](&w, e))
 
-	fmt.Println(string(super.MarshalIndentJSON(NewStatus(&w), "", "  ")))
+	fmt.Println(string(toolkit.MarshalIndentJSON(NewStatus(&w), "", "  ")))
 }

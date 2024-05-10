@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrNoInstance = errors.New("no instance")
+	ErrNoInstance = errors.New("no instance") // 没有实例
 )
 
 type Balancer[I constraints.Ordered, T Item[I]] interface {

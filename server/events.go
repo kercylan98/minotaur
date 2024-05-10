@@ -7,13 +7,13 @@ import (
 )
 
 type (
-	LaunchedEventHandler                  func(srv Server, ip string, t time.Time)
-	ShutdownEventHandler                  func(srv Server)
-	ConnectionOpenedEventHandler          func(srv Server, conn Conn)
-	ConnectionOpenedAfterEventHandler     func(srv Server, conn Conn)
-	ConnectionClosedEventHandler          func(srv Server, conn Conn, err error)
-	ConnectionReceivePacketEventHandler   func(srv Server, conn Conn, packet Packet)
-	ConnectionAsyncWriteErrorEventHandler func(srv Server, conn Conn, packet Packet, err error)
+	LaunchedEventHandler                  func(srv Server, ip string, t time.Time)              // 服务器启动事件
+	ShutdownEventHandler                  func(srv Server)                                      // 服务器关闭事件
+	ConnectionOpenedEventHandler          func(srv Server, conn Conn)                           // 连接打开事件
+	ConnectionOpenedAfterEventHandler     func(srv Server, conn Conn)                           // 连接打开后事件
+	ConnectionClosedEventHandler          func(srv Server, conn Conn, err error)                // 连接关闭事件
+	ConnectionReceivePacketEventHandler   func(srv Server, conn Conn, packet Packet)            // 连接接收数据包事件
+	ConnectionAsyncWriteErrorEventHandler func(srv Server, conn Conn, packet Packet, err error) // 连接异步写入数据错误事件
 )
 
 type Events interface {

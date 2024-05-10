@@ -3,7 +3,7 @@ package discovery
 import (
 	"context"
 	"github.com/kercylan98/minotaur/rpc"
-	"github.com/kercylan98/minotaur/rpc/internal/utils"
+	"github.com/kercylan98/minotaur/rpc/utils"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/nats-io/nats.go"
 	"time"

@@ -1,8 +1,8 @@
 package mask
 
 import (
+	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/ident"
-	"github.com/kercylan98/minotaur/utils/super"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -190,12 +190,12 @@ func (m *DynamicMask) StringIdentical() string {
 
 func (m *DynamicMask) MarshalJSON() ([]byte, error) {
 	slice := (*[1 << 30]uint64)(m.data)[:m.length]
-	return super.MarshalJSONE(slice)
+	return toolkit.MarshalJSONE(slice)
 }
 
 func (m *DynamicMask) UnmarshalJSON(data []byte) error {
 	var slice []uint64
-	err := super.UnmarshalJSON(data, &slice)
+	err := toolkit.UnmarshalJSONE(data, &slice)
 	if err != nil {
 		return err
 	}

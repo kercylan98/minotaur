@@ -1,6 +1,6 @@
 package ecs
 
-import "github.com/kercylan98/minotaur/utils/collection/listings"
+import "github.com/kercylan98/minotaur/toolkit/collection/listings"
 
 type entityPool struct {
 	entities  *listings.PagedSlice[EntityId] // 所有的实体

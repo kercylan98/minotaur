@@ -15,12 +15,12 @@ func NewTypeFixedMultistage[T constraints.Ordered, HandleFunc any]() *TypeFixedM
 	return r
 }
 
-// TypeFixedMultistageBind 多级分类路由绑定函数
+// TypeFixedMultistageBind 多级分类路由绑定函数，该路由器与 Multistage 的区别在于仅支持固定类型的路由
 type TypeFixedMultistageBind[HandleFunc any] func(HandleFunc)
 
 // Bind 将处理函数绑定到预设的路由中
-func (slf TypeFixedMultistageBind[HandleFunc]) Bind(handleFunc HandleFunc) {
-	slf(handleFunc)
+func (b TypeFixedMultistageBind[HandleFunc]) Bind(handleFunc HandleFunc) {
+	b(handleFunc)
 }
 
 // TypeFixedMultistage 支持多级分类的路由器

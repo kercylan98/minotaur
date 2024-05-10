@@ -32,11 +32,11 @@ const (
 )
 
 const (
-	levelNone  Level = slog.LevelDebug - 1
-	LevelDebug Level = slog.LevelDebug
-	LevelInfo  Level = slog.LevelInfo
-	LevelWarn  Level = slog.LevelWarn
-	LevelError Level = slog.LevelError
+	levelNone  = slog.LevelDebug - 1
+	LevelDebug = slog.LevelDebug
+	LevelInfo  = slog.LevelInfo
+	LevelWarn  = slog.LevelWarn
+	LevelError = slog.LevelError
 )
 
 var levels = []Level{LevelDebug, LevelInfo, LevelWarn, LevelError}

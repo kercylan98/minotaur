@@ -2,12 +2,12 @@ package ranking
 
 import (
 	"encoding/json"
-	"github.com/kercylan98/minotaur/utils/collection/mappings"
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 )
 
 // NewBinarySearch 创建一个基于内存的二分查找排行榜
-func NewBinarySearch[CompetitorID comparable, Score generic.Ordered](options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score] {
+func NewBinarySearch[CompetitorID comparable, Score constraints.Ordered](options ...BinarySearchOption[CompetitorID, Score]) *BinarySearch[CompetitorID, Score] {
 	r := &BinarySearch[CompetitorID, Score]{
 		binarySearchEvent: new(binarySearchEvent[CompetitorID, Score]),
 		rankCount:         100,
@@ -19,7 +19,7 @@ func NewBinarySearch[CompetitorID comparable, Score generic.Ordered](options ...
 	return r
 }
 
-type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
+type BinarySearch[CompetitorID comparable, Score constraints.Ordered] struct {
 	*binarySearchEvent[CompetitorID, Score]
 	asc         bool
 	rankCount   int
@@ -30,7 +30,7 @@ type BinarySearch[CompetitorID comparable, Score generic.Ordered] struct {
 	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }
 
-type scoreItem[CompetitorID comparable, Score generic.Ordered] struct {
+type scoreItem[CompetitorID comparable, Score constraints.Ordered] struct {
 	CompetitorId CompetitorID `json:"competitor_id,omitempty"`
 	Score        Score        `json:"score,omitempty"`
 }

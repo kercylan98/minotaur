@@ -1,13 +1,13 @@
 package ranking
 
-import "github.com/kercylan98/minotaur/utils/generic"
+import "github.com/kercylan98/minotaur/toolkit/constraints"
 
 type (
-	BinarySearchRankChangeEventHandle[CompetitorID comparable, Score generic.Ordered]      func(ranking *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
-	BinarySearchRankClearBeforeEventHandle[CompetitorID comparable, Score generic.Ordered] func(ranking *BinarySearch[CompetitorID, Score])
+	BinarySearchRankChangeEventHandle[CompetitorID comparable, Score constraints.Ordered]      func(ranking *BinarySearch[CompetitorID, Score], competitorId CompetitorID, oldRank, newRank int, oldScore, newScore Score)
+	BinarySearchRankClearBeforeEventHandle[CompetitorID comparable, Score constraints.Ordered] func(ranking *BinarySearch[CompetitorID, Score])
 )
 
-type binarySearchEvent[CompetitorID comparable, Score generic.Ordered] struct {
+type binarySearchEvent[CompetitorID comparable, Score constraints.Ordered] struct {
 	rankChangeEventHandles      []BinarySearchRankChangeEventHandle[CompetitorID, Score]
 	rankClearBeforeEventHandles []BinarySearchRankClearBeforeEventHandle[CompetitorID, Score]
 }

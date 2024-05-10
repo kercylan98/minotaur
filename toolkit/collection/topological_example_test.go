@@ -2,10 +2,10 @@ package collection_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/sorts"
+	"github.com/kercylan98/minotaur/toolkit/collection"
 )
 
-func ExampleTopological() {
+func ExampleTopologicalSort() {
 	type Item struct {
 		ID      int
 		Depends []int
@@ -19,7 +19,7 @@ func ExampleTopological() {
 		{ID: 5, Depends: []int{}},
 	}
 
-	var sorted, err = sorts.Topological(items, func(item Item) int {
+	var sorted, err = collection.TopologicalSort(items, func(item Item) int {
 		return item.ID
 	}, func(item Item) []int {
 		return item.Depends

@@ -89,10 +89,10 @@ func (n *NonBlockingRW[I, T]) Run() {
 		if n.buf.IsEmpty() {
 			// 当队列为空时检查是否需要关闭队列，如果不需要关闭则等待新消息
 			if atomic.LoadInt32(&n.status) >= NonBlockingRWStatusClosing && n.total == 0 {
-				n.cond.L.Unlock()
 				atomic.StoreInt32(&n.status, NonBlockingRWStatusClosed)
 				close(n.c)
 				close(n.cs)
+				n.cond.L.Unlock()
 				return
 			}
 			n.cond.Wait()
@@ -154,11 +154,11 @@ func (n *NonBlockingRW[I, T]) Publish(topic T, event nexus.Event[I, T]) error {
 				} else {
 					delete(n.topics, topic)
 				}
+				n.cond.L.Unlock()
 				if finisher != nil {
 					finisher(topic, curr == 0)
 				}
 				n.cond.Signal()
-				n.cond.L.Unlock()
 			}()
 
 			handler(topic, func() {

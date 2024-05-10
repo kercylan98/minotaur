@@ -2,7 +2,7 @@ package listings_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/utils/collection/listings"
+	"github.com/kercylan98/minotaur/toolkit/collection/listings"
 	"testing"
 )
 

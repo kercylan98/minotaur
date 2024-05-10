@@ -21,8 +21,8 @@ func NewMultistage[HandleFunc any](options ...MultistageOption[HandleFunc]) *Mul
 type MultistageBind[HandleFunc any] func(HandleFunc)
 
 // Bind 将处理函数绑定到预设的路由中
-func (slf MultistageBind[HandleFunc]) Bind(handleFunc HandleFunc) {
-	slf(handleFunc)
+func (b MultistageBind[HandleFunc]) Bind(handleFunc HandleFunc) {
+	b(handleFunc)
 }
 
 // Multistage 支持多级分类的路由器

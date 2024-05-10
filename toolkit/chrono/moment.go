@@ -8,74 +8,25 @@ import (
 
 var zero = time.Time{}
 
-// IsMomentReached 检查指定时刻是否已到达且未发生过
-//   - now: 当前时间
-//   - last: 上次发生的时间
-//   - hour: 要检查的时刻的小时数
-//   - min: 要检查的时刻的分钟数
-//   - sec: 要检查的时刻的秒数
-func IsMomentReached(now time.Time, last time.Time, hour, min, sec int) bool {
-	moment := time.Date(last.Year(), last.Month(), last.Day(), hour, min, sec, 0, time.Local)
-	if !moment.Before(now) {
-		return false
-	} else if moment.After(last) {
-		return true
-	}
-
-	// 如果要检查的时刻在上次发生的时间和当前时间之间，并且已经过了一天，说明已经发生
-	nextDayMoment := moment.AddDate(0, 0, 1)
-	return !nextDayMoment.After(now)
-}
-
 // GetNextMoment 获取下一个指定时刻发生的时间。
 func GetNextMoment(now time.Time, hour, min, sec int) time.Time {
 	moment := time.Date(now.Year(), now.Month(), now.Day(), hour, min, sec, 0, time.Local)
 	// 如果要检查的时刻已经过了，则返回明天的这个时刻
-	if moment.Before(now) {
+	if now.After(moment) || now.Equal(moment) {
 		moment = moment.AddDate(0, 0, 1)
 	}
 	return moment
 }
 
-// IsMomentInDays 检查指定时刻是否在给定的天数内发生。
-//   - now: 当前时间
-//   - hour: 要检查的时刻的小时数
-//   - min: 要检查的时刻的分钟数
-//   - sec: 要检查的时刻的秒数
-//   - days: 表示要偏移的天数。正数表示未来，负数表示过去，0 即今天
-func IsMomentInDays(now time.Time, hour, min, sec, days int) bool {
-	offsetTime := now.AddDate(0, 0, days)
-	moment := time.Date(offsetTime.Year(), offsetTime.Month(), offsetTime.Day(), hour, min, sec, 0, time.Local)
-	return now.Before(moment.AddDate(0, 0, 1)) && now.After(moment)
-}
-
-// IsMomentYesterday 检查指定时刻是否在昨天发生
-func IsMomentYesterday(now time.Time, hour, min, sec int) bool {
-	return IsMomentInDays(now, hour, min, sec, -1)
-}
-
-// IsMomentToday 检查指定时刻是否在今天发生
-func IsMomentToday(now time.Time, hour, min, sec int) bool {
-	return IsMomentInDays(now, hour, min, sec, 0)
-}
-
-// IsMomentTomorrow 检查指定时刻是否在明天发生
-func IsMomentTomorrow(now time.Time, hour, min, sec int) bool {
-	return IsMomentInDays(now, hour, min, sec, 1)
-}
-
 // IsMomentPassed 检查指定时刻是否已经过去
 func IsMomentPassed(now time.Time, hour, min, sec int) bool {
-	// 构建要检查的时刻
 	moment := time.Date(now.Year(), now.Month(), now.Day(), hour, min, sec, 0, time.Local)
 	return now.After(moment)
 }
 
 // IsMomentFuture 检查指定时刻是否在未来
 func IsMomentFuture(now time.Time, hour, min, sec int) bool {
-	// 构建要检查的时刻
-	moment := time.Date(now.Year(), now.Month(), now.Day(), hour, min, sec, 0, time.Local)
-	return now.Before(moment)
+	return !IsMomentPassed(now, hour, min, sec)
 }
 
 // GetStartOfDay 获取指定时间的当天第一刻，即 00:00:00

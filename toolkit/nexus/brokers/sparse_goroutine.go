@@ -126,7 +126,7 @@ func (s *SparseGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) (err e
 	s.queueRW.RLock()
 	if atomic.LoadInt32(&s.state) > sparseGoroutineStatusClosing {
 		s.queueRW.RUnlock()
-		return fmt.Errorf("broker closing or closed")
+		return fmt.Errorf("broker closed")
 	}
 
 	var next nexus.Queue[I, T]

@@ -1,7 +1,7 @@
 package ecs
 
 import (
-	"github.com/kercylan98/minotaur/utils/generic"
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"testing"
 )
 
@@ -272,7 +272,7 @@ type Component254 struct{ X int }
 type Component255 struct{ X int }
 type Component256 struct{ X int }
 
-func ExceptNum[V generic.Number](t *testing.T, got, expect V) {
+func ExceptNum[V constraints.Number](t *testing.T, got, expect V) {
 	if got != expect {
 		t.Fatalf("got %v, expect %v", got, expect)
 	}

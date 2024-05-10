@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/panjf2000/ants/v2"
 	"net"
 )
@@ -20,6 +21,8 @@ type Controller interface {
 	GetAnts() *ants.Pool
 	// OnConnectionAsyncWriteError 注册连接异步写入数据错误事件
 	OnConnectionAsyncWriteError(conn Conn, packet Packet, err error)
+	// GetServerLogger 获取服务器日志记录器
+	GetServerLogger() *log.Logger
 }
 
 type controller struct {
@@ -74,4 +77,8 @@ func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
 			s.events.onConnectionReceivePacket(c, packet)
 		})
 	})
+}
+
+func (s *controller) GetServerLogger() *log.Logger {
+	return s.server.Options.GetLogger()
 }

@@ -73,7 +73,8 @@ func (w *gNetCore) OnRun() (err error) {
 	default:
 		return fmt.Errorf("unsupported schema: %s", w.schema)
 	}
-	err = gnet.Run(w.handler, addr)
+
+	err = gnet.Run(w.handler, addr, gnet.WithLogger(&gNetLogger{w.controller}))
 	return
 }
 
