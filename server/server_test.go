@@ -1,9 +1,7 @@
 package server_test
 
 import (
-	"context"
 	"fmt"
-	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/server"
 	"github.com/kercylan98/minotaur/server/network"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
@@ -16,26 +14,18 @@ import (
 func TestNewServer(t *testing.T) {
 	srv := server.NewServer(network.WebSocket(":9999"),
 		server.NewOptions().
+			WithZombieConnectionDeadline(time.Second*5).
 			WithLifeCycleLimit(chrono.Day*3).
 			WithLogger(log.GetLogger()).
 			WithEventOptions(nexus.NewEventOptions().WithDeadLockThreshold(time.Second*5, func(stack []byte) {
 				t.Log("dead lock")
 				fmt.Println(string(stack))
-			})),
+			})).
+			WithIndependentGoroutineBroker(),
 	)
 
 	srv.RegisterConnectionOpenedEvent(func(srv server.Server, conn server.Conn) {
-		if err := conn.WritePacket(server.NewPacket([]byte("hello")).SetContext(ws.OpText)); err != nil {
-			t.Error(err)
-		}
 
-		conn.WriteWebSocketText([]byte("hello text"))
-
-		srv.PublishAsyncMessage("123", func(ctx context.Context) error {
-			return nil
-		}, func(ctx context.Context, err error) {
-			time.Sleep(time.Second * 6)
-		})
 	})
 
 	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {

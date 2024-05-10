@@ -169,10 +169,18 @@ func (c *conn) initWriteQueue() {
 
 func (c *conn) SetQueue(queue string) {
 	c.queue.Store(&queue)
+
+	if binder := c.server.getIndependentGoroutineBinder(); binder != nil {
+		binder(queue)
+	}
 }
 
 func (c *conn) DelQueue() {
-	c.queue.Store(nil)
+	if queue := c.queue.Swap(nil); queue != nil {
+		if unBinder := c.server.getIndependentGoroutineUnBinder(); unBinder != nil {
+			unBinder(*queue)
+		}
+	}
 }
 
 func (c *conn) GetQueue() string {

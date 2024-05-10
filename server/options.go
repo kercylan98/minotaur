@@ -3,6 +3,8 @@ package server
 import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
+	"github.com/kercylan98/minotaur/toolkit/nexus/brokers"
+	"github.com/kercylan98/minotaur/toolkit/nexus/queues"
 	"os"
 	"runtime"
 	"sync"
@@ -14,7 +16,7 @@ func NewOptions() *Options {
 }
 
 func DefaultOptions() *Options {
-	return &Options{
+	opt := &Options{
 		messageChannelSize:       1024 * 4,
 		messageBufferInitialSize: 1024,
 		lifeCycleLimit:           0,
@@ -22,20 +24,25 @@ func DefaultOptions() *Options {
 		sparseGoroutineNum:       runtime.NumCPU(),
 		eventOptions:             nexus.NewEventOptions().WithLowHandlerThreshold(0, nil),
 	}
+	return opt
 }
 
 type Options struct {
-	server                   *server
-	rw                       sync.RWMutex
-	messageChannelSize       int                 // 服务器消息处理管道大小
-	messageBufferInitialSize int                 // 服务器消息写入缓冲区初始化大小
-	lifeCycleLimit           time.Duration       // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
-	logger                   *log.Logger         // 日志记录器
-	debug                    bool                // Debug 模式
-	syncLowMessageDuration   time.Duration       // 同步慢消息时间
-	asyncLowMessageDuration  time.Duration       // 异步慢消息时间
-	sparseGoroutineNum       int                 // 稀疏 goroutine 数量
-	eventOptions             *nexus.EventOptions // 事件选项
+	server                             *server
+	rw                                 sync.RWMutex
+	messageChannelSize                 int                                          // 服务器消息处理管道大小
+	messageBufferInitialSize           int                                          // 服务器消息写入缓冲区初始化大小
+	lifeCycleLimit                     time.Duration                                // 服务器生命周期上限，在服务器启动后达到生命周期上限将关闭服务器
+	logger                             *log.Logger                                  // 日志记录器
+	debug                              bool                                         // Debug 模式
+	syncLowMessageDuration             time.Duration                                // 同步慢消息时间
+	asyncLowMessageDuration            time.Duration                                // 异步慢消息时间
+	sparseGoroutineNum                 int                                          // 稀疏 goroutine 数量
+	eventOptions                       *nexus.EventOptions                          // 事件选项
+	independentGoroutineBroker         nexus.Broker[int, string]                    // 独立 goroutine 事件处理器
+	independentGoroutineBrokerBinder   brokers.IndependentGoroutineBinder[string]   // 独立 goroutine 事件处理器绑定器
+	independentGoroutineBrokerUnBinder brokers.IndependentGoroutineUnBinder[string] // 独立 goroutine 事件处理器解绑器
+	zombieConnectionDeadline           time.Duration                                // 僵尸连接超时时间
 }
 
 func (opt *Options) init(srv *server) *Options {
@@ -58,6 +65,10 @@ func (opt *Options) Apply(options ...*Options) {
 		opt.asyncLowMessageDuration = option.asyncLowMessageDuration
 		opt.sparseGoroutineNum = option.sparseGoroutineNum
 		opt.eventOptions = option.eventOptions
+		opt.independentGoroutineBroker = option.independentGoroutineBroker
+		opt.independentGoroutineBrokerBinder = option.independentGoroutineBrokerBinder
+		opt.independentGoroutineBrokerUnBinder = option.independentGoroutineBrokerUnBinder
+		opt.zombieConnectionDeadline = option.zombieConnectionDeadline
 
 		option.rw.RUnlock()
 	}
@@ -68,6 +79,46 @@ func (opt *Options) Apply(options ...*Options) {
 
 func (opt *Options) active() {
 	opt.server.notify.lifeCycleTime <- opt.GetLifeCycleLimit()
+}
+
+// WithZombieConnectionDeadline 设置僵尸连接超时时间，当连接超过该时间未收到任何消息时，将关闭连接
+func (opt *Options) WithZombieConnectionDeadline(deadline time.Duration) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.zombieConnectionDeadline = deadline
+	})
+}
+
+func (opt *Options) GetZombieConnectionDeadline() time.Duration {
+	return getOptionsValue(opt, func(opt *Options) time.Duration {
+		return opt.zombieConnectionDeadline
+	})
+}
+
+// WithIndependentGoroutineBroker 设置使用 brokers.IndependentGoroutine 作为消息处理器
+//   - 该函数不支持运行时设置
+func (opt *Options) WithIndependentGoroutineBroker() *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.independentGoroutineBroker, opt.independentGoroutineBrokerBinder, opt.independentGoroutineBrokerUnBinder = brokers.NewIndependentGoroutine[int, string](
+			func(index int) nexus.Queue[int, string] {
+				return queues.NewNonBlockingRW[int, string](index, opt.GetServerMessageChannelSize(), opt.GetServerMessageBufferInitialSize())
+			},
+			opt.server.onEventProcess,
+		)
+	})
+}
+
+// getIndependentGoroutineBinder 获取独立 goroutine 事件处理器绑定器
+func (opt *Options) getIndependentGoroutineBinder() brokers.IndependentGoroutineBinder[string] {
+	return getOptionsValue(opt, func(opt *Options) brokers.IndependentGoroutineBinder[string] {
+		return opt.independentGoroutineBrokerBinder
+	})
+}
+
+// getIndependentGoroutineUnBinder 获取独立 goroutine 事件处理器解绑器
+func (opt *Options) getIndependentGoroutineUnBinder() brokers.IndependentGoroutineUnBinder[string] {
+	return getOptionsValue(opt, func(opt *Options) brokers.IndependentGoroutineUnBinder[string] {
+		return opt.independentGoroutineBrokerUnBinder
+	})
 }
 
 // WithEventOptions 设置服务器事件选项

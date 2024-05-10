@@ -1,6 +1,7 @@
 package brokers
 
 import (
+	"context"
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/kercylan98/minotaur/toolkit/nexus"
@@ -191,5 +192,6 @@ func (i *IndependentGoroutine[I, T]) Publish(topic T, event nexus.Event[I, T]) e
 		i.queueRW.Unlock()
 	}
 
+	event.OnInitialize(context.Background(), i)
 	return queue.Publish(topic, event)
 }

@@ -2,9 +2,14 @@ package server
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/panjf2000/ants/v2"
 	"net"
+)
+
+const (
+	zombieConnTimeoutTask = "zct|t" // 僵尸连接超时任务
 )
 
 // Controller 控制器是暴露 Server 对用户非公开的接口信息，适用于功能性的拓展
@@ -23,6 +28,8 @@ type Controller interface {
 	OnConnectionAsyncWriteError(conn Conn, packet Packet, err error)
 	// GetServerLogger 获取服务器日志记录器
 	GetServerLogger() *log.Logger
+	// GetScheduler 获取调度器
+	GetScheduler() *chrono.Scheduler
 }
 
 type controller struct {
@@ -45,6 +52,10 @@ func (s *controller) GetAnts() *ants.Pool {
 }
 
 func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter, callback func(conn Conn, descriptor *ConnDescriptor)) {
+	s.GetScheduler().RegisterAfterTask(zombieConnTimeoutTask+conn.RemoteAddr().String(), s.GetZombieConnectionDeadline(), func() {
+		_ = conn.Close()
+	})
+
 	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c := newConn(s.server, conn, writer)
 		s.server.connections[conn] = c
@@ -56,6 +67,8 @@ func (s *controller) RegisterConnection(conn net.Conn, writer ConnWriter, callba
 }
 
 func (s *controller) EliminateConnection(conn net.Conn, err error) {
+	s.GetScheduler().UnregisterTask(zombieConnTimeoutTask + conn.RemoteAddr().String())
+
 	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c, exist := s.server.connections[conn]
 		if !exist {
@@ -63,11 +76,16 @@ func (s *controller) EliminateConnection(conn net.Conn, err error) {
 		}
 		delete(s.server.connections, conn)
 		s.server.events.onConnectionClosed(c, err)
+		c.DelQueue()
 		c.Close()
 	})
 }
 
 func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
+	s.GetScheduler().RegisterAfterTask(zombieConnTimeoutTask+conn.RemoteAddr().String(), s.GetZombieConnectionDeadline(), func() {
+		_ = conn.Close()
+	})
+
 	s.server.PublishSyncMessage(s.getSysQueue(), func(ctx context.Context) {
 		c, exist := s.server.connections[conn]
 		if !exist {
@@ -81,4 +99,8 @@ func (s *controller) ReactPacket(conn net.Conn, packet Packet) {
 
 func (s *controller) GetServerLogger() *log.Logger {
 	return s.server.Options.GetLogger()
+}
+
+func (s *controller) GetScheduler() *chrono.Scheduler {
+	return s.server.scheduler
 }

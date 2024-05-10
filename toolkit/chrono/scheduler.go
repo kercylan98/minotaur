@@ -132,7 +132,7 @@ func (s *Scheduler) RegisterImmediateCronTask(name, expression string, function 
 
 // RegisterAfterTask 注册一个在特定时间后执行一次的任务
 func (s *Scheduler) RegisterAfterTask(name string, after time.Duration, function interface{}, args ...interface{}) {
-	s.task(name, after, s.pool.tick, nil, 1, function, args...)
+	s.task(name, after, s.tick, nil, 1, function, args...)
 }
 
 // RegisterRepeatedTask 注册一个在特定时间后反复执行的任务
@@ -180,12 +180,9 @@ func (s *Scheduler) task(name string, after, interval time.Duration, expr *crone
 		scheduler: s,
 		expr:      expr,
 	}
-	var executor func(name string, caller func())
-	if s.pool != nil {
-		executor = s.pool.getExecutor()
-	}
 	s.lock.Lock()
-	if s.executor != nil {
+	var executor = s.executor
+	if s.pool != nil {
 		executor = s.pool.getExecutor()
 	}
 

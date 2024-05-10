@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
@@ -59,6 +60,7 @@ type server struct {
 	cancel      context.CancelFunc        // 服务器全局上下文取消函数
 	network     Network                   // 服务器使用的网络接口
 	broker      nexus.Broker[int, string] // 服务器使用的消息队列
+	scheduler   *chrono.Scheduler         // 服务器使用的定时器
 }
 
 func NewServer(network Network, options ...*Options) Server {
@@ -72,14 +74,25 @@ func NewServer(network Network, options ...*Options) Server {
 	srv.controller = new(controller).init(srv)
 	srv.events = new(events).init(srv)
 	srv.state = new(State).init(srv)
+	srv.scheduler = chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize)
+	srv.scheduler.SetExecutor(func(name string, caller func()) {
+		srv.PublishSystemSyncMessage(func(ctx context.Context) {
+			caller()
+		})
+	})
 	srv.Options.init(srv).Apply(options...)
-	srv.broker = brokers.NewSparseGoroutine(
-		srv.Options.GetSparseGoroutineNum(),
-		func(index int) nexus.Queue[int, string] {
-			return queues.NewNonBlockingRW[int, string](index, srv.Options.GetServerMessageChannelSize(), srv.Options.GetServerMessageBufferInitialSize())
-		},
-		srv.onEventProcess,
-	)
+	srv.Options.getManyOptions(func(opt *Options) {
+		srv.broker = opt.independentGoroutineBroker
+	})
+	if srv.broker == nil {
+		srv.broker = brokers.NewSparseGoroutine(
+			srv.Options.GetSparseGoroutineNum(),
+			func(index int) nexus.Queue[int, string] {
+				return queues.NewNonBlockingRW[int, string](index, srv.Options.GetServerMessageChannelSize(), srv.Options.GetServerMessageBufferInitialSize())
+			},
+			srv.onEventProcess,
+		)
+	}
 	antsPool, err := ants.NewPool(ants.DefaultAntsPoolSize, ants.WithOptions(ants.Options{
 		ExpiryDuration: 10 * time.Second,
 		Nonblocking:    true,
@@ -100,6 +113,9 @@ func (s *server) Run() (err error) {
 	if err = s.network.OnSetup(s.ctx, s); err != nil {
 		return
 	}
+	if binder := s.getIndependentGoroutineBinder(); binder != nil {
+		binder(s.getSysQueue())
+	}
 
 	ip, _ := network.IP()
 	s.state.onLaunched(ip.String(), time.Now())
@@ -107,7 +123,12 @@ func (s *server) Run() (err error) {
 		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
 		opt.logger.Info("Minotaur Server", log.String("", "RunningInfo"), log.String("network", reflect.TypeOf(s.network).String()), log.String("listen", fmt.Sprintf("%s://%s%s", s.network.Schema(), ip.String(), s.network.Address())))
 		opt.logger.Info("Minotaur Server", log.String("", "============================================================================"))
-		opt.logger.Info("Minotaur Server", log.String("", reflect.TypeOf(s.broker).String()), log.Int("num", opt.sparseGoroutineNum))
+		switch s.broker.(type) {
+		case *brokers.SparseGoroutine[int, string]:
+			opt.logger.Info("Minotaur Server", log.String("", reflect.TypeOf(s.broker).String()), log.Int("num", opt.sparseGoroutineNum))
+		default:
+			opt.logger.Info("Minotaur Server", log.String("", reflect.TypeOf(s.broker).String()))
+		}
 	})
 	go func(s *server) {
 		if err = s.network.OnRun(); err != nil {
@@ -130,6 +151,9 @@ func (s *server) Shutdown() (err error) {
 	s.events.onShutdown()
 	DisableHttpPProf()
 	err = s.network.OnShutdown()
+	if unBinder := s.getIndependentGoroutineUnBinder(); unBinder != nil {
+		unBinder(s.getSysQueue())
+	}
 	s.broker.Close()
 	return
 }
