@@ -7,13 +7,9 @@ import (
 
 func TestQueryComponent(t *testing.T) {
 
-	var g = &graph{
-		next: make(map[ComponentId]*graph),
-		prev: make(map[ComponentId]*graph),
-	}
+	var graph graphNode
 
-	g.generate([]ComponentId{1, 2, 3}, 0)
+	graph.AddArchetype(1, 2, 3)
 
-	g.Print()
-	fmt.Println()
+	fmt.Println(graph)
 }

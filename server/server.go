@@ -155,6 +155,7 @@ func (s *server) Shutdown() (err error) {
 		unBinder(s.getSysQueue())
 	}
 	s.broker.Close()
+	s.scheduler.Release()
 	return
 }
 

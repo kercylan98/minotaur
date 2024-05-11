@@ -26,21 +26,21 @@ func (a *Application) run() {
 			return true
 		}).
 		next("onPreload", func(service BasicService) bool {
-			service.OnPreload(a)
+			service.OnPreload()
 			return true
 		}).
 		next("onMount", func(service BasicService) bool {
-			service.OnMount(a)
+			service.OnMount()
 			return true
 		}).
 		next("onStart", func(service BasicService) bool {
-			service.OnStart(a)
+			service.OnStart()
 			return true
 		}).
 		next("onBlock", func(service BasicService) bool {
 			block, ok := service.(BlockService)
 			if ok {
-				block.OnBlock(a)
+				block.OnBlock()
 			}
 			return ok
 		}).

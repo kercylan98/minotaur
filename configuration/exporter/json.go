@@ -8,8 +8,10 @@ import (
 )
 
 // NewJSON 创建一个Json导出器
-func NewJSON() *JSON {
-	return &JSON{}
+func NewJSON(writePath string) *JSON {
+	return &JSON{
+		writePath: writePath,
+	}
 }
 
 type JSON struct {
@@ -27,6 +29,13 @@ func (j *JSON) Export(config raw.Config, data any) error {
 	}
 
 	var writer = os.Stdout
-	_, err = buffer.WriteTo(writer)
+	if j.writePath != "" {
+		writer, err = os.OpenFile(j.writePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = writer.Write(buffer.Bytes())
 	return err
 }

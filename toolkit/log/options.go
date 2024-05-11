@@ -42,29 +42,29 @@ func DefaultOptions() *Options {
 			AttrTypeMessage: NewColor(ColorFgWhite, ColorBold),
 			AttrTypeTrace:   NewColor(ColorFgWhite, ColorFaint),
 		},
+		prefixColor: NewColor(ColorFgHiWhite),
 	}
 }
 
 type Options struct {
-	rw             sync.RWMutex
-	level          Level // 日志级别
-	timeLayout     string
-	keyText        map[AttrType]string // 特定属性类型的前缀字符串
-	keyColor       map[AttrType]*Color // 特定属性类型的前缀颜色
-	delimiterText  map[AttrType]string // 特定属性类型的分隔符字符串
-	delimiterColor map[AttrType]*Color // 特定属性类型的分隔符颜色
-	valueColor     map[AttrType]*Color // 特定属性类型的值颜色
-	levelText      map[Level]string    // 特定级别的字符串
-	levelColor     map[Level]*Color    // 特定级别的颜色
-
-	disabledColor bool // 是否禁用颜色
-
-	callerSkip int // 调用者跳过数量
-
+	rw               sync.RWMutex
+	level            Level // 日志级别
+	timeLayout       string
+	keyText          map[AttrType]string                                   // 特定属性类型的前缀字符串
+	keyColor         map[AttrType]*Color                                   // 特定属性类型的前缀颜色
+	delimiterText    map[AttrType]string                                   // 特定属性类型的分隔符字符串
+	delimiterColor   map[AttrType]*Color                                   // 特定属性类型的分隔符颜色
+	valueColor       map[AttrType]*Color                                   // 特定属性类型的值颜色
+	levelText        map[Level]string                                      // 特定级别的字符串
+	levelColor       map[Level]*Color                                      // 特定级别的颜色
+	disabledColor    bool                                                  // 是否禁用颜色
+	callerSkip       int                                                   // 调用者跳过数量
 	disabledCaller   bool                                                  // 是否禁用调用者
 	callerFormatter  func(file string, line int) (repFile, repLine string) // 调用者格式化函数
 	stackTrace       map[Level]bool                                        // 是否开启特定级别的堆栈追踪
 	stackTraceBeauty map[Level]bool                                        // 是否开启特定级别的堆栈追踪美化
+	prefix           string                                                // 日志前缀
+	prefixColor      *Color                                                // 日志前缀颜色
 }
 
 func (opt *Options) Apply(opts ...*Options) *Options {
@@ -102,9 +102,41 @@ func (opt *Options) Apply(opts ...*Options) *Options {
 			opt.callerFormatter = o.callerFormatter
 			opt.stackTrace = collection.CloneMap(o.stackTrace)
 			opt.stackTraceBeauty = collection.CloneMap(o.stackTraceBeauty)
+			opt.prefix = o.prefix
+			opt.prefixColor = o.prefixColor.clone()
 		})
 	}
 	return opt
+}
+
+// WithPrefix 设置日志前缀
+//   - 该函数支持运行时设置
+func (opt *Options) WithPrefix(prefix string) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.prefix = prefix
+	})
+}
+
+// GetPrefix 获取日志前缀
+func (opt *Options) GetPrefix() string {
+	return getOptionsValue(opt, func(opt *Options) string {
+		return opt.prefix
+	})
+}
+
+// WithPrefixColor 设置日志前缀颜色
+//   - 该函数支持运行时设置
+func (opt *Options) WithPrefixColor(color *Color) *Options {
+	return opt.modifyOptionsValue(func(opt *Options) {
+		opt.prefixColor = color
+	})
+}
+
+// GetPrefixColor 获取日志前缀颜色
+func (opt *Options) GetPrefixColor() *Color {
+	return getOptionsValue(opt, func(opt *Options) *Color {
+		return opt.prefixColor
+	})
 }
 
 // WithStackTraceBeauty 设置堆栈追踪美化

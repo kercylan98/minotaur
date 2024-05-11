@@ -1,66 +1,51 @@
 package ecs
 
 import (
-	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/mask"
-	"strings"
 )
 
-type graph struct {
-	mask mask.DynamicMask
+type graphNode struct {
+	mask         mask.DynamicMask
+	componentIds []ComponentId
 
-	next map[ComponentId]*graph
-	prev map[ComponentId]*graph
+	children map[ComponentId]*graphNode
+	parents  map[ComponentId]*graphNode
 }
 
-func (g *graph) generate(ids []ComponentId, exclude ComponentId) {
-	if len(ids) == 0 {
-		return
-	}
-
-	// 模拟一下这个函数，当 ids = [1, 2, 3] 时，exclude = 0
-	// mask: 0 [next: 1, 2, 3]
-	//   - mask: 1 [next: 2]
-	//       - mask: 1, 2 [next: 3]
-	//           - mask: 1, 2, 3 [next: ]
-	//   - mask: 2 [next: 1]
-	//       - mask: 2, 1 [next: 3]
-	//           - mask: 2, 1, 3 [next: ]
-	//   - mask: 3 [next: 1]
-	//       - mask: 3, 1 [next: 2]
-	//           - mask: 3, 1, 2 [next: ]
-
-	for _, id := range ids {
-		if id == exclude {
-			continue
+func (g *graphNode) AddArchetype(componentIds ...ComponentId) {
+	var recursive func(node *graphNode, componentIds []ComponentId)
+	recursive = func(node *graphNode, componentIds []ComponentId) {
+		if len(componentIds) == 0 {
+			return
 		}
 
-		nextGraph := &graph{
-			next: make(map[ComponentId]*graph),
-			prev: make(map[ComponentId]*graph),
+		if node.children == nil {
+			node.children = make(map[ComponentId]*graphNode)
+			node.parents = make(map[ComponentId]*graphNode)
 		}
-		nextGraph.mask = g.mask.Clone()
-		nextGraph.mask.Set(id)
 
-		// Add next graph to current graph's next
-		g.next[id] = nextGraph
-		// Add current graph to next graph's prev
-		nextGraph.prev[id] = g
+		curr := node.mask
+		for i := 0; i < len(componentIds); i++ {
+			node.mask.Set(componentIds[i])
+			node.componentIds = append(node.componentIds, componentIds[i])
 
-		// Recursively generate graphs for remaining ids
-		nextGraph.generate(ids, id)
+			if child, exist := node.children[componentIds[i]]; exist {
+				// 忽略当前节点，但是要包含前后节点
+				recursive(child, append(componentIds[:i], componentIds[i+1:]...))
+			} else {
+				child = &graphNode{
+					mask:     curr,
+					children: map[ComponentId]*graphNode{},
+					parents:  map[ComponentId]*graphNode{},
+				}
+				node.children[componentIds[i]] = child
+				child.parents = map[ComponentId]*graphNode{
+					componentIds[i]: node,
+				}
+				recursive(child, append(componentIds[:i], componentIds[i+1:]...))
+			}
+		}
 	}
 
-}
-
-func (g *graph) Print() {
-	var printGraph func(g *graph, depth int)
-	printGraph = func(g *graph, depth int) {
-		indent := strings.Repeat("  ", depth)
-		for id, next := range g.next {
-			fmt.Printf("%s%d ->\n", indent, id)
-			printGraph(next, depth+1)
-		}
-	}
-	printGraph(g, 0)
+	recursive(g, componentIds)
 }

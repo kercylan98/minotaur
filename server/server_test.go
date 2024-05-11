@@ -12,13 +12,26 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
+	server.NewServer(network.WebSocket(":8080"), server.NewOptions().
+		WithEventOptions(nexus.NewEventOptions().
+			WithLowHandlerTrace(true, func(cost time.Duration, stack []byte) {
+
+			}).
+			WithLowHandlerThreshold(time.Millisecond*200, func(cost time.Duration) {
+
+			}).
+			WithDeadLockThreshold(time.Second*5, func(stack []byte) {
+
+			}),
+		),
+	)
+
 	srv := server.NewServer(network.WebSocket(":9999"),
 		server.NewOptions().
 			WithZombieConnectionDeadline(time.Second*5).
 			WithLifeCycleLimit(chrono.Day*3).
 			WithLogger(log.GetLogger()).
 			WithEventOptions(nexus.NewEventOptions().WithDeadLockThreshold(time.Second*5, func(stack []byte) {
-				t.Log("dead lock")
 				fmt.Println(string(stack))
 			})).
 			WithIndependentGoroutineBroker(),

@@ -25,6 +25,7 @@ type ConnStatus = int32
 // ConnWriter 用于兼容不同 Network 的连接数据写入器
 type ConnWriter func(packet Packet) error
 
+// Conn 网络连接实例
 type Conn interface {
 	// SetQueue 设置连接使用的消息队列名称
 	SetQueue(queue string)

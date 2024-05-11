@@ -1,9 +1,9 @@
 package ecs
 
 import (
+	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/ident"
-"github.com/kercylan98/minotaur/toolkit/collection"
-"reflect"
+	"reflect"
 )
 
 // NewWorld 创建一个新的世界

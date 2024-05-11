@@ -25,6 +25,12 @@ func RegisterService[Instance BasicService, Exposer any](application *Applicatio
 }
 
 // InvokeService 获取特定全局服务的实例
-func InvokeService[Expose any](application *Application) Expose {
+func InvokeService[Expose any](application *Application) (expose Expose) {
+	expose, _ = do.Invoke[Expose](application.injector)
+	return
+}
+
+// MustInvokeService 获取特定全局服务的实例，如果获取失败将会 panic
+func MustInvokeService[Expose any](application *Application) Expose {
 	return do.MustInvoke[Expose](application.injector)
 }

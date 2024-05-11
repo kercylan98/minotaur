@@ -40,7 +40,7 @@ mindmap
 ![server-gdi.svg](.github/images/server-gdi.svg)
 
 ## 安装
-注意：依赖于 **[Go](https://go.dev/) 1.20 +**
+注意：依赖于 **[Go](https://go.dev/) 1.22 +**
 
 运行以下 Go 命令来安装软件包：`minotaur`
 ```sh
@@ -80,83 +80,90 @@ chmod 777 ./local-doc.sh
 
 ### 简单回响服务器
 创建一个基于`Websocket`创建的单线程回响服务器。
+
 ```go
 package main
 
 import (
 	"github.com/kercylan98/minotaur/server"
+	"github.com/kercylan98/minotaur/server/network"
 )
 
 func main() {
-	srv := server.New(server.NetworkWebsocket)
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
-		conn.Write(packet)
+	srv := server.NewServer(network.WebSocket(":8080/echo"))
+	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {
+		conn.AsyncWritePacket(packet)
 	})
-	if err := srv.Run(":9999"); err != nil {
+	if err := srv.Run(); err != nil {
 		panic(err)
 	}
 }
 ```
 访问 **[WebSocket 在线测试](http://www.websocket-test.com/)** 进行验证。
-> Websocket地址: ws://127.0.0.1:9999
+> Websocket地址: ws://127.0.0.1:8080/echo
 
-### 分流服务器
-分流服务器可以将消息分流到不同的分组上，每个分组中为串行处理，不同分组之间并行处理。
+### Server 消息机制（ 类 Actor ）
 
-> 关于分流服务器的思考：
-> - 当游戏需要以房间的形式进行时，应该确保相同房间的玩家处于同一分流中，不同房间的玩家处于不同分流中，这样可以避免不同房间的玩家之间的消息互相阻塞；
->   - 这时候网络 IO 应该根据不同的游戏类型而进行不同的处理，例如回合制可以同步执行，而实时游戏应该采用异步执行；
-> - 当游戏大部分时候以单人游戏进行时，应该每个玩家处于自身唯一的分流中，此时非互动的消息造成的网络 IO 采用同步执行即可，也不会阻塞到其他玩家的消息处理；
-```go
-package main
+`Minotaur` 中的消息处理机制是类似于 `Actor` 的概念，一切调用在 `Server` 中都是通过向 `Topic` 投递消息的方式来进行的，具体特色如下：
 
-import "github.com/kercylan98/minotaur/server"
+> - 暴露了消息驱动的接口，可以高度自定义消息处理逻辑；
+> - 在每个 `Topic` 中，消息处理是串行化的，确保了操作的顺序性和状态的一致性，同时避免了多线程带来的竞态条件和锁竞争；
+> - 尽管每个 `Topic` 是串行处理，但多个 `Topic` 可以同时独立处理消息，支持多种场景下的高性能需求；
+> - 不同的 `Topic` 之间不进行状态的共享，避免了竞态条件和锁竞争的风险，确保系统的稳定性；
+> - 采用了无界缓冲区的设置，支持循环嵌套的消息投递，可以实现复杂的消息处理逻辑，同时也避免了消息管道的递归阻塞问题；
 
-func main() {
-	srv := server.New(server.NetworkWebsocket)
-	srv.RegConnectionOpenedEvent(func(srv *server.Server, conn *server.Conn) {
-		// 通过 user_id 进行分流，不同用户的消息将不会互相阻塞
-		srv.UseShunt(conn, conn.Gata("user_id").(string))
-	})
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
-		var roomId = "default"
-		switch string(packet) {
-		case "JoinRoom":
-            // 将用户所处的分流渠道切换到 roomId 渠道，此刻同一分流渠道的消息将会按队列顺序处理
-            srv.UseShunt(conn, roomId)
-		case "LeaveRoom":
-            // 将用户所处分流切换为用户自身的分流渠道
-            srv.UseShunt(conn, conn.Gata("user_id").(string))
-		}
-	})
-	if err := srv.Run(":9999"); err != nil {
-		panic(err)
-	}
-}
-```
-> 该示例中模拟了用户分流渠道在自身渠道和房间渠道切换的过程，通过`UseShunt`对连接分流渠道进行设置，提高并发处理能力。
+#### 不同 `Topic` 之间的状态共享：
 
-### 服务器死锁检测
-`Minotaur`内置了服务器消息死锁检测功能，可通过`server.WithDeadlockDetect`进行开启。
+**举个栗子，假设在聊天室场景中我们加入个人积分的功能，而积分的来源我们分为如下几种：**
+ - 每日签到
+ - 参与聊天发言
+ - 被赠送礼物
+
+_其中，每日签到和参与聊天发言涉及单个用户自身的操作，不需要跨用户的状态共享。这些操作在用户自己的 Topic 中串行
+处理即可。然而，被赠送礼物涉及到跨用户的交互，需要考虑积分修改和事件通知。我们通过中间模块来组织这个过程。_
+
+##### 模块化设计
+模块作为中间层，接受各个 `Topic` 的调用，并可以投递消息到其他 `Topic`，同时也可以暴露事件给其他 `Topic`。
+
+> - 礼物模块：礼物模块提供赠送礼物的接口，同时暴露收到礼物的事件。这个模块处理礼物的发送和接收，并确保跨 `Topic` 的交互。
+> - 积分模块：积分模块负责管理用户的积分，并监听礼物模块的收到礼物事件。它根据事件内容来更新积分，然后暴露积分变化事件。
+> - 聊天室模块：聊天室模块是用户交互的核心模块，负责处理聊天相关的操作。它可以注册积分模块的积分变化事件，确保用户在收到积分变化时得到及时反馈。
+
+##### 送礼与积分修改的流程
+> - 用户间的消息传递：当送礼人在礼物模块中执行送礼操作时，系统会向接收者的 `Topic` 投递消息。这条消息包含收礼人的信息以及礼物的内容。
+> - 积分更新：积分模块监听礼物模块的收到礼物事件，接收到礼物消息后，更新相应用户的积分，并触发积分变化事件。 
+> - 通知机制：聊天室模块注册了积分模块的积分变化事件。当事件触发时，聊天室模块可以根据需要进行操作，例如发送通知或更新用户界面。
+
+##### 串行化处理与并发
+> - 由于每个 `Topic` 的消息处理是串行化的，确保了操作的顺序性和状态的一致性。即使跨模块的操作，也不会出现竞态条件或锁竞争的问题。事件驱动机制确保模块之间的松耦合，支持灵活的事件响应。
+
+### 慢消息及死锁检测追踪
+在服务器开发过程中，慢消息和死锁是常见的问题，`Minotaur` 内置了对慢消息和死锁的检测，可通过`server.NewOptions().WithEventOptions`进行设置。
+
 ```go
 package main
 
 import (
 	"github.com/kercylan98/minotaur/server"
+	"github.com/kercylan98/minotaur/server/network"
+	"github.com/kercylan98/minotaur/toolkit/nexus"
 	"time"
 )
 
 func main() {
-	srv := server.New(server.NetworkWebsocket,
-		server.WithDeadlockDetect(time.Second*5),
+	server.NewServer(network.WebSocket(":8080"), server.NewOptions().
+		WithEventOptions(nexus.NewEventOptions().
+			WithLowHandlerTrace(true, func(cost time.Duration, stack []byte) {
+
+			}).
+			WithLowHandlerThreshold(time.Millisecond*200, func(cost time.Duration) {
+
+			}).
+			WithDeadLockThreshold(time.Second*5, func(stack []byte) {
+
+			}),
+		),
 	)
-	srv.RegConnectionReceivePacketEvent(func(srv *server.Server, conn *server.Conn, packet []byte) {
-		time.Sleep(10 * time.Second)
-		conn.Write(packet)
-	})
-	if err := srv.Run(":9999"); err != nil {
-		panic(err)
-	}
 }
 ```
 > 在开启死锁检测的时候需要设置一个合理的死锁怀疑时间，该时间内消息没有处理完毕则会触发死锁检测，并打印`WARN`级别的日志输出。
@@ -204,7 +211,7 @@ func main() {
 - **[`planner/pce/exporter`](planner/pce/exporter)** 是实现了基于`xlsx`文件的配置导出工具，可直接编译成可执行文件使用；
 - **[`planner/pce/exporter/xlsx_template.xlsx`](planner/pce/exporter/xlsx_template.xlsx)** 是导出工具的模板文件，其中包含了具体的规则说明。
 - 模板文件图例：
-![exporter-xlsx-template.png](.github/images/exporter-xlsx-template.png)
+  ![exporter-xlsx-template.png](.github/images/exporter-xlsx-template.png)
 
 #### 导出 JSON 文件（可供客户端直接使用，包含索引的配置导出后为键值模式，可直接读取）
 ```text
@@ -285,7 +292,7 @@ func main() {
 
 ### 贡献者列表
 <a href="https://github.com/kercylan98/minotaur/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=kercylan98/minotaur" />
+  <img alt="contributors" src="https://contrib.rocks/image?repo=kercylan98/minotaur" />
 </a>
 
 #### 参与贡献请参考 **[CONTRIBUTING.md](CONTRIBUTING.md)** 贡献指南。

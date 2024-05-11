@@ -51,6 +51,7 @@ func (h *MinotaurHandler) Handle(ctx context.Context, record slog.Record) (err e
 		defer buffer.Reset()
 
 		processTime(buffer, record, opt)
+		processPrefix(buffer, opt)
 		processLevel(buffer, record, opt)
 		processCaller(buffer, record, opt)
 		processMessage(buffer, record, opt)
@@ -100,12 +101,13 @@ func (h *MinotaurHandler) WithGroup(name string) slog.Handler {
 }
 
 func (h *MinotaurHandler) clone() *MinotaurHandler {
-	return &MinotaurHandler{
+	c := &MinotaurHandler{
 		groupPrefix: h.groupPrefix,
 		opts:        DefaultOptions().Apply(h.opts),
 		groups:      h.groups,
 		w:           h.w,
 	}
+	return c
 }
 
 func processTime(buffer *strings.Builder, record slog.Record, opt *Options) {
@@ -114,6 +116,19 @@ func processTime(buffer *strings.Builder, record slog.Record, opt *Options) {
 	}
 
 	processAttrType(buffer, opt, AttrTypeTime, record.Time.Format(opt.timeLayout))
+}
+
+func processPrefix(buffer *strings.Builder, opt *Options) {
+	if opt.prefix == charproc.None {
+		return
+	}
+
+	if opt.disabledColor || opt.prefixColor == nil {
+		buffer.WriteString(opt.prefix)
+	} else {
+		buffer.WriteString(opt.prefixColor.Sprint(opt.prefix))
+	}
+	buffer.WriteByte(' ')
 }
 
 func processLevel(buffer *strings.Builder, record slog.Record, opt *Options) {
