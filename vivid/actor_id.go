@@ -101,5 +101,5 @@ func (i ActorId) IsZero() bool {
 
 // String 返回 ActorId 的字符串表示。
 func (i ActorId) String() string {
-	return fmt.Sprintf("%s:%d:%d", i.Host(), i.Port(), i.Guid())
+	return fmt.Sprintf("%s:%d:%s:%d", i.Host(), i.Port(), i.SystemName(), i.Guid())
 }
