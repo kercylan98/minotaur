@@ -88,11 +88,13 @@ func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, dat
 		Receiver: receiver,
 		Command:  command,
 	}
-	d, err := s.opt.codec.Encode(data)
-	if err != nil {
-		return err
+	if data != nil {
+		d, err := s.opt.codec.Encode(data)
+		if err != nil {
+			return err
+		}
+		ctx.Data = d
 	}
-	ctx.Data = d
 
 	s.actorRW.RLock()
 	actor, exist := s.actors[receiver]
