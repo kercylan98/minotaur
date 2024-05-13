@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/rpc"
 	"sync"
 )
 
@@ -10,12 +11,17 @@ import (
 type ActorTerminatedNotifier func()
 
 // NewActorSystem 创建一个 ActorSystem
-func NewActorSystem(host string, port uint16, name string) *ActorSystem {
+func NewActorSystem(host string, port uint16, name string, opts ...ActorSystemOption) *ActorSystem {
 	s := &ActorSystem{
+		opt:    new(ActorSystemOptions).apply(opts...),
 		host:   host,
 		port:   port,
 		name:   name,
 		actors: make(map[ActorId]*actorCore),
+	}
+
+	if s.opt.rpcSrv != nil {
+		s.opt.rpcSrv.GetRouter().Register("/actor/message", s.onActorMessage)
 	}
 	return s
 }
@@ -23,12 +29,30 @@ func NewActorSystem(host string, port uint16, name string) *ActorSystem {
 // ActorSystem 是维护 Actor 的容器，负责 Actor 的创建、销毁、消息分发等
 //   - 通常推荐每个应用程序仅使用一个 ActorSystem
 type ActorSystem struct {
+	opt     *ActorSystemOptions
 	host    string
 	port    uint16
 	name    string
 	actorRW sync.RWMutex
 	guid    ActorGuid
 	actors  map[ActorId]*actorCore
+}
+
+func (s *ActorSystem) onActorMessage(ctx rpc.Context) error {
+	var msg Message
+	if err := ctx.ReadTo(&msg); err != nil {
+		return err
+	}
+
+	s.actorRW.RLock()
+	actor, exist := s.actors[msg.Receiver]
+	s.actorRW.RUnlock()
+	if !exist {
+		return fmt.Errorf("%w: %s", ErrActorNotFound, msg.Receiver)
+	}
+
+	actor.add(&msg)
+	return nil
 }
 
 // Spawn 创建一个 Actor
@@ -53,21 +77,30 @@ func (s *ActorSystem) Spawn(actor Actor) (ActorId, error) {
 }
 
 // Tell 发送消息
-func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command any, params ...any) error {
+func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, params ...any) error {
 	s.actorRW.RLock()
 	actor, exist := s.actors[receiver]
 	s.actorRW.RUnlock()
+	msg := &Message{
+		Sender:   sender,
+		Receiver: receiver,
+		Command:  command,
+		Params:   params,
+	}
 	if exist {
-		actor.add(&Message{
-			Sender:   sender,
-			Receiver: receiver,
-			Command:  command,
-			Params:   params,
-		})
+		actor.add(msg)
 		return nil
 	}
 
-	// TODO: RPC
+	// 通过服务发现发送消息
+	if s.opt.discovery != nil {
+		cli, err := s.opt.discovery.GetInstance(s.name)
+		if err != nil {
+			return err
+		}
+		return cli.Tell("/actor/message", msg)
+	}
+
 	return fmt.Errorf("%w: %s", ErrActorNotFound, receiver)
 }
 

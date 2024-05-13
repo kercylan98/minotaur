@@ -3,7 +3,7 @@ package vivid
 type Message struct {
 	Sender   ActorId
 	Receiver ActorId
-	Command  any
+	Command  string
 	Params   []any
 	Results  []any
 }

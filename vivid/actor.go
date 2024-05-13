@@ -22,19 +22,21 @@ type Actor interface {
 type BasicActor struct {
 	system     *ActorSystem
 	terminated ActorTerminatedNotifier
-	router     map[reflect.Type]reflect.Value
+	router     map[string]reflect.Value
 }
 
 // RegisterTell 注册消息处理函数
-func (b *BasicActor) RegisterTell(handler any) error {
+func (b *BasicActor) RegisterTell(name string, handler any) error {
+	if b.router == nil {
+		b.router = make(map[string]reflect.Value)
+	}
+
 	tof := reflect.TypeOf(handler)
 	if tof.Kind() != reflect.Func {
 		return fmt.Errorf("%w: %s", ErrActorMessageHandlerNotFunc, tof.String())
 	}
-	if b.router == nil {
-		b.router = make(map[reflect.Type]reflect.Value)
-	}
-	b.router[tof] = reflect.ValueOf(handler)
+
+	b.router[name] = reflect.ValueOf(handler)
 	return nil
 }
 
@@ -48,13 +50,12 @@ func (b *BasicActor) OnReceive(message *Message) error {
 	if b.router == nil {
 		return ErrActorNotHasAnyHandler
 	}
-	tof := reflect.TypeOf(message.Command)
-	handler, exist := b.router[tof]
+	handler, exist := b.router[message.Command]
 	if !exist {
-		return fmt.Errorf("%w: %s", ErrActorMessageHandlerNotFound, tof.String())
+		return fmt.Errorf("%w: %s", ErrActorMessageHandlerNotFound, message.Command)
 	}
-	if tof.NumIn() != len(message.Params) {
-		return fmt.Errorf("%w: %s, except: %d, got: %d", ErrActorHandlerParamsNotMatch, tof.String(), tof.NumIn(), len(message.Params))
+	if handler.Type().NumIn() != len(message.Params) {
+		return fmt.Errorf("%w: %s, except: %d, got: %d", ErrActorHandlerParamsNotMatch, message.Command, handler.Type(), len(message.Params))
 	}
 
 	params := make([]reflect.Value, len(message.Params))
