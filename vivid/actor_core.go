@@ -13,7 +13,7 @@ func newActorCore(id ActorId, actor Actor) *actorCore {
 	a := &actorCore{
 		ActorId:  id,
 		actor:    actor,
-		messages: buffer.NewRing[*Message](1024),
+		messages: buffer.NewRing[*context](1024),
 		cond:     sync.NewCond(&sync.Mutex{}),
 		closed:   make(chan struct{}),
 	}
@@ -26,7 +26,7 @@ type actorCore struct {
 	actor    Actor                  // Actor 状态
 	status   actorStatus            // Actor 运行状态
 	cond     *sync.Cond             // 消息队列条件变量
-	messages *buffer.Ring[*Message] // 消息缓冲区
+	messages *buffer.Ring[*context] // 消息缓冲区
 	closed   chan struct{}          // 关闭信号
 }
 
@@ -63,12 +63,15 @@ func (a *actorCore) start() {
 		a.cond.L.Unlock()
 
 		for i := 0; i < len(messages); i++ {
-			a.onReceive(messages[i])
+			m := messages[i]
+			if err := a.onReceive(m); err != nil {
+				m.err = err
+			}
 		}
 	}
 }
 
-func (a *actorCore) add(message *Message) {
+func (a *actorCore) add(message *context) {
 	if atomic.LoadInt32(&a.status) == actorStatusStopped {
 		return
 	}
@@ -93,8 +96,9 @@ func (a *actorCore) stop() {
 	return
 }
 
-func (a *actorCore) onReceive(message *Message) error {
+func (a *actorCore) onReceive(message *context) error {
 	defer func() {
+		close(message.done)
 		if err := recover(); err != nil {
 			fmt.Println(err)
 			debug.PrintStack()

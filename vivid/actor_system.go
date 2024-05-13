@@ -13,7 +13,7 @@ type ActorTerminatedNotifier func()
 // NewActorSystem 创建一个 ActorSystem
 func NewActorSystem(host string, port uint16, name string, opts ...ActorSystemOption) *ActorSystem {
 	s := &ActorSystem{
-		opt:    new(ActorSystemOptions).apply(opts...),
+		opt:    defaultActorSystemOptions().apply(opts...),
 		host:   host,
 		port:   port,
 		name:   name,
@@ -21,7 +21,7 @@ func NewActorSystem(host string, port uint16, name string, opts ...ActorSystemOp
 	}
 
 	if s.opt.rpcSrv != nil {
-		s.opt.rpcSrv.GetRouter().Register("/actor/message", s.onActorMessage)
+		s.opt.rpcSrv.GetRouter().Register("/actor/context", s.onActorMessage)
 	}
 	return s
 }
@@ -39,7 +39,7 @@ type ActorSystem struct {
 }
 
 func (s *ActorSystem) onActorMessage(ctx rpc.Context) error {
-	var msg Message
+	var msg context
 	if err := ctx.ReadTo(&msg); err != nil {
 		return err
 	}
@@ -51,8 +51,13 @@ func (s *ActorSystem) onActorMessage(ctx rpc.Context) error {
 		return fmt.Errorf("%w: %s", ErrActorNotFound, msg.Receiver)
 	}
 
+	msg.reader = func(dst any) error {
+		return s.opt.codec.Decode(msg.Data, dst)
+	}
+	msg.done = make(chan struct{})
 	actor.add(&msg)
-	return nil
+	<-msg.done
+	return msg.err
 }
 
 // Spawn 创建一个 Actor
@@ -77,19 +82,29 @@ func (s *ActorSystem) Spawn(actor Actor) (ActorId, error) {
 }
 
 // Tell 发送消息
-func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, params ...any) error {
-	s.actorRW.RLock()
-	actor, exist := s.actors[receiver]
-	s.actorRW.RUnlock()
-	msg := &Message{
+func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, data any) error {
+	ctx := &context{
 		Sender:   sender,
 		Receiver: receiver,
 		Command:  command,
-		Params:   params,
 	}
+	d, err := s.opt.codec.Encode(data)
+	if err != nil {
+		return err
+	}
+	ctx.Data = d
+
+	s.actorRW.RLock()
+	actor, exist := s.actors[receiver]
+	s.actorRW.RUnlock()
 	if exist {
-		actor.add(msg)
-		return nil
+		ctx.reader = func(dst any) error {
+			return s.opt.codec.Decode(ctx.Data, dst)
+		}
+		ctx.done = make(chan struct{})
+		actor.add(ctx)
+		<-ctx.done
+		return ctx.err
 	}
 
 	// 通过服务发现发送消息
@@ -98,15 +113,55 @@ func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, par
 		if err != nil {
 			return err
 		}
-		return cli.Tell("/actor/message", msg)
+		return cli.Tell("/actor/context", ctx)
 	}
 
 	return fmt.Errorf("%w: %s", ErrActorNotFound, receiver)
 }
 
 // Ask 发送消息并等待回复
-func (s *ActorSystem) Ask(sender ActorId, receiver ActorId, message Message) (*Message, error) {
-	return nil, nil
+func (s *ActorSystem) Ask(sender ActorId, receiver ActorId, message context) (Result, error) {
+	s.actorRW.RLock()
+	actor, exist := s.actors[receiver]
+	s.actorRW.RUnlock()
+	if exist {
+		message.Sender = sender
+		message.Receiver = receiver
+		message.reader = func(dst any) error {
+			return s.opt.codec.Decode(message.Data, dst)
+		}
+		message.done = make(chan struct{})
+		actor.add(&message)
+		<-message.done
+		if message.err != nil {
+			return nil, message.err
+		}
+
+		return func(dst any) error {
+			result, err := s.opt.codec.Encode(message.reply)
+			if err != nil {
+				return err
+			}
+			return s.opt.codec.Decode(result, dst)
+		}, nil
+	}
+
+	// 通过服务发现发送消息
+	if s.opt.discovery != nil {
+		cli, err := s.opt.discovery.GetInstance(s.name)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := cli.Ask("/actor/context", message)
+		if err != nil {
+			return nil, err
+		}
+		return func(dst any) error {
+			return resp.ReadTo(dst)
+		}, nil
+	}
+
+	return nil, fmt.Errorf("%w: %s", ErrActorNotFound, receiver)
 }
 
 // onDestroy

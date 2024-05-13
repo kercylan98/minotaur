@@ -7,6 +7,13 @@ type ActorSystemOption func(*ActorSystemOptions)
 type ActorSystemOptions struct {
 	rpcSrv    rpc.Server    // RPC 服务
 	discovery rpc.Discovery // 服务发现
+	codec     Codec         // 编解码器
+}
+
+func defaultActorSystemOptions() *ActorSystemOptions {
+	return &ActorSystemOptions{
+		codec: new(gobCodec),
+	}
 }
 
 func (o *ActorSystemOptions) apply(options ...ActorSystemOption) *ActorSystemOptions {
@@ -20,5 +27,11 @@ func WithDiscovery(server rpc.Server, discovery rpc.Discovery) ActorSystemOption
 	return func(options *ActorSystemOptions) {
 		options.rpcSrv = server
 		options.discovery = discovery
+	}
+}
+
+func WithCodec(codec Codec) ActorSystemOption {
+	return func(options *ActorSystemOptions) {
+		options.codec = codec
 	}
 }

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/rpc"
 	"github.com/kercylan98/minotaur/rpc/client"
 	"github.com/kercylan98/minotaur/rpc/codec"
 	"github.com/kercylan98/minotaur/rpc/transporter"
-	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/vivid"
 	"time"
 )
@@ -15,11 +15,12 @@ type AccountActor struct {
 }
 
 func (a *AccountActor) OnSpawn(system *vivid.ActorSystem, terminated vivid.ActorTerminatedNotifier) error {
-	return a.RegisterTell("onLogin", a.onLogin)
-}
-
-func (a *AccountActor) onLogin(account string, password string) {
-	log.Info("AccountActor.onLogin", account, password)
+	return a.RegisterTell("onLogin", func(message vivid.Context) error {
+		var pwd string
+		message.MustReadTo(&pwd)
+		fmt.Println("AccountActor.OnReceive", pwd)
+		return nil
+	})
 }
 
 type Discovery struct {
@@ -48,7 +49,7 @@ func main() {
 
 	time.Sleep(time.Second * 1)
 
-	if err := system.Tell(actorId, actorId, "onLogin", "kercylan", "123456"); err != nil {
+	if err := system.Tell(actorId, actorId, "onLogin", "123456"); err != nil {
 		panic(err)
 	}
 
