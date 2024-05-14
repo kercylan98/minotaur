@@ -61,7 +61,7 @@ type Client struct {
 	tcp net.Conn
 }
 
-func (c Client) Exec(data []byte) ([]byte, error) {
+func (c Client) Ask(data []byte) ([]byte, error) {
 	_, err := c.tcp.Write(data)
 	if err != nil {
 		return nil, err
@@ -76,23 +76,9 @@ func (c Client) Exec(data []byte) ([]byte, error) {
 	return buf[:n], nil
 }
 
-func (c Client) AsyncExec(data []byte, callback func([]byte, error)) error {
+func (c Client) Tell(data []byte) error {
 	_, err := c.tcp.Write(data)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		var buf = make([]byte, 1024)
-		n, err := c.tcp.Read(buf)
-		if err != nil {
-			callback(nil, err)
-			return
-		}
-
-		callback(buf[:n], nil)
-	}()
-	return nil
+	return err
 }
 
 func (u *UserActor) OnPreStart(ctx *vivid.ActorContext) error {

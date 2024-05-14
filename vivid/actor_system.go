@@ -32,6 +32,7 @@ type ActorSystem struct {
 	ctx    context.Context    // 上下文
 	cancel context.CancelFunc // 取消函数（该函数应该在 closed 生效后才能调用）
 	guid   atomic.Uint64      // 未命名 Actor 的唯一标识
+	seq    atomic.Uint64      // 消息序列号
 }
 
 // Run 启动 ActorSystem
@@ -119,10 +120,10 @@ func (s *ActorSystem) GetActor(actorId ActorId) (ActorRef, error) {
 	return ref, nil
 }
 
-// tell 用于向 Actor 发送消息
-func (s *ActorSystem) tell(receiver ActorRef, msg Message, opts ...MessageOption) error {
+// send 用于向 Actor 发送消息
+func (s *ActorSystem) send(receiver ActorRef, msg Message, opts ...MessageOption) ([]byte, error) {
 	if receiver == nil {
-		return nil
+		return nil, nil
 	}
 	opt := new(MessageOptions).apply(opts...)
 	receiverId := receiver.GetId()
@@ -131,29 +132,45 @@ func (s *ActorSystem) tell(receiver ActorRef, msg Message, opts ...MessageOption
 	isLocal := receiverId.Host() == s.opts.Host && receiverId.Port() == s.opts.Port
 	if isLocal {
 		a := receiver.(*localActor)
-		a.mailbox.Enqueue(msg)
-		return nil
+		a.mailbox.Enqueue(msg) // TODO: 需兼容 Ask 模式
+		return nil, nil
 	}
 
 	// 远程消息
 	if s.opts.Host != "" {
-		data, err := gob.Encode(newRemoteMessage(opt, receiver, msg))
+		data, err := gob.Encode(newRemoteMessage(s, receiver, msg, opt))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// TODO: 客户端应该是一个连接池
 		cli, err := s.opts.ClientFactory.NewClient(receiverId.Network(), receiverId.Host(), receiverId.Port())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return cli.AsyncExec(data, func(bytes []byte, err error) {
-			// TODO: 处理远程消息的响应
-		})
+		var reply []byte
+		if opt.Reply {
+			reply, err = cli.Ask(data)
+		} else {
+			err = cli.Tell(data)
+		}
+		return reply, err
 	}
 
-	return nil
+	return nil, nil
+}
+
+// tell 用于向 Actor 发送消息
+func (s *ActorSystem) tell(receiver ActorRef, msg Message, opts ...MessageOption) error {
+	opt := new(MessageOptions).apply(append(opts, WithMessageReply(false))...)
+	_, err := s.send(receiver, msg, WithMessageOptions(opt))
+	return err
+}
+
+// ask 用于向 Actor 发送消息，并等待回复
+func (s *ActorSystem) ask(receiver ActorRef, msg Message, opts ...MessageOption) ([]byte, error) {
+	return s.send(receiver, msg, append(opts, WithMessageReply(true))...)
 }
 
 func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan RemoteMessageEvent) {
