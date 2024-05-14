@@ -1,66 +1,68 @@
 package vivid
 
 import (
-	"fmt"
 	"reflect"
 )
 
-// Actor 外部 Actor 接口，实现该接口的结构体可以被 ActorSystem 管理
+var actorType = reflect.TypeOf((*Actor)(nil)).Elem()
+
+// Actor 是 Actor 模型的接口，该接口用于定义一个 Actor
 type Actor interface {
-	// OnSpawn 该函数将在 Actor 被创建时调用，传入 ActorSystem、 ActorTerminatedNotifier，用于 Actor 的初始化
-	OnSpawn(system *ActorSystem, terminated ActorTerminatedNotifier) error
+	// OnPreStart 在 Actor 启动之前执行的逻辑，适用于对 Actor 状态的初始化
+	OnPreStart(ctx *ActorContext) error
 
-	// OnReceive 接收消息，该函数将在 Actor 接收到消息时调用
-	OnReceive(message Context) error
-
-	// OnDestroy 销毁 Actor，该函数将在 ActorSystem 主动销毁 Actor 时调用
-	//  - 销毁过程应该保持同步阻塞， ActorSystem 会等待 Actor 销毁
-	OnDestroy()
+	// OnReceived 当 Actor 接收到消息时执行的逻辑
+	OnReceived(msg Message) error
 }
 
-type ActorHandler func(message Context) error
-
-// BasicActor 基础 Actor 结构体，实现了 Actor 接口
-type BasicActor struct {
-	system     *ActorSystem
-	terminated ActorTerminatedNotifier
-	router     map[string]ActorHandler
+// localActor 实现 Actor 模型的核心逻辑
+type localActor struct {
+	opts    *ActorOptions
+	actor   Actor
+	ctx     *ActorContext
+	mailbox *Mailbox
 }
 
-// RegisterTell 注册消息处理函数
-func (b *BasicActor) RegisterTell(name string, handler ActorHandler) error {
-	if b.router == nil {
-		b.router = make(map[string]ActorHandler)
-	}
+func (a *localActor) init(opts *ActorOptions, id ActorId, actor Actor, systemGetter actorSystemGetter) *localActor {
+	a.opts = opts
+	a.actor = actor
+	a.ctx = new(ActorContext).init(id, a, systemGetter)
+	a.mailbox = opts.Mailbox()
 
-	tof := reflect.TypeOf(handler)
-	if tof.Kind() != reflect.Func {
-		return fmt.Errorf("%w: %s", ErrActorMessageHandlerNotFunc, tof.String())
-	}
+	go a.mailbox.Start()
+	return a
+}
 
-	b.router[name] = handler
+func (a *localActor) GetId() ActorId {
+	return a.ctx.id
+}
+
+func (a *localActor) Tell(msg Message, opts ...MessageOption) error {
+	system := a.ctx.GetSystem()
+	return system.tell(a, msg, opts...)
+}
+
+func (a *localActor) Stop() error {
+	a.mailbox.Stop()
 	return nil
 }
 
-func (b *BasicActor) OnSpawn(system *ActorSystem, terminated ActorTerminatedNotifier) error {
-	b.system = system
-	b.terminated = terminated
-	return nil
+// remoteActor 实现 Actor 模型的远程调用逻辑
+type remoteActor struct {
+	id     ActorId
+	system *ActorSystem // 仅用于调用 tell 方法，并非 Actor 真正的所属系统
 }
 
-func (b *BasicActor) OnReceive(message Context) error {
-	if b.router == nil {
-		return ErrActorNotHasAnyHandler
-	}
-	command := message.GetCommand()
-	handler, exist := b.router[command]
-	if !exist {
-		return fmt.Errorf("%w: %s", ErrActorMessageHandlerNotFound, command)
-	}
-
-	return handler(message)
+func (a *remoteActor) init(system *ActorSystem, id ActorId) *remoteActor {
+	a.id = id
+	a.system = system
+	return a
 }
 
-func (b *BasicActor) OnDestroy() {
-	b.terminated()
+func (a *remoteActor) GetId() ActorId {
+	return a.id
+}
+
+func (a *remoteActor) Tell(msg Message, opts ...MessageOption) error {
+	return a.system.tell(a, msg, opts...)
 }

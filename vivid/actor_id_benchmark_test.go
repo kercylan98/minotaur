@@ -5,68 +5,48 @@ import (
 	"testing"
 )
 
-func BenchmarkActorId(b *testing.B) {
-	id := vivid.NewActorId("127.0.0.1", 8080, "Connection", 1)
-	b.Run("Generate", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			vivid.NewActorId("127.0.0.1", 8080, "Connection", 1)
-		}
-	})
-
-	b.Run("GetHost", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			id.Host()
-		}
-	})
-
-	b.Run("GetPort", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			id.Port()
-		}
-	})
-
-	b.Run("GetSystemName", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			id.SystemName()
-		}
-	})
-
-	b.Run("GetGuid", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			id.Guid()
-		}
-	})
-}
-
 func BenchmarkNewActorId(b *testing.B) {
-	for i := range uint64(b.N) {
-		vivid.NewActorId("127.0.0.1", 8080, "Connection", i)
+	for i := 0; i < b.N; i++ {
+		vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActor")
 	}
 }
 
-func BenchmarkActorId_Get(b *testing.B) {
-	id := vivid.NewActorId("127.0.0.1", 8080, "Connection", 1)
-	b.Run("GetHost", func(b *testing.B) {
+func BenchmarkActorIdInfo(b *testing.B) {
+	actorId := vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActor")
+
+	b.Run("Network", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			id.Host()
+			actorId.Network()
 		}
 	})
 
-	b.Run("GetPort", func(b *testing.B) {
+	b.Run("Cluster", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			id.Port()
+			actorId.Cluster()
 		}
 	})
 
-	b.Run("GetSystemName", func(b *testing.B) {
+	b.Run("Host", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			id.SystemName()
+			actorId.Host()
 		}
 	})
 
-	b.Run("GetGuid", func(b *testing.B) {
+	b.Run("Port", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			id.Guid()
+			actorId.Port()
+		}
+	})
+
+	b.Run("System", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			actorId.System()
+		}
+	})
+
+	b.Run("Name", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			actorId.Name()
 		}
 	})
 }

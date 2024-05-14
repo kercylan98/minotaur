@@ -2,210 +2,174 @@ package vivid
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/rpc"
-	"sync"
+	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"golang.org/x/net/context"
+	"reflect"
+	"sync/atomic"
 )
 
-// ActorTerminatedNotifier Actor 终止通知器，当 Actor 终止时务必调用该函数，以便 ActorSystem 可以正确清理资源
-//   - 该函数多次调用不会产生副作用，但仅第一次调用有效
-type ActorTerminatedNotifier func()
+type actorSystemGetter func() *ActorSystem
 
 // NewActorSystem 创建一个 ActorSystem
-func NewActorSystem(host string, port uint16, name string, opts ...ActorSystemOption) *ActorSystem {
+func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 	s := &ActorSystem{
-		opt:    defaultActorSystemOptions().apply(opts...),
-		host:   host,
-		port:   port,
+		opts:   NewActorSystemOptions().Apply(opts...),
 		name:   name,
-		actors: make(map[ActorId]*actorCore),
+		actors: new(actorTrie).init(),
+		closed: make(chan struct{}),
 	}
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 
-	if s.opt.rpcSrv != nil {
-		s.opt.rpcSrv.GetRouter().Register("/actor/context", s.onActorMessage)
-	}
 	return s
 }
 
 // ActorSystem 是维护 Actor 的容器，负责 Actor 的创建、销毁、消息分发等
-//   - 通常推荐每个应用程序仅使用一个 ActorSystem
 type ActorSystem struct {
-	opt     *ActorSystemOptions
-	host    string
-	port    uint16
-	name    string
-	actorRW sync.RWMutex
-	guid    ActorGuid
-	actors  map[ActorId]*actorCore
+	opts   *ActorSystemOptions
+	name   string             // ActorSystem 的名称
+	actors *actorTrie         // Actor 容器
+	closed chan struct{}      // 关闭信号
+	ctx    context.Context    // 上下文
+	cancel context.CancelFunc // 取消函数（该函数应该在 closed 生效后才能调用）
+	guid   atomic.Uint64      // 未命名 Actor 的唯一标识
 }
 
-func (s *ActorSystem) onActorMessage(ctx rpc.Context) error {
-	var msg context
-	if err := ctx.ReadTo(&msg); err != nil {
-		return err
+// Run 启动 ActorSystem
+func (s *ActorSystem) Run() error {
+	if s.opts.Host != "" {
+		go s.handleRemoteMessage(s.ctx, s.opts.Server.C())
+		return s.opts.Server.Run()
 	}
 
-	s.actorRW.RLock()
-	actor, exist := s.actors[msg.Receiver]
-	s.actorRW.RUnlock()
-	if !exist {
-		return fmt.Errorf("%w: %s", ErrActorNotFound, msg.Receiver)
-	}
-
-	msg.reader = func(dst any) error {
-		return s.opt.codec.Decode(msg.Data, dst)
-	}
-	msg.done = make(chan struct{})
-	actor.add(&msg)
-	<-msg.done
-	return msg.err
+	return nil
 }
 
-// Spawn 创建一个 Actor
-func (s *ActorSystem) Spawn(actor Actor) (ActorId, error) {
-	s.actorRW.Lock()
-
-	s.guid++
-	id := NewActorId(s.host, s.port, s.name, s.guid)
-	core := newActorCore(id, actor)
-	if err := actor.OnSpawn(s, func() {
-		s.onDestroy(id)
-	}); err != nil {
-		s.guid--
-		s.actorRW.Unlock()
-		return "", err
-	}
-	go core.start()
-	s.actors[id] = core
-
-	s.actorRW.Unlock()
-	return id, nil
+// ActorOf 创建一个 Actor
+func ActorOf[T Actor](system *ActorSystem, opts ...*ActorOptions) (ActorRef, error) {
+	typ := reflect.TypeOf((*T)(nil)).Elem()
+	return system.ActorOf(typ, opts...)
 }
 
-// Tell 发送消息
-func (s *ActorSystem) Tell(sender ActorId, receiver ActorId, command string, data any) error {
-	ctx := &context{
-		Sender:   sender,
-		Receiver: receiver,
-		Command:  command,
+// ActorOf 创建一个 Actor
+//   - 推荐使用 ActorOf 函数来创建 Actor，这样可以保证 Actor 的类型安全
+func (s *ActorSystem) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
+	// 检查是否实现
+	if !typ.Implements(actorType) {
+		return nil, fmt.Errorf("%w: %s", ErrActorNotImplementActorRef, typ.String())
 	}
-	if data != nil {
-		d, err := s.opt.codec.Encode(data)
-		if err != nil {
-			return err
-		}
-		ctx.Data = d
-	}
+	typ = typ.Elem()
 
-	s.actorRW.RLock()
-	actor, exist := s.actors[receiver]
-	s.actorRW.RUnlock()
-	if exist {
-		ctx.reader = func(dst any) error {
-			return s.opt.codec.Decode(ctx.Data, dst)
+	opt := NewActorOptions().Apply(opts...)
+
+	// 重复检查
+	var actorName = opt.Name
+	if actorName != charproc.None {
+		if s.actors.has(actorName) {
+			return nil, fmt.Errorf("%w: %s", ErrActorAlreadyExists, actorName)
 		}
-		ctx.done = make(chan struct{})
-		actor.add(ctx)
-		<-ctx.done
-		return ctx.err
+	} else {
+		actorName = fmt.Sprintf("%s-%d", typ.String(), s.guid.Add(1))
 	}
 
-	// 通过服务发现发送消息
-	if s.opt.discovery != nil {
-		cli, err := s.opt.discovery.GetInstance(s.name)
-		if err != nil {
-			return err
-		}
-		return cli.Tell("/actor/context", ctx)
+	// 创建 Actor
+	var imp = reflect.New(typ).Interface().(Actor)
+	var a = new(localActor).init(
+		opt,
+		NewActorId("tcp", s.opts.ClusterName, s.opts.Host, s.opts.Port, s.name, actorName),
+		imp,
+		func() *ActorSystem {
+			return s
+		},
+	)
+	if err := imp.OnPreStart(a.ctx); err != nil {
+		return nil, err
 	}
 
-	return fmt.Errorf("%w: %s", ErrActorNotFound, receiver)
-}
+	s.actors.insert(actorName, a)
+	a.ctx.state = actorContextStateStarted
 
-// Ask 发送消息并等待回复
-func (s *ActorSystem) Ask(sender ActorId, receiver ActorId, message context) (Result, error) {
-	s.actorRW.RLock()
-	actor, exist := s.actors[receiver]
-	s.actorRW.RUnlock()
-	if exist {
-		message.Sender = sender
-		message.Receiver = receiver
-		message.reader = func(dst any) error {
-			return s.opt.codec.Decode(message.Data, dst)
-		}
-		message.done = make(chan struct{})
-		actor.add(&message)
-		<-message.done
-		if message.err != nil {
-			return nil, message.err
-		}
-
-		return func(dst any) error {
-			result, err := s.opt.codec.Encode(message.reply)
-			if err != nil {
-				return err
+	// TODO: 临时使用普通异步循环处理消息，应该使用分发器来处理消息
+	go func() {
+		for message := range a.mailbox.Dequeue() {
+			if err := imp.OnReceived(message); err != nil {
+				fmt.Println(err)
 			}
-			return s.opt.codec.Decode(result, dst)
-		}, nil
-	}
-
-	// 通过服务发现发送消息
-	if s.opt.discovery != nil {
-		cli, err := s.opt.discovery.GetInstance(s.name)
-		if err != nil {
-			return nil, err
 		}
-		resp, err := cli.Ask("/actor/context", message)
-		if err != nil {
-			return nil, err
-		}
-		return func(dst any) error {
-			return resp.ReadTo(dst)
-		}, nil
-	}
+	}()
 
-	return nil, fmt.Errorf("%w: %s", ErrActorNotFound, receiver)
+	return a, nil
 }
 
-// onDestroy
-func (s *ActorSystem) onDestroy(id ActorId) {
-	s.actorRW.Lock()
-	actor, exist := s.actors[id]
-	if exist {
-		actor.stop()
-		delete(s.actors, id)
+// GetActor 获取 ActorRef
+func (s *ActorSystem) GetActor(actorId ActorId) (ActorRef, error) {
+	if actorId.Cluster() != s.opts.ClusterName || actorId.Host() != s.opts.Host || actorId.Port() != s.opts.Port {
+		// 生成远程 ActorRef
+		return new(remoteActor).init(s, actorId), nil
 	}
-	s.actorRW.Unlock()
+
+	if actorId.System() != s.name {
+		return nil, fmt.Errorf("%w: %s", ErrActorNotFound, actorId.String())
+	}
+
+	ref := s.actors.find(actorId.Name())
+	if ref == nil {
+		return nil, fmt.Errorf("%w: %s", ErrActorNotFound, actorId.String())
+	}
+
+	return ref, nil
 }
 
-// Destroy 销毁整个 ActorSystem 下当前所有的 Actor，重置 ActorSystem 状态
-func (s *ActorSystem) Destroy() {
-	defer s.actorRW.RUnlock() // 跳出循环必定是锁定状态，重置资源后确保解锁
+// tell 用于向 Actor 发送消息
+func (s *ActorSystem) tell(receiver ActorRef, msg Message, opts ...MessageOption) error {
+	if receiver == nil {
+		return nil
+	}
+	opt := new(MessageOptions).apply(opts...)
+	receiverId := receiver.GetId()
+
+	// 检查是否为本地 Actor
+	isLocal := receiverId.Host() == s.opts.Host && receiverId.Port() == s.opts.Port
+	if isLocal {
+		a := receiver.(*localActor)
+		a.mailbox.Enqueue(msg)
+		return nil
+	}
+
+	// 远程消息
+	if s.opts.Host != "" {
+		data, err := gob.Encode(newRemoteMessage(opt, receiver, msg))
+		if err != nil {
+			return err
+		}
+
+		// TODO: 客户端应该是一个连接池
+		cli, err := s.opts.ClientFactory.NewClient(receiverId.Network(), receiverId.Host(), receiverId.Port())
+		if err != nil {
+			return err
+		}
+
+		return cli.AsyncExec(data, func(bytes []byte, err error) {
+			// TODO: 处理远程消息的响应
+		})
+	}
+
+	return nil
+}
+
+func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan RemoteMessageEvent) {
 	for {
-		// Actor 会等待所有消息处理完毕后再退出，在退出期间也会接收新消息，需要多轮检查退出。故不适用 context.Context
-		s.actorRW.RLock()
-		if len(s.actors) == 0 {
-			break
-		}
+		select {
+		case <-ctx.Done():
+			return
+		case e := <-c:
+			ref, err := s.GetActor(e.Message.Receiver)
+			if err != nil {
+				e.Callback(err)
+				continue
+			}
 
-		// 使用 WaitGroup 等待异步停止，避免此刻无法产生新的 Actor
-		var wg = new(sync.WaitGroup)
-		for _, a := range s.actors {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, s *ActorSystem, a *actorCore) {
-				defer wg.Done()
-				a.getActor().OnDestroy()
-				a.stop()
-				s.actorRW.Lock()
-				delete(s.actors, a.getId())
-				s.actorRW.Unlock()
-			}(wg, s, a)
+			err = s.tell(ref, e.Message.Message, WithMessageOptions(e.Message.Opts))
+			e.Callback(err)
 		}
-
-		s.actorRW.RUnlock()
-		wg.Wait()
 	}
-
-	// 重置状态
-	s.guid = 0
-	s.actors = make(map[ActorId]*actorCore)
 }

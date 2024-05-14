@@ -3,103 +3,194 @@ package vivid
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/kercylan98/minotaur/toolkit/convert"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const (
-	actorMaxHostLength          = 255
-	actorMaxSystemNameLength    = 128
-	actorHostPrefixLength       = 1 // 用于存储Host长度
-	actorPortPrefixLength       = 2 // Port占用2字节
-	actorSystemNamePrefixLength = 1 // 用于存储SystemName长度
-	actorGuidPrefixLength       = 8 // Guid占用8字节
-	actorCommaLength            = 1 // 逗号占1字节
-	actorIdMaxLength            = actorHostPrefixLength + actorMaxHostLength + actorCommaLength + actorPortPrefixLength + actorCommaLength + actorSystemNamePrefixLength + actorMaxSystemNameLength + actorCommaLength + actorGuidPrefixLength
+	actorIdPrefix = "minotaur"
 )
 
-type (
-	// ActorId 是并发计算模型的基本执行单元 ID 表示，用于标识一个 Actor。
-	//  - 该 Id 是全局（集群）唯一的，并且包含必要特征信息。
-	//
-	// 分区格式如下，以英文半角逗号分隔，ActorId 应该包含以下信息：
-	//  - | HostLength | SystemNameLength | Host | Port | SystemName | Guid |
-	ActorId string
+// ActorId 是一个 Actor 的唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了 Actor 完整的资源定位信息
+//   - minotaur://my-system/user/my-localActor
+//   - minotaur.tcp://localhost:1234/user/my-localActor
+//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActor
+type ActorId string
 
-	ActorGuid = uint64
-)
+func NewActorId(network, cluster, host string, port uint16, system, name string) ActorId {
+	networkLen := uint16(len(network))
+	clusterLen := uint16(len(cluster))
+	hostLen := uint16(len(host))
+	systemLen := uint16(len(system))
+	nameLen := uint16(len(name))
 
-// NewActorId 生成一个 ActorId，用于标识一个 Actor。
-func NewActorId(host string, port uint16, systemName string, guid ActorGuid) ActorId {
-	hostLength := len(host)
-	systemNameLength := len(systemName)
+	// 计算需要的字节数
+	size := networkLen + clusterLen + hostLen + systemLen + nameLen + 12 // 添加端口号和长度信息
 
-	actorId := [actorIdMaxLength]byte{}
-	cursor := 2
+	// 分配内存
+	actorId := make([]byte, size)
+	offset := uint16(0)
 
-	// HostLength
-	actorId[0] = byte(hostLength)
+	// 提前写入所有的长度信息，确保读取时可以快速定位
+	binary.BigEndian.PutUint16(actorId[offset:], networkLen)
+	offset += 2
+	binary.BigEndian.PutUint16(actorId[offset:], clusterLen)
+	offset += 2
+	binary.BigEndian.PutUint16(actorId[offset:], hostLen)
+	offset += 2
+	binary.BigEndian.PutUint16(actorId[offset:], systemLen)
+	offset += 2
+	binary.BigEndian.PutUint16(actorId[offset:], nameLen)
+	offset += 2
 
-	// SystemNameLength
-	actorId[1] = byte(systemNameLength)
+	// 写入网络信息
+	copy(actorId[offset:], network)
+	offset += networkLen
 
-	// Host
-	copy(actorId[cursor:], host)
-	cursor += hostLength
+	// 写入集群信息
+	copy(actorId[offset:], cluster)
+	offset += clusterLen
 
-	// Port
-	binary.BigEndian.PutUint16(actorId[cursor:], port)
-	cursor += actorPortPrefixLength
+	// 写入主机信息
+	copy(actorId[offset:], host)
+	offset += hostLen
 
-	// SystemName
-	copy(actorId[cursor:], systemName)
-	cursor += systemNameLength
+	// 写入系统信息
+	copy(actorId[offset:], system)
+	offset += systemLen
 
-	// Guid
-	binary.BigEndian.PutUint64(actorId[cursor:], guid)
-	cursor += actorGuidPrefixLength
+	// 写入名称信息
+	copy(actorId[offset:], name)
+	offset += nameLen
 
-	return ActorId(actorId[:cursor])
+	// 写入端口信息
+	binary.BigEndian.PutUint16(actorId[offset:], port)
+
+	// 转换为字符串
+	return ActorId(actorId)
 }
 
-// Host 返回 ActorId 的 Host 信息。
-func (i ActorId) Host() string {
-	hostLength := int(i[0])
-	start := actorHostPrefixLength + 1
-	end := hostLength + start
-	return string(i[start:end])
+// ParseActorId 用于解析可读的 ActorId 字符串为 ActorId 对象
+//   - minotaur://my-system/user/my-localActor
+//   - minotaur.tcp://localhost:1234/user/my-localActor
+//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActor
+func ParseActorId(actorId string) (ActorId, error) {
+	var network, cluster, host, system, name string
+	var port int
+	var portStr string
+
+	// 定义正则表达式来匹配不同格式的 ActorId
+	re1 := regexp.MustCompile(`^` + actorIdPrefix + `://([^/@]+@)?([^/:]+):(\d+)/([^/]+)/([^/]+)$`)
+	re2 := regexp.MustCompile(`^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)$`)
+	re3 := regexp.MustCompile(`^` + actorIdPrefix + `://([^/]+)/([^/]+)/([^/]+)$`)
+
+	if matches := re1.FindStringSubmatch(actorId); matches != nil {
+		cluster = matches[1]
+		host = matches[2]
+		portStr = matches[3]
+		system = matches[4]
+		name = matches[5]
+		network = "tcp"
+	} else if matches := re2.FindStringSubmatch(actorId); matches != nil {
+		host = matches[1]
+		portStr = matches[2]
+		system = matches[3]
+		name = matches[4]
+		network = "tcp"
+	} else if matches := re3.FindStringSubmatch(actorId); matches != nil {
+		system = matches[1]
+		name = matches[2]
+		network = ""
+		cluster = ""
+		host = ""
+		portStr = "0"
+	} else {
+		return "", fmt.Errorf("%w: %s", ErrActorIdInvalid, actorId)
+	}
+
+	// 将端口号从字符串转换为整数
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s, %w", ErrActorIdInvalid, actorId, err)
+	}
+
+	return NewActorId(network, cluster, host, uint16(port), system, name), nil
 }
 
-// Port 返回 ActorId 的 Port 信息。
-func (i ActorId) Port() uint16 {
-	hostLength := int(i[0])
-	start := actorHostPrefixLength + hostLength + 1
-	end := start + actorPortPrefixLength
-	return binary.BigEndian.Uint16([]byte(i[start:end]))
+// Network 获取 ActorId 的网络信息
+func (a ActorId) Network() string {
+	length := binary.BigEndian.Uint16([]byte(a[:2]))
+	v := a[10 : 10+length]
+	return string(v)
 }
 
-// SystemName 返回 ActorId 的 SystemName 信息。
-func (i ActorId) SystemName() string {
-	hostLength := int(i[0])
-	systemNameLength := int(i[1])
-	start := actorHostPrefixLength + hostLength + actorCommaLength + actorPortPrefixLength
-	end := start + systemNameLength
-	return string(i[start:end])
+// Cluster 获取 ActorId 的集群信息
+func (a ActorId) Cluster() string {
+	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
+	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
+	v := a[10+networkLen : 10+networkLen+clusterLen]
+	return string(v)
 }
 
-// Guid 返回 ActorId 的 Guid 信息。
-func (i ActorId) Guid() ActorGuid {
-	hostLength := int(i[0])
-	systemNameLength := int(i[1])
-	start := actorHostPrefixLength + hostLength + actorCommaLength + actorPortPrefixLength + systemNameLength
-	end := start + actorGuidPrefixLength
-	return binary.BigEndian.Uint64([]byte(i[start:end]))
+// Host 获取 ActorId 的主机信息
+func (a ActorId) Host() string {
+	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
+	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
+	hostLen := binary.BigEndian.Uint16([]byte(a[4:6]))
+	v := a[10+networkLen+clusterLen : 10+networkLen+clusterLen+hostLen]
+	return string(v)
 }
 
-// IsZero 返回 ActorId 是否为零值。
-func (i ActorId) IsZero() bool {
-	return i == ""
+// Port 获取 ActorId 的端口信息
+func (a ActorId) Port() uint16 {
+	port := a[len(a)-2:]
+	return binary.BigEndian.Uint16([]byte(port))
 }
 
-// String 返回 ActorId 的字符串表示。
-func (i ActorId) String() string {
-	return fmt.Sprintf("%s:%d:%s:%d", i.Host(), i.Port(), i.SystemName(), i.Guid())
+// System 获取 ActorId 的系统信息
+func (a ActorId) System() string {
+	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
+	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
+	hostLen := binary.BigEndian.Uint16([]byte(a[4:6]))
+	systemLen := binary.BigEndian.Uint16([]byte(a[6:8]))
+	v := a[10+networkLen+clusterLen+hostLen : 10+networkLen+clusterLen+hostLen+systemLen]
+	return string(v)
+}
+
+// Name 获取 ActorId 的名称信息
+func (a ActorId) Name() string {
+	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
+	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
+	hostLen := binary.BigEndian.Uint16([]byte(a[4:6]))
+	systemLen := binary.BigEndian.Uint16([]byte(a[6:8]))
+	nameLen := binary.BigEndian.Uint16([]byte(a[8:10]))
+	v := a[10+networkLen+clusterLen+hostLen+systemLen : 10+networkLen+clusterLen+hostLen+systemLen+nameLen]
+	return string(v)
+}
+
+// String 获取 ActorId 的字符串表示
+func (a ActorId) String() string {
+	var builder strings.Builder
+	builder.WriteString(actorIdPrefix)
+	if network := a.Network(); network != "" {
+		builder.WriteString(".")
+		builder.WriteString(network)
+	}
+	builder.WriteString("://")
+	if cluster := a.Cluster(); cluster != "" {
+		builder.WriteString(cluster)
+		builder.WriteString("@")
+	}
+	builder.WriteString(a.Host())
+	if port := a.Port(); port != 0 {
+		builder.WriteString(":")
+		builder.WriteString(convert.Uint16ToString(port))
+	}
+	builder.WriteString("/")
+	builder.WriteString(a.System())
+	builder.WriteString("/")
+	builder.WriteString(a.Name())
+	return builder.String()
 }
