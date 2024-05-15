@@ -16,25 +16,18 @@ type UserActor struct {
 
 func NewServer() *Server {
 	return &Server{
-		c: make(chan vivid.RemoteMessageEvent, 1024),
+		c: make(chan []byte, 1024),
 	}
 }
 
 type Server struct {
-	c chan vivid.RemoteMessageEvent
+	c chan []byte
 }
 
 func (s *Server) Run() error {
 	srv := server.NewServer(network.Tcp(":1244"))
 	srv.RegisterConnectionReceivePacketEvent(func(srv server.Server, conn server.Conn, packet server.Packet) {
-		message, err := vivid.ParseRemoteMessage(packet.GetBytes(), func(err error) {
-			fmt.Println("remote handle", err)
-		})
-		if err != nil {
-			return
-		}
-
-		s.c <- message
+		s.c <- packet.GetBytes()
 	})
 	return srv.Run()
 }
@@ -43,7 +36,7 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func (s *Server) C() <-chan vivid.RemoteMessageEvent {
+func (s *Server) C() <-chan []byte {
 	return s.c
 }
 
@@ -61,35 +54,25 @@ type Client struct {
 	tcp net.Conn
 }
 
-func (c Client) Ask(data []byte) ([]byte, error) {
-	_, err := c.tcp.Write(data)
-	if err != nil {
-		return nil, err
-	}
-
-	var buf = make([]byte, 1024)
-	n, err := c.tcp.Read(buf)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf[:n], nil
-}
-
-func (c Client) Tell(data []byte) error {
+func (c Client) Exec(data []byte) error {
 	_, err := c.tcp.Write(data)
 	return err
 }
 
-func (u *UserActor) OnPreStart(ctx *vivid.ActorContext) error {
+func (u *UserActor) OnPreStart(ctx vivid.ActorContext) error {
 	u.BehaviorAutoExecutor.Init(ctx)
 	vivid.RegisterBehavior(ctx, u.onHello)
+	vivid.RegisterBehavior(ctx, u.onEcho)
 	return nil
 }
 
-func (u *UserActor) onHello(ctx *vivid.ActorContext, msg string) error {
+func (u *UserActor) onHello(ctx vivid.MessageContext, msg string) error {
 	fmt.Println(msg)
 	return nil
+}
+
+func (u *UserActor) onEcho(ctx vivid.MessageContext, msg int) error {
+	return ctx.Reply(msg)
 }
 
 func main() {

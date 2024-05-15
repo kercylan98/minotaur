@@ -1,18 +1,19 @@
 package vivid
 
+import "time"
+
 type MessageOption func(opts *MessageOptions)
 
 type MessageOptions struct {
-	Reply bool // 是否需要回复
-
-	sender ActorRef // 发送者
+	ReplyTimeout time.Duration // 回复超时时间
+	SenderId     ActorId       // 显式发送者
 }
 
 // WithMessageOptions 设置消息选项
 func WithMessageOptions(options *MessageOptions) MessageOption {
 	return func(opts *MessageOptions) {
-		opts.sender = options.sender
-		opts.Reply = options.Reply
+		opts.SenderId = options.SenderId
+		opts.ReplyTimeout = options.ReplyTimeout
 	}
 }
 
@@ -26,13 +27,13 @@ func (o *MessageOptions) apply(options ...MessageOption) *MessageOptions {
 // WithMessageSender 设置发送者
 func WithMessageSender(sender ActorRef) MessageOption {
 	return func(opts *MessageOptions) {
-		opts.sender = sender
+		opts.SenderId = sender.GetId()
 	}
 }
 
-// WithMessageReply 设置是否需要回复
-func WithMessageReply(reply bool) MessageOption {
+// WithMessageReply 设置是否需要回复，当超时时间 <= 0 时，表示不需要回复
+func WithMessageReply(timeout time.Duration) MessageOption {
 	return func(opts *MessageOptions) {
-		opts.Reply = reply
+		opts.ReplyTimeout = timeout
 	}
 }

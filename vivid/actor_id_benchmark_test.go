@@ -7,12 +7,12 @@ import (
 
 func BenchmarkNewActorId(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActor")
+		vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActorRef")
 	}
 }
 
 func BenchmarkActorIdInfo(b *testing.B) {
-	actorId := vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActor")
+	actorId := vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActorRef")
 
 	b.Run("Network", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

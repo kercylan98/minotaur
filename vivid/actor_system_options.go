@@ -1,20 +1,27 @@
 package vivid
 
+import "time"
+
 // NewActorSystemOptions 用于创建一个 ActorSystemOptions
 func NewActorSystemOptions() *ActorSystemOptions {
-	return &ActorSystemOptions{
-		Network: "tcp",
-	}
+	return (&ActorSystemOptions{
+		Dispatchers: make(map[string]Dispatcher),
+	}).
+		WithNetwork("tcp").
+		WithDispatcher("default", newDispatcher()).
+		WithAskDefaultTimeout(time.Second * 2)
 }
 
 // ActorSystemOptions 是 ActorSystem 的配置选项
 type ActorSystemOptions struct {
-	ClusterName   string        // 集群名称
-	Network       string        // 网络协议
-	Host          string        // 主机地址
-	Port          uint16        // 端口
-	Server        Server        // 远程调用服务端
-	ClientFactory ClientFactory // 远程调用客户端
+	ClusterName       string                // 集群名称
+	Network           string                // 网络协议
+	Host              string                // 主机地址
+	Port              uint16                // 端口
+	Server            Server                // 远程调用服务端
+	ClientFactory     ClientFactory         // 远程调用客户端
+	Dispatchers       map[string]Dispatcher // 消息分发器
+	AskDefaultTimeout time.Duration         // 默认的 Ask 超时时间
 }
 
 // Apply 用于应用配置选项
@@ -37,6 +44,12 @@ func (o *ActorSystemOptions) Apply(options ...*ActorSystemOptions) *ActorSystemO
 		}
 		if option.ClientFactory != nil {
 			o.ClientFactory = option.ClientFactory
+		}
+		for r, d := range option.Dispatchers {
+			o.Dispatchers[r] = d
+		}
+		if option.AskDefaultTimeout != 0 {
+			o.AskDefaultTimeout = option.AskDefaultTimeout
 		}
 	}
 	return o
@@ -66,5 +79,17 @@ func (o *ActorSystemOptions) WithAddress(Server Server, host string, port uint16
 // WithClientFactory 设置远程调用客户端工厂
 func (o *ActorSystemOptions) WithClientFactory(ClientFactory ClientFactory) *ActorSystemOptions {
 	o.ClientFactory = ClientFactory
+	return o
+}
+
+// WithDispatcher 绑定消息分发器
+func (o *ActorSystemOptions) WithDispatcher(name string, dispatcher Dispatcher) *ActorSystemOptions {
+	o.Dispatchers[name] = dispatcher
+	return o
+}
+
+// WithAskDefaultTimeout 设置默认的 Ask 超时时间
+func (o *ActorSystemOptions) WithAskDefaultTimeout(timeout time.Duration) *ActorSystemOptions {
+	o.AskDefaultTimeout = timeout
 	return o
 }

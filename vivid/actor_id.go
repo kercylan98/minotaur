@@ -14,9 +14,9 @@ const (
 )
 
 // ActorId 是一个 Actor 的唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了 Actor 完整的资源定位信息
-//   - minotaur://my-system/user/my-localActor
-//   - minotaur.tcp://localhost:1234/user/my-localActor
-//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActor
+//   - minotaur://my-system/user/my-localActorRef
+//   - minotaur.tcp://localhost:1234/user/my-localActorRef
+//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActorRef
 type ActorId string
 
 func NewActorId(network, cluster, host string, port uint16, system, name string) ActorId {
@@ -73,9 +73,9 @@ func NewActorId(network, cluster, host string, port uint16, system, name string)
 }
 
 // ParseActorId 用于解析可读的 ActorId 字符串为 ActorId 对象
-//   - minotaur://my-system/user/my-localActor
-//   - minotaur.tcp://localhost:1234/user/my-localActor
-//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActor
+//   - minotaur://my-system/user/my-localActorRef
+//   - minotaur.tcp://localhost:1234/user/my-localActorRef
+//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActorRef
 func ParseActorId(actorId string) (ActorId, error) {
 	var network, cluster, host, system, name string
 	var port int

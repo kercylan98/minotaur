@@ -1,18 +1,24 @@
 package vivid
 
+import "sync"
+
 type actorTrie struct {
-	root *trieActorNode // 根节点
+	root   *trieActorNode         // 根节点
+	fast   map[ActorId]*actorCore // 快速查找
+	fastRW sync.RWMutex           // 快速查找读写锁
 }
 
 func (t *actorTrie) init() *actorTrie {
+	t.fast = make(map[ActorId]*actorCore)
 	t.root = &trieActorNode{
 		children: make(map[rune]*trieActorNode),
 	}
 	return t
 }
 
-// insert 插入一个 localActor
-func (t *actorTrie) insert(name string, actor *localActor) {
+// insert 插入一个 localActorRef
+func (t *actorTrie) insert(actorId ActorId, actor *actorCore) {
+	name := actorId.Name()
 	node := t.root
 	for _, ch := range name {
 		node.lock.Lock()
@@ -29,31 +35,26 @@ func (t *actorTrie) insert(name string, actor *localActor) {
 	node.isEnd = true
 	node.actor = actor
 	node.lock.Unlock()
+
+	t.fastRW.Lock()
+	t.fast[actorId] = actor
+	t.fastRW.Unlock()
 }
 
 // find 查找一个 localActor
-func (t *actorTrie) find(name string) *localActor {
-	node := t.root
-	for _, ch := range name {
-		node.lock.RLock()
-		nextNode, exists := node.children[ch]
-		node.lock.RUnlock()
-		if !exists {
-			return nil
-		}
-		node = nextNode
-	}
-	node.lock.RLock()
-	defer node.lock.RUnlock()
-	if node.isEnd {
-		return node.actor
-	}
-	return nil
+func (t *actorTrie) find(id ActorId) *actorCore {
+	t.fastRW.RLock()
+	actor, _ := t.fast[id]
+	t.fastRW.RUnlock()
+	return actor
 }
 
-// has 检查是否存在一个 localActor
-func (t *actorTrie) has(name string) bool {
-	return t.find(name) != nil
+// has 检查是否存在一个 localActorRef
+func (t *actorTrie) has(id ActorId) bool {
+	t.fastRW.RLock()
+	_, exists := t.fast[id]
+	t.fastRW.RUnlock()
+	return exists
 }
 
 // startsWith 搜索一个前缀
