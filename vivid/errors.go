@@ -9,4 +9,5 @@ var (
 	ErrActorAlreadyExists        = errors.New("actor already exists")
 	ErrActorNotFound             = errors.New("actor not found")
 	ErrReplyTimeout              = errors.New("actor reply timeout")
+	ErrActorNotUnique            = errors.New("actor not unique")
 )

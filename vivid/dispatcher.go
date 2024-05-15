@@ -35,6 +35,7 @@ func (d *dispatcher) Send(receiver ActorCore, msg MessageContext) error {
 	mailbox, exist := d.mailboxes[receiver.GetId()]
 	d.mailboxesRW.RUnlock()
 	if !exist {
+		panic("mailbox not found")
 		return nil
 	}
 

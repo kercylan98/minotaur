@@ -2,8 +2,9 @@ package vivid
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"golang.org/x/net/context"
+	"path"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -14,7 +15,7 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 	s := &ActorSystem{
 		opts:         NewActorSystemOptions().Apply(opts...),
 		name:         name,
-		actors:       new(actorTrie).init(),
+		actors:       make(map[ActorId]*actorCore),
 		closed:       make(chan struct{}),
 		replyWaiters: make(map[uint64]chan any),
 	}
@@ -26,19 +27,23 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 // ActorSystem 是维护 Actor 的容器，负责 Actor 的创建、销毁、消息分发等
 type ActorSystem struct {
 	opts             *ActorSystemOptions
-	name             string              // ActorSystem 的名称
-	actors           *actorTrie          // Actor 容器
-	closed           chan struct{}       // 关闭信号
-	ctx              context.Context     // 上下文
-	cancel           context.CancelFunc  // 取消函数（该函数应该在 closed 生效后才能调用）
-	guid             atomic.Uint64       // 未命名 Actor 的唯一标识
-	seq              atomic.Uint64       // 消息序列号
-	replyWaiters     map[uint64]chan any // 等待回复的消息
-	replyWaitersLock sync.Mutex          // 等待回复的消息锁
+	name             string                 // ActorSystem 的名称
+	actors           map[ActorId]*actorCore // 可用于精准快查的映射
+	actorsRW         sync.RWMutex           // 用于保护 actors 的读写锁
+	user             *actorCore             // 用户使用的顶级 Actor
+	closed           chan struct{}          // 关闭信号
+	ctx              context.Context        // 上下文
+	cancel           context.CancelFunc     // 取消函数（该函数应该在 closed 生效后才能调用）
+	guid             atomic.Uint64          // 未命名 Actor 的唯一标识
+	seq              atomic.Uint64          // 消息序列号
+	replyWaiters     map[uint64]chan any    // 等待回复的消息
+	replyWaitersLock sync.Mutex             // 等待回复的消息锁
 }
 
 // Run 启动 ActorSystem
-func (s *ActorSystem) Run() error {
+func (s *ActorSystem) Run() (err error) {
+	s.user, err = s.generateActor(reflect.TypeOf((*userGuardianActor)(nil)).Elem(), NewActorOptions().WithName("user"))
+
 	if s.opts.Host != "" {
 		go s.handleRemoteMessage(s.ctx, s.opts.Server.C())
 		return s.opts.Server.Run()
@@ -56,74 +61,28 @@ func ActorOf[T Actor](system *ActorSystem, opts ...*ActorOptions) (ActorRef, err
 // ActorOf 创建一个 Actor
 //   - 推荐使用 ActorOf 函数来创建 Actor，这样可以保证 Actor 的类型安全
 func (s *ActorSystem) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
-	// 检查是否实现
-	if !typ.Implements(actorType) {
-		return nil, fmt.Errorf("%w: %s", ErrActorNotImplementActorRef, typ.String())
-	}
-	typ = typ.Elem()
-
-	// 应用可选项
-	opt := NewActorOptions().Apply(opts...)
-
-	// 重复检查
-	var actorId = NewActorId("tcp", s.opts.ClusterName, s.opts.Host, s.opts.Port, s.name, opt.Name)
-	if opt.Name != charproc.None {
-		if s.actors.has(actorId) {
-			return nil, fmt.Errorf("%w: %s", ErrActorAlreadyExists, actorId.Name())
-		}
-	} else {
-		opt.Name = fmt.Sprintf("%s-%d", typ.String(), s.guid.Add(1))
-		actorId = NewActorId("tcp", s.opts.ClusterName, s.opts.Host, s.opts.Port, s.name, opt.Name)
-	}
-
-	// 创建 Actor
-	var actor = reflect.New(typ).Interface().(Actor)
-	var core = newActorCore(s, actorId, actor, opt)
-	var dispatcher, exist = s.opts.Dispatchers[opt.DispatcherName]
-	if !exist {
-		dispatcher = s.opts.Dispatchers["default"]
-	}
-	if err := dispatcher.Attach(core); err != nil {
-		return nil, err
-	}
-	if err := core.onPreStart(); err != nil {
-		return nil, err
-	}
-
-	s.actors.insert(actorId, core)
-
-	return core, nil
+	return s.user.ActorOf(typ, opts...)
 }
 
 // GetActor 获取 ActorRef
-func (s *ActorSystem) GetActor(actorId ActorId) (ActorRef, error) {
-	if actorId.Cluster() != s.opts.ClusterName || actorId.Host() != s.opts.Host || actorId.Port() != s.opts.Port {
-		// 生成远程 ActorRef
-		return newRemoteActorRef(s, actorId), nil
-	}
-
-	if actorId.System() != s.name {
-		return nil, fmt.Errorf("%w: %s", ErrActorNotFound, actorId.String())
-	}
-
-	ref := s.actors.find(actorId)
-	if ref == nil {
-		return nil, fmt.Errorf("%w: %s", ErrActorNotFound, actorId.String())
-	}
-
-	return ref, nil
+func (s *ActorSystem) GetActor() Query {
+	return newQuery(s, s.user)
 }
 
-func (s *ActorSystem) sendCtx(actorId ActorId, ctx MessageContext) error {
-	core := s.actors.find(actorId)
-	if core == nil {
-		return fmt.Errorf("%w: %s", ErrActorNotFound, actorId.String())
-	}
+func (s *ActorSystem) getActorDispatcher(core ActorCore) Dispatcher {
 	receiverDispatcher, exist := s.opts.Dispatchers[core.GetOptions().DispatcherName]
 	if !exist {
 		receiverDispatcher = s.opts.Dispatchers["default"]
 	}
-	return receiverDispatcher.Send(core, ctx)
+	return receiverDispatcher
+}
+
+func (s *ActorSystem) sendCtx(actorId ActorId, ctx MessageContext) error {
+	core, err := s.GetActor().MustActorId(actorId).internalOne()
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, actorId.String())
+	}
+	return s.getActorDispatcher(core).Send(core, ctx)
 }
 
 // send 用于向 Actor 发送消息
@@ -230,7 +189,62 @@ func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan []byte) 
 			}
 
 			// 处理请求消息
-			s.sendCtx(message.GetReceiverId(), message)
+			if err = s.sendCtx(message.GetReceiverId(), message); err != nil {
+				log.Error(fmt.Sprintf("handle remote message error: %s", err.Error()))
+			}
 		}
 	}
+}
+
+func (s *ActorSystem) unregisterActor(id ActorId) {
+	core, err := s.GetActor().ActorId(id).internalOne()
+	if err != nil {
+		log.Error(fmt.Sprintf("unregister actor error: %s", err.Error()))
+		return
+	}
+
+	dispatcher := s.getActorDispatcher(core)
+	if err = dispatcher.Detach(core); err != nil {
+		log.Error(fmt.Sprintf("unregister actor detach error: %s", err.Error()))
+		return
+	}
+}
+
+// 用于创建顶层 Actor 的函数
+func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*actorCore, error) {
+	opt := NewActorOptions().Apply(opts...)
+	actorPath := path.Clean(opt.Name)
+
+	// 创建 Actor ID
+	actorId := NewActorId(s.opts.Network, s.opts.ClusterName, s.opts.Host, s.opts.Port, s.name, actorPath)
+
+	// 检查 Actor 是否已经存在
+	s.actorsRW.Lock()
+	defer s.actorsRW.Unlock()
+	actor, exist := s.actors[actorId]
+	if exist {
+		return nil, fmt.Errorf("%w: %s", ErrActorAlreadyExists, actorId.Name())
+	}
+
+	// 创建 Actor
+	actor = newActorCore(s, actorId, reflect.New(typ).Interface().(Actor), opt)
+
+	// 分发器
+	dispatcher := s.getActorDispatcher(actor)
+	if err := dispatcher.Attach(actor); err != nil {
+		return nil, err
+	}
+
+	// 启动 Actor
+	if err := actor.onPreStart(); err != nil {
+		return nil, err
+	}
+
+	// 绑定 Actor
+	s.actors[actorId] = actor
+
+	if opt.hookActorOf != nil {
+		opt.hookActorOf(actor)
+	}
+	return actor, nil
 }

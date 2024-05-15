@@ -22,19 +22,22 @@ func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, opts *Actor
 	}
 	core.ActorRef = newLocalActorRef(system, actorId)
 	core.actorContext = &actorContext{
+		system:    system,
 		id:        actorId,
+		core:      core,
 		state:     actorContextStatePreStart,
 		behaviors: make(map[reflect.Type]reflect.Value),
+		children:  map[ActorName]*actorCore{},
 	}
 
 	return core
 }
 
 type actorCore struct {
-	Actor
-	ActorRef
-	*actorContext
-	opts *ActorOptions
+	Actor                       // 外部 Actor 实现
+	ActorRef                    // Actor 的引用
+	*actorContext               // Actor 的上下文
+	opts          *ActorOptions // Actor 的配置项
 }
 
 // onPreStart 在 Actor 启动之前执行的逻辑

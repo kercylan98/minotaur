@@ -4,13 +4,18 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/convert"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
 const (
-	actorIdPrefix = "minotaur"
+	actorIdPrefix          = "minotaur"
+	actorIdParseLocal      = `^` + actorIdPrefix + `://([^/@]+@)?([^/:]+):(\d+)/([^/]+)/([^/]+)$`
+	actorIdParseTcp        = `^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)$`
+	actorIdParseTcpCluster = `^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)/([^/]+)$`
+	actorIdMinLength       = 12
 )
 
 // ActorId 是一个 Actor 的唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了 Actor 完整的资源定位信息
@@ -19,15 +24,18 @@ const (
 //   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActorRef
 type ActorId string
 
-func NewActorId(network, cluster, host string, port uint16, system, name string) ActorId {
+type ActorName = string
+type ActorPath = string
+
+func NewActorId(network, cluster, host string, port uint16, system, path ActorPath) ActorId {
 	networkLen := uint16(len(network))
 	clusterLen := uint16(len(cluster))
 	hostLen := uint16(len(host))
 	systemLen := uint16(len(system))
-	nameLen := uint16(len(name))
+	pathLen := uint16(len(path))
 
 	// 计算需要的字节数
-	size := networkLen + clusterLen + hostLen + systemLen + nameLen + 12 // 添加端口号和长度信息
+	size := networkLen + clusterLen + hostLen + systemLen + pathLen + 12 // 添加端口号和长度信息
 
 	// 分配内存
 	actorId := make([]byte, size)
@@ -42,7 +50,7 @@ func NewActorId(network, cluster, host string, port uint16, system, name string)
 	offset += 2
 	binary.BigEndian.PutUint16(actorId[offset:], systemLen)
 	offset += 2
-	binary.BigEndian.PutUint16(actorId[offset:], nameLen)
+	binary.BigEndian.PutUint16(actorId[offset:], pathLen)
 	offset += 2
 
 	// 写入网络信息
@@ -61,9 +69,9 @@ func NewActorId(network, cluster, host string, port uint16, system, name string)
 	copy(actorId[offset:], system)
 	offset += systemLen
 
-	// 写入名称信息
-	copy(actorId[offset:], name)
-	offset += nameLen
+	// 写入路径信息
+	copy(actorId[offset:], path)
+	offset += pathLen
 
 	// 写入端口信息
 	binary.BigEndian.PutUint16(actorId[offset:], port)
@@ -82,9 +90,9 @@ func ParseActorId(actorId string) (ActorId, error) {
 	var portStr string
 
 	// 定义正则表达式来匹配不同格式的 ActorId
-	re1 := regexp.MustCompile(`^` + actorIdPrefix + `://([^/@]+@)?([^/:]+):(\d+)/([^/]+)/([^/]+)$`)
-	re2 := regexp.MustCompile(`^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)$`)
-	re3 := regexp.MustCompile(`^` + actorIdPrefix + `://([^/]+)/([^/]+)/([^/]+)$`)
+	re1 := regexp.MustCompile(actorIdParseLocal)
+	re2 := regexp.MustCompile(actorIdParseTcp)
+	re3 := regexp.MustCompile(actorIdParseTcpCluster)
 
 	if matches := re1.FindStringSubmatch(actorId); matches != nil {
 		cluster = matches[1]
@@ -117,6 +125,24 @@ func ParseActorId(actorId string) (ActorId, error) {
 	}
 
 	return NewActorId(network, cluster, host, uint16(port), system, name), nil
+}
+
+// Invalid 检查 ActorId 是否无效
+func (a ActorId) Invalid() bool {
+	if len(a) < actorIdMinLength {
+		return true
+	}
+	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
+	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
+	hostLen := binary.BigEndian.Uint16([]byte(a[4:6]))
+	systemLen := binary.BigEndian.Uint16([]byte(a[6:8]))
+	nameLen := binary.BigEndian.Uint16([]byte(a[8:10]))
+	totalLen := actorIdMinLength + networkLen + clusterLen + hostLen + systemLen + nameLen
+	if uint16(len(a)) < totalLen {
+		return true
+	}
+
+	return networkLen == 0 || hostLen == 0 || systemLen == 0 || nameLen == 0
 }
 
 // Network 获取 ActorId 的网络信息
@@ -159,15 +185,20 @@ func (a ActorId) System() string {
 	return string(v)
 }
 
-// Name 获取 ActorId 的名称信息
-func (a ActorId) Name() string {
+// Path 获取 ActorId 的路径信息
+func (a ActorId) Path() ActorPath {
 	networkLen := binary.BigEndian.Uint16([]byte(a[:2]))
 	clusterLen := binary.BigEndian.Uint16([]byte(a[2:4]))
 	hostLen := binary.BigEndian.Uint16([]byte(a[4:6]))
 	systemLen := binary.BigEndian.Uint16([]byte(a[6:8]))
 	nameLen := binary.BigEndian.Uint16([]byte(a[8:10]))
 	v := a[10+networkLen+clusterLen+hostLen+systemLen : 10+networkLen+clusterLen+hostLen+systemLen+nameLen]
-	return string(v)
+	return ActorPath(v)
+}
+
+// Name 获取 ActorId 的名称信息
+func (a ActorId) Name() ActorName {
+	return filepath.Base(a.Path())
 }
 
 // String 获取 ActorId 的字符串表示
@@ -194,6 +225,6 @@ func (a ActorId) String() string {
 	builder.WriteString("/")
 	builder.WriteString(a.System())
 	builder.WriteString("/")
-	builder.WriteString(a.Name())
+	builder.WriteString(a.Path())
 	return builder.String()
 }

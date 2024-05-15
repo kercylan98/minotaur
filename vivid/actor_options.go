@@ -20,6 +20,8 @@ type ActorOptions struct {
 	Name           string          // Actor 名称
 	Mailbox        func() *Mailbox // Actor 使用的邮箱
 	DispatcherName string          // Actor 使用的调度器名称，如果为空则使用默认调度器
+
+	hookActorOf func(core *actorCore) // 内部 ActorOf 钩子
 }
 
 // Apply 应用配置项
@@ -53,5 +55,11 @@ func (o *ActorOptions) WithMailbox(mailbox func() *Mailbox) *ActorOptions {
 // WithDispatcherName 设置 Actor 使用的调度器名称
 func (o *ActorOptions) WithDispatcherName(name string) *ActorOptions {
 	o.DispatcherName = name
+	return o
+}
+
+// withHookActorOf 设置内部 ActorOf 钩子
+func (o *ActorOptions) withHookActorOf(hook func(core *actorCore)) *ActorOptions {
+	o.hookActorOf = hook
 	return o
 }

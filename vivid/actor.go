@@ -13,4 +13,7 @@ type Actor interface {
 
 	// OnReceived 当 Actor 接收到消息时执行的逻辑
 	OnReceived(ctx MessageContext) error
+
+	// OnDestroy 当 Actor 被要求销毁时将会调用该函数，需要在该函数中释放 Actor 的资源
+	OnDestroy(ctx ActorContext) error
 }
