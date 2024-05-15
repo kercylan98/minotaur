@@ -127,35 +127,42 @@ func (s *ActorSystem) sendCtx(actorId ActorId, ctx MessageContext) error {
 }
 
 // send 用于向 Actor 发送消息
-func (s *ActorSystem) send(senderId, receiverId ActorId, msg Message, opts ...MessageOption) (MessageContext, error) {
+func (s *ActorSystem) send(senderId, receiverId ActorId, msg Message, opts ...MessageOption) (MessageContext, *MessageOptions, error) {
 	opt := new(MessageOptions).apply(opts...)
 
 	ctx := newMessageContext(s, senderId, receiverId, msg, opt)
 
 	// 检查是否为本地 Actor
 	if isLocal := receiverId.Host() == s.opts.Host && receiverId.Port() == s.opts.Port; isLocal {
-		return ctx, s.sendCtx(receiverId, ctx)
+		return ctx, opt, s.sendCtx(receiverId, ctx)
 	}
 
-	// 远程消息
+	// 远程消息如果是匿名发送，设置网络信息
+	if ctx.GetSenderId() == "" {
+		c := ctx.(*messageContext)
+		c.RemoteNetwork = s.opts.Network
+		c.RemoteHost = s.opts.Host
+		c.RemotePort = s.opts.Port
+	}
+
 	data, err := gob.Encode(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// TODO: 客户端应该是一个连接池
 	cli, err := s.opts.ClientFactory.NewClient(receiverId.Network(), receiverId.Host(), receiverId.Port())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return ctx, cli.Exec(data)
+	return ctx, opt, cli.Exec(data)
 }
 
 // tell 用于向 Actor 发送消息
 func (s *ActorSystem) tell(receiverId ActorId, msg Message, opts ...MessageOption) error {
 	opt := new(MessageOptions).apply(append(opts, WithMessageReply(0))...)
-	_, err := s.send(opt.SenderId, receiverId, msg, WithMessageOptions(opt))
+	_, _, err := s.send(opt.SenderId, receiverId, msg, WithMessageOptions(opt))
 	return err
 }
 
@@ -167,7 +174,7 @@ func (s *ActorSystem) ask(receiverId ActorId, msg Message, opts ...MessageOption
 		appendOpts = append(appendOpts, WithMessageReply(s.opts.AskDefaultTimeout))
 	}
 
-	ctx, err := s.send(opt.SenderId, receiverId, msg, appendOpts...)
+	ctx, opt, err := s.send(opt.SenderId, receiverId, msg, appendOpts...)
 	if err != nil {
 		return nil, err
 	}

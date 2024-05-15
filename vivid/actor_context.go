@@ -18,7 +18,7 @@ type ActorContext interface {
 
 	// MatchBehavior 匹配 Actor 的行为，当匹配不到时将返回 nil，否则返回匹配到的行为执行器
 	//   - 推荐使用 MatchBehavior 函数来匹配 Actor 的行为，这样可以保证行为的类型安全
-	MatchBehavior(messageType reflect.Type, message any) ActorBehaviorExecutor
+	MatchBehavior(messageType reflect.Type, ctx MessageContext) ActorBehaviorExecutor
 }
 
 type actorContextState = uint8 // actorContext 的状态
@@ -26,7 +26,6 @@ type actorContextState = uint8 // actorContext 的状态
 // actorContext 是 Actor 的上下文
 type actorContext struct {
 	id        ActorId                        // Actor 的 ID
-	vof       reflect.Value                  // 上下文的值类型
 	state     actorContextState              // 上下文的状态
 	behaviors map[reflect.Type]reflect.Value // Actor 的行为，由消息类型到行为的映射
 }
@@ -52,7 +51,7 @@ func (c *actorContext) RegisterBehavior(messageType reflect.Type, behavior any) 
 	}
 
 	// 检查行为参数是否符合要求
-	if behaviorType.NumIn() != 1 || behaviorType.In(0) != messageContextType {
+	if behaviorType.NumIn() != 2 || behaviorType.In(0) != messageContextType {
 		panic(fmt.Errorf("%w: %s", ErrActorBehaviorInvalid, behaviorType))
 	}
 
@@ -65,12 +64,11 @@ func (c *actorContext) RegisterBehavior(messageType reflect.Type, behavior any) 
 }
 
 // MatchBehavior 匹配 Actor 的行为，当匹配不到时将返回 nil，否则返回匹配到的行为执行器
-func MatchBehavior[T any](ctx ActorContext, message T) ActorBehaviorExecutor {
-	messageType := reflect.TypeOf(message)
-	return ctx.MatchBehavior(messageType, message)
+func MatchBehavior(ctx MessageContext) ActorBehaviorExecutor {
+	return ctx.GetActorContext().MatchBehavior(reflect.TypeOf(ctx.GetMessage()), ctx)
 }
 
-func (c *actorContext) MatchBehavior(messageType reflect.Type, message any) ActorBehaviorExecutor {
+func (c *actorContext) MatchBehavior(messageType reflect.Type, ctx MessageContext) ActorBehaviorExecutor {
 	behaviorValue, ok := c.behaviors[messageType]
 
 	if !ok {
@@ -78,7 +76,7 @@ func (c *actorContext) MatchBehavior(messageType reflect.Type, message any) Acto
 	}
 
 	return func() error {
-		result := behaviorValue.Call([]reflect.Value{c.vof, reflect.ValueOf(message)})
+		result := behaviorValue.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(ctx.GetMessage())})
 		switch v := result[0].Interface().(type) {
 		case nil:
 			return nil

@@ -23,11 +23,9 @@ func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, opts *Actor
 	core.ActorRef = newLocalActorRef(system, actorId)
 	core.actorContext = &actorContext{
 		id:        actorId,
-		vof:       reflect.Value{},
 		state:     actorContextStatePreStart,
 		behaviors: make(map[reflect.Type]reflect.Value),
 	}
-	core.actorContext.vof = reflect.ValueOf(core.actorContext)
 
 	return core
 }

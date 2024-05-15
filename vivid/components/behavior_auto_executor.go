@@ -18,7 +18,7 @@ func (b *BehaviorAutoExecutor) Init(ctx vivid.ActorContext) *BehaviorAutoExecuto
 }
 
 func (b *BehaviorAutoExecutor) OnReceived(msg vivid.MessageContext) error {
-	executor := vivid.MatchBehavior(b.ctx, msg)
+	executor := vivid.MatchBehavior(msg)
 	if executor == nil {
 		return nil
 	}

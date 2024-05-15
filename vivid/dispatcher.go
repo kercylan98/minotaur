@@ -74,6 +74,7 @@ func (d *dispatcher) Detach(actor ActorCore) error {
 
 func (d *dispatcher) watchReceive(actor ActorCore, dequeue <-chan MessageContext) {
 	for ctx := range dequeue {
+		ctx.(*messageContext).actorContext = actor
 		actor.OnReceived(ctx)
 	}
 }

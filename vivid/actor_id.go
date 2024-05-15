@@ -172,6 +172,9 @@ func (a ActorId) Name() string {
 
 // String 获取 ActorId 的字符串表示
 func (a ActorId) String() string {
+	if a == "" {
+		return ""
+	}
 	var builder strings.Builder
 	builder.WriteString(actorIdPrefix)
 	if network := a.Network(); network != "" {

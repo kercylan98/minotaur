@@ -72,6 +72,7 @@ func (u *UserActor) onHello(ctx vivid.MessageContext, msg string) error {
 }
 
 func (u *UserActor) onEcho(ctx vivid.MessageContext, msg int) error {
+	fmt.Println("ECHO", msg)
 	return ctx.Reply(msg)
 }
 
@@ -87,6 +88,11 @@ func main() {
 	}()
 	time.Sleep(time.Second)
 
+	localActor, err := vivid.ActorOf[*UserActor](system)
+	if err != nil {
+		panic(err)
+	}
+
 	remoteActor, err := system.GetActor(vivid.NewActorId("tcp", "", "127.0.0.1", 1245, "User", "User1"))
 	if err != nil {
 		panic(err)
@@ -95,5 +101,22 @@ func main() {
 	if err = remoteActor.Tell("Hello, World!"); err != nil {
 		panic(err)
 	}
+
+	if reply, err := remoteActor.Ask(10086); err != nil {
+		panic(err)
+	} else {
+		fmt.Println("remote reply:", reply)
+	}
+
+	if err = localActor.Tell("local: Hello, World!"); err != nil {
+		panic(err)
+	}
+
+	if reply, err := localActor.Ask(9999); err != nil {
+		panic(err)
+	} else {
+		fmt.Println("local reply:", reply)
+	}
+
 	time.Sleep(time.Minute * 10)
 }

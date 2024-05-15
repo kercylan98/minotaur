@@ -61,18 +61,19 @@ func (c Client) Exec(data []byte) error {
 
 func (u *UserActor) OnPreStart(ctx vivid.ActorContext) error {
 	u.BehaviorAutoExecutor.Init(ctx)
-	vivid.RegisterBehavior[string](ctx, u.onHello)
-	vivid.RegisterBehavior[int](ctx, u.onEcho)
+	vivid.RegisterBehavior(ctx, u.onHello)
+	vivid.RegisterBehavior(ctx, u.onEcho)
 	return nil
 }
 
-func (u *UserActor) onHello(ctx vivid.MessageContext) error {
-	fmt.Println(ctx.GetMessage())
+func (u *UserActor) onHello(ctx vivid.MessageContext, msg string) error {
+	fmt.Println(msg)
 	return nil
 }
 
-func (u *UserActor) onEcho(ctx vivid.MessageContext) error {
-	return ctx.Reply(ctx.GetMessage())
+func (u *UserActor) onEcho(ctx vivid.MessageContext, msg int) error {
+	fmt.Println("ECHO", msg)
+	return ctx.Reply(msg)
 }
 
 func main() {
