@@ -20,6 +20,7 @@ type ActorOptions struct {
 	Name           string          // Actor 名称
 	Mailbox        func() *Mailbox // Actor 使用的邮箱
 	DispatcherName string          // Actor 使用的调度器名称，如果为空则使用默认调度器
+	Parent         ActorContext    // 父 Actor
 
 	hookActorOf func(core *actorCore) // 内部 ActorOf 钩子
 }
@@ -35,6 +36,13 @@ func (o *ActorOptions) Apply(opts ...*ActorOptions) *ActorOptions {
 		}
 		if opt.DispatcherName != "" {
 			o.DispatcherName = opt.DispatcherName
+		}
+		if opt.Parent != nil {
+			o.Parent = opt.Parent
+		}
+		if opt.hookActorOf != nil {
+			o.hookActorOf = opt.hookActorOf
+
 		}
 	}
 	return o
@@ -55,6 +63,12 @@ func (o *ActorOptions) WithMailbox(mailbox func() *Mailbox) *ActorOptions {
 // WithDispatcherName 设置 Actor 使用的调度器名称
 func (o *ActorOptions) WithDispatcherName(name string) *ActorOptions {
 	o.DispatcherName = name
+	return o
+}
+
+// WithParent 设置 Actor 的父 Actor
+func (o *ActorOptions) WithParent(parent ActorContext) *ActorOptions {
+	o.Parent = parent
 	return o
 }
 

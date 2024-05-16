@@ -35,8 +35,7 @@ func (d *dispatcher) Send(receiver ActorCore, msg MessageContext) error {
 	mailbox, exist := d.mailboxes[receiver.GetId()]
 	d.mailboxesRW.RUnlock()
 	if !exist {
-		panic("mailbox not found")
-		return nil
+		return ErrActorTerminated
 	}
 
 	mailbox.Enqueue(msg)
@@ -75,7 +74,7 @@ func (d *dispatcher) Detach(actor ActorCore) error {
 
 func (d *dispatcher) watchReceive(actor ActorCore, dequeue <-chan MessageContext) {
 	for ctx := range dequeue {
-		ctx.(*messageContext).actorContext = actor
+		ctx.(*messageContext).ActorContext = actor
 		actor.OnReceived(ctx)
 	}
 }

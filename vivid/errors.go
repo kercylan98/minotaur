@@ -10,4 +10,6 @@ var (
 	ErrActorNotFound             = errors.New("actor not found")
 	ErrReplyTimeout              = errors.New("actor reply timeout")
 	ErrActorNotUnique            = errors.New("actor not unique")
+	ErrActorTerminated           = errors.New("actor terminated or not exists")
+	ErrActorPreStart             = errors.New("actor pre start error")
 )

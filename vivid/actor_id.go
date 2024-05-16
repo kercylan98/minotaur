@@ -222,7 +222,9 @@ func (a ActorId) String() string {
 		builder.WriteString(":")
 		builder.WriteString(convert.Uint16ToString(port))
 	}
-	builder.WriteString("/")
+	if a.Host() != "" {
+		builder.WriteString("/")
+	}
 	builder.WriteString(a.System())
 	builder.WriteString("/")
 	builder.WriteString(a.Path())

@@ -2,7 +2,6 @@ package vivid
 
 import (
 	"fmt"
-	"path"
 	"reflect"
 )
 
@@ -22,13 +21,19 @@ type ActorContext interface {
 	MatchBehavior(messageType reflect.Type, ctx MessageContext) ActorBehaviorExecutor
 
 	// NotifyTerminated 当 Actor 主动销毁时，务必调用该函数，以便在整个 Actor 系统中得到完整的释放
-	NotifyTerminated()
+	NotifyTerminated(v ...Message)
 
 	// ActorOf 创建一个 Actor，该 Actor 是当前 Actor 的子 Actor
-	ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error)
+	ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error)
 
 	// GetActor 获取 Actor 的引用
 	GetActor() Query
+
+	// GetParentActor 获取父 Actor 的引用
+	GetParentActor() ActorRef
+
+	// GetActorId 获取 Actor 的 ID
+	GetActorId() ActorId
 }
 
 type actorContextState = uint8 // actorContext 的状态
@@ -40,58 +45,66 @@ type actorContext struct {
 	core      *actorCore                     // Actor 的核心
 	state     actorContextState              // 上下文的状态
 	behaviors map[reflect.Type]reflect.Value // Actor 的行为，由消息类型到行为的映射
+	parent    *actorCore                     // 父 Actor
 	children  map[ActorName]*actorCore       // 子 Actor
 	isEnd     bool                           // 是否是末级 Actor
+	tof       reflect.Type                   // Actor 的类型
 }
 
-func (c *actorContext) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
-	// 检查类型是否实现了 Actor 接口
-	if !typ.Implements(actorType) {
-		return nil, fmt.Errorf("%w: %s", ErrActorNotImplementActorRef, typ.String())
+// restart 重启上下文
+func (c *actorContext) restart(reEntry bool) (recovery func(), err error) {
+	// 重启所有子 Actor
+	if !reEntry && c.state != actorContextStatePreStart {
+		c.system.actorsRW.RLock()
+		defer c.system.actorsRW.RUnlock()
 	}
-	typ = typ.Elem()
-
-	// 应用可选项
-	opt := NewActorOptions().Apply(opts...)
-	if opt.Name == "" {
-		opt.Name = fmt.Sprintf("%s-%d", c.id.Name(), c.system.guid.Add(1))
-	}
-	actorPath := path.Join(c.id.Name(), opt.Name)
-	actorName := opt.Name
-
-	// 创建 Actor ID
-	actorId := NewActorId(c.id.Network(), c.id.Cluster(), c.id.Host(), c.id.Port(), c.id.System(), actorPath)
-
-	// 检查 Actor 是否已经存在
-	c.system.actorsRW.Lock()
-	defer c.system.actorsRW.Unlock()
-	actor, exist := c.system.actors[actorId]
-	if exist {
-		return nil, fmt.Errorf("%w: %s", ErrActorAlreadyExists, actorId.Name())
+	var recoveries []func()
+	for _, child := range c.children {
+		if recovery, err = child.restart(true); err != nil {
+			for _, f := range recoveries {
+				f()
+			}
+			return nil, err
+		}
+		recoveries = append(recoveries, recovery)
 	}
 
-	// 创建 Actor
-	actor = newActorCore(c.system, actorId, reflect.New(typ).Interface().(Actor), opt)
-
-	// 分发器
-	dispatcher := c.system.getActorDispatcher(actor)
-	if err := dispatcher.Attach(actor); err != nil {
+	backupActor := c.core.Actor
+	backupState := c.core.state
+	backupBehaviors := c.behaviors
+	var recoveryFunc = func() {
+		c.core.Actor = backupActor
+		c.core.state = backupState
+		c.behaviors = backupBehaviors
+	}
+	c.core.Actor = reflect.New(c.core.tof).Interface().(Actor)
+	c.core.state = actorContextStatePreStart
+	c.core.actorContext.behaviors = make(map[reflect.Type]reflect.Value)
+	if err = c.core.onPreStart(); err != nil {
+		recoveryFunc()
 		return nil, err
 	}
+	return recoveryFunc, nil
+}
 
-	// 启动 Actor
-	if err := actor.onPreStart(); err != nil {
-		return nil, err
+func (c *actorContext) bindChildren(core *actorCore) {
+	c.children[core.GetOptions().Name] = core
+}
+
+func (c *actorContext) actorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
+	var opt *ActorOptions
+	if len(opts) > 0 {
+		opt = opts[0]
+	} else {
+		opt = NewActorOptions()
 	}
+	opt = opt.WithParent(c)
 
-	// 绑定 Actor
-	c.system.actors[actorId] = actor
-	c.children[actorName] = actor
+	return c.system.generateActor(typ, opt)
+}
 
-	if opt.hookActorOf != nil {
-		opt.hookActorOf(actor)
-	}
-	return actor, nil
+func (c *actorContext) ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
+	return c.actorOf(reflect.TypeOf(actor), opts...)
 }
 
 func (c *actorContext) GetActor() Query {
@@ -105,8 +118,13 @@ func RegisterBehavior[T any](ctx ActorContext, behavior ActorBehavior[T]) {
 	ctx.RegisterBehavior(messageType, behavior)
 }
 
-func (c *actorContext) NotifyTerminated() {
-	c.system.unregisterActor(c.id)
+func (c *actorContext) NotifyTerminated(v ...Message) {
+	terminatedContext := newActorTerminatedContext(c.core, v...)
+	c.parent.OnChildTerminated(c.parent, terminatedContext)
+	if terminatedContext.cancelTerminate {
+		return
+	}
+	c.system.unregisterActor(c.core, c.core.state == actorContextStatePreStart)
 }
 
 func (c *actorContext) RegisterBehavior(messageType reflect.Type, behavior any) {
@@ -137,7 +155,7 @@ func (c *actorContext) RegisterBehavior(messageType reflect.Type, behavior any) 
 
 // MatchBehavior 匹配 Actor 的行为，当匹配不到时将返回 nil，否则返回匹配到的行为执行器
 func MatchBehavior(ctx MessageContext) ActorBehaviorExecutor {
-	return ctx.GetActorContext().MatchBehavior(reflect.TypeOf(ctx.GetMessage()), ctx)
+	return ctx.MatchBehavior(reflect.TypeOf(ctx.GetMessage()), ctx)
 }
 
 func (c *actorContext) MatchBehavior(messageType reflect.Type, ctx MessageContext) ActorBehaviorExecutor {
@@ -156,4 +174,12 @@ func (c *actorContext) MatchBehavior(messageType reflect.Type, ctx MessageContex
 			return v.(error)
 		}
 	}
+}
+
+func (c *actorContext) GetParentActor() ActorRef {
+	return c.parent.ActorRef
+}
+
+func (c *actorContext) GetActorId() ActorId {
+	return c.id
 }

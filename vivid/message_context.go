@@ -5,9 +5,7 @@ import "reflect"
 var messageContextType = reflect.TypeOf((*MessageContext)(nil)).Elem()
 
 type MessageContext interface {
-
-	// GetActorContext 用于获取 Actor 上下文
-	GetActorContext() ActorContext
+	ActorContext
 
 	// GetSeq 用于获取消息序号
 	GetSeq() uint64
@@ -37,8 +35,8 @@ func newMessageContext(system *ActorSystem, senderId, receiverId ActorId, messag
 }
 
 type messageContext struct {
+	ActorContext              // 消息接收者的 ActorContext，不参与序列化
 	system       *ActorSystem // 生产该消息的 ActorSystem，不参与序列化
-	actorContext ActorContext // 消息接收者的 ActorContext，不参与序列化
 
 	Options       *MessageOptions // 消息选项
 	SenderId      ActorId         // 隐式发送者
@@ -81,10 +79,6 @@ func (c *messageContext) Reply(msg Message) error {
 		waiter <- clone.ReplyMessage
 	}
 	return nil
-}
-
-func (c *messageContext) GetActorContext() ActorContext {
-	return c.actorContext
 }
 
 func (c *messageContext) GetSeq() uint64 {

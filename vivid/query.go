@@ -12,6 +12,7 @@ func newQuery(system *ActorSystem, core *actorCore) *query {
 		system:    system,
 		core:      core,
 		resultIds: map[ActorId]struct{}{},
+		lock:      true,
 	}
 }
 
@@ -52,6 +53,7 @@ type query struct {
 	resultIds map[ActorId]struct{} // 去重查询结果 ID
 
 	actions []func()
+	lock    bool
 }
 
 func (q *query) ActorId(actorIds ...ActorId) *query {
@@ -151,8 +153,10 @@ func (q *query) One() (ActorRef, error) {
 
 // exec 执行查询
 func (q *query) exec() {
-	q.system.actorsRW.RLock()
-	defer q.system.actorsRW.RUnlock()
+	if q.lock {
+		q.system.actorsRW.RLock()
+		defer q.system.actorsRW.RUnlock()
+	}
 
 	for _, action := range q.actions {
 		action()
@@ -184,4 +188,10 @@ func (q *query) internalFirst() (*actorCore, error) {
 		return nil, ErrActorNotFound
 	}
 	return q.results[0], nil
+}
+
+// withLock 禁用锁
+func (q *query) withLock(isLock bool) *query {
+	q.lock = isLock
+	return q
 }

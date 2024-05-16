@@ -16,7 +16,6 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 		opts:         NewActorSystemOptions().Apply(opts...),
 		name:         name,
 		actors:       make(map[ActorId]*actorCore),
-		closed:       make(chan struct{}),
 		replyWaiters: make(map[uint64]chan any),
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -31,24 +30,39 @@ type ActorSystem struct {
 	actors           map[ActorId]*actorCore // 可用于精准快查的映射
 	actorsRW         sync.RWMutex           // 用于保护 actors 的读写锁
 	user             *actorCore             // 用户使用的顶级 Actor
-	closed           chan struct{}          // 关闭信号
 	ctx              context.Context        // 上下文
-	cancel           context.CancelFunc     // 取消函数（该函数应该在 closed 生效后才能调用）
+	cancel           context.CancelFunc     // 取消函数
 	guid             atomic.Uint64          // 未命名 Actor 的唯一标识
 	seq              atomic.Uint64          // 消息序列号
 	replyWaiters     map[uint64]chan any    // 等待回复的消息
 	replyWaitersLock sync.Mutex             // 等待回复的消息锁
 }
 
-// Run 启动 ActorSystem
+// Run 非阻塞的运行 ActorSystem
 func (s *ActorSystem) Run() (err error) {
-	s.user, err = s.generateActor(reflect.TypeOf((*userGuardianActor)(nil)).Elem(), NewActorOptions().WithName("user"))
+	s.user, err = s.generateActor(reflect.TypeOf((*userGuardianActor)(nil)), NewActorOptions().WithName("user"))
+	if err != nil {
+		return err
+	}
 
 	if s.opts.Host != "" {
 		go s.handleRemoteMessage(s.ctx, s.opts.Server.C())
-		return s.opts.Server.Run()
 	}
 
+	return nil
+}
+
+// Shutdown 关闭 ActorSystem
+func (s *ActorSystem) Shutdown() error {
+	if err := s.user.OnDestroy(s.user); err != nil {
+		return err
+	}
+	s.actorsRW.Lock()
+	defer s.actorsRW.Unlock()
+	s.unregisterActor(s.user, true)
+	delete(s.actors, s.user.GetId())
+
+	s.cancel()
 	return nil
 }
 
@@ -58,10 +72,16 @@ func ActorOf[T Actor](system *ActorSystem, opts ...*ActorOptions) (ActorRef, err
 	return system.ActorOf(typ, opts...)
 }
 
+// ActorChildOf 创建一个 Actor
+func ActorChildOf[T Actor](parent ActorContext, opts ...*ActorOptions) (ActorRef, error) {
+	typ := reflect.TypeOf((*T)(nil)).Elem()
+	return parent.(*actorContext).actorOf(typ, opts...)
+}
+
 // ActorOf 创建一个 Actor
 //   - 推荐使用 ActorOf 函数来创建 Actor，这样可以保证 Actor 的类型安全
 func (s *ActorSystem) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
-	return s.user.ActorOf(typ, opts...)
+	return s.user.actorOf(typ, opts...)
 }
 
 // GetActor 获取 ActorRef
@@ -196,24 +216,58 @@ func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan []byte) 
 	}
 }
 
-func (s *ActorSystem) unregisterActor(id ActorId) {
-	core, err := s.GetActor().ActorId(id).internalOne()
-	if err != nil {
-		log.Error(fmt.Sprintf("unregister actor error: %s", err.Error()))
-		return
+func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
+	if !reEnter {
+		s.actorsRW.RLock()
+		defer s.actorsRW.RUnlock()
+	}
+	for key, child := range core.children {
+		if err := child.OnDestroy(child.core); err != nil {
+			log.Error(fmt.Sprintf("unregister actor destroy error: %s", err.Error()))
+		}
+		s.unregisterActor(child, true)
+		delete(core.children, key)
+		delete(s.actors, child.GetId())
+	}
+
+	delete(s.actors, core.id)
+	if core.parent != nil {
+		delete(core.parent.children, core.GetOptions().Name)
 	}
 
 	dispatcher := s.getActorDispatcher(core)
-	if err = dispatcher.Detach(core); err != nil {
+	if err := dispatcher.Detach(core); err != nil {
 		log.Error(fmt.Sprintf("unregister actor detach error: %s", err.Error()))
 		return
 	}
 }
 
-// 用于创建顶层 Actor 的函数
 func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*actorCore, error) {
+	// 检查类型是否实现了 Actor 接口
+	if !typ.Implements(actorType) {
+		return nil, fmt.Errorf("%w: %s", ErrActorNotImplementActorRef, typ.String())
+	}
+	typ = typ.Elem()
+
+	// 应用可选项
 	opt := NewActorOptions().Apply(opts...)
-	actorPath := path.Clean(opt.Name)
+
+	var actorPath string
+	if opt.Name == "" {
+		if opt.Parent != nil {
+			opt.Name = fmt.Sprintf("%s-%d", opt.Parent.GetActorId().Name(), s.guid.Add(1))
+			actorPath = path.Join(opt.Parent.GetActorId().Path(), opt.Name)
+		} else {
+			opt.Name = fmt.Sprintf("%s-%d", s.name, s.guid.Add(1))
+			actorPath = path.Clean(opt.Name)
+		}
+	} else {
+		if opt.Parent != nil {
+			actorPath = path.Join(opt.Parent.GetActorId().Path(), opt.Name)
+		} else {
+			actorPath = path.Clean(opt.Name)
+		}
+	}
 
 	// 创建 Actor ID
 	actorId := NewActorId(s.opts.Network, s.opts.ClusterName, s.opts.Host, s.opts.Port, s.name, actorPath)
@@ -227,12 +281,17 @@ func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*a
 	}
 
 	// 创建 Actor
-	actor = newActorCore(s, actorId, reflect.New(typ).Interface().(Actor), opt)
+	actor = newActorCore(s, actorId, reflect.New(typ).Interface().(Actor), typ, opt)
 
 	// 分发器
 	dispatcher := s.getActorDispatcher(actor)
 	if err := dispatcher.Attach(actor); err != nil {
 		return nil, err
+	}
+
+	// 绑定父 Actor
+	if opt.Parent != nil {
+		actor.parent = opt.Parent.(*actorContext).core
 	}
 
 	// 启动 Actor
@@ -242,9 +301,24 @@ func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*a
 
 	// 绑定 Actor
 	s.actors[actorId] = actor
+	if opt.Parent != nil {
+		opt.Parent.(*actorContext).bindChildren(actor)
+	}
 
 	if opt.hookActorOf != nil {
 		opt.hookActorOf(actor)
 	}
+
 	return actor, nil
+}
+
+// GetActorIds 获取 Actor ID
+func (s *ActorSystem) GetActorIds() []ActorId {
+	s.actorsRW.RLock()
+	defer s.actorsRW.RUnlock()
+	var ids = make([]ActorId, 0, len(s.actors))
+	for _, actor := range s.actors {
+		ids = append(ids, actor.GetId())
+	}
+	return ids
 }
