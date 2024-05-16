@@ -18,7 +18,7 @@ type ActorCoreExpose interface {
 	GetOptions() *ActorOptions
 }
 
-func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, typ reflect.Type, opts *ActorOptions) *actorCore {
+func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, opts *ActorOptions) *actorCore {
 	core := &actorCore{
 		Actor: actor,
 		opts:  opts,
@@ -31,9 +31,7 @@ func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, typ reflect
 		state:     actorContextStatePreStart,
 		behaviors: make(map[reflect.Type]reflect.Value),
 		children:  map[ActorName]*actorCore{},
-		tof:       typ,
 	}
-
 	return core
 }
 

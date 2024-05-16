@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"golang.org/x/net/context"
 	"path"
-	"reflect"
 	"sync"
 	"sync/atomic"
 )
@@ -40,7 +39,7 @@ type ActorSystem struct {
 
 // Run 非阻塞的运行 ActorSystem
 func (s *ActorSystem) Run() (err error) {
-	s.user, err = s.generateActor(reflect.TypeOf((*userGuardianActor)(nil)), NewActorOptions().WithName("user"))
+	s.user, err = s.generateActor(new(userGuardianActor), NewActorOptions().WithName("user"))
 	if err != nil {
 		return err
 	}
@@ -62,20 +61,18 @@ func (s *ActorSystem) Shutdown() error {
 	s.unregisterActor(s.user, true)
 	delete(s.actors, s.user.GetId())
 
+	for _, d := range s.opts.Dispatchers {
+		d.Stop()
+	}
+
 	s.cancel()
 	return nil
 }
 
 // ActorOf 创建一个 Actor
-func ActorOf[T Actor](generator ActorGenerator, opts ...*ActorOptions) (ActorRef, error) {
-	typ := reflect.TypeOf((*T)(nil)).Elem()
-	return generator.ActorOf(typ, opts...)
-}
-
-// ActorOf 创建一个 Actor
 //   - 推荐使用 ActorOf 函数来创建 Actor，这样可以保证 Actor 的类型安全
-func (s *ActorSystem) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
-	return s.user.ActorOf(typ, opts...)
+func (s *ActorSystem) ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
+	return s.user.ActorOf(actor, opts...)
 }
 
 // GetActor 获取 ActorRef
@@ -213,8 +210,8 @@ func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan []byte) 
 func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
 	if !reEnter {
 		s.actorsRW.RLock()
-		defer s.actorsRW.RUnlock()
 	}
+
 	for key, child := range core.children {
 		if err := child.OnDestroy(child.core); err != nil {
 			log.Error(fmt.Sprintf("unregister actor destroy error: %s", err.Error()))
@@ -229,6 +226,10 @@ func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
 		delete(core.parent.children, core.GetOptions().Name)
 	}
 
+	if !reEnter {
+		s.actorsRW.RUnlock()
+	}
+
 	dispatcher := s.getActorDispatcher(core)
 	if err := dispatcher.Detach(core); err != nil {
 		log.Error(fmt.Sprintf("unregister actor detach error: %s", err.Error()))
@@ -236,13 +237,7 @@ func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
 	}
 }
 
-func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*actorCore, error) {
-	// 检查类型是否实现了 Actor 接口
-	if !typ.Implements(actorType) {
-		return nil, fmt.Errorf("%w: %s", ErrActorNotImplementActorRef, typ.String())
-	}
-	typ = typ.Elem()
-
+func (s *ActorSystem) generateActor(actorImpl Actor, opts ...*ActorOptions) (*actorCore, error) {
 	// 应用可选项
 	opt := NewActorOptions().Apply(opts...)
 
@@ -275,7 +270,7 @@ func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*a
 	}
 
 	// 创建 Actor
-	actor = newActorCore(s, actorId, reflect.New(typ).Interface().(Actor), typ, opt)
+	actor = newActorCore(s, actorId, actorImpl, opt)
 
 	// 分发器
 	dispatcher := s.getActorDispatcher(actor)

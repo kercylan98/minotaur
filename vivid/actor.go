@@ -15,6 +15,7 @@ type Actor interface {
 	OnReceived(ctx MessageContext) (err error)
 
 	// OnDestroy 当 Actor 被要求销毁时将会调用该函数，需要在该函数中释放 Actor 的资源
+	//  - 该函数可能会在重启前被调用，被用于重置 Actor 的状态
 	OnDestroy(ctx ActorContext) (err error)
 
 	// OnChildTerminated 当 Actor 的子 Actor 被销毁时将会调用该函数

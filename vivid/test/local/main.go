@@ -2,24 +2,42 @@ package main
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/toolkit/chrono"
-	"github.com/kercylan98/minotaur/toolkit/random"
 	"github.com/kercylan98/minotaur/vivid"
 	"time"
 )
 
+type LocalTestActorChild struct {
+	vivid.BasicActor
+	state int
+}
+
+func (l *LocalTestActorChild) OnPreStart(ctx vivid.ActorContext) error {
+
+	return nil
+}
+
+func (l *LocalTestActorChild) OnReceived(ctx vivid.MessageContext) error {
+	l.state++
+	return nil
+}
+
+func (l *LocalTestActorChild) OnDestroy(ctx vivid.ActorContext) error {
+	l.state = 0
+	return nil
+}
+
 type LocalTestActor struct {
 	vivid.BasicActor
-	vm map[int]int
 }
 
 func (l *LocalTestActor) OnPreStart(ctx vivid.ActorContext) error {
-	l.vm = make(map[int]int)
+
 	return nil
 }
+
 func (l *LocalTestActor) OnReceived(ctx vivid.MessageContext) error {
-	l.vm[ctx.GetMessage().(int)] += ctx.GetMessage().(int)
-	fmt.Println(l.vm[ctx.GetMessage().(int)])
+	time.Sleep(time.Second * 3)
+	fmt.Println(ctx.GetMessage())
 	return nil
 }
 
@@ -29,18 +47,16 @@ func main() {
 		panic(err)
 	}
 
-	for i := 0; i < 10; i++ {
-		ref, _ := vivid.ActorOf[*LocalTestActor](system)
-		for j := 0; j < 1000; j++ {
-			_ = ref.Tell(random.Int(0, 100))
-		}
+	ref, err := system.ActorOf(&LocalTestActor{}, nil)
+	if err != nil {
+		panic(err)
 	}
 
-	time.Sleep(time.Second * 5)
+	ref.Tell(123)
+
 	if err := system.Shutdown(); err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Shutdown")
-	time.Sleep(chrono.Week)
 }

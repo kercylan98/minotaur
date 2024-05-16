@@ -23,11 +23,8 @@ type ActorContext interface {
 	// NotifyTerminated 当 Actor 主动销毁时，务必调用该函数，以便在整个 Actor 系统中得到完整的释放
 	NotifyTerminated(v ...Message)
 
-	// Spawn 创建一个 Actor，该 Actor 是当前 Actor 的子 Actor，该函数是 ActorOf 的简化版
-	Spawn(actor Actor, opts ...*ActorOptions) (ActorRef, error)
-
 	// ActorOf 创建一个 Actor，该 Actor 是当前 Actor 的子 Actor
-	ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error)
+	ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error)
 
 	// GetActor 获取 Actor 的引用
 	GetActor() Query
@@ -51,7 +48,6 @@ type actorContext struct {
 	parent    *actorCore                     // 父 Actor
 	children  map[ActorName]*actorCore       // 子 Actor
 	isEnd     bool                           // 是否是末级 Actor
-	tof       reflect.Type                   // Actor 的类型
 }
 
 // restart 重启上下文
@@ -80,9 +76,12 @@ func (c *actorContext) restart(reEntry bool) (recovery func(), err error) {
 		c.core.state = backupState
 		c.behaviors = backupBehaviors
 	}
-	c.core.Actor = reflect.New(c.core.tof).Interface().(Actor)
 	c.core.state = actorContextStatePreStart
 	c.core.actorContext.behaviors = make(map[reflect.Type]reflect.Value)
+	if err = c.core.Actor.OnDestroy(c.core); err != nil {
+		recoveryFunc()
+		return nil, err
+	}
 	if err = c.core.onPreStart(); err != nil {
 		recoveryFunc()
 		return nil, err
@@ -94,20 +93,17 @@ func (c *actorContext) bindChildren(core *actorCore) {
 	c.children[core.GetOptions().Name] = core
 }
 
-func (c *actorContext) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
+func (c *actorContext) ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
 	var opt *ActorOptions
 	if len(opts) > 0 {
 		opt = opts[0]
-	} else {
+	}
+	if opt == nil {
 		opt = NewActorOptions()
 	}
 	opt = opt.WithParent(c)
 
-	return c.system.generateActor(typ, opt)
-}
-
-func (c *actorContext) Spawn(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
-	return c.ActorOf(reflect.TypeOf(actor), opts...)
+	return c.system.generateActor(actor, opt)
 }
 
 func (c *actorContext) GetActor() Query {

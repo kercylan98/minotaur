@@ -60,6 +60,17 @@ func TestActorId_System(t *testing.T) {
 	}
 }
 
+func TestActorId_Path(t *testing.T) {
+	actorId := vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActorRef")
+
+	path := actorId.Path()
+	t.Log(path)
+
+	if path != "my-localActorRef" {
+		t.Fail()
+	}
+}
+
 func TestActorId_Name(t *testing.T) {
 	actorId := vivid.NewActorId("tcp", "my-cluster", "localhost", 1234, "my-system", "my-localActorRef")
 
