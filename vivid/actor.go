@@ -23,6 +23,9 @@ type Actor interface {
 
 // ActorTerminatedContext 是 Actor 销毁时的上下文
 type ActorTerminatedContext interface {
+	// GetActorId 获取 Actor 的 ID
+	GetActorId() ActorId
+
 	// HasTerminatedMessage 判断是否有销毁消息
 	HasTerminatedMessage() bool
 
@@ -53,6 +56,10 @@ type actorTerminatedContext struct {
 	core               *actorCore // Actor 核心
 	terminatedMessages []Message  // 销毁消息
 	cancelTerminate    bool       // 是否取消销毁
+}
+
+func (c *actorTerminatedContext) GetActorId() ActorId {
+	return c.core.id
 }
 
 func (c *actorTerminatedContext) HasTerminatedMessage() bool {

@@ -60,7 +60,7 @@ func (c *messageContext) Reply(msg Message) error {
 	}
 	if clone.ReceiverId == "" && c.RemoteNetwork != "" && c.RemoteHost != "" {
 		// 匿名远程 Actor，通过网络发送消息
-		client, err := c.system.opts.ClientFactory(c.RemoteNetwork, c.RemoteHost, c.RemotePort)
+		client, err := c.system.opts.ClientFactory(c.system, c.RemoteNetwork, c.RemoteHost, c.RemotePort)
 		if err != nil {
 			return err
 		}

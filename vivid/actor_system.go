@@ -67,21 +67,15 @@ func (s *ActorSystem) Shutdown() error {
 }
 
 // ActorOf 创建一个 Actor
-func ActorOf[T Actor](system *ActorSystem, opts ...*ActorOptions) (ActorRef, error) {
+func ActorOf[T Actor](generator ActorGenerator, opts ...*ActorOptions) (ActorRef, error) {
 	typ := reflect.TypeOf((*T)(nil)).Elem()
-	return system.ActorOf(typ, opts...)
-}
-
-// ActorChildOf 创建一个 Actor
-func ActorChildOf[T Actor](parent ActorContext, opts ...*ActorOptions) (ActorRef, error) {
-	typ := reflect.TypeOf((*T)(nil)).Elem()
-	return parent.(*actorContext).actorOf(typ, opts...)
+	return generator.ActorOf(typ, opts...)
 }
 
 // ActorOf 创建一个 Actor
 //   - 推荐使用 ActorOf 函数来创建 Actor，这样可以保证 Actor 的类型安全
 func (s *ActorSystem) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
-	return s.user.actorOf(typ, opts...)
+	return s.user.ActorOf(typ, opts...)
 }
 
 // GetActor 获取 ActorRef
@@ -130,7 +124,7 @@ func (s *ActorSystem) send(senderId, receiverId ActorId, msg Message, opts ...Me
 	}
 
 	// TODO: 客户端应该是一个连接池
-	cli, err := s.opts.ClientFactory.NewClient(receiverId.Network(), receiverId.Host(), receiverId.Port())
+	cli, err := s.opts.ClientFactory.NewClient(s, receiverId.Network(), receiverId.Host(), receiverId.Port())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -305,10 +299,6 @@ func (s *ActorSystem) generateActor(typ reflect.Type, opts ...*ActorOptions) (*a
 		opt.Parent.(*actorContext).bindChildren(actor)
 	}
 
-	if opt.hookActorOf != nil {
-		opt.hookActorOf(actor)
-	}
-
 	return actor, nil
 }
 
@@ -321,4 +311,9 @@ func (s *ActorSystem) GetActorIds() []ActorId {
 		ids = append(ids, actor.GetId())
 	}
 	return ids
+}
+
+// GetName 获取 ActorSystem 的名称
+func (s *ActorSystem) GetName() string {
+	return s.name
 }

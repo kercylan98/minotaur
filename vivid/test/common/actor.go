@@ -21,6 +21,10 @@ func (u *UserActor) OnDestroy(ctx vivid.ActorContext) error {
 	return nil
 }
 
+func (u *UserActor) OnChildTerminated(ctx vivid.ActorContext, child vivid.ActorTerminatedContext) {
+
+}
+
 func (u *UserActor) onHello(ctx vivid.MessageContext, msg string) error {
 	fmt.Println(msg)
 	return nil

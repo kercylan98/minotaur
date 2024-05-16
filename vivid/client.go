@@ -1,10 +1,10 @@
 package vivid
 
 // ClientFactory 是 ActorSystem 远程调用的客户端工厂
-type ClientFactory func(network, host string, port uint16) (Client, error)
+type ClientFactory func(system *ActorSystem, network, host string, port uint16) (Client, error)
 
-func (f ClientFactory) NewClient(network, host string, port uint16) (Client, error) {
-	return f(network, host, port)
+func (f ClientFactory) NewClient(system *ActorSystem, network, host string, port uint16) (Client, error) {
+	return f(system, network, host, port)
 }
 
 // Client 是 ActorSystem 远程调用的客户端

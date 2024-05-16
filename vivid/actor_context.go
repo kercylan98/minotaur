@@ -23,8 +23,11 @@ type ActorContext interface {
 	// NotifyTerminated 当 Actor 主动销毁时，务必调用该函数，以便在整个 Actor 系统中得到完整的释放
 	NotifyTerminated(v ...Message)
 
+	// Spawn 创建一个 Actor，该 Actor 是当前 Actor 的子 Actor，该函数是 ActorOf 的简化版
+	Spawn(actor Actor, opts ...*ActorOptions) (ActorRef, error)
+
 	// ActorOf 创建一个 Actor，该 Actor 是当前 Actor 的子 Actor
-	ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error)
+	ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error)
 
 	// GetActor 获取 Actor 的引用
 	GetActor() Query
@@ -91,7 +94,7 @@ func (c *actorContext) bindChildren(core *actorCore) {
 	c.children[core.GetOptions().Name] = core
 }
 
-func (c *actorContext) actorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
+func (c *actorContext) ActorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRef, error) {
 	var opt *ActorOptions
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -103,8 +106,8 @@ func (c *actorContext) actorOf(typ reflect.Type, opts ...*ActorOptions) (ActorRe
 	return c.system.generateActor(typ, opt)
 }
 
-func (c *actorContext) ActorOf(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
-	return c.actorOf(reflect.TypeOf(actor), opts...)
+func (c *actorContext) Spawn(actor Actor, opts ...*ActorOptions) (ActorRef, error) {
+	return c.ActorOf(reflect.TypeOf(actor), opts...)
 }
 
 func (c *actorContext) GetActor() Query {

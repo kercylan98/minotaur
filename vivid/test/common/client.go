@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func NewClient(network, host string, port uint16) (vivid.Client, error) {
+func NewClient(system *vivid.ActorSystem, network, host string, port uint16) (vivid.Client, error) {
 	tcp, err := net.Dial(network, fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, err

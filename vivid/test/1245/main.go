@@ -1,14 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/vivid"
 	"github.com/kercylan98/minotaur/vivid/test/common"
 	"time"
 )
 
 func main() {
+	srv := common.NewServer(":1245")
 	system := vivid.NewActorSystem("Account", vivid.NewActorSystemOptions().
-		WithAddress(common.NewServer(":1245"), "127.0.0.1", 1245).
+		WithAddress(srv, "127.0.0.1", 1245).
 		WithClientFactory(common.NewClient),
 	)
 	go func() {
@@ -24,5 +26,10 @@ func main() {
 	}
 
 	_ = localActor.Tell("Hello, World!")
-	time.Sleep(time.Minute * 10)
+
+	if err = srv.Run(); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Server is shutdown.")
 }
