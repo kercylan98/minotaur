@@ -136,7 +136,6 @@ func (s *ActorSystem) send(senderId, receiverId ActorId, msg Message, opts ...Me
 		return nil, nil, err
 	}
 
-	// TODO: 客户端应该是一个连接池
 	cli, err := s.opts.ClientFactory.NewClient(s, receiverId.Network(), receiverId.Host(), receiverId.Port())
 	if err != nil {
 		return nil, nil, err
@@ -223,8 +222,8 @@ func (s *ActorSystem) handleRemoteMessage(ctx context.Context, c <-chan []byte) 
 	}
 }
 
-func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
-	if !reEnter {
+func (s *ActorSystem) unregisterActor(core *actorCore, reenter bool) {
+	if !reenter {
 		s.actorsRW.RLock()
 	}
 
@@ -242,12 +241,11 @@ func (s *ActorSystem) unregisterActor(core *actorCore, reEnter bool) {
 		delete(core.parent.children, core.GetOptions().Name)
 	}
 
-	if !reEnter {
+	if !reenter {
 		s.actorsRW.RUnlock()
 	}
 
-	dispatcher := s.getActorDispatcher(core)
-	if err := dispatcher.Detach(core); err != nil {
+	if err := s.getActorDispatcher(core).Detach(core); err != nil {
 		log.Error(fmt.Sprintf("unregister actor detach error: %s", err.Error()))
 		return
 	}
@@ -288,28 +286,25 @@ func (s *ActorSystem) generateActor(actorImpl Actor, opts ...*ActorOptions) (*ac
 	// 创建 Actor
 	actor = newActorCore(s, actorId, actorImpl, opt)
 
-	// 分发器
-	dispatcher := s.getActorDispatcher(actor)
-	if err := dispatcher.Attach(actor); err != nil {
+	// 绑定分发器
+	if err := s.getActorDispatcher(actor).Attach(actor); err != nil {
+		s.unregisterActor(actor, true)
 		return nil, err
 	}
 
 	// 绑定父 Actor
 	if opt.Parent != nil {
 		actor.parent = opt.Parent.(*actorContext).core
+		opt.Parent.(*actorContext).bindChildren(actor)
 	}
 
 	// 启动 Actor
 	if err := actor.onPreStart(); err != nil {
+		s.unregisterActor(actor, true)
 		return nil, err
 	}
 
-	// 绑定 Actor
 	s.actors[actorId] = actor
-	if opt.Parent != nil {
-		opt.Parent.(*actorContext).bindChildren(actor)
-	}
-
 	return actor, nil
 }
 

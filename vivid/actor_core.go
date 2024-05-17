@@ -7,7 +7,6 @@ import (
 
 // ActorCore 是 Actor 的核心接口定义，被用于高级功能的实现
 type ActorCore interface {
-	Actor
 	ActorRef
 	ActorContext
 	ActorCoreExpose
@@ -23,6 +22,16 @@ type ActorCoreExpose interface {
 
 	// GetContext 获取 Actor 的上下文
 	GetContext() any
+
+	// IsPause 判断 Actor 当前是否处于暂停处理消息的状态，返回一个只读的通道
+	//  - 当 Actor 未处于暂停状态时，返回 nil
+	IsPause() <-chan struct{}
+
+	// BindMessageActorContext 绑定消息的 Actor 上下文为当前 Actor
+	BindMessageActorContext(ctx MessageContext)
+
+	// OnReceived 用于处理接收到的消息
+	OnReceived(ctx MessageContext) (err error)
 }
 
 func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, opts *ActorOptions) *actorCore {
@@ -49,6 +58,7 @@ type actorCore struct {
 	opts          *ActorOptions // Actor 的配置项
 	restartNum    int           // 重启次数
 	ctx           any           // 外部上下文
+	pause         chan struct{} // 暂停处理消息
 }
 
 // onPreStart 在 Actor 启动之前执行的逻辑
@@ -67,17 +77,29 @@ func (a *actorCore) onPreStart() (err error) {
 	return
 }
 
-// GetOptions 获取 Actor 的配置项
 func (a *actorCore) GetOptions() *ActorOptions {
 	return a.opts
 }
 
-// SetContext 为 Actor 设置一个上下文
 func (a *actorCore) SetContext(ctx any) {
 	a.ctx = ctx
 }
 
-// GetContext 获取 Actor 的上下文
 func (a *actorCore) GetContext() any {
 	return a.ctx
+}
+
+func (a *actorCore) IsPause() <-chan struct{} {
+	if a.pause == nil {
+		return nil
+	}
+	return a.pause
+}
+
+func (a *actorCore) BindMessageActorContext(ctx MessageContext) {
+	ctx.(*messageContext).ActorContext = a
+}
+
+func (a *actorCore) OnReceived(ctx MessageContext) error {
+	return a.Actor.OnReceived(ctx)
 }

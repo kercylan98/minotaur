@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kercylan98/minotaur/vivid"
 	"time"
@@ -31,8 +32,7 @@ type LocalTestActor struct {
 }
 
 func (l *LocalTestActor) OnPreStart(ctx vivid.ActorContext) error {
-
-	return nil
+	return errors.New("test")
 }
 
 func (l *LocalTestActor) OnReceived(ctx vivid.MessageContext) error {

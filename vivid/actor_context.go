@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"reflect"
 )
 
@@ -51,9 +52,15 @@ type actorContext struct {
 }
 
 // restart 重启上下文
-func (c *actorContext) restart(reEntry bool) (recovery func(), err error) {
+func (c *actorContext) restart(reentry bool) (recovery func(), err error) {
+	// 尝试获取快照，获取失败则算作重启失败
+	actorSnapshot, err := c.core.Actor.OnSaveSnapshot(c.core)
+	if err != nil {
+		return nil, err
+	}
+
 	// 重启所有子 Actor
-	if !reEntry && c.state != actorContextStatePreStart {
+	if !reentry && c.state != actorContextStatePreStart {
 		c.system.actorsRW.RLock()
 		defer c.system.actorsRW.RUnlock()
 	}
@@ -68,11 +75,13 @@ func (c *actorContext) restart(reEntry bool) (recovery func(), err error) {
 		recoveries = append(recoveries, recovery)
 	}
 
-	backupActor := c.core.Actor
 	backupState := c.core.state
 	backupBehaviors := c.behaviors
 	var recoveryFunc = func() {
-		c.core.Actor = backupActor
+		// TODO: 恢复快照失败如何处理？
+		if err := c.core.OnRecoverSnapshot(c, actorSnapshot); err != nil {
+			log.Error("actor recover snapshot failed", log.Err(err))
+		}
 		c.core.state = backupState
 		c.behaviors = backupBehaviors
 	}

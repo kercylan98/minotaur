@@ -109,8 +109,16 @@ func (d *dispatcher) Stop() {
 
 func (d *dispatcher) watchReceive(actor ActorCore, wait chan struct{}, dequeue <-chan MessageContext) {
 	defer close(wait)
-	for ctx := range dequeue {
-		ctx.(*messageContext).ActorContext = actor
+	for {
+		if pause := actor.IsPause(); pause != nil {
+			<-pause
+		}
+
+		ctx, ok := <-dequeue
+		if !ok {
+			break
+		}
+		actor.BindMessageActorContext(ctx)
 		actor.OnReceived(ctx)
 	}
 }

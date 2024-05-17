@@ -18,6 +18,12 @@ type Actor interface {
 	//  - 该函数可能会在重启前被调用，被用于重置 Actor 的状态
 	OnDestroy(ctx ActorContext) (err error)
 
+	// OnSaveSnapshot 当 Actor 被要求保存快照时将会调用该函数
+	OnSaveSnapshot(ctx ActorContext) (snapshot []byte, err error)
+
+	// OnRecoverSnapshot 当 Actor 被要求恢复快照时将会调用该函数
+	OnRecoverSnapshot(ctx ActorContext, snapshot []byte) (err error)
+
 	// OnChildTerminated 当 Actor 的子 Actor 被销毁时将会调用该函数
 	OnChildTerminated(ctx ActorContext, child ActorTerminatedContext)
 }
@@ -33,7 +39,9 @@ type ActorTerminatedContext interface {
 	// GetTerminatedMessage 获取销毁消息
 	GetTerminatedMessage() Message
 
-	// Restart 以全新的状态重启 Actor
+	// Restart 以全新的状态重启 Actor，包括所有的子 Actor
+	//  - 该函数将会一次执行 Actor.OnSaveSnapshot、 Actor.OnDestroy、 Actor.OnPreStart 三个函数来完成重启
+	//  - 当重启过程中发生错误时将会通过 Actor.OnRecoverSnapshot 函数来恢复 Actor 的状态
 	Restart() error
 
 	// Recover 保留当前的状态恢复 Actor
