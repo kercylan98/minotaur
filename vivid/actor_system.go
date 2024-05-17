@@ -3,6 +3,7 @@ package vivid
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/panjf2000/ants/v2"
 	"golang.org/x/net/context"
 	"path"
 	"sync"
@@ -17,6 +18,7 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 		actors:       make(map[ActorId]*actorCore),
 		replyWaiters: make(map[uint64]chan any),
 	}
+	s.actorSystemExternal = new(actorSystemExternal).init(s)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
 	return s
@@ -24,6 +26,7 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 
 // ActorSystem 是维护 Actor 的容器，负责 Actor 的创建、销毁、消息分发等
 type ActorSystem struct {
+	*actorSystemExternal
 	opts             *ActorSystemOptions
 	name             string                 // ActorSystem 的名称
 	actors           map[ActorId]*actorCore // 可用于精准快查的映射
@@ -35,17 +38,30 @@ type ActorSystem struct {
 	seq              atomic.Uint64          // 消息序列号
 	replyWaiters     map[uint64]chan any    // 等待回复的消息
 	replyWaitersLock sync.Mutex             // 等待回复的消息锁
+	gp               *ants.Pool             // goroutine 池
 }
 
 // Run 非阻塞的运行 ActorSystem
 func (s *ActorSystem) Run() (err error) {
+	pool, err := ants.NewPool(s.opts.AntsPoolSize, s.opts.AntsOptions...)
+	if err != nil {
+		return err
+	}
+	s.gp = pool
+
+	for _, d := range s.opts.Dispatchers {
+		d.OnInit(s)
+	}
+
 	s.user, err = s.generateActor(new(userGuardianActor), NewActorOptions().WithName("user"))
 	if err != nil {
 		return err
 	}
 
 	if s.opts.Host != "" {
-		go s.handleRemoteMessage(s.ctx, s.opts.Server.C())
+		for i := 0; i < int(s.opts.RemoteProcessorNum); i++ {
+			go s.handleRemoteMessage(s.ctx, s.opts.Server.C())
+		}
 	}
 
 	return nil

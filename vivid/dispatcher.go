@@ -6,8 +6,8 @@ import (
 
 // Dispatcher 消息调度器接口
 type Dispatcher interface {
-	// Send 用于向一个 Actor 发送消息
-	Send(receiver ActorCore, msg MessageContext) error
+	// OnInit 用于初始化调度器
+	OnInit(system ActorSystemExternal)
 
 	// Attach 用于将一个 Actor 添加到调度器中
 	Attach(actor ActorCore) error
@@ -15,37 +15,31 @@ type Dispatcher interface {
 	// Detach 用于将一个 Actor 从调度器中移除
 	Detach(actor ActorCore) error
 
+	// Send 用于向一个 Actor 发送消息
+	Send(receiver ActorCore, msg MessageContext) error
+
 	// Stop 用于停止调度器
 	Stop()
 }
 
+type dispatcherActorContext struct {
+	mailbox *Mailbox
+	wait    chan struct{}
+}
+
 // newDispatcher 创建一个新的消息调度器
 func newDispatcher() Dispatcher {
-	d := &dispatcher{
-		mailboxes:   make(map[ActorId]*Mailbox),
-		mailboxWait: map[ActorId]chan struct{}{},
-	}
-
+	d := &dispatcher{}
 	return d
 }
 
 type dispatcher struct {
-	mailboxes   map[ActorId]*Mailbox      // ActorId -> Mailbox
-	mailboxWait map[ActorId]chan struct{} // ActorId -> chan struct{}
-	mailboxesRW sync.RWMutex              // 保护 mailboxes 的读写锁
-	wait        sync.WaitGroup            // 等待所有 Actor 关闭
+	system ActorSystemExternal
+	wait   sync.WaitGroup // 等待所有 Actor 关闭
 }
 
-func (d *dispatcher) Send(receiver ActorCore, msg MessageContext) error {
-	d.mailboxesRW.RLock()
-	mailbox, exist := d.mailboxes[receiver.GetId()]
-	d.mailboxesRW.RUnlock()
-	if !exist {
-		return ErrActorTerminated
-	}
-
-	mailbox.Enqueue(msg)
-	return nil
+func (d *dispatcher) OnInit(system ActorSystemExternal) {
+	d.system = system
 }
 
 func (d *dispatcher) Attach(actor ActorCore) error {
@@ -53,37 +47,59 @@ func (d *dispatcher) Attach(actor ActorCore) error {
 	// 为 Actor 创建一个邮箱
 	mailbox := opts.Mailbox()
 
-	wait := make(chan struct{})
-	d.mailboxesRW.Lock()
-	d.mailboxes[actor.GetId()] = mailbox
-	d.mailboxWait[actor.GetId()] = wait
-	d.mailboxesRW.Unlock()
+	ctx := &dispatcherActorContext{
+		mailbox: mailbox,
+		wait:    make(chan struct{}),
+	}
+	actor.SetContext(ctx)
 
-	go mailbox.Start()
-	go d.watchReceive(actor, wait, mailbox.Dequeue())
+	pool := d.system.GetGoroutinePool()
+	if err := pool.Submit(func() {
+		mailbox.Start()
+	}); err != nil {
+		return err
+	}
+
+	if err := pool.Submit(func() {
+		d.watchReceive(actor, ctx.wait, mailbox.Dequeue())
+	}); err != nil {
+		mailbox.Stop()
+		return err
+	}
 	return nil
 }
 
 func (d *dispatcher) Detach(actor ActorCore) error {
-	actorId := actor.GetId()
-	d.mailboxesRW.Lock()
-	mailbox, exist := d.mailboxes[actorId]
-	if !exist {
-		d.mailboxesRW.Unlock()
+	ctx, ok := actor.GetContext().(*dispatcherActorContext)
+	if !ok {
 		return nil
 	}
-	wait := d.mailboxWait[actorId]
-	delete(d.mailboxes, actorId)
-	delete(d.mailboxWait, actorId)
-	d.mailboxesRW.Unlock()
 
 	d.wait.Add(1)
-	go func() { // 异步等待邮箱关闭
-		defer d.wait.Done()
-		<-wait
-	}()
-	mailbox.Stop()
 
+	// 异步等待邮箱关闭，当池无法使用时降级使用内置 goroutine
+	pool := d.system.GetGoroutinePool()
+	if err := pool.Submit(func() {
+		defer d.wait.Done()
+		<-ctx.wait
+	}); err != nil {
+		go func() {
+			defer d.wait.Done()
+			<-ctx.wait
+		}()
+	}
+
+	ctx.mailbox.Stop()
+	return nil
+}
+
+func (d *dispatcher) Send(receiver ActorCore, msg MessageContext) error {
+	ctx, ok := receiver.GetContext().(*dispatcherActorContext)
+	if !ok {
+		return ErrActorTerminated
+	}
+
+	ctx.mailbox.Enqueue(msg)
 	return nil
 }
 

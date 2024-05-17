@@ -15,7 +15,14 @@ type ActorCore interface {
 
 // ActorCoreExpose 额外的暴露项
 type ActorCoreExpose interface {
+	// GetOptions 获取 Actor 的配置项
 	GetOptions() *ActorOptions
+
+	// SetContext 为 Actor 设置一个上下文
+	SetContext(ctx any)
+
+	// GetContext 获取 Actor 的上下文
+	GetContext() any
 }
 
 func newActorCore(system *ActorSystem, actorId ActorId, actor Actor, opts *ActorOptions) *actorCore {
@@ -41,6 +48,7 @@ type actorCore struct {
 	*actorContext               // Actor 的上下文
 	opts          *ActorOptions // Actor 的配置项
 	restartNum    int           // 重启次数
+	ctx           any           // 外部上下文
 }
 
 // onPreStart 在 Actor 启动之前执行的逻辑
@@ -62,4 +70,14 @@ func (a *actorCore) onPreStart() (err error) {
 // GetOptions 获取 Actor 的配置项
 func (a *actorCore) GetOptions() *ActorOptions {
 	return a.opts
+}
+
+// SetContext 为 Actor 设置一个上下文
+func (a *actorCore) SetContext(ctx any) {
+	a.ctx = ctx
+}
+
+// GetContext 获取 Actor 的上下文
+func (a *actorCore) GetContext() any {
+	return a.ctx
 }

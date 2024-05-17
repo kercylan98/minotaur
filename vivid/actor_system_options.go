@@ -1,6 +1,10 @@
 package vivid
 
-import "time"
+import (
+	"github.com/panjf2000/ants/v2"
+	"runtime"
+	"time"
+)
 
 // NewActorSystemOptions 用于创建一个 ActorSystemOptions
 func NewActorSystemOptions() *ActorSystemOptions {
@@ -9,19 +13,28 @@ func NewActorSystemOptions() *ActorSystemOptions {
 	}).
 		WithNetwork("tcp").
 		WithDispatcher("default", newDispatcher()).
-		WithAskDefaultTimeout(time.Second * 2)
+		WithAskDefaultTimeout(time.Second * 2).
+		WithAntsPoolSize(ants.DefaultAntsPoolSize).
+		WithAntsOptions(ants.WithOptions(ants.Options{
+			ExpiryDuration: time.Minute,
+			Nonblocking:    true,
+		})).
+		WithRemoteProcessorNum(uint(runtime.NumCPU()))
 }
 
 // ActorSystemOptions 是 ActorSystem 的配置选项
 type ActorSystemOptions struct {
-	ClusterName       string                // 集群名称
-	Network           string                // 网络协议
-	Host              string                // 主机地址
-	Port              uint16                // 端口
-	Server            Server                // 远程调用服务端
-	ClientFactory     ClientFactory         // 远程调用客户端
-	Dispatchers       map[string]Dispatcher // 消息分发器
-	AskDefaultTimeout time.Duration         // 默认的 Ask 超时时间
+	ClusterName        string                // 集群名称
+	Network            string                // 网络协议
+	Host               string                // 主机地址
+	Port               uint16                // 端口
+	Server             Server                // 远程调用服务端
+	ClientFactory      ClientFactory         // 远程调用客户端
+	Dispatchers        map[string]Dispatcher // 消息分发器
+	AskDefaultTimeout  time.Duration         // 默认的 Ask 超时时间
+	AntsOptions        []ants.Option         // ants.Pool 的配置选项
+	AntsPoolSize       int                   // ants.Pool 的大小
+	RemoteProcessorNum uint                  // 远程消息处理器数量
 }
 
 // Apply 用于应用配置选项
@@ -51,7 +64,34 @@ func (o *ActorSystemOptions) Apply(options ...*ActorSystemOptions) *ActorSystemO
 		if option.AskDefaultTimeout != 0 {
 			o.AskDefaultTimeout = option.AskDefaultTimeout
 		}
+		if len(option.AntsOptions) > 0 {
+			o.AntsOptions = append(o.AntsOptions, option.AntsOptions...)
+		}
+		if option.AntsPoolSize != 0 {
+			o.AntsPoolSize = option.AntsPoolSize
+		}
+		if option.RemoteProcessorNum != 0 {
+			o.RemoteProcessorNum = option.RemoteProcessorNum
+		}
 	}
+	return o
+}
+
+// WithRemoteProcessorNum 设置远程消息处理器数量
+func (o *ActorSystemOptions) WithRemoteProcessorNum(num uint) *ActorSystemOptions {
+	o.RemoteProcessorNum = num
+	return o
+}
+
+// WithAntsPoolSize 设置 ants.Pool 的大小
+func (o *ActorSystemOptions) WithAntsPoolSize(size int) *ActorSystemOptions {
+	o.AntsPoolSize = size
+	return o
+}
+
+// WithAntsOptions 设置 ants.Pool 的配置选项
+func (o *ActorSystemOptions) WithAntsOptions(options ...ants.Option) *ActorSystemOptions {
+	o.AntsOptions = append(o.AntsOptions, options...)
 	return o
 }
 
