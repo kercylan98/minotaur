@@ -33,6 +33,10 @@ type ActorTerminatedContext interface {
 	// GetActorId 获取 Actor 的 ID
 	GetActorId() ActorId
 
+	// GetActor 获取 Actor 原始对象
+	//  - 常被用于类型断言进行不同 Actor 类型的处理
+	GetActor() any
+
 	// HasTerminatedMessage 判断是否有销毁消息
 	HasTerminatedMessage() bool
 
@@ -69,6 +73,10 @@ type actorTerminatedContext struct {
 
 func (c *actorTerminatedContext) GetActorId() ActorId {
 	return c.core.id
+}
+
+func (c *actorTerminatedContext) GetActor() any {
+	return c.core.Actor
 }
 
 func (c *actorTerminatedContext) HasTerminatedMessage() bool {

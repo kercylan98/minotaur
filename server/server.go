@@ -12,7 +12,6 @@ import (
 	messageEvents "github.com/kercylan98/minotaur/toolkit/nexus/events"
 	"github.com/kercylan98/minotaur/toolkit/nexus/queues"
 	"github.com/kercylan98/minotaur/toolkit/random"
-	"github.com/kercylan98/minotaur/vivid"
 	"github.com/panjf2000/ants/v2"
 	"reflect"
 	"time"
@@ -62,26 +61,6 @@ type server struct {
 	network     Network                   // 服务器使用的网络接口
 	broker      nexus.Broker[int, string] // 服务器使用的消息队列
 	scheduler   *chrono.Scheduler         // 服务器使用的定时器
-}
-
-func (s *server) OnPreStart(ctx vivid.ActorContext) (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *server) OnReceived(ctx vivid.MessageContext) (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *server) OnDestroy(ctx vivid.ActorContext) (err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *server) OnChildTerminated(ctx vivid.ActorContext, child vivid.ActorTerminatedContext) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func NewServer(network Network, options ...*Options) Server {

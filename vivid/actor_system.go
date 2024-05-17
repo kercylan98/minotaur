@@ -19,8 +19,6 @@ func NewActorSystem(name string, opts ...*ActorSystemOptions) *ActorSystem {
 		replyWaiters: make(map[uint64]chan any),
 	}
 	s.actorSystemExternal = new(actorSystemExternal).init(s)
-	s.ctx, s.cancel = context.WithCancel(context.Background())
-
 	return s
 }
 
@@ -43,6 +41,7 @@ type ActorSystem struct {
 
 // Run 非阻塞的运行 ActorSystem
 func (s *ActorSystem) Run() (err error) {
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	pool, err := ants.NewPool(s.opts.AntsPoolSize, s.opts.AntsOptions...)
 	if err != nil {
 		return err

@@ -35,6 +35,9 @@ type ActorContext interface {
 
 	// GetActorId 获取 Actor 的 ID
 	GetActorId() ActorId
+
+	// Future 创建一个 Future 对象，用于异步获取 Actor 的返回值
+	Future(handler func() Message) Future
 }
 
 type actorContextState = uint8 // actorContext 的状态
@@ -190,4 +193,8 @@ func (c *actorContext) GetParentActor() ActorRef {
 
 func (c *actorContext) GetActorId() ActorId {
 	return c.id
+}
+
+func (c *actorContext) Future(handler func() Message) Future {
+	return NewFuture(c, handler)
 }
