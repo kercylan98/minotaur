@@ -10,4 +10,7 @@ type ActorRef interface {
 
 	// Ask 用于向 Actor 发送消息并等待返回结果
 	Ask(msg Message, opts ...MessageOption) (Message, error)
+
+	// Subscribe 订阅事件
+	Subscribe(ctx *ActorContext, event Event)
 }

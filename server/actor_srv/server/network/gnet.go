@@ -102,27 +102,28 @@ func (g *gnetEngine) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	if g.schema == schemaWebSocket {
 		c.SetContext(newWebsocketWrapper(c))
 	} else {
-		if conn, err := g.ctx.GetParentActor().Ask(server.NetworkConnectionOpenedMessage{
-			Conn: c,
-			ConnectionWriter: func(packet server.Packet) error {
-				return c.AsyncWrite(packet.GetBytes(), func(c gnet.Conn, err error) error {
-					return g.ctx.GetParentActor().Tell(server.NetworkConnectionAsyncWriteErrorMessage{
-						Conn:   c.Context().(server.Conn),
-						Packet: packet,
-						Error:  err,
+		connActor, err := g.ctx.ActorOf(new(server.Conn), vivids.NewActorOptions().
+			WithName(c.RemoteAddr().String()).
+			WithProps(server.ConnProps{
+				Conn: c,
+				Writer: func(packet server.Packet) error {
+					return c.AsyncWrite(packet.GetBytes(), func(c gnet.Conn, err error) error {
+						return g.ctx.GetParentActor().Tell(server.ConnectionAsyncWriteErrorEvent{
+							Error: err,
+						})
 					})
-				})
-			},
-		}, vivids.WithMessageSender(g.ctx)); err != nil {
+				},
+			}))
+		if err != nil {
 			action = gnet.Close
-		} else {
-			_, ok := conn.(error)
-			if ok {
-				action = gnet.Close
-			} else {
-				c.SetContext(conn)
-			}
+			return
 		}
+
+		g.ctx.PublishEvent(server.NetworkConnectionOpenedEvent{
+			ActorRef: connActor,
+		})
+
+		c.SetContext(connActor)
 	}
 	return
 }
@@ -134,9 +135,9 @@ func (g *gnetEngine) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 	} else {
 		conn = c.Context().(vivids.ActorRef)
 	}
-	_ = g.ctx.GetParentActor().Tell(server.NetworkConnectionClosedMessage{
-		Conn:  conn,
-		Error: err,
+
+	_ = g.ctx.GetParentActor().Tell(server.NetworkConnectionClosedEvent{
+		ActorRef: conn,
 	}, vivids.WithMessageSender(g.ctx))
 	return
 }
@@ -151,22 +152,24 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 
 		if err := wrapper.upgrade(g.upgrader, func() {
 			// 协议升级成功后视为连接建立
-			if conn, err := g.ctx.GetParentActor().Ask(server.NetworkConnectionOpenedMessage{
-				Conn: c,
-				ConnectionWriter: func(packet server.Packet) error {
-					return wsutil.WriteServerMessage(c, packet.GetContext().(ws.OpCode), packet.GetBytes())
-				},
-			}, vivids.WithMessageSender(g.ctx)); err != nil {
+			conn, err := g.ctx.ActorOf(new(server.Conn), vivids.NewActorOptions().
+				WithName(c.RemoteAddr().String()).
+				WithProps(server.ConnProps{
+					Conn: c,
+					Writer: func(packet server.Packet) error {
+						return wsutil.WriteServerMessage(c, ws.OpText, packet.GetBytes())
+					},
+				}))
+			if err != nil {
 				action = gnet.Close
 				return
-			} else {
-				_, ok := conn.(error)
-				if ok {
-					action = gnet.Close
-				} else {
-					wrapper.ref = conn.(vivids.ActorRef)
-				}
 			}
+
+			wrapper.ref = conn
+			g.ctx.PublishEvent(server.NetworkConnectionOpenedEvent{
+				ActorRef: conn,
+			})
+
 		}); err != nil {
 			return gnet.Close
 		}
@@ -182,7 +185,6 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 			packet := server.NewPacket(message.Payload)
 			packet.SetContext(message.OpCode)
 			if err = wrapper.ref.Tell(server.NetworkConnectionReceivedMessage{
-				Conn:   c,
 				Packet: packet,
 			}, vivids.WithMessageSender(g.ctx)); err != nil {
 				action = gnet.Close
@@ -199,7 +201,6 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		copy(clone, buf)
 
 		if err = c.Context().(vivids.ActorRef).Tell(server.NetworkConnectionReceivedMessage{
-			Conn:   c,
 			Packet: server.NewPacket(clone),
 		}, vivids.WithMessageSender(g.ctx)); err != nil {
 			action = gnet.Close

@@ -3,23 +3,49 @@ package unsafevivid
 import (
 	"context"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	vivid "github.com/kercylan98/minotaur/vivid/vivids"
+	"github.com/kercylan98/minotaur/vivid/vivids"
+	"reflect"
 )
 
 // ActorContext 是 Actor 的上下文
 type ActorContext struct {
-	context.Context                                // 上下文
-	System          *ActorSystem                   // Actor 所属的 Actor 系统
-	Core            *ActorCore                     // Actor 的核心
-	Parent          *ActorCore                     // 父 Actor
-	Children        map[vivid.ActorName]*ActorCore // 子 Actor
-	Id              vivid.ActorId                  // Actor 的 ID
-	IsEnd           bool                           // 是否是末级 Actor
-	Started         bool                           // 是否已经启动
+	context.Context                                 // 上下文
+	System          *ActorSystem                    // Actor 所属的 Actor 系统
+	Core            *ActorCore                      // Actor 的核心
+	Parent          *ActorCore                      // 父 Actor
+	Children        map[vivids.ActorName]*ActorCore // 子 Actor
+	Id              vivids.ActorId                  // Actor 的 ID
+	IsEnd           bool                            // 是否是末级 Actor
+	Started         bool                            // 是否已经启动
+	Behaviors       map[reflect.Type]reflect.Value  // 消息处理器
+}
+
+func (c *ActorContext) RegisterBehavior(message vivids.Message, behavior any) {
+	if c.Started {
+		panic("register behavior after actor started")
+	}
+	msgType := reflect.TypeOf(message)
+	behaviorValue := reflect.ValueOf(behavior)
+	if behaviorValue.Kind() != reflect.Func {
+		panic("behavior must be a function")
+	}
+	if _, exist := c.Behaviors[msgType]; exist {
+		panic("behavior already registered")
+	}
+	if behaviorValue.Type().NumIn() != 2 {
+		panic("behavior must have two parameters")
+	}
+	if behaviorValue.Type().In(0) != reflect.TypeOf(c) {
+		panic("behavior first parameter must be ActorContext")
+	}
+	if behaviorValue.Type().In(1) != msgType {
+		panic("behavior second parameter must be message")
+	}
+	c.Behaviors[msgType] = behaviorValue
 }
 
 // GetSystem 获取 Actor 所属的 Actor 系统
-func (c *ActorContext) GetSystem() vivid.ActorSystem {
+func (c *ActorContext) GetSystem() vivids.ActorSystem {
 	return c.System
 }
 
@@ -68,26 +94,26 @@ func (c *ActorContext) bindChildren(core *ActorCore) {
 	c.Children[core.GetOptions().Name] = core
 }
 
-func (c *ActorContext) ActorOf(actor vivid.Actor, opts ...*vivid.ActorOptions) (vivid.ActorRef, error) {
-	var opt *vivid.ActorOptions
+func (c *ActorContext) ActorOf(actor vivids.Actor, opts ...*vivids.ActorOptions) (vivids.ActorRef, error) {
+	var opt *vivids.ActorOptions
 	if len(opts) > 0 {
 		opt = opts[0]
 		if opt == nil {
-			opt = vivid.NewActorOptions()
+			opt = vivids.NewActorOptions()
 		}
 	} else {
-		opt = vivid.NewActorOptions()
+		opt = vivids.NewActorOptions()
 	}
 	opt = opt.WithParent(c)
 
 	return c.System.generateActor(c, actor, opt, !c.Started)
 }
 
-func (c *ActorContext) GetActor() vivid.Query {
+func (c *ActorContext) GetActor() vivids.Query {
 	return NewQuery(c.System, c.Core)
 }
 
-func (c *ActorContext) NotifyTerminated(v ...vivid.Message) {
+func (c *ActorContext) NotifyTerminated(v ...vivids.Message) {
 	terminatedContext := NewActorTerminatedContext(c.Core, v...)
 	c.Parent.OnChildTerminated(c.Parent, terminatedContext)
 	if terminatedContext.cancelTerminate {
@@ -96,14 +122,35 @@ func (c *ActorContext) NotifyTerminated(v ...vivid.Message) {
 	c.System.releaseActor(c.Core, !c.Core.Started)
 }
 
-func (c *ActorContext) GetParentActor() vivid.ActorRef {
+func (c *ActorContext) GetParentActor() vivids.ActorRef {
 	return c.Parent.ActorRef
 }
 
-func (c *ActorContext) GetActorId() vivid.ActorId {
+func (c *ActorContext) GetActorId() vivids.ActorId {
 	return c.Id
 }
 
-func (c *ActorContext) Future(handler func() vivid.Message) vivid.Future {
+func (c *ActorContext) Future(handler func() vivids.Message) vivids.Future {
 	return NewFuture(c, handler)
+}
+
+func (c *ActorContext) PublishEvent(event vivids.Message) {
+	c.Core.EventRW.RLock()
+	defer c.Core.EventRW.RUnlock()
+
+	eventType := reflect.TypeOf(event)
+	if _, exist := c.Core.Events[eventType]; !exist {
+		return
+	}
+
+	var err error
+	for actorId := range c.Core.Events[eventType] {
+		if err = c.System.Tell(actorId, event); err != nil {
+			log.Error("publish event failed", log.Err(err))
+		}
+	}
+}
+
+func (c *ActorContext) GetProps() any {
+	return c.Core.GetOptions().Props
 }

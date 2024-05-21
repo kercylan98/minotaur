@@ -26,3 +26,7 @@ func (b *BasicActor) OnSaveSnapshot(ctx ActorContext) (snapshot []byte, err erro
 func (b *BasicActor) OnRecoverSnapshot(ctx ActorContext, snapshot []byte) (err error) {
 	return
 }
+
+func (b *BasicActor) OnEvent(ctx ActorContext, event Message) (err error) {
+	return
+}

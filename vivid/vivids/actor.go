@@ -20,4 +20,7 @@ type Actor interface {
 
 	// OnChildTerminated 当 Actor 的子 Actor 被销毁时将会调用该函数
 	OnChildTerminated(ctx ActorContext, child ActorTerminatedContext)
+
+	// OnEvent 当 Actor 接收到事件时将会调用该函数
+	OnEvent(ctx ActorContext, event Message) (err error)
 }

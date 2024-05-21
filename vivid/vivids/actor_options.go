@@ -11,6 +11,7 @@ type ActorOptions struct {
 	Mailbox        func() Mailbox // Actor 使用的邮箱
 	Name           string         // Actor 名称
 	DispatcherName string         // Actor 使用的调度器名称，如果为空则使用默认调度器
+	Props          any            // Actor 的属性
 }
 
 // Apply 应用配置项
@@ -28,7 +29,16 @@ func (o *ActorOptions) Apply(opts ...*ActorOptions) *ActorOptions {
 		if opt.Parent != nil {
 			o.Parent = opt.Parent
 		}
+		if opt.Props != nil {
+			o.Props = opt.Props
+		}
 	}
+	return o
+}
+
+// WithProps 设置 Actor 的属性
+func (o *ActorOptions) WithProps(props any) *ActorOptions {
+	o.Props = props
 	return o
 }
 

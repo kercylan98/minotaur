@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/kercylan98/minotaur/vivid/vivids"
-	"net"
 )
 
 type Network interface {
@@ -10,28 +9,23 @@ type Network interface {
 }
 
 type (
-	// NetworkConnectionOpenedMessage 网络连接打开消息
-	NetworkConnectionOpenedMessage struct {
-		net.Conn
-		ConnectionWriter
+	NetworkConnectionOpenedEvent struct {
+		vivids.ActorRef
 	}
 
-	// NetworkConnectionClosedMessage 网络连接关闭消息
-	NetworkConnectionClosedMessage struct {
-		Conn  vivids.ActorRef
-		Error error
+	NetworkConnectionClosedEvent struct {
+		vivids.ActorRef
 	}
 
-	// NetworkConnectionReceivedMessage 网络连接接收消息
 	NetworkConnectionReceivedMessage struct {
-		net.Conn
-		Packet
+		Packet Packet
 	}
 
-	// NetworkConnectionAsyncWriteErrorMessage 网络连接异步写入失败消息
-	NetworkConnectionAsyncWriteErrorMessage struct {
-		Conn
-		Packet
+	ConnectionWriteMessage struct {
+		Packet Packet
+	}
+
+	ConnectionAsyncWriteErrorEvent struct {
 		Error error
 	}
 )

@@ -2,6 +2,8 @@ package vivids
 
 import "context"
 
+type ActorBehavior[T Message] func(ctx MessageContext, msg T) error
+
 type ActorContext interface {
 	context.Context
 
@@ -22,4 +24,13 @@ type ActorContext interface {
 
 	// NotifyTerminated 当 Actor 主动销毁时，务必调用该函数，以便在整个 Actor 系统中得到完整的释放
 	NotifyTerminated(v ...Message)
+
+	// RegisterBehavior 注册一个行为，该行为必须是一个 ActorBehavior 类型
+	RegisterBehavior(message Message, behavior any)
+
+	// PublishEvent 发布一个事件
+	PublishEvent(event Message)
+
+	// GetProps 获取 Actor 的属性
+	GetProps() any
 }

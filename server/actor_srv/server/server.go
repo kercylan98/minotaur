@@ -17,8 +17,11 @@ type Server struct {
 	network Network
 }
 
-func (s *Server) OnPreStart(ctx vivids.ActorContext) (err error) {
-	_, err = ctx.ActorOf(s.network, vivids.NewActorOptions().WithName("network"))
+func (s *Server) OnPreStart(ctx vivids.ActorContext) error {
+	networkActor, err := ctx.ActorOf(s.network, vivids.NewActorOptions().WithName("network"))
+
+	networkActor.Subscribe(ctx, NetworkConnectionOpenedMessage{})
+
 	return err
 }
 
