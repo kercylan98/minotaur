@@ -144,5 +144,5 @@ func (b *Ring[T]) Reset() {
 	b.r = 0
 	b.w = 0
 	b.size = b.initSize
-	b.buf = make([]T, b.initSize)
+	b.buf = b.buf[:b.initSize]
 }
