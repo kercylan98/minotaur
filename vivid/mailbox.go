@@ -1,6 +1,7 @@
 package vivid
 
-const DefaultMailboxFactoryId MailboxFactoryId = 1
+const FIFOMailboxFactoryId MailboxFactoryId = 1
+const PriorityMailboxFactoryId MailboxFactoryId = 2
 
 type MailboxFactoryId = uint64
 

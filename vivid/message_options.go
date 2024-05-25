@@ -10,6 +10,7 @@ type MessageOptions struct {
 	Sender       ActorRef
 	ReplyTimeout time.Duration
 	ContextHook  func(MessageContext)
+	Priority     int64
 }
 
 func (o *MessageOptions) apply(options []MessageOption) *MessageOptions {
@@ -17,6 +18,15 @@ func (o *MessageOptions) apply(options []MessageOption) *MessageOptions {
 		option(o)
 	}
 	return o
+}
+
+// WithPriority 设置消息优先级，优先级越高的消息将会被优先处理
+//   - 当 priority 的数值越小时，优先级越高
+//   - 当邮箱类型为非优先级邮箱 PriorityMailboxFactoryId 时，该可选项会被忽略
+func WithPriority(priority int64) MessageOption {
+	return func(options *MessageOptions) {
+		options.Priority = priority
+	}
 }
 
 // WithSender 设置消息发送者，发送者可以有利于对消息流向的追踪

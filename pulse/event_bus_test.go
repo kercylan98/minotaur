@@ -5,10 +5,16 @@ import (
 	"github.com/kercylan98/minotaur/pulse"
 	"github.com/kercylan98/minotaur/vivid"
 	"testing"
+	"time"
 )
+
+var tester *testing.T
+var receiveEventCount int
+var produceEventCount int
 
 type TestActor struct {
 	eventBus vivid.ActorRef
+	producer vivid.ActorRef
 }
 
 func (t *TestActor) OnReceive(ctx vivid.MessageContext) {
@@ -16,12 +22,23 @@ func (t *TestActor) OnReceive(ctx vivid.MessageContext) {
 	case TestActorBindEventBus:
 		t.eventBus = m.EventBus
 	case vivid.ActorRef:
+		t.producer = m
 		pulse.Subscribe[string](t.eventBus, m, ctx.GetReceiver(), "event-string")
+		m.Tell(true)
 	case string:
-		fmt.Println("receive event:", m)
+		receiveEventCount++
+		tester.Log("receive event:", m)
+		pulse.Unsubscribe[string](t.eventBus, t.producer, ctx.GetReceiver(), "event-string")
+		tester.Log("unsubscribe event")
 	case int:
 		// producer message
+		produceEventCount++
 		pulse.Publish(t.eventBus, ctx.GetReceiver(), fmt.Sprintf("event-%d", m))
+	case bool:
+		for i := 0; i < 10; i++ {
+			ctx.GetReceiver().Tell(i)
+			tester.Log("produce event:", i)
+		}
 	}
 }
 
@@ -30,6 +47,7 @@ type TestActorBindEventBus struct {
 }
 
 func TestNewEventBus(t *testing.T) {
+	tester = t
 	system := vivid.NewActorSystem("test")
 
 	eventBus := vivid.ActorOf[*pulse.EventBus](&system, vivid.NewActorOptions[*pulse.EventBus]().WithName("event_bus"))
@@ -40,9 +58,9 @@ func TestNewEventBus(t *testing.T) {
 	subscriber.Tell(TestActorBindEventBus{EventBus: eventBus})
 	subscriber.Tell(producer)
 
-	for i := 0; i < 100; i++ {
-		producer.Tell(i)
-	}
-
+	time.Sleep(time.Second)
 	system.Shutdown()
+
+	t.Log("produce event count:", produceEventCount)
+	t.Log("receive event count:", receiveEventCount)
 }

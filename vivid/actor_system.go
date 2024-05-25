@@ -30,24 +30,8 @@ func NewActorSystem(name string) ActorSystem {
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.BindDispatcher(new(_Dispatcher)) // default dispatcher
-	s.BindMailboxFactory(NewFIFOFactory(func(message MessageContext) {
-		// received message
-		core := message.GetReceiver().(*_LocalActorRef).core
-		defer func() {
-			core.messageGroup.Done()
-			if r := recover(); r != nil {
-				s.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeMessage, DeadLetterEventMessage{
-					Error:   fmt.Errorf("%w: %v", ErrActorPanic, r),
-					To:      core.GetId(),
-					Message: message,
-				}))
-			}
-		}()
-		if core.messageHook != nil && !core.messageHook(message) {
-			return
-		}
-		core.OnReceive(message)
-	}))
+	s.BindMailboxFactory(NewFIFOFactory(s.onProcessMailboxMessage))
+	s.BindMailboxFactory(NewPriorityFactory(s.onProcessMailboxMessage))
 	var err error
 	s.userGuard, err = generateActor(&s, new(UserGuardActor), parseActorOptions(NewActorOptions[*UserGuardActor]().WithName("user")))
 	if err != nil {
@@ -115,7 +99,7 @@ func (s *ActorSystem) BindMailboxFactory(f MailboxFactory) MailboxFactoryId {
 }
 
 func (s *ActorSystem) UnbindMailboxFactory(id MailboxFactoryId) {
-	if id == DefaultMailboxFactoryId {
+	if id == FIFOMailboxFactoryId {
 		return
 	}
 	s.mailboxFactorRW.Lock()
@@ -194,7 +178,7 @@ func (s *ActorSystem) getContext() *_ActorCore {
 func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ...MessageOption) Message {
 	var opts = new(MessageOptions).apply(options)
 
-	ctx := newMessageContext(s, message)
+	ctx := newMessageContext(s, message, opts.Priority)
 	switch ref := receiver.(type) {
 	case *_LocalActorRef:
 		ctx = ctx.withLocal(ref.core, opts.Sender)
@@ -297,10 +281,33 @@ func (s *ActorSystem) onProcessServerMessage(bytes []byte) {
 	}
 }
 
+func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
+	// received message
+	core := message.GetReceiver().(*_LocalActorRef).core
+	defer func() {
+		core.messageGroup.Done()
+		if r := recover(); r != nil {
+			s.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeMessage, DeadLetterEventMessage{
+				Error:   fmt.Errorf("%w: %v", ErrActorPanic, r),
+				To:      core.GetId(),
+				Message: message,
+			}))
+		}
+	}()
+	if core.messageHook != nil && !core.messageHook(message) {
+		return
+	}
+	core.OnReceive(message)
+}
+
 func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[T]) (*_ActorCore, error) {
 	if options.Name == charproc.None {
 		options.Name = uuid.NewString()
 	}
+
+	optionsNum := len(options.options)
+	actor.OnReceive(newMessageContext(system, OnOptionApply[T]{Options: options}, 0).withLocal(nil, nil))
+	options.applyOption(options.options[optionsNum:]...)
 
 	var actorPath = options.Name
 	if options.Parent != nil {

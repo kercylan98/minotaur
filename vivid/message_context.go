@@ -29,28 +29,33 @@ type MessageContext interface {
 
 	// GetActor 获取 Actor 对象，该函数是 ActorContext.GetActor 的快捷方式
 	GetActor() Actor
+
+	// GetPriority 获取消息的优先级
+	GetPriority() int64
 }
 
-func newMessageContext(system *ActorSystem, message Message) *_MessageContext {
+func newMessageContext(system *ActorSystem, message Message, priority int64) *_MessageContext {
 	return &_MessageContext{
-		system:  system,
-		Seq:     system.messageSeq.Add(1),
-		Network: system.network,
-		Host:    system.host,
-		Port:    system.port,
-		Message: message,
+		system:   system,
+		Seq:      system.messageSeq.Add(1),
+		Network:  system.network,
+		Host:     system.host,
+		Port:     system.port,
+		Message:  message,
+		Priority: priority,
 	}
 }
 
 // _MessageContext 消息上下文，消息上下文实现了兼容本地及远程消息的上下文
 //   - 该结构体中，除开公共信息外，内部字段被用于本地消息，公开字段被用于远程消息，需要保证公共及公开字段的可序列化
 type _MessageContext struct {
-	system  *ActorSystem // 创建上下文的 Actor 系统
-	Seq     uint64       // 消息序号
-	Network string       // 产生消息的网络
-	Host    string       // 产生消息的主机
-	Port    uint16       // 产生消息的端口
-	Message Message      // 消息内容
+	system   *ActorSystem // 创建上下文的 Actor 系统
+	Seq      uint64       // 消息序号
+	Network  string       // 产生消息的网络
+	Host     string       // 产生消息的主机
+	Port     uint16       // 产生消息的端口
+	Message  Message      // 消息内容
+	Priority int64        // 消息优先级
 
 	// 本地消息是直接根据实现了 ActorRef 的 _ActorCore 来投递的，所以可以直接将消息投递到 ActorCore 绑定的 Dispatcher 中
 	actorContext ActorContext // 本地接收者的上下文
@@ -189,4 +194,8 @@ func (c *_MessageContext) Reply(message Message) {
 
 func (c *_MessageContext) GetActor() Actor {
 	return c.GetContext().GetActor()
+}
+
+func (c *_MessageContext) GetPriority() int64 {
+	return c.Priority
 }

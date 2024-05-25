@@ -108,7 +108,7 @@ func parseActorOptions[T Actor](options ...*ActorOptions[T]) *ActorOptions[T] {
 		opts.DispatcherId = DefaultDispatcherId
 	}
 	if opts.MailboxFactoryId == 0 {
-		opts.MailboxFactoryId = DefaultMailboxFactoryId
+		opts.MailboxFactoryId = FIFOMailboxFactoryId
 	}
 	return opts
 }

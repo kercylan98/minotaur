@@ -12,6 +12,8 @@ type EventBus struct {
 
 func (e *EventBus) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
+	case vivid.OnOptionApply[*EventBus]:
+		m.Options.WithMailboxFactory(vivid.PriorityMailboxFactoryId)
 	case vivid.OnPreStart:
 		e.onStart()
 	case eventSubscribeMessage:
