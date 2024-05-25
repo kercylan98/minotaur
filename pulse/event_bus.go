@@ -2,12 +2,11 @@ package pulse
 
 import (
 	"github.com/kercylan98/minotaur/vivid"
-	"sync"
 )
 
 // EventBus 基于 Actor 模型实现的事件总线
 type EventBus struct {
-	rw              sync.RWMutex                // 保护生产者列表的读写锁
+	//rw              sync.RWMutex                // 保护生产者列表的读写锁
 	expectProducers map[vivid.ActorId]*producer // 期望的生产者
 }
 
@@ -29,21 +28,21 @@ func (e *EventBus) onStart() {
 }
 
 func (e *EventBus) onSubscribe(m eventSubscribeMessage) {
-	e.rw.Lock()
+	//e.rw.Lock()
 	producerActorId := vivid.GetActorIdByActorRef(m.producer)
 	producer, exists := e.expectProducers[producerActorId]
 	if !exists {
 		producer = newProducer(m.producer)
 		e.expectProducers[producerActorId] = producer
 	}
-	e.rw.Unlock()
+	//e.rw.Unlock()
 
 	producer.subscribe(m)
 }
 
 func (e *EventBus) onUnsubscribe(m eventUnsubscribeMessage) {
-	e.rw.Lock()
-	defer e.rw.Unlock()
+	//e.rw.Lock()
+	//defer e.rw.Unlock()
 	producerActorId := vivid.GetActorIdByActorRef(m.producer)
 	producer, exists := e.expectProducers[producerActorId]
 	if !exists {
@@ -56,14 +55,14 @@ func (e *EventBus) onUnsubscribe(m eventUnsubscribeMessage) {
 }
 
 func (e *EventBus) onPublish(m eventPublishMessage) {
-	e.rw.RLock()
+	//e.rw.RLock()
 	producerActorId := vivid.GetActorIdByActorRef(m.producer)
 	producer, exists := e.expectProducers[producerActorId]
 	if !exists {
-		e.rw.RUnlock()
+		//e.rw.RUnlock()
 		return
 	}
-	e.rw.RUnlock()
+	//e.rw.RUnlock()
 
 	producer.publish(m)
 }

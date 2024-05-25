@@ -4,7 +4,6 @@ import (
 	"github.com/kercylan98/minotaur/vivid"
 	"reflect"
 	"sort"
-	"sync"
 )
 
 type Producer interface {
@@ -14,14 +13,14 @@ type Producer interface {
 type (
 	// 内部生产者
 	producer struct {
-		Producer                                       // 生产者
-		rw       sync.RWMutex                          // 保护事件列表的读写锁
-		events   map[reflect.Type]*producerSubscribers // 事件列表
+		Producer // 生产者
+		//rw       sync.RWMutex                          // 保护事件列表的读写锁
+		events map[reflect.Type]*producerSubscribers // 事件列表
 	}
 
 	// 生产者订阅者列表
 	producerSubscribers struct {
-		rw           sync.RWMutex                  // 保护订阅者列表的读写锁
+		//rw           sync.RWMutex                  // 保护订阅者列表的读写锁
 		priorities   map[SubscribeId]int           // 事件优先级
 		subscribeIds map[SubscribeId]vivid.ActorId // 订阅 ID
 		subscribers  map[vivid.ActorId]Subscriber  // 订阅者
@@ -38,7 +37,7 @@ func newProducer(p Producer) *producer {
 }
 
 func (p *producer) subscribe(message eventSubscribeMessage) {
-	p.rw.Lock()
+	//p.rw.Lock()
 	events, exists := p.events[message.event]
 	if !exists {
 		events = &producerSubscribers{
@@ -49,10 +48,10 @@ func (p *producer) subscribe(message eventSubscribeMessage) {
 		}
 		p.events[message.event] = events
 	}
-	p.rw.Unlock()
+	//p.rw.Unlock()
 
-	events.rw.Lock()
-	defer events.rw.Unlock()
+	//events.rw.Lock()
+	//defer events.rw.Unlock()
 
 	subscriberActorId := vivid.GetActorIdByActorRef(message.subscriber)
 
@@ -66,16 +65,16 @@ func (p *producer) subscribe(message eventSubscribeMessage) {
 }
 
 func (p *producer) unsubscribe(message eventUnsubscribeMessage) (empty bool) {
-	p.rw.Lock()
-	defer p.rw.Unlock()
+	//p.rw.Lock()
+	//defer p.rw.Unlock()
 	events, exists := p.events[message.event]
 
 	if !exists {
 		return
 	}
 
-	events.rw.Lock()
-	defer events.rw.Unlock()
+	//events.rw.Lock()
+	//defer events.rw.Unlock()
 
 	subscriberActorId := vivid.GetActorIdByActorRef(message.subscriber)
 
@@ -96,16 +95,16 @@ func (p *producer) unsubscribe(message eventUnsubscribeMessage) (empty bool) {
 func (p *producer) publish(message eventPublishMessage) {
 	eventType := reflect.TypeOf(message.event)
 
-	p.rw.RLock()
+	//p.rw.RLock()
 	events, exists := p.events[eventType]
-	p.rw.RUnlock()
+	//p.rw.RUnlock()
 
 	if !exists {
 		return
 	}
 
-	events.rw.RLock()
-	defer events.rw.RUnlock()
+	//events.rw.RLock()
+	//defer events.rw.RUnlock()
 
 	// 优先级排序
 	var subscribeIds = make([]SubscribeId, 0, len(events.priorities))
