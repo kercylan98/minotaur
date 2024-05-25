@@ -1,6 +1,7 @@
 package vivid
 
 import (
+	"context"
 	"github.com/kercylan98/minotaur/toolkit"
 	"sync"
 )
@@ -30,6 +31,11 @@ func newActorCore[T Actor](system *ActorSystem, id ActorId, actor Actor, options
 		messageGroup: toolkit.NewDynamicWaitGroup(),
 		messageHook:  options.MessageHook,
 	}
+	if core.parent != nil {
+		core.Context = context.WithoutCancel(options.Parent)
+	} else {
+		core.Context = context.WithoutCancel(system.ctx)
+	}
 
 	core._LocalActorRef.core = core
 	core._ActorContext._ActorCore = core
@@ -39,6 +45,7 @@ func newActorCore[T Actor](system *ActorSystem, id ActorId, actor Actor, options
 }
 
 type _ActorCore struct {
+	context.Context                           // 上下文
 	Actor                                     // Actor 对象
 	*_ActorContext                            // ActorContext
 	*_LocalActorRef                           // ActorRef

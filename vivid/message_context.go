@@ -1,6 +1,12 @@
 package vivid
 
+import (
+	"context"
+	"time"
+)
+
 type MessageContext interface {
+	context.Context
 	actorOf
 
 	// GetContext 获取 Actor 上下文
@@ -54,6 +60,22 @@ type _MessageContext struct {
 	ReceiverId     ActorId // 远程接收者的 ActorId
 	SenderId       ActorId // 远程发送者的 ActorId，通过 WithSender 设置后，由于是远程消息，所以需要将发送者的 ActorId 传递到远程消息的上下文中
 	RemoteReplySeq uint64  // 用于远程回复的消息序号
+}
+
+func (c *_MessageContext) Deadline() (deadline time.Time, ok bool) {
+	return c.actorContext.Deadline()
+}
+
+func (c *_MessageContext) Done() <-chan struct{} {
+	return c.actorContext.Done()
+}
+
+func (c *_MessageContext) Err() error {
+	return c.actorContext.Err()
+}
+
+func (c *_MessageContext) Value(key any) any {
+	return c.actorContext.Value(key)
 }
 
 func (c *_MessageContext) getSystem() *ActorSystem {
