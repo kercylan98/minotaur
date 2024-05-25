@@ -11,8 +11,11 @@ type Context interface {
 
 func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
 	var opts = parseActorOptions(options...)
-	var tof = reflect.TypeOf((*T)(nil)).Elem().Elem()
-	var ins = reflect.New(tof).Interface().(T)
+	var ins = opts.Props
+	if ins == nil {
+		tof := reflect.TypeOf((*T)(nil)).Elem().Elem()
+		ins = reflect.New(tof).Interface().(T)
+	}
 	var system = actorOf.getSystem()
 
 	if opts.Parent == nil {
@@ -37,8 +40,11 @@ func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
 
 func FreeActorOf[T any](actorOf actorOf, options ...*ActorOptions[*FreeActor[T]]) ActorRef {
 	var opts = parseActorOptions(options...)
-	var tof = reflect.TypeOf((*T)(nil)).Elem().Elem()
-	var ins = reflect.New(tof).Interface().(T)
+	var ins = opts.Props.actor
+	if ins == nil {
+		tof := reflect.TypeOf((*T)(nil)).Elem().Elem()
+		ins = reflect.New(tof).Interface().(T)
+	}
 	var system = actorOf.getSystem()
 
 	if opts.Parent == nil {

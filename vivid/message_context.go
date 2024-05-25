@@ -37,7 +37,7 @@ type MessageContext interface {
 	Instantly() bool
 }
 
-func newMessageContext(system *ActorSystem, message Message, priority int64, instantly bool) *_MessageContext {
+func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
 	return &_MessageContext{
 		system:        system,
 		Seq:           system.messageSeq.Add(1),
@@ -47,6 +47,7 @@ func newMessageContext(system *ActorSystem, message Message, priority int64, ins
 		Message:       message,
 		Priority:      priority,
 		InstantlyExec: instantly,
+		HasReply:      hasReply,
 	}
 }
 
@@ -60,6 +61,7 @@ type _MessageContext struct {
 	Port     uint16       // 产生消息的端口
 	Message  Message      // 消息内容
 	Priority int64        // 消息优先级
+	HasReply bool         // 是否需要回复
 
 	// 本地消息是直接根据实现了 ActorRef 的 _ActorCore 来投递的，所以可以直接将消息投递到 ActorCore 绑定的 Dispatcher 中
 	actorContext ActorContext // 本地接收者的上下文
@@ -169,6 +171,9 @@ func (c *_MessageContext) GetMessage() Message {
 }
 
 func (c *_MessageContext) Reply(message Message) {
+	if !c.HasReply {
+		return
+	}
 	// 本地消息回复直接投递到对应 waiter 中，远程消息则通过网络发送
 	sender := c.GetSender()
 	localSender, isLocal := sender.(*_LocalActorRef)

@@ -1,9 +1,5 @@
 package vivid
 
-type (
-	ActorProps[T Actor] func(T)
-)
-
 type ActorOption[T Actor] func(opts *ActorOptions[T])
 
 type ActorOptions[T Actor] struct {
@@ -12,7 +8,7 @@ type ActorOptions[T Actor] struct {
 	Parent           ActorContext                  // 父 actor 上下文
 	DispatcherId     DispatcherId                  // 调度器 ID
 	MailboxFactoryId MailboxFactoryId              // 邮箱工厂 ID
-	Props            ActorProps[T]                 // Actor 属性
+	Props            T                             // Actor 属性
 	MessageHook      func(ctx MessageContext) bool // 消息钩子
 }
 
@@ -25,7 +21,7 @@ func (o *ActorOptions[T]) WithMessageHook(hook func(ctx MessageContext) bool) *A
 }
 
 // WithProps 设置 Actor 的属性
-func (o *ActorOptions[T]) WithProps(props ActorProps[T]) *ActorOptions[T] {
+func (o *ActorOptions[T]) WithProps(props T) *ActorOptions[T] {
 	o.options = append(o.options, func(opts *ActorOptions[T]) {
 		opts.Props = props
 	})

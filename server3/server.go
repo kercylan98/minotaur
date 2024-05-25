@@ -1,59 +1,53 @@
 package server
 
 import (
-	"context"
 	"github.com/kercylan98/minotaur/vivid"
 )
 
-type Server interface {
-	vivid.Actor
-	// Launch 启动服务器
-	Launch(ctx ...context.Context) error
-}
-
-// NewServer 创建一个新的 Server
-func NewServer(network Network) Server {
+func NewServer(system *vivid.ActorSystem, network Network, options ...*vivid.ActorOptions[*server]) Server {
+	ref := vivid.ActorOf[*server](system, append(options, vivid.NewActorOptions[*server]().
+		WithProps(func() *server {
+			srv := &server{
+				network: network,
+			}
+			srv.core = new(_Core).init(srv)
+			return srv
+		}()),
+	)...)
 	return &_Server{
-		network: network,
+		actor: ref,
 	}
 }
 
-// NewServerActorProps 创建一个新的 ServerActor
-func NewServerActorProps(network Network) vivid.ActorOption[*_Server] {
-	return func(opts *vivid.ActorOptions[*_Server]) {
-		opts.WithProps(func(server *_Server) {
-			server.network = network
-		})
+type server struct {
+	core        *_Core
+	actor       vivid.ActorRef
+	network     Network
+	connections map[vivid.ActorId]vivid.ActorRef
+}
+
+func (s *server) OnReceive(ctx vivid.MessageContext) {
+	switch m := ctx.GetMessage().(type) {
+	case vivid.OnPreStart:
+		s.actor = ctx.GetReceiver()
+	case onLaunchServerAskMessage:
+		s.onLaunch(ctx, m)
+	case onShutdownServerAskMessage:
+		s.onShutdown(ctx, m)
+	case onConnectionOpenedMessage:
+		s.onConnectionOpened(ctx, m)
 	}
 }
 
-type _Server struct {
-	ctx     context.Context    // 上下文
-	cancel  context.CancelFunc // 取消函数
-	network Network            // 网络接口
+func (s *server) onLaunch(ctx vivid.MessageContext, m onLaunchServerAskMessage) {
+	ctx.Reply(s.network.Launch(ctx, s.core))
 }
 
-func (s *_Server) OnReceive(ctx vivid.MessageContext) {
-	switch ctx.GetMessage().(type) {
-	case LaunchServerMessage:
-		go s.Launch(ctx)
-	}
+func (s *server) onShutdown(ctx vivid.MessageContext, m onShutdownServerAskMessage) {
+	ctx.Reply(s.network.Shutdown())
 }
 
-func (s *_Server) Launch(ctx ...context.Context) (err error) {
-	if len(ctx) == 0 {
-		ctx = append(ctx, context.Background())
-	}
-	s.ctx, s.cancel = context.WithCancel(ctx[0])
-	defer s.cancel()
-	if err = s.network.OnSetup(s.ctx); err != nil {
-		return
-	}
-
-	if err = s.network.OnRun(); err != nil {
-		return
-	}
-
-	<-s.ctx.Done()
-	return
+func (s *server) onConnectionOpened(ctx vivid.MessageContext, m onConnectionOpenedMessage) {
+	connActor := vivid.ActorOf[*conn](ctx, vivid.NewActorOptions[*conn]().WithProps(m.conn))
+	s.connections[vivid.GetActorIdByActorRef(connActor)] = connActor
 }
