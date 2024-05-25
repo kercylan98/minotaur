@@ -114,6 +114,10 @@ func (f *FIFO) Enqueue(message MessageContext) bool {
 	return true
 }
 
+func (f *FIFO) GetLockable() sync.Locker {
+	return f.cond.L
+}
+
 func (f *FIFO) reset() {
 	f.cond.L.Lock()
 	if f.status < fifoStateStopping {

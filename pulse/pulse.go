@@ -18,7 +18,7 @@ func Subscribe[T Event](eventBus vivid.ActorRef, producer Producer, subscriber S
 		event:       reflect.TypeOf((*T)(nil)).Elem(),
 		subscribeId: subscribeId,
 		priority:    0,
-	}, vivid.WithPriority(math.MinInt64))
+	}, vivid.WithPriority(math.MinInt64), vivid.WithInstantly(true))
 }
 
 // Unsubscribe 取消订阅消息总线中来自特定生产者的特定事件
@@ -30,7 +30,7 @@ func Unsubscribe[T Event](eventBus vivid.ActorRef, producer Producer, subscriber
 		subscriber:  subscriber,
 		event:       reflect.TypeOf((*T)(nil)).Elem(),
 		subscribeId: subscribeId,
-	}, vivid.WithPriority(math.MinInt64))
+	}, vivid.WithPriority(math.MinInt64), vivid.WithInstantly(true))
 }
 
 // Publish 发布事件到消息总线，消息总线会将事件投递给所有订阅者

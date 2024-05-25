@@ -1,5 +1,7 @@
 package vivid
 
+import "sync"
+
 const FIFOMailboxFactoryId MailboxFactoryId = 1
 const PriorityMailboxFactoryId MailboxFactoryId = 2
 
@@ -20,4 +22,7 @@ type Mailbox interface {
 
 	// Enqueue 将一个消息放入队列
 	Enqueue(message MessageContext) bool
+
+	// GetLockable 获取队列的锁
+	GetLockable() sync.Locker
 }

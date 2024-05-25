@@ -107,6 +107,10 @@ func (p *Priority) Enqueue(message MessageContext) bool {
 	return true
 }
 
+func (p *Priority) GetLockable() sync.Locker {
+	return p.cond.L
+}
+
 func (p *Priority) reset() {
 	p.cond.L.Lock()
 	p.buffer = p.buffer[:0]

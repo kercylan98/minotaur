@@ -13,6 +13,7 @@ type ActorCore interface {
 	GetMailboxFactory() MailboxFactory
 	GetMailbox() Mailbox
 	BindMailbox(Mailbox)
+	ModifyMessageCounter(delta int64)
 }
 
 // newActorCore 创建一个新的 ActorCore
@@ -72,4 +73,8 @@ func (a *_ActorCore) GetMailbox() Mailbox {
 
 func (a *_ActorCore) BindMailbox(mailbox Mailbox) {
 	a.mailbox = mailbox
+}
+
+func (a *_ActorCore) ModifyMessageCounter(delta int64) {
+	a.core.messageGroup.Add(delta)
 }

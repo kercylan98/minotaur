@@ -28,6 +28,7 @@ func NewActorSystem(name string) ActorSystem {
 		waitGroup:       toolkit.NewDynamicWaitGroup(),
 		name:            name,
 	}
+	s.core = new(_ActorSystemCore).init(&s)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.BindDispatcher(new(_Dispatcher)) // default dispatcher
 	s.BindMailboxFactory(NewFIFOFactory(s.onProcessMailboxMessage))
@@ -41,6 +42,7 @@ func NewActorSystem(name string) ActorSystem {
 }
 
 type ActorSystem struct {
+	core              *_ActorSystemCore
 	ctx               context.Context
 	cancel            context.CancelFunc
 	dispatchers       map[DispatcherId]Dispatcher
@@ -146,7 +148,7 @@ func (s *ActorSystem) unbindActor(actor ActorContext) {
 	// 等待消息处理完毕后拒绝新消息
 	core := actor.(*_ActorCore)
 	core.messageGroup.Wait(func() {
-		core.dispatcher.Detach(core)
+		core.dispatcher.Detach(s.core, core)
 		s.actorRW.Lock()
 		delete(s.actors, core.GetId())
 		s.actorRW.Unlock()
@@ -178,7 +180,7 @@ func (s *ActorSystem) getContext() *_ActorCore {
 func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ...MessageOption) Message {
 	var opts = new(MessageOptions).apply(options)
 
-	ctx := newMessageContext(s, message, opts.Priority)
+	ctx := newMessageContext(s, message, opts.Priority, opts.Instantly)
 	switch ref := receiver.(type) {
 	case *_LocalActorRef:
 		ctx = ctx.withLocal(ref.core, opts.Sender)
@@ -276,7 +278,7 @@ func (s *ActorSystem) onProcessServerMessage(bytes []byte) {
 
 	// 远程消息增加计数，该计数将在消息处理完毕后减少
 	receiver.messageGroup.Add(1)
-	if !receiver.dispatcher.Send(receiver, ctx) {
+	if !receiver.dispatcher.Send(s.core, receiver, ctx) {
 		receiver.messageGroup.Done()
 	}
 }
@@ -306,7 +308,7 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	}
 
 	optionsNum := len(options.options)
-	actor.OnReceive(newMessageContext(system, OnOptionApply[T]{Options: options}, 0).withLocal(nil, nil))
+	actor.OnReceive(newMessageContext(system, OnOptionApply[T]{Options: options}, 0, false).withLocal(nil, nil))
 	options.applyOption(options.options[optionsNum:]...)
 
 	var actorPath = options.Name
@@ -351,7 +353,7 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 
 	// 启动 Actor
 	system.waitGroup.Add(1)
-	core.dispatcher.Attach(core)
+	core.dispatcher.Attach(system.core, core)
 
 	// 绑定父 Actor 并注册到系统
 	system.actorRW.Lock()

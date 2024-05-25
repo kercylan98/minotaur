@@ -24,6 +24,7 @@ func (t *TestActor) OnReceive(ctx vivid.MessageContext) {
 	case vivid.ActorRef:
 		t.producer = m
 		pulse.Subscribe[string](t.eventBus, m, ctx.GetReceiver(), "event-string")
+		tester.Log("subscribe event")
 		m.Tell(true)
 	case string:
 		receiveEventCount++
@@ -32,13 +33,9 @@ func (t *TestActor) OnReceive(ctx vivid.MessageContext) {
 		tester.Log("unsubscribe event")
 	case int:
 		// producer message
+		tester.Log("produce event:", m)
 		produceEventCount++
 		pulse.Publish(t.eventBus, ctx.GetReceiver(), fmt.Sprintf("event-%d", m))
-	case bool:
-		for i := 0; i < 10; i++ {
-			ctx.GetReceiver().Tell(i)
-			tester.Log("produce event:", i)
-		}
 	}
 }
 
@@ -57,6 +54,10 @@ func TestNewEventBus(t *testing.T) {
 	producer.Tell(TestActorBindEventBus{EventBus: eventBus})
 	subscriber.Tell(TestActorBindEventBus{EventBus: eventBus})
 	subscriber.Tell(producer)
+
+	for i := 0; i < 10; i++ {
+		producer.Tell(i)
+	}
 
 	time.Sleep(time.Second)
 	system.Shutdown()

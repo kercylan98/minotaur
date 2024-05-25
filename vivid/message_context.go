@@ -32,17 +32,21 @@ type MessageContext interface {
 
 	// GetPriority 获取消息的优先级
 	GetPriority() int64
+
+	// Instantly 是否是立即执行的消息
+	Instantly() bool
 }
 
-func newMessageContext(system *ActorSystem, message Message, priority int64) *_MessageContext {
+func newMessageContext(system *ActorSystem, message Message, priority int64, instantly bool) *_MessageContext {
 	return &_MessageContext{
-		system:   system,
-		Seq:      system.messageSeq.Add(1),
-		Network:  system.network,
-		Host:     system.host,
-		Port:     system.port,
-		Message:  message,
-		Priority: priority,
+		system:        system,
+		Seq:           system.messageSeq.Add(1),
+		Network:       system.network,
+		Host:          system.host,
+		Port:          system.port,
+		Message:       message,
+		Priority:      priority,
+		InstantlyExec: instantly,
 	}
 }
 
@@ -65,6 +69,7 @@ type _MessageContext struct {
 	ReceiverId     ActorId // 远程接收者的 ActorId
 	SenderId       ActorId // 远程发送者的 ActorId，通过 WithSender 设置后，由于是远程消息，所以需要将发送者的 ActorId 传递到远程消息的上下文中
 	RemoteReplySeq uint64  // 用于远程回复的消息序号
+	InstantlyExec  bool    // 是否立即执行
 }
 
 func (c *_MessageContext) Deadline() (deadline time.Time, ok bool) {
@@ -198,4 +203,8 @@ func (c *_MessageContext) GetActor() Actor {
 
 func (c *_MessageContext) GetPriority() int64 {
 	return c.Priority
+}
+
+func (c *_MessageContext) Instantly() bool {
+	return c.InstantlyExec
 }

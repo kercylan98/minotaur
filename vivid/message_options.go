@@ -11,6 +11,7 @@ type MessageOptions struct {
 	ReplyTimeout time.Duration
 	ContextHook  func(MessageContext)
 	Priority     int64
+	Instantly    bool // 是否立即执行
 }
 
 func (o *MessageOptions) apply(options []MessageOption) *MessageOptions {
@@ -18,6 +19,14 @@ func (o *MessageOptions) apply(options []MessageOption) *MessageOptions {
 		option(o)
 	}
 	return o
+}
+
+// WithInstantly 设置消息是否立即执行，如果设置为立即执行，消息将会被立即执行，否则将会被放入邮箱等待执行
+//   - 该可选项将提供给 Dispatcher 进行处理，根据不同的 Dispatcher 实现，该可选项可能会被忽略
+func WithInstantly(instantly bool) MessageOption {
+	return func(options *MessageOptions) {
+		options.Instantly = instantly
+	}
 }
 
 // WithPriority 设置消息优先级，优先级越高的消息将会被优先处理
@@ -36,7 +45,7 @@ func WithSender(sender ActorRef) MessageOption {
 	}
 }
 
-// WithReplyTimeout 设置消息回复超时时间，当消息发送后等待回复的时间超过此时间时将会返回 nil
+// WithReplyTimeout 设置消息回复超时时间，当消息发送后等待回复的时间超过此时间时将会返回消息的零值
 func WithReplyTimeout(timeout time.Duration) MessageOption {
 	return func(options *MessageOptions) {
 		options.ReplyTimeout = timeout
