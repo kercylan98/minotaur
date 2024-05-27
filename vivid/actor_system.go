@@ -147,6 +147,7 @@ func (s *ActorSystem) UnbindDispatcher(id DispatcherId) {
 func (s *ActorSystem) unbindActor(actor ActorContext) {
 	// 等待消息处理完毕后拒绝新消息
 	core := actor.(*_ActorCore)
+	core.Tell(OnDestroy{internal: true})
 	core.messageGroup.Wait(func() {
 		core.dispatcher.Detach(s.core, core)
 		s.actorRW.Lock()
@@ -175,6 +176,19 @@ func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
 
 func (s *ActorSystem) getContext() *_ActorCore {
 	return s.userGuard
+}
+
+func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore, message MessageContext) {
+	actor.messageGroup.Add(1)
+	if !dispatcher.Send(s.core, actor, message) {
+		actor.messageGroup.Done()
+	}
+	switch m := message.GetMessage().(type) {
+	case OnDestroy:
+		if !m.internal {
+			s.unbindActor(actor)
+		}
+	}
 }
 
 func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ...MessageOption) Message {
@@ -277,10 +291,7 @@ func (s *ActorSystem) onProcessServerMessage(bytes []byte) {
 	ctx.actorContext = receiver
 
 	// 远程消息增加计数，该计数将在消息处理完毕后减少
-	receiver.messageGroup.Add(1)
-	if !receiver.dispatcher.Send(s.core, receiver, ctx) {
-		receiver.messageGroup.Done()
-	}
+	s.sendToDispatcher(receiver.dispatcher, receiver, ctx)
 }
 
 func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
@@ -366,9 +377,6 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 		parentLock.Unlock()
 	}
 
-	if options.Props != nil {
-		options.Props(actor)
-	}
 	core.Tell(OnPreStart{})
 
 	return core, nil

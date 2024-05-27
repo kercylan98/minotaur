@@ -8,7 +8,7 @@ type ActorOptions[T Actor] struct {
 	Parent           ActorContext                  // 父 actor 上下文
 	DispatcherId     DispatcherId                  // 调度器 ID
 	MailboxFactoryId MailboxFactoryId              // 邮箱工厂 ID
-	Props            T                             // Actor 属性
+	Construct        T                             // Actor 构造器
 	MessageHook      func(ctx MessageContext) bool // 消息钩子
 }
 
@@ -20,10 +20,10 @@ func (o *ActorOptions[T]) WithMessageHook(hook func(ctx MessageContext) bool) *A
 	return o
 }
 
-// WithProps 设置 Actor 的属性
-func (o *ActorOptions[T]) WithProps(props T) *ActorOptions[T] {
+// WithConstruct 以非零值的 Actor 作为 Actor 的初始对象
+func (o *ActorOptions[T]) WithConstruct(actor T) *ActorOptions[T] {
 	o.options = append(o.options, func(opts *ActorOptions[T]) {
-		opts.Props = props
+		opts.Construct = actor
 	})
 	return o
 }

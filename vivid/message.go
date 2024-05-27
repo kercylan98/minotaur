@@ -12,6 +12,7 @@ type OnOptionApply[T Actor] struct {
 type OnPreStart struct {
 }
 
-// OnDestroy 是 Actor 生命周期的销毁阶段，通常用于释放 Actor 的资源
+// OnDestroy 该消息在父 Actor 通知子 Actor 关闭时发送，用于通知子 Actor 关闭
 type OnDestroy struct {
+	internal bool
 }

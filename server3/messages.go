@@ -1,7 +1,9 @@
 package server
 
+import "net"
+
 type (
-	onLaunchServerAskMessage struct {
+	onLaunchServerTellMessage struct {
 		Network Network // 网络接口
 	}
 
@@ -9,7 +11,15 @@ type (
 	onShutdownServerAskMessage struct {
 	}
 
-	onConnectionOpenedMessage struct {
+	onConnectionOpenedAskMessage struct {
 		conn *conn
+	}
+
+	onConnectionClosedTellMessage struct {
+		conn net.Conn
+	}
+
+	onConnectionReceivedMessage struct {
+		Packet Packet
 	}
 )

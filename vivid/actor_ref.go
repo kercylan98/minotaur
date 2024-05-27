@@ -34,10 +34,7 @@ func (r *_LocalActorRef) Ask(msg Message, opts ...MessageOption) Message {
 }
 
 func (r *_LocalActorRef) send(ctx MessageContext) {
-	r.core.messageGroup.Add(1)
-	if !r.core.dispatcher.Send(r.core.system.core, r.core, ctx) {
-		r.core.messageGroup.Done()
-	}
+	r.core.system.sendToDispatcher(r.core.dispatcher, r.core, ctx)
 }
 
 func newRemoteActorRef(system *ActorSystem, actorId ActorId) *_RemoteActorRef {
