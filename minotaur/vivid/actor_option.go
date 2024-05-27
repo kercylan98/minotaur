@@ -9,7 +9,16 @@ type ActorOptions[T Actor] struct {
 	DispatcherId     DispatcherId                  // 调度器 ID
 	MailboxFactoryId MailboxFactoryId              // 邮箱工厂 ID
 	Construct        T                             // Actor 构造器
+	Init             func(T)                       // Actor 初始化函数
 	MessageHook      func(ctx MessageContext) bool // 消息钩子
+}
+
+// WithInit 设置 Actor 的初始化函数
+func (o *ActorOptions[T]) WithInit(init func(T)) *ActorOptions[T] {
+	o.options = append(o.options, func(opts *ActorOptions[T]) {
+		opts.Init = init
+	})
+	return o
 }
 
 // WithMessageHook 设置 Actor 的消息钩子，在消息处理前执行。返回 false 将会阻止消息的处理

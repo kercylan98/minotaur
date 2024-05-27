@@ -370,6 +370,10 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	system.waitGroup.Add(1)
 	core.dispatcher.Attach(system.core, core)
 
+	if options.Init != nil {
+		options.Init(actor)
+	}
+
 	// 绑定父 Actor 并注册到系统
 	system.actorRW.Lock()
 	if options.Parent != nil {
