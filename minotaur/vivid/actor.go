@@ -15,3 +15,19 @@ func (i *FreeActor[T]) OnReceive(ctx MessageContext) {
 func (i *FreeActor[T]) GetActor() T {
 	return i.actor
 }
+
+func onReceive(actor Actor, ctx MessageContext) {
+	actorCtx := ctx.getContext()
+	if actorCtx == nil {
+		actor.OnReceive(ctx)
+		return
+	}
+
+	behavior := actorCtx.matchBehavior(ctx.GetMessage())
+	if behavior == nil {
+		actor.OnReceive(ctx)
+		return
+	}
+
+	behavior.onHandler(ctx, ctx.GetMessage())
+}

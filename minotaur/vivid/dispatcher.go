@@ -44,7 +44,7 @@ func (d *_Dispatcher) Send(system ActorSystemCore, actor ActorCore, message Mess
 			actor.ModifyMessageCounter(-1)
 			mailbox.GetLockable().Unlock()
 		}()
-		actor.OnReceive(message)
+		onReceive(actor, message)
 		return true
 	}
 	return mailbox.Enqueue(message)

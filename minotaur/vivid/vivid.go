@@ -9,6 +9,15 @@ type Context interface {
 	GetActor() Actor
 }
 
+// BehaviorOf 创建一个行为
+func BehaviorOf[T Message](handler func(ctx MessageContext, message T)) Behavior {
+	adp := &behaviorAdapter[T]{
+		typ:     reflect.TypeOf((*T)(nil)).Elem(),
+		handler: handler,
+	}
+	return adp
+}
+
 func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
 	var opts = parseActorOptions(options...)
 	var ins = opts.Construct

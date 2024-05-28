@@ -1,6 +1,9 @@
 package vivid
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
 type internalActorContext interface {
 	actorOf
@@ -21,6 +24,9 @@ type internalActorContext interface {
 	// unbindChild 解绑子 Actor
 	//   - 该函数不会删除子 Actor，只会解除绑定关系
 	unbindChild(name ActorName)
+
+	// matchBehavior 匹配行为
+	matchBehavior(message Message) Behavior
 }
 
 type _internalActorContext struct {
@@ -55,4 +61,17 @@ func (c *_internalActorContext) unbindChild(name ActorName) {
 
 func (c *_internalActorContext) getChildren() map[ActorName]*_ActorCore {
 	return c.children
+}
+
+func (c *_internalActorContext) matchBehavior(message Message) Behavior {
+	if c.behaviors == nil {
+		return nil
+	}
+
+	behavior, ok := c.behaviors[reflect.TypeOf(message)]
+	if !ok {
+		return nil
+	}
+
+	return behavior
 }

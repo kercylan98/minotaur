@@ -14,16 +14,19 @@ type AccountManager struct {
 }
 
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
-	switch m := ctx.GetMessage().(type) {
+	switch ctx.GetMessage().(type) {
 	case vivid.OnPreStart:
+		ctx.GetContext().BindBehavior(vivid.BehaviorOf[transport.ConnOpenedEvent](e.onConnOpened))
 		e.app.EventBus().Subscribe(pulse.SubscribeId(ctx.GetReceiver().Id()), ctx.GetReceiver(), transport.ConnOpenedEvent{})
-	case transport.ConnOpenedEvent:
-		conn := vivid.ActorOf[*Account](e.app.ActorSystem(), vivid.NewActorOptions[*Account]().WithInit(func(account *Account) {
-			account.app = e.app
-			account.conn = m.Conn
-		}))
-		e.app.EventBus().Subscribe(pulse.SubscribeId(conn.Id()), conn, transport.ConnReceiveEvent{})
 	}
+}
+
+func (e *AccountManager) onConnOpened(ctx vivid.MessageContext, message transport.ConnOpenedEvent) {
+	conn := vivid.ActorOf[*Account](e.app.ActorSystem(), vivid.NewActorOptions[*Account]().WithInit(func(account *Account) {
+		account.app = e.app
+		account.conn = message.Conn
+	}))
+	e.app.EventBus().Subscribe(pulse.SubscribeId(conn.Id()), conn, transport.ConnReceiveEvent{})
 }
 
 type Account struct {

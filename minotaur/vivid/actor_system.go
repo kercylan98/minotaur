@@ -314,7 +314,7 @@ func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
 	if core.messageHook != nil && !core.messageHook(message) {
 		return
 	}
-	core.OnReceive(message)
+	onReceive(core, message)
 }
 
 func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[T]) (*_ActorCore, error) {
@@ -323,7 +323,7 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	}
 
 	optionsNum := len(options.options)
-	actor.OnReceive(newMessageContext(system, OnOptionApply[T]{Options: options}, 0, false, false).withLocal(nil, nil))
+	onReceive(actor, newMessageContext(system, OnOptionApply[T]{Options: options}, 0, false, false).withLocal(nil, nil))
 	options.applyOption(options.options[optionsNum:]...)
 
 	var actorPath = options.Name
