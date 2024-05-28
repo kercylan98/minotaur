@@ -16,7 +16,7 @@ type AccountManager struct {
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
 	case vivid.OnPreStart:
-		ctx.GetContext().BindBehavior(vivid.BehaviorOf[transport.ConnOpenedEvent](e.onConnOpened))
+		ctx.BindBehavior(vivid.BehaviorOf[transport.ConnOpenedEvent](e.onConnOpened))
 		e.app.EventBus().Subscribe(pulse.SubscribeId(ctx.GetReceiver().Id()), ctx.GetReceiver(), transport.ConnOpenedEvent{})
 	}
 }

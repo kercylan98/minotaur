@@ -10,7 +10,7 @@ func newConn(eventBus *pulse.Pulse, server vivid.ActorContext, c net.Conn, write
 	conn := &conn{}
 	conn.reader = vivid.ActorOf[*ConnReadActor](server, vivid.NewActorOptions[*ConnReadActor]().WithConstruct(func() *ConnReadActor {
 		return &ConnReadActor{
-			conn:     c,
+			conn:     conn,
 			eventBus: eventBus,
 		}
 	}()))
@@ -24,6 +24,7 @@ func newConn(eventBus *pulse.Pulse, server vivid.ActorContext, c net.Conn, write
 }
 
 type Conn interface {
+	// Write 向连接内写入数据包
 	Write(packet Packet)
 }
 

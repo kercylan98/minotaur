@@ -3,7 +3,6 @@ package transport
 import (
 	"github.com/kercylan98/minotaur/minotaur/pulse"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
-	"net"
 )
 
 type (
@@ -14,13 +13,14 @@ type (
 
 type (
 	ConnReceiveEvent struct {
+		Conn   Conn
 		Packet Packet
 	}
 )
 
 type ConnReadActor struct {
 	actor    vivid.ActorRef
-	conn     net.Conn
+	conn     Conn
 	eventBus *pulse.Pulse
 }
 
@@ -34,5 +34,5 @@ func (c *ConnReadActor) OnReceive(ctx vivid.MessageContext) {
 }
 
 func (c *ConnReadActor) onConnReceiveMessage(ctx vivid.MessageContext, m connReceivePacketMessage) {
-	c.eventBus.Publish(c.actor, ConnReceiveEvent{Packet: m.Packet})
+	c.eventBus.Publish(c.actor, ConnReceiveEvent{Conn: c.conn, Packet: m.Packet})
 }

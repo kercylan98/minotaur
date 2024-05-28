@@ -14,14 +14,11 @@ type priorityEventActor struct {
 }
 
 func (p *priorityEventActor) OnReceive(ctx vivid.MessageContext) {
-	switch m := ctx.GetMessage().(type) {
-	case Event:
-		for _, info := range p.subscribes {
-			var timeout time.Duration
-			if info.priorityTimeout != nil {
-				timeout = *info.priorityTimeout
-			}
-			info.subscriber.Ask(m, vivid.WithReplyTimeout(timeout))
+	for _, info := range p.subscribes {
+		var timeout time.Duration
+		if info.priorityTimeout != nil {
+			timeout = *info.priorityTimeout
 		}
+		info.subscriber.Ask(ctx.GetMessage(), vivid.WithReplyTimeout(timeout))
 	}
 }

@@ -35,6 +35,9 @@ type MessageContext interface {
 
 	// Instantly 是否是立即执行的消息
 	Instantly() bool
+
+	// BindBehavior 该函数是 ActorContext.BindBehavior 的快捷方式
+	BindBehavior(behavior Behavior)
 }
 
 func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
@@ -212,4 +215,8 @@ func (c *_MessageContext) GetPriority() int64 {
 
 func (c *_MessageContext) Instantly() bool {
 	return c.InstantlyExec
+}
+
+func (c *_MessageContext) BindBehavior(behavior Behavior) {
+	c.GetContext().BindBehavior(behavior)
 }

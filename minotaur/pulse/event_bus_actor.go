@@ -123,10 +123,12 @@ func (e *EventBusActor) onPublish(ctx vivid.MessageContext, m PublishMessage) {
 		})
 
 		// 处理优先级订阅者
-		vivid.ActorOf(ctx, vivid.NewActorOptions[*priorityEventActor]().WithConstruct(func() *priorityEventActor {
+		eventActor := vivid.ActorOf(ctx, vivid.NewActorOptions[*priorityEventActor]().WithConstruct(func() *priorityEventActor {
 			return &priorityEventActor{
 				subscribes: subscribePriorityList,
 			}
-		}())).Tell(priorityEventMessage{event: m.Event})
+		}()))
+		eventActor.Tell(priorityEventMessage{event: m.Event})
+		eventActor.Tell(vivid.OnDestroy{})
 	}
 }
