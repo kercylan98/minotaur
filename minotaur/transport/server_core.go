@@ -23,10 +23,10 @@ func (s *serverCore) init(ref vivid.ActorRef) *serverCore {
 }
 
 func (s *serverCore) Attach(conn net.Conn, writer ConnWriter) ConnCore {
-	core, _ := s.serverActor.Ask(ConnOpenedMessage{conn, writer}).(ConnCore)
+	core, _ := s.serverActor.Ask(ServerConnOpenedMessage{conn, writer}).(ConnCore)
 	return core
 }
 
 func (s *serverCore) Detach(conn net.Conn) {
-	s.serverActor.Tell(ConnClosedMessage{conn})
+	s.serverActor.Tell(ServerConnClosedMessage{conn})
 }

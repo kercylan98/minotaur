@@ -28,6 +28,6 @@ func (c *ConnWriteActor) OnReceive(ctx vivid.MessageContext) {
 
 func (c *ConnWriteActor) onConnWriteMessage(ctx vivid.MessageContext, m connWriteMessage) {
 	if err := c.writer(m.Packet); err != nil {
-		log.Error("conn write error: %v", err)
+		log.Error("ConnActor write error: %v", err)
 	}
 }

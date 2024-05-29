@@ -7,7 +7,6 @@ import (
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"path"
-	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,8 +27,6 @@ func NewActorSystem(name string) ActorSystem {
 		messageSeq:      new(atomic.Uint64),
 		waitGroup:       toolkit.NewDynamicWaitGroup(),
 		name:            name,
-		flows:           map[ActorId]map[reflect.Type]Flow{},
-		flowRW:          new(sync.RWMutex),
 	}
 	s.core = new(_ActorSystemCore).init(&s)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -65,8 +62,6 @@ type ActorSystem struct {
 	askWaits          map[uint64]chan<- Message
 	askWaitsLock      *sync.RWMutex
 	waitGroup         *toolkit.DynamicWaitGroup
-	flows             map[ActorId]map[reflect.Type]Flow // actor id -> message type -> flows
-	flowRW            *sync.RWMutex
 
 	name    string // ActorSystem 名称
 	network string // 网络类型
@@ -202,18 +197,6 @@ func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore,
 }
 
 func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ...MessageOption) Message {
-	// 转发处理
-	messageType := reflect.TypeOf(message)
-	s.flowRW.RLock()
-	flows, exist := s.flows[receiver.Id()]
-	s.flowRW.RUnlock()
-	if exist {
-		flow, exist := flows[messageType]
-		if exist && flow.forward(message) {
-			return s.sendMessage(flow.dest(), message, options...)
-		}
-	}
-
 	var opts = new(MessageOptions).apply(options)
 
 	ctx := newMessageContext(s, message, opts.Priority, opts.Instantly, opts.reply)

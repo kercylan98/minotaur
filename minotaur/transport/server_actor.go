@@ -20,23 +20,23 @@ type (
 	// ServerShutdownMessage 服务器关闭消息，服务器在收到该消息后将停止运行
 	ServerShutdownMessage struct{}
 
-	ConnOpenedMessage struct {
+	ServerConnOpenedMessage struct {
 		conn   net.Conn
 		writer ConnWriter
 	}
 
-	ConnClosedMessage struct {
+	ServerConnClosedMessage struct {
 		conn net.Conn
 	}
 )
 
 type (
-	ConnOpenedEvent struct {
-		Conn
+	ServerConnOpenedEvent struct {
+		*ConnActor
 	}
 
-	ConnClosedEvent struct {
-		Conn
+	ServerConnClosedEvent struct {
+		*ConnActor
 	}
 )
 
@@ -45,7 +45,7 @@ type ServerActor struct {
 	pulse       *pulse.Pulse
 	actor       vivid.ActorRef
 	core        *serverCore
-	connections map[net.Conn]*conn
+	connections map[net.Conn]*ConnActor
 }
 
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
@@ -58,15 +58,15 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 		s.onServerLaunch(ctx, m)
 	case ServerShutdownMessage:
 		s.onServerShutdown(ctx, m)
-	case ConnOpenedMessage:
-		s.onConnOpened(ctx, m)
-	case ConnClosedMessage:
-		s.onConnClosed(ctx, m)
+	case ServerConnOpenedMessage:
+		s.onServerConnOpened(ctx, m)
+	case ServerConnClosedMessage:
+		s.onServerConnClosed(ctx, m)
 	}
 }
 
 func (s *ServerActor) onPreStart(ctx vivid.MessageContext) {
-	s.connections = make(map[net.Conn]*conn)
+	s.connections = make(map[net.Conn]*ConnActor)
 	s.actor = ctx.GetReceiver()
 	s.core = new(serverCore).init(ctx.GetReceiver())
 }
@@ -95,20 +95,24 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 	ctx.Reply(s.network.Shutdown())
 }
 
-func (s *ServerActor) onConnOpened(ctx vivid.MessageContext, m ConnOpenedMessage) {
+func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
 	conn := newConn(s.pulse, ctx.GetContext(), m.conn, m.writer)
 	s.connections[m.conn] = conn
 	ctx.Reply(ConnCore(conn))
-	s.pulse.Publish(s.actor, ConnOpenedEvent{Conn: conn})
+	s.pulse.Publish(s.actor, ServerConnOpenedEvent{ConnActor: conn})
 }
 
-func (s *ServerActor) onConnClosed(ctx vivid.MessageContext, m ConnClosedMessage) {
+func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnClosedMessage) {
 	conn, ok := s.connections[m.conn]
 	if ok {
 		delete(s.connections, m.conn)
-		conn.reader.Tell(vivid.OnDestroy{})
-		conn.writer.Tell(vivid.OnDestroy{})
+		if conn.reader != nil {
+			conn.reader.Tell(vivid.OnDestroy{})
+		}
+		if conn.writer != nil {
+			conn.writer.Tell(vivid.OnDestroy{})
+		}
 
-		s.pulse.Publish(s.actor, ConnClosedEvent{Conn: conn})
+		s.pulse.Publish(s.actor, ServerConnClosedEvent{ConnActor: conn})
 	}
 }

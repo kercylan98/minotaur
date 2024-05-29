@@ -8,6 +8,7 @@ import (
 type MessageContext interface {
 	context.Context
 	actorOf
+	ActorRef
 
 	// GetContext 获取 Actor 上下文
 	GetContext() ActorContext
@@ -75,6 +76,22 @@ type _MessageContext struct {
 	SenderId       ActorId // 远程发送者的 ActorId，通过 WithSender 设置后，由于是远程消息，所以需要将发送者的 ActorId 传递到远程消息的上下文中
 	RemoteReplySeq uint64  // 用于远程回复的消息序号
 	InstantlyExec  bool    // 是否立即执行
+}
+
+func (c *_MessageContext) Id() ActorId {
+	return c.GetReceiver().Id()
+}
+
+func (c *_MessageContext) Tell(msg Message, opts ...MessageOption) {
+	c.GetReceiver().Tell(msg, opts...)
+}
+
+func (c *_MessageContext) Ask(msg Message, opts ...MessageOption) Message {
+	return c.GetReceiver().Ask(msg, opts...)
+}
+
+func (c *_MessageContext) send(ctx MessageContext) {
+	c.GetReceiver().send(ctx)
 }
 
 func (c *_MessageContext) Deadline() (deadline time.Time, ok bool) {
