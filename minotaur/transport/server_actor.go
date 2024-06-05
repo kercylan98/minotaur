@@ -67,8 +67,8 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 
 func (s *ServerActor) onPreStart(ctx vivid.MessageContext) {
 	s.connections = make(map[net.Conn]*ConnActor)
-	s.actor = ctx.GetReceiver()
-	s.core = new(serverCore).init(ctx.GetReceiver())
+	s.actor = ctx.GetRef()
+	s.core = new(serverCore).init(ctx.GetRef())
 }
 
 func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMessage) {

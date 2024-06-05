@@ -301,7 +301,7 @@ func (s *ActorSystem) onProcessServerMessage(bytes []byte) {
 
 func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
 	// received message
-	core := message.GetReceiver().(*_LocalActorRef).core
+	core := message.GetRef().(*_LocalActorRef).core
 	defer func() {
 		core.messageGroup.Done()
 		if r := recover(); r != nil {

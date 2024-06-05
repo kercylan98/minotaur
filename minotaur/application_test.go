@@ -24,6 +24,23 @@ func (e *AccountManager) onConnOpened(ctx vivid.MessageContext, message transpor
 	vivid.ActorOf[*Account](e.ActorSystem(), vivid.NewActorOptions[*Account]().WithInit(func(account *Account) {
 		account.ConnActor = message.ConnActor
 	}))
+
+	vivid.ActorOfF[*Account](e.ActorSystem(), func(options *vivid.ActorOptions[*Account]) {
+		options.
+			WithName("account").
+			WithInit(func(account *Account) {
+				account.ConnActor = message.ConnActor
+			})
+	})
+
+	vivid.ActorOfI(e.ActorSystem(), new(Account), func(options *vivid.ActorOptions[*Account]) {
+		options.
+			WithName("account").
+			WithInit(func(account *Account) {
+				account.ConnActor = message.ConnActor
+			})
+	})
+
 }
 
 type Account struct {
@@ -40,7 +57,7 @@ func (c *Account) OnReceive(ctx vivid.MessageContext) {
 }
 
 func TestNewApplication(t *testing.T) {
-	app := minotaur.NewApplication("test", minotaur.WithNetwork(network.WebSocket(":9988")))
+	app := minotaur.NewApplication(minotaur.WithNetwork(network.WebSocket(":9988")))
 	vivid.ActorOf[*AccountManager](app.ActorSystem(), vivid.NewActorOptions[*AccountManager]().WithInit(func(manager *AccountManager) {
 		manager.Application = app
 	}))

@@ -19,8 +19,8 @@ type MessageContext interface {
 	// GetSender 获取消息的发送者
 	GetSender() ActorRef
 
-	// GetReceiver 获取消息的接收者
-	GetReceiver() ActorRef
+	// GetRef 获取上下文的 ActorRef
+	GetRef() ActorRef
 
 	// GetMessage 获取消息内容
 	GetMessage() Message
@@ -39,6 +39,9 @@ type MessageContext interface {
 
 	// BindBehavior 该函数是 ActorContext.BindBehavior 的快捷方式
 	BindBehavior(behavior Behavior)
+
+	// UnbindBehavior 该函数是 ActorContext.UnbindBehavior 的快捷方式
+	UnbindBehavior(message Message)
 }
 
 func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
@@ -79,19 +82,19 @@ type _MessageContext struct {
 }
 
 func (c *_MessageContext) Id() ActorId {
-	return c.GetReceiver().Id()
+	return c.GetRef().Id()
 }
 
 func (c *_MessageContext) Tell(msg Message, opts ...MessageOption) {
-	c.GetReceiver().Tell(msg, opts...)
+	c.GetRef().Tell(msg, opts...)
 }
 
 func (c *_MessageContext) Ask(msg Message, opts ...MessageOption) Message {
-	return c.GetReceiver().Ask(msg, opts...)
+	return c.GetRef().Ask(msg, opts...)
 }
 
 func (c *_MessageContext) send(ctx MessageContext) {
-	c.GetReceiver().send(ctx)
+	c.GetRef().send(ctx)
 }
 
 func (c *_MessageContext) Deadline() (deadline time.Time, ok bool) {
@@ -170,7 +173,7 @@ func (c *_MessageContext) GetSender() ActorRef {
 	return c.sender
 }
 
-func (c *_MessageContext) GetReceiver() ActorRef {
+func (c *_MessageContext) GetRef() ActorRef {
 	if c.actorContext != nil {
 		return c.actorContext.(*_ActorCore)._LocalActorRef
 	}
@@ -236,4 +239,8 @@ func (c *_MessageContext) Instantly() bool {
 
 func (c *_MessageContext) BindBehavior(behavior Behavior) {
 	c.GetContext().BindBehavior(behavior)
+}
+
+func (c *_MessageContext) UnbindBehavior(message Message) {
+	c.GetContext().UnbindBehavior(message)
 }

@@ -10,12 +10,14 @@ import (
 	"syscall"
 )
 
-func NewApplication(name string, options ...Option) *Application {
-	actorSystem := vivid.NewActorSystem(name)
-	eventBus := pulse.NewPulse(&actorSystem, vivid.NewActorOptions[*pulse.EventBusActor]().WithName("event_bus"))
+func NewApplication(options ...Option) *Application {
+	opts := new(Options).apply(options...)
+
+	actorSystem := vivid.NewActorSystem(opts.ActorSystemName)
+	eventBus := pulse.NewPulse(&actorSystem, vivid.NewActorOptions[*pulse.EventBusActor]().WithName(opts.EventBusActorName))
 	ctx, cancel := context.WithCancel(actorSystem.Context())
 	return &Application{
-		options:     new(Options).apply(options...),
+		options:     opts,
 		ctx:         ctx,
 		cancel:      cancel,
 		closed:      make(chan struct{}),

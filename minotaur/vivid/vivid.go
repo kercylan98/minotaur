@@ -18,6 +18,22 @@ func BehaviorOf[T Message](handler func(ctx MessageContext, message T)) Behavior
 	return adp
 }
 
+func ActorOfI[T Actor](actorOf actorOf, actor T, options ...func(options *ActorOptions[T])) ActorRef {
+	var opts = NewActorOptions[T]().WithConstruct(actor)
+	for _, opt := range options {
+		opt(opts)
+	}
+	return ActorOf(actorOf, opts)
+}
+
+func ActorOfF[T Actor](actorOf actorOf, options ...func(options *ActorOptions[T])) ActorRef {
+	var opts = NewActorOptions[T]()
+	for _, opt := range options {
+		opt(opts)
+	}
+	return ActorOf(actorOf, opts)
+}
+
 func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
 	var opts = parseActorOptions(options...)
 	var ins = opts.Construct

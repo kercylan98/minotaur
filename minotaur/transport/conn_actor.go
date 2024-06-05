@@ -46,13 +46,15 @@ type ConnActor struct {
 func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
 	case vivid.OnPreStart:
-		c.reader = ctx.GetReceiver()
+		c.reader = ctx.GetRef()
 		c.writer = vivid.ActorOf[*ConnWriteActor](c.server, vivid.NewActorOptions[*ConnWriteActor]().WithConstruct(func() *ConnWriteActor {
 			return &ConnWriteActor{
 				conn:   c.conn,
 				writer: c.connWriter,
 			}
 		}()))
+	case ConnReceivePacketMessage:
+
 	}
 }
 

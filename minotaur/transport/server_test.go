@@ -31,7 +31,7 @@ type AccountManager struct {
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
 	case vivid.OnPreStart:
-		e.eventBus.Subscribe(pulse.SubscribeId(ctx.GetReceiver().Id()), ctx.GetReceiver(), transport.ServerConnOpenedEvent{})
+		e.eventBus.Subscribe(pulse.SubscribeId(ctx.GetRef().Id()), ctx.GetRef(), transport.ServerConnOpenedEvent{})
 	case transport.ServerConnOpenedEvent:
 		vivid.ActorOf[*Conn](ctx, vivid.NewActorOptions[*Conn]().WithInit(func(conn *Conn) {
 			conn.ConnActor = m.ConnActor
