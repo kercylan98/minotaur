@@ -113,6 +113,16 @@ func (p *Priority) GetLockable() sync.Locker {
 
 func (p *Priority) reset() {
 	p.cond.L.Lock()
+	if p.status < fifoStateStopping {
+		p.cond.L.Unlock()
+		p.Stop()
+	} else {
+		p.cond.L.Unlock()
+	}
+
+	p.cond.L.Lock()
+	defer p.cond.L.Unlock()
+
+	p.status = priorityStateNone
 	p.buffer = p.buffer[:0]
-	p.cond.L.Unlock()
 }

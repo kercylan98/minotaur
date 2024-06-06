@@ -70,6 +70,10 @@ type ActorSystem struct {
 	cluster string // 集群名称
 }
 
+func (s *ActorSystem) ActorOf(ofo ActorOfO) ActorRef {
+	return s.userGuard.ActorOf(ofo)
+}
+
 func (s *ActorSystem) Context() context.Context {
 	return s.ctx
 }
@@ -80,18 +84,12 @@ func (s *ActorSystem) Shutdown() {
 	s.waitGroup.Wait()
 }
 
-func (s *ActorSystem) getSystem() *ActorSystem {
+func (s *ActorSystem) GetSystem() *ActorSystem {
 	return s
 }
 
 func (s *ActorSystem) GetDeadLetters() DeadLetterStream {
 	return s.deadLetters
-}
-
-type actorOf interface {
-	getSystem() *ActorSystem
-
-	getContext() *_ActorCore
 }
 
 func (s *ActorSystem) BindMailboxFactory(f MailboxFactory) MailboxFactoryId {
@@ -178,7 +176,7 @@ func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
 	return s.actors[id]
 }
 
-func (s *ActorSystem) getContext() *_ActorCore {
+func (s *ActorSystem) GetContext() ActorContext {
 	return s.userGuard
 }
 

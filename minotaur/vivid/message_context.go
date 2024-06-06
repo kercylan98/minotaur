@@ -7,7 +7,7 @@ import (
 
 type MessageContext interface {
 	context.Context
-	actorOf
+	ActorOwner
 	ActorRef
 
 	// GetContext 获取 Actor 上下文
@@ -42,6 +42,9 @@ type MessageContext interface {
 
 	// UnbindBehavior 该函数是 ActorContext.UnbindBehavior 的快捷方式
 	UnbindBehavior(message Message)
+
+	// ActorOf 该函数是 ActorContext.ActorOf 的快捷方式
+	ActorOf(ofo ActorOfO) ActorRef
 }
 
 func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
@@ -79,6 +82,10 @@ type _MessageContext struct {
 	SenderId       ActorId // 远程发送者的 ActorId，通过 WithSender 设置后，由于是远程消息，所以需要将发送者的 ActorId 传递到远程消息的上下文中
 	RemoteReplySeq uint64  // 用于远程回复的消息序号
 	InstantlyExec  bool    // 是否立即执行
+}
+
+func (c *_MessageContext) GetSystem() *ActorSystem {
+	return c.system
 }
 
 func (c *_MessageContext) Id() ActorId {
@@ -243,4 +250,8 @@ func (c *_MessageContext) BindBehavior(behavior Behavior) {
 
 func (c *_MessageContext) UnbindBehavior(message Message) {
 	c.GetContext().UnbindBehavior(message)
+}
+
+func (c *_MessageContext) ActorOf(ofo ActorOfO) ActorRef {
+	return c.GetContext().ActorOf(ofo)
 }

@@ -60,14 +60,14 @@ func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 
 func (c *ConnActor) Write(packet Packet) {
 	if c.writer == nil {
-		return
+		panic("should not happen, writer is nil")
 	}
 	c.writer.Tell(connWriteMessage{packet})
 }
 
 func (c *ConnActor) React(packet Packet) {
 	if c.reader == nil {
-		return
+		panic("should not happen, reader is nil")
 	}
 	c.reader.Tell(ConnReceivePacketMessage{packet})
 }

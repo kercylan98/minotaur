@@ -17,7 +17,7 @@ func (i *FreeActor[T]) GetActor() T {
 }
 
 func onReceive(actor Actor, ctx MessageContext) {
-	actorCtx := ctx.getContext()
+	actorCtx, _ := ctx.GetContext().(*_ActorCore)
 	if actorCtx == nil {
 		actor.OnReceive(ctx)
 		return

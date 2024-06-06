@@ -63,6 +63,10 @@ type _ActorCore struct {
 	messageHook     func(MessageContext) bool // 消息钩子
 }
 
+func (a *_ActorCore) GetContext() ActorContext {
+	return a._ActorContext
+}
+
 func (a *_ActorCore) GetMailboxFactory() MailboxFactory {
 	return a.mailboxFactory
 }

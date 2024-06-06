@@ -15,32 +15,17 @@ type AccountManager struct {
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
 	case vivid.OnPreStart:
-		ctx.BindBehavior(vivid.BehaviorOf[transport.ServerConnOpenedEvent](e.onConnOpened))
+		ctx.BindBehavior(vivid.BehaviorOf(e.onConnOpened))
 		e.EventBus().Subscribe("conn-opened", ctx, transport.ServerConnOpenedEvent{})
 	}
 }
 
 func (e *AccountManager) onConnOpened(ctx vivid.MessageContext, message transport.ServerConnOpenedEvent) {
-	vivid.ActorOf[*Account](e.ActorSystem(), vivid.NewActorOptions[*Account]().WithInit(func(account *Account) {
-		account.ConnActor = message.ConnActor
+	e.ActorSystem().ActorOf(vivid.OfO(func(actorOptions *vivid.ActorOptions[*Account]) {
+		actorOptions.WithInit(func(account *Account) {
+			account.ConnActor = message.ConnActor
+		})
 	}))
-
-	vivid.ActorOfF[*Account](e.ActorSystem(), func(options *vivid.ActorOptions[*Account]) {
-		options.
-			WithName("account").
-			WithInit(func(account *Account) {
-				account.ConnActor = message.ConnActor
-			})
-	})
-
-	vivid.ActorOfI(e.ActorSystem(), new(Account), func(options *vivid.ActorOptions[*Account]) {
-		options.
-			WithName("account").
-			WithInit(func(account *Account) {
-				account.ConnActor = message.ConnActor
-			})
-	})
-
 }
 
 type Account struct {

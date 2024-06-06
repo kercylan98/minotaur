@@ -18,7 +18,7 @@ func BehaviorOf[T Message](handler func(ctx MessageContext, message T)) Behavior
 	return adp
 }
 
-func ActorOfI[T Actor](actorOf actorOf, actor T, options ...func(options *ActorOptions[T])) ActorRef {
+func ActorOfI[T Actor](actorOf ActorOwner, actor T, options ...func(options *ActorOptions[T])) ActorRef {
 	var opts = NewActorOptions[T]().WithConstruct(actor)
 	for _, opt := range options {
 		opt(opts)
@@ -26,7 +26,7 @@ func ActorOfI[T Actor](actorOf actorOf, actor T, options ...func(options *ActorO
 	return ActorOf(actorOf, opts)
 }
 
-func ActorOfF[T Actor](actorOf actorOf, options ...func(options *ActorOptions[T])) ActorRef {
+func ActorOfF[T Actor](actorOf ActorOwner, options ...func(options *ActorOptions[T])) ActorRef {
 	var opts = NewActorOptions[T]()
 	for _, opt := range options {
 		opt(opts)
@@ -34,20 +34,20 @@ func ActorOfF[T Actor](actorOf actorOf, options ...func(options *ActorOptions[T]
 	return ActorOf(actorOf, opts)
 }
 
-func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
+func ActorOf[T Actor](actorOf ActorOwner, options ...*ActorOptions[T]) ActorRef {
 	var opts = parseActorOptions(options...)
 	var ins = opts.Construct
 	if reflect.ValueOf(ins).IsNil() {
 		tof := reflect.TypeOf((*T)(nil)).Elem().Elem()
 		ins = reflect.New(tof).Interface().(T)
 	}
-	var system = actorOf.getSystem()
+	var system = actorOf.GetSystem()
 
 	if opts.Parent == nil {
-		opts.Parent = actorOf.getContext()
+		opts.Parent = actorOf.GetContext()
 	}
 
-	ctx, err := generateActor[T](actorOf.getSystem(), ins, opts)
+	ctx, err := generateActor[T](actorOf.GetSystem(), ins, opts)
 	if err != nil {
 		system.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeActorOf, DeadLetterEventActorOf{
 			Error:  err,
@@ -63,20 +63,20 @@ func ActorOf[T Actor](actorOf actorOf, options ...*ActorOptions[T]) ActorRef {
 	return ctx
 }
 
-func FreeActorOf[T any](actorOf actorOf, options ...*ActorOptions[*FreeActor[T]]) ActorRef {
+func FreeActorOf[T any](actorOf ActorOwner, options ...*ActorOptions[*FreeActor[T]]) ActorRef {
 	var opts = parseActorOptions(options...)
 	var ins = opts.Construct.actor
 	if reflect.ValueOf(ins).IsNil() {
 		tof := reflect.TypeOf((*T)(nil)).Elem().Elem()
 		ins = reflect.New(tof).Interface().(T)
 	}
-	var system = actorOf.getSystem()
+	var system = actorOf.GetSystem()
 
 	if opts.Parent == nil {
-		opts.Parent = actorOf.getContext()
+		opts.Parent = actorOf.GetContext()
 	}
 
-	ctx, err := generateActor[*FreeActor[T]](actorOf.getSystem(), &FreeActor[T]{actor: ins}, opts)
+	ctx, err := generateActor[*FreeActor[T]](actorOf.GetSystem(), &FreeActor[T]{actor: ins}, opts)
 	if err != nil {
 		system.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeActorOf, DeadLetterEventActorOf{
 			Error:  err,

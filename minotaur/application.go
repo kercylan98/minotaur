@@ -37,6 +37,14 @@ type Application struct {
 	server      *transport.Server
 }
 
+func (a *Application) GetSystem() *vivid.ActorSystem {
+	return a.actorSystem
+}
+
+func (a *Application) GetContext() vivid.ActorContext {
+	return a.actorSystem.GetContext()
+}
+
 func (a *Application) Launch() {
 	defer func(a *Application) {
 		close(a.closed)
@@ -68,4 +76,8 @@ func (a *Application) EventBus() *pulse.Pulse {
 
 func (a *Application) ActorSystem() *vivid.ActorSystem {
 	return a.actorSystem
+}
+
+func (a *Application) ActorOf(ofo vivid.ActorOfO) vivid.ActorRef {
+	return a.actorSystem.ActorOf(ofo)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type internalActorContext interface {
-	actorOf
+	ActorOwner
 
 	// getLock 获取当前 ActorContext 的锁
 	//   - 所有函数均不操作锁，应由外部调用者自行操作

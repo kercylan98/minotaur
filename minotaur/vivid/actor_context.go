@@ -28,6 +28,10 @@ type ActorContext interface {
 
 	// UnbindBehavior 解绑一个已绑定的行为
 	UnbindBehavior(message Message)
+
+	// ActorOf 创建一个 Actor 并返回 ActorRef
+	//  - ActorOfO 对象可通过 OfO 函数快速创建
+	ActorOf(ofo ActorOfO) ActorRef
 }
 
 type _ActorContext struct {
@@ -66,4 +70,8 @@ func (c *_ActorContext) UnbindBehavior(message Message) {
 	}
 
 	delete(c.behaviors, reflect.TypeOf(message))
+}
+
+func (c *_ActorContext) ActorOf(ofo ActorOfO) ActorRef {
+	return ofo.generate(c)
 }

@@ -125,7 +125,6 @@ func (f *FIFO) reset() {
 		f.Stop()
 	} else {
 		f.cond.L.Unlock()
-		return
 	}
 
 	f.cond.L.Lock()
