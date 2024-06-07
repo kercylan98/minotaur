@@ -71,3 +71,9 @@ func (c *ConnActor) React(packet Packet) {
 	}
 	c.reader.Tell(ConnReceivePacketMessage{packet})
 }
+
+func (c *ConnActor) Close() {
+	_ = c.conn.Close()
+	c.reader.Tell(vivid.OnDestroy{})
+	c.writer.Tell(vivid.OnDestroy{})
+}

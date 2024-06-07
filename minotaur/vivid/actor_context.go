@@ -32,6 +32,9 @@ type ActorContext interface {
 	// ActorOf 创建一个 Actor 并返回 ActorRef
 	//  - ActorOfO 对象可通过 OfO 函数快速创建
 	ActorOf(ofo ActorOfO) ActorRef
+
+	// Destroy 销毁当前 Actor，该操作将会触发 Actor 的 OnDestroy 生命周期
+	Destroy()
 }
 
 type _ActorContext struct {
@@ -74,4 +77,8 @@ func (c *_ActorContext) UnbindBehavior(message Message) {
 
 func (c *_ActorContext) ActorOf(ofo ActorOfO) ActorRef {
 	return ofo.generate(c)
+}
+
+func (c *_ActorContext) Destroy() {
+	c.Tell(OnDestroy{})
 }
