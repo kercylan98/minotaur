@@ -1,11 +1,11 @@
 package vivid
 
-type UserGuardActor struct {
+type userGuardActor struct {
 }
 
-func (u *UserGuardActor) OnReceive(ctx MessageContext) {
+func (u *userGuardActor) OnReceive(ctx MessageContext) {
 	switch msg := ctx.GetMessage().(type) {
-	case OnInit[*UserGuardActor]:
+	case OnInit[*userGuardActor]:
 		msg.Options.WithSupervisor(func(message, reason Message) Directive {
 			switch message.(type) {
 			case OnBoot:

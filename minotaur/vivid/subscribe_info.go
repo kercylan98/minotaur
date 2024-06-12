@@ -1,6 +1,8 @@
-package pulse
+package vivid
 
-import "time"
+import (
+	"time"
+)
 
 type subscribeInfo struct {
 	subscribeId     SubscribeId    // 订阅 ID

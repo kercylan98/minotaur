@@ -1,7 +1,6 @@
-package pulse
+package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"reflect"
 	"sort"
 	"time"
@@ -36,11 +35,11 @@ type EventBusActor struct {
 	subscribeTypes map[SubscribeId]EventType
 }
 
-func (e *EventBusActor) OnReceive(ctx vivid.MessageContext) {
+func (e *EventBusActor) OnReceive(ctx MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnInit[*EventBusActor]:
-		m.Options.WithMailboxFactory(vivid.PriorityMailboxFactoryId)
-	case vivid.OnBoot:
+	case OnInit[*EventBusActor]:
+		m.Options.WithMailboxFactory(PriorityMailboxFactoryId)
+	case OnBoot:
 		e.onPreStart()
 	case SubscribeMessage:
 		e.onSubscribe(m)
@@ -91,13 +90,13 @@ func (e *EventBusActor) onUnsubscribe(m UnsubscribeMessage) {
 	}
 }
 
-func (e *EventBusActor) onPublish(ctx vivid.MessageContext, m PublishMessage) {
+func (e *EventBusActor) onPublish(ctx MessageContext, m PublishMessage) {
 	subscribeMap, exists := e.subscribes[reflect.TypeOf(m.Event)]
 	if !exists {
 		return
 	}
 
-	var producerActorId = vivid.GetActorIdByActorRef(m.Producer)
+	var producerActorId = GetActorIdByActorRef(m.Producer)
 	var subscribeNoPriorityList []subscribeInfo
 	var subscribePriorityList []subscribeInfo
 	for _, info := range subscribeMap {
@@ -123,12 +122,12 @@ func (e *EventBusActor) onPublish(ctx vivid.MessageContext, m PublishMessage) {
 		})
 
 		// 处理优先级订阅者
-		eventActor := vivid.ActorOf(ctx, vivid.NewActorOptions[*priorityEventActor]().WithConstruct(func() *priorityEventActor {
+		eventActor := ActorOf(ctx, NewActorOptions[*priorityEventActor]().WithConstruct(func() *priorityEventActor {
 			return &priorityEventActor{
 				subscribes: subscribePriorityList,
 			}
 		}()))
 		eventActor.Tell(priorityEventMessage{event: m.Event})
-		eventActor.Tell(vivid.OnTerminate{})
+		eventActor.Tell(OnTerminate{})
 	}
 }

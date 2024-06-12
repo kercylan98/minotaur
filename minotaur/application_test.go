@@ -4,47 +4,13 @@ import (
 	"github.com/kercylan98/minotaur/minotaur"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/transport/network"
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"testing"
 )
 
-type AccountManager struct {
-	*minotaur.Application
-}
-
-func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
-	switch ctx.GetMessage().(type) {
-	case vivid.OnBoot:
-		ctx.Become(vivid.BehaviorOf(e.onConnOpened))
-		e.EventBus().Subscribe("conn-opened", ctx, transport.ServerConnOpenedEvent{})
-	}
-}
-
-func (e *AccountManager) onConnOpened(ctx vivid.MessageContext, message transport.ServerConnOpenedEvent) {
-	e.ActorSystem().ActorOf(vivid.OfO(func(actorOptions *vivid.ActorOptions[*Account]) {
-		actorOptions.WithInit(func(account *Account) {
-			account.ConnActor = message.ConnActor
-		})
-	}))
-}
-
-type Account struct {
-	*transport.ConnActor
-}
-
-func (c *Account) OnReceive(ctx vivid.MessageContext) {
-	switch m := ctx.GetMessage().(type) {
-	case vivid.OnBoot:
-		c.ConnActor.OnReceive(ctx)
-	case transport.ConnReceivePacketMessage:
-		c.Write(m.Packet)
-	}
-}
-
 func TestNewApplication(t *testing.T) {
 	app := minotaur.NewApplication(minotaur.WithNetwork(network.WebSocket(":9988")))
-	vivid.ActorOf[*AccountManager](app.ActorSystem(), vivid.NewActorOptions[*AccountManager]().WithInit(func(manager *AccountManager) {
-		manager.Application = app
-	}))
+	app.GetServer().Protocol().SubscribeConnOpenedEvent("conn_opened", app.ActorSystem(), func(event transport.ServerConnOpenedEvent) {
+		t.Log("conn opened")
+	})
 	app.Launch()
 }

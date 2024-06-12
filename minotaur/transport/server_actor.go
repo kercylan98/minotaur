@@ -2,7 +2,6 @@ package transport
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/minotaur/pulse"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
@@ -13,8 +12,7 @@ import (
 type (
 	// ServerLaunchMessage 服务器启动消息，服务器在收到该消息后将开始运行，运行过程是异步的
 	ServerLaunchMessage struct {
-		Network  Network      // 网络接口
-		EventBus *pulse.Pulse // 事件总线
+		Network Network // 网络接口
 	}
 
 	// ServerShutdownMessage 服务器关闭消息，服务器在收到该消息后将停止运行
@@ -40,10 +38,17 @@ type (
 	}
 )
 
+func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) vivid.TypedActorRef[ServerActorTyped] {
+	ref := vivid.ActorOf[*ServerActor](system, options...)
+	return vivid.Typed[ServerActorTyped](ref, &ServerActorTypedImpl{
+		ref: ref,
+	})
+}
+
 type ServerActor struct {
+	ServerActorTyped
+	system      *vivid.ActorSystem
 	network     Network
-	pulse       *pulse.Pulse
-	actor       vivid.ActorRef
 	core        *serverCore
 	connections map[net.Conn]*ConnActor
 }
@@ -51,7 +56,7 @@ type ServerActor struct {
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
 	case vivid.OnBoot:
-		s.onPreStart(ctx)
+		s.onBoot(ctx)
 	case vivid.OnTerminate:
 		s.onServerShutdown(ctx, ServerShutdownMessage{})
 	case ServerLaunchMessage:
@@ -65,15 +70,14 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	}
 }
 
-func (s *ServerActor) onPreStart(ctx vivid.MessageContext) {
+func (s *ServerActor) onBoot(ctx vivid.MessageContext) {
+	s.system = ctx.GetSystem()
 	s.connections = make(map[net.Conn]*ConnActor)
-	s.actor = ctx.GetRef()
 	s.core = new(serverCore).init(ctx.GetRef())
 }
 
 func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMessage) {
 	s.network = m.Network
-	s.pulse = m.EventBus
 	ip, err := network.IP()
 	if err != nil {
 		panic(err)
@@ -96,10 +100,10 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 }
 
 func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
-	conn := newConn(s.pulse, ctx.GetContext(), m.conn, m.writer)
+	conn := newConn(ctx.GetContext(), m.conn, m.writer)
 	s.connections[m.conn] = conn
 	ctx.Reply(ConnCore(conn))
-	s.pulse.Publish(s.actor, ServerConnOpenedEvent{ConnActor: conn})
+	ctx.GetSystem().Publish(ctx, ServerConnOpenedEvent{ConnActor: conn})
 }
 
 func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnClosedMessage) {
@@ -113,6 +117,6 @@ func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnC
 			conn.writer.Tell(vivid.OnTerminate{})
 		}
 
-		s.pulse.Publish(s.actor, ServerConnClosedEvent{ConnActor: conn})
+		ctx.GetSystem().Publish(ctx, ServerConnClosedEvent{ConnActor: conn})
 	}
 }

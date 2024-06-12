@@ -1,7 +1,6 @@
 package transport_test
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/pulse"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/transport/network"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
@@ -25,13 +24,13 @@ func (c *Conn) OnReceive(ctx vivid.MessageContext) {
 }
 
 type AccountManager struct {
-	eventBus *pulse.Pulse
+	eventBus *vivid.Pulse
 }
 
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
 	case vivid.OnBoot:
-		e.eventBus.Subscribe(pulse.SubscribeId(ctx.GetRef().Id()), ctx.GetRef(), transport.ServerConnOpenedEvent{})
+		e.eventBus.Subscribe(vivid.SubscribeId(ctx.GetRef().Id()), ctx.GetRef(), transport.ServerConnOpenedEvent{})
 	case transport.ServerConnOpenedEvent:
 		vivid.ActorOf[*Conn](ctx, vivid.NewActorOptions[*Conn]().WithInit(func(conn *Conn) {
 			conn.ConnActor = m.ConnActor
@@ -42,7 +41,7 @@ func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 
 func TestNewServer(t *testing.T) {
 	system := vivid.NewActorSystem("test-srv")
-	eventBus := pulse.NewPulse(&system)
+	eventBus := vivid.NewPulse(&system)
 	srv := transport.NewServer(&system)
 	srv.Launch(&eventBus, network.WebSocket(":8899"))
 

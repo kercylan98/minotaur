@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/pulse"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"net"
 )
@@ -12,9 +11,8 @@ type (
 	}
 )
 
-func newConn(eventBus *pulse.Pulse, server vivid.ActorContext, c net.Conn, writer ConnWriter) *ConnActor {
+func newConn(server vivid.ActorContext, c net.Conn, writer ConnWriter) *ConnActor {
 	conn := &ConnActor{
-		eventBus:   eventBus,
 		server:     server,
 		conn:       c,
 		connWriter: writer,
@@ -35,7 +33,6 @@ type ConnCore interface {
 }
 
 type ConnActor struct {
-	eventBus   *pulse.Pulse
 	server     vivid.ActorContext
 	conn       net.Conn
 	connWriter ConnWriter

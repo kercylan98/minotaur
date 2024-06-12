@@ -97,3 +97,7 @@ func (a *_ActorCore) BindMailbox(mailbox Mailbox) {
 func (a *_ActorCore) ModifyMessageCounter(delta int64) {
 	a.core.messageGroup.Add(delta)
 }
+
+func (a *_ActorCore) GetSystem() *ActorSystem {
+	return a.system
+}

@@ -1,7 +1,7 @@
 package vivid
 
 type ActorRef interface {
-	// I'd 获取 Actor ID
+	// Id 获取 Actor ID
 	Id() ActorId
 
 	// Tell 向 Actor 发送一条消息，当消息发送失败时将会进入死信队列中，以下列举一些特殊场景
@@ -16,6 +16,12 @@ type ActorRef interface {
 	//  - 当发送人已经销毁或不存在时，将会进入到发送人所在的 ActorSystem 的死信队列中
 	//  - 当给自己给自己发送消息时需特别注意，自己的邮箱会收到消息，但是由于不会立即执行，所以回复始终会等待到超时位置，而超时后收到的消息将被执行，回复将无效
 	Ask(msg Message, opts ...MessageOption) Message
+
+	// Stop 停止 Actor
+	Stop()
+
+	// GetSystem 获取 Actor 所在的 ActorSystem
+	GetSystem() *ActorSystem
 
 	// 内部发送消息实现
 	send(ctx MessageContext)
@@ -38,6 +44,14 @@ func (r *_LocalActorRef) Ask(msg Message, opts ...MessageOption) Message {
 	return r.core.system.sendMessage(r.core._LocalActorRef, msg, append(opts, func(options *MessageOptions) {
 		options.reply = true
 	})...)
+}
+
+func (r *_LocalActorRef) Stop() {
+	r.Tell(OnTerminate{})
+}
+
+func (r *_LocalActorRef) GetSystem() *ActorSystem {
+	return r.core.system
 }
 
 func (r *_LocalActorRef) send(ctx MessageContext) {
@@ -69,6 +83,14 @@ func (r *_RemoteActorRef) Ask(msg Message, opts ...MessageOption) Message {
 	return r.system.sendMessage(r, msg, append(opts, func(options *MessageOptions) {
 		options.reply = true
 	})...)
+}
+
+func (r *_RemoteActorRef) Stop() {
+	r.Tell(OnTerminate{})
+}
+
+func (r *_RemoteActorRef) GetSystem() *ActorSystem {
+	return r.system
 }
 
 func (r *_RemoteActorRef) send(ctx MessageContext) {
@@ -110,6 +132,14 @@ func (r *_DeadLetterActorRef) Ask(msg Message, opts ...MessageOption) Message {
 		Message: msg,
 	}))
 	return nil
+}
+
+func (r *_DeadLetterActorRef) Stop() {
+	r.Tell(OnTerminate{})
+}
+
+func (r *_DeadLetterActorRef) GetSystem() *ActorSystem {
+	return r.system
 }
 
 func (r *_DeadLetterActorRef) send(ctx MessageContext) {

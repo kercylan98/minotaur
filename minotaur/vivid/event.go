@@ -1,4 +1,4 @@
-package pulse
+package vivid
 
 import "reflect"
 

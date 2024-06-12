@@ -1,6 +1,8 @@
-package pulse
+package vivid
 
-import "time"
+import (
+	"time"
+)
 
 type SubscribeOption func(*SubscribeOptions)
 

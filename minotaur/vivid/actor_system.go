@@ -7,8 +7,10 @@ import (
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"math"
 	"os"
 	"path"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,6 +32,7 @@ func NewActorSystem(name string) ActorSystem {
 		waitGroup:       toolkit.NewDynamicWaitGroup(),
 		name:            name,
 		logger:          new(atomic.Pointer[log.Logger]),
+		eventSeq:        new(atomic.Int64),
 	}
 	s.logger.Store(log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name)))
 	s.core = new(_ActorSystemCore).init(&s)
@@ -38,7 +41,12 @@ func NewActorSystem(name string) ActorSystem {
 	s.BindMailboxFactory(NewFIFOFactory(s.onProcessMailboxMessage))
 	s.BindMailboxFactory(NewPriorityFactory(s.onProcessMailboxMessage))
 	var err error
-	s.userGuard, err = generateActor(&s, new(UserGuardActor), parseActorOptions(NewActorOptions[*UserGuardActor]().WithName("user")), false)
+	s.userGuardActor, err = generateActor(&s, new(userGuardActor), parseActorOptions(NewActorOptions[*userGuardActor]().WithName("user")), false)
+	if err != nil {
+		panic(err)
+	}
+
+	s.eventBusActor, err = generateActor(&s, new(EventBusActor), parseActorOptions(NewActorOptions[*EventBusActor]().WithName("event_bus")), false)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +67,9 @@ type ActorSystem struct {
 	actors            map[ActorId]*_ActorCore // actor id -> actor core
 	actorRW           *sync.RWMutex
 	deadLetters       *_DeadLetterStream // 死信队列
-	userGuard         *_ActorCore        // 用户使用的顶级 Actor
+	userGuardActor    *_ActorCore        // 用户使用的顶级 Actor
+	eventBusActor     *_ActorCore        // 事件总线 Actor
+	eventSeq          *atomic.Int64      // 全局事件序号，仅标记事件产生顺序
 	codec             Codec
 	server            Server
 	client            Client
@@ -84,7 +94,7 @@ func (s *ActorSystem) GetLogger() *log.Logger {
 }
 
 func (s *ActorSystem) ActorOf(ofo ActorOfO) ActorRef {
-	return s.userGuard.ActorOf(ofo)
+	return s.userGuardActor.ActorOf(ofo)
 }
 
 func (s *ActorSystem) Context() context.Context {
@@ -93,7 +103,8 @@ func (s *ActorSystem) Context() context.Context {
 
 func (s *ActorSystem) Shutdown() {
 	defer s.cancel()
-	s.unbindActor(s.userGuard, false, true)
+	s.unbindActor(s.userGuardActor, false, true)
+	s.unbindActor(s.eventBusActor, false, true)
 	s.waitGroup.Wait()
 }
 
@@ -236,7 +247,7 @@ func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
 }
 
 func (s *ActorSystem) GetContext() ActorContext {
-	return s.userGuard
+	return s.userGuardActor
 }
 
 func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore, message MessageContext) {
@@ -458,4 +469,29 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	core.Tell(OnBoot{})
 
 	return core, nil
+}
+
+func (s *ActorSystem) Subscribe(subscribeId SubscribeId, subscriber Subscriber, event Event, options ...SubscribeOption) {
+	opts := new(SubscribeOptions).apply(options)
+	s.eventBusActor.Tell(SubscribeMessage{
+		Producer:        opts.Producer,
+		Subscriber:      subscriber,
+		Event:           reflect.TypeOf(event),
+		SubscribeId:     subscribeId,
+		Priority:        opts.Priority,
+		PriorityTimeout: opts.PriorityTimeout,
+	}, WithPriority(math.MinInt64), WithInstantly(true))
+}
+
+func (s *ActorSystem) Unsubscribe(subscribeId SubscribeId) {
+	s.eventBusActor.Tell(UnsubscribeMessage{
+		SubscribeId: subscribeId,
+	}, WithPriority(math.MinInt64), WithInstantly(true))
+}
+
+func (s *ActorSystem) Publish(producer Producer, event Event) {
+	s.eventBusActor.Tell(PublishMessage{
+		Producer: producer,
+		Event:    event,
+	}, WithPriority(s.eventSeq.Add(1)))
 }

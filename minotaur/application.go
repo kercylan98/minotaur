@@ -2,7 +2,6 @@ package minotaur
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/minotaur/pulse"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"os"
@@ -14,7 +13,6 @@ func NewApplication(options ...Option) *Application {
 	opts := new(Options).apply(options...)
 
 	actorSystem := vivid.NewActorSystem(opts.ActorSystemName)
-	eventBus := pulse.NewPulse(&actorSystem, vivid.NewActorOptions[*pulse.EventBusActor]().WithName(opts.EventBusActorName))
 	ctx, cancel := context.WithCancel(actorSystem.Context())
 	return &Application{
 		options:     opts,
@@ -22,7 +20,6 @@ func NewApplication(options ...Option) *Application {
 		cancel:      cancel,
 		closed:      make(chan struct{}),
 		actorSystem: &actorSystem,
-		eventBus:    &eventBus,
 	}
 }
 
@@ -33,12 +30,18 @@ type Application struct {
 	cancel      context.CancelFunc
 	closed      chan struct{}
 	actorSystem *vivid.ActorSystem
-	eventBus    *pulse.Pulse
-	server      *transport.Server
+	server      vivid.TypedActorRef[transport.ServerActorTyped]
 }
 
 func (a *Application) GetSystem() *vivid.ActorSystem {
 	return a.actorSystem
+}
+
+func (a *Application) GetServer() vivid.TypedActorRef[transport.ServerActorTyped] {
+	if a.server == nil {
+		panic("server actor not initialized or not launched, please with WithNetwork option to initialize it")
+	}
+	return a.server
 }
 
 func (a *Application) GetContext() vivid.ActorContext {
@@ -51,9 +54,8 @@ func (a *Application) Launch() {
 	}(a)
 
 	if a.options.Network != nil {
-		srv := transport.NewServer(a.actorSystem, vivid.NewActorOptions[*transport.ServerActor]().WithName("server"))
-		a.server = &srv
-		a.server.Launch(a.eventBus, a.options.Network)
+		a.server = transport.NewServerActor(a.actorSystem, vivid.NewActorOptions[*transport.ServerActor]().WithName("server"))
+		a.server.Protocol().Launch(a.options.Network)
 	}
 
 	var systemSignal = make(chan os.Signal, 1)
@@ -68,10 +70,6 @@ func (a *Application) Launch() {
 func (a *Application) Shutdown() {
 	a.cancel()
 	<-a.closed
-}
-
-func (a *Application) EventBus() *pulse.Pulse {
-	return a.eventBus
 }
 
 func (a *Application) ActorSystem() *vivid.ActorSystem {
