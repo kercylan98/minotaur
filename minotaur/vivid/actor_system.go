@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"github.com/kercylan98/minotaur/toolkit/log"
+	"os"
 	"path"
 	"sync"
 	"sync/atomic"
@@ -27,14 +29,16 @@ func NewActorSystem(name string) ActorSystem {
 		messageSeq:      new(atomic.Uint64),
 		waitGroup:       toolkit.NewDynamicWaitGroup(),
 		name:            name,
+		logger:          new(atomic.Pointer[log.Logger]),
 	}
+	s.logger.Store(log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name)))
 	s.core = new(_ActorSystemCore).init(&s)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.BindDispatcher(new(_Dispatcher)) // default dispatcher
 	s.BindMailboxFactory(NewFIFOFactory(s.onProcessMailboxMessage))
 	s.BindMailboxFactory(NewPriorityFactory(s.onProcessMailboxMessage))
 	var err error
-	s.userGuard, err = generateActor(&s, new(UserGuardActor), parseActorOptions(NewActorOptions[*UserGuardActor]().WithName("user")))
+	s.userGuard, err = generateActor(&s, new(UserGuardActor), parseActorOptions(NewActorOptions[*UserGuardActor]().WithName("user")), false)
 	if err != nil {
 		panic(err)
 	}
@@ -42,6 +46,7 @@ func NewActorSystem(name string) ActorSystem {
 }
 
 type ActorSystem struct {
+	logger            *atomic.Pointer[log.Logger]
 	core              *_ActorSystemCore
 	ctx               context.Context
 	cancel            context.CancelFunc
@@ -70,6 +75,14 @@ type ActorSystem struct {
 	cluster string // 集群名称
 }
 
+func (s *ActorSystem) SetLogger(logger *log.Logger) {
+	s.logger.Store(logger)
+}
+
+func (s *ActorSystem) GetLogger() *log.Logger {
+	return s.logger.Load()
+}
+
 func (s *ActorSystem) ActorOf(ofo ActorOfO) ActorRef {
 	return s.userGuard.ActorOf(ofo)
 }
@@ -80,7 +93,7 @@ func (s *ActorSystem) Context() context.Context {
 
 func (s *ActorSystem) Shutdown() {
 	defer s.cancel()
-	s.unbindActor(s.userGuard)
+	s.unbindActor(s.userGuard, false, true)
 	s.waitGroup.Wait()
 }
 
@@ -146,10 +159,9 @@ func (s *ActorSystem) UnbindDispatcher(id DispatcherId) {
 	delete(s.dispatchers, id)
 }
 
-func (s *ActorSystem) unbindActor(actor ActorContext) {
+func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCallback ...func(core *_ActorCore)) {
 	// 等待消息处理完毕后拒绝新消息
 	core := actor.(*_ActorCore)
-	core.Tell(OnDestroy{internal: true})
 	core.messageGroup.Wait(func() {
 		core.dispatcher.Detach(s.core, core)
 		s.actorRW.Lock()
@@ -157,16 +169,63 @@ func (s *ActorSystem) unbindActor(actor ActorContext) {
 		s.actorRW.Unlock()
 	})
 
-	actor.getLockable().RLock()
-	var children = actor.getChildren()
-	actor.getLockable().RUnlock()
-
-	for _, child := range children {
-		s.unbindActor(child)
+	// 重启顺序
+	var restartOrder []*_ActorCore
+	if restart {
+		restartOrder = append(restartOrder, core)
+		deadCallback = append(deadCallback, func(core *_ActorCore) {
+			restartOrder = append(restartOrder, core)
+		})
 	}
 
+	// 递归解绑子 Actor
+	func(actor ActorContext) {
+		actor.getLockable().Lock()
+		defer actor.getLockable().Unlock()
+		var children = actor.getChildren()
+		for name, child := range children {
+			s.unbindActor(child, false, false, deadCallback...)
+			actor.unbindChild(name)
+		}
+	}(actor)
+
+	var logType string
+	if restart {
+		logType = "restart"
+	} else {
+		logType = "stop"
+	}
+	s.GetLogger().Debug("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()))
+
+	// 宣布 Actor 死亡
 	s.waitGroup.Done()
-	//log.Debug("actor unbind", log.String("actor", core.GetId().String()))
+	if !root {
+		for _, f := range deadCallback {
+			f(core)
+		}
+	} else {
+		if parent := actor.getParent(); parent != nil {
+			func(parent ActorContext) {
+				parent.getLockable().Lock()
+				defer parent.getLockable().Unlock()
+				parent.unbindChild(actor.GetId().Name())
+			}(parent)
+		}
+	}
+
+	// 此刻 Actor 及其子 Actor 已经全部解绑
+	if root && restart {
+		var restarted = make(map[ActorId]*_ActorCore)
+		for i, c := range restartOrder {
+			var parent = c.getParent().(*_internalActorContext).core
+			if i > 0 {
+				parent = restarted[parent.GetId()]
+			}
+			ctx := c.restartHandler(parent)
+			c._LocalActorRef.core = ctx
+			restarted[ctx.GetId()] = ctx
+		}
+	}
 }
 
 func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
@@ -182,15 +241,19 @@ func (s *ActorSystem) GetContext() ActorContext {
 
 func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore, message MessageContext) {
 	actor.messageGroup.Add(1)
+
 	if !dispatcher.Send(s.core, actor, message) {
 		actor.messageGroup.Done()
 	}
 
 	switch m := message.GetMessage().(type) {
-	case OnDestroy:
-		if !m.internal {
-			s.unbindActor(actor)
-		}
+	case OnTerminate:
+		// 异步重启
+		s.waitGroup.Add(1)
+		go func(s *ActorSystem, actor *_ActorCore, restart bool) {
+			defer s.waitGroup.Done()
+			s.unbindActor(actor, restart, true)
+		}(s, actor, m.restart)
 	}
 }
 
@@ -302,13 +365,6 @@ func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
 	core := message.GetRef().(*_LocalActorRef).core
 	defer func() {
 		core.messageGroup.Done()
-		if r := recover(); r != nil {
-			s.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeMessage, DeadLetterEventMessage{
-				Error:   fmt.Errorf("%w: %v", ErrActorPanic, r),
-				To:      core.GetId(),
-				Message: message,
-			}))
-		}
 	}()
 	if core.messageHook != nil && !core.messageHook(message) {
 		return
@@ -316,14 +372,16 @@ func (s *ActorSystem) onProcessMailboxMessage(message MessageContext) {
 	onReceive(core, message)
 }
 
-func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[T]) (*_ActorCore, error) {
-	if options.Name == charproc.None {
-		options.Name = uuid.NewString()
-	}
+func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[T], restart bool) (*_ActorCore, error) {
+	if !restart {
+		if options.Name == charproc.None {
+			options.Name = uuid.NewString()
+		}
 
-	optionsNum := len(options.options)
-	onReceive(actor, newMessageContext(system, OnOptionApply[T]{Options: options}, 0, false, false).withLocal(nil, nil))
-	options.applyOption(options.options[optionsNum:]...)
+		optionsNum := len(options.options)
+		onReceive(actor, newMessageContext(system, OnInit[T]{Options: options}, 0, false, false).withLocal(nil, nil))
+		options.applyOption(options.options[optionsNum:]...)
+	}
 
 	var actorPath = options.Name
 	if options.Parent != nil {
@@ -384,7 +442,20 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 		parentLock.Unlock()
 	}
 
-	core.Tell(OnPreStart{})
+	var logType string
+	if restart {
+		logType = "restart"
+	} else {
+		logType = "generate"
+	}
+
+	system.GetLogger().Debug("generateActor", log.String("type", logType), log.String("actor", actorId.String()))
+
+	// 生命周期
+	if restart {
+		core.Tell(OnRestart{})
+	}
+	core.Tell(OnBoot{})
 
 	return core, nil
 }

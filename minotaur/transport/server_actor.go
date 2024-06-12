@@ -50,9 +50,9 @@ type ServerActor struct {
 
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		s.onPreStart(ctx)
-	case vivid.OnDestroy:
+	case vivid.OnTerminate:
 		s.onServerShutdown(ctx, ServerShutdownMessage{})
 	case ServerLaunchMessage:
 		s.onServerLaunch(ctx, m)
@@ -107,10 +107,10 @@ func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnC
 	if ok {
 		delete(s.connections, m.conn)
 		if conn.reader != nil {
-			conn.reader.Tell(vivid.OnDestroy{})
+			conn.reader.Tell(vivid.OnTerminate{})
 		}
 		if conn.writer != nil {
-			conn.writer.Tell(vivid.OnDestroy{})
+			conn.writer.Tell(vivid.OnTerminate{})
 		}
 
 		s.pulse.Publish(s.actor, ServerConnClosedEvent{ConnActor: conn})

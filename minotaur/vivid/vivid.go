@@ -47,7 +47,7 @@ func ActorOf[T Actor](actorOf ActorOwner, options ...*ActorOptions[T]) ActorRef 
 		opts.Parent = actorOf.GetContext()
 	}
 
-	ctx, err := generateActor[T](actorOf.GetSystem(), ins, opts)
+	ctx, err := generateActor[T](actorOf.GetSystem(), ins, opts, false)
 	if err != nil {
 		system.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeActorOf, DeadLetterEventActorOf{
 			Error:  err,
@@ -76,7 +76,7 @@ func FreeActorOf[T any](actorOf ActorOwner, options ...*ActorOptions[*FreeActor[
 		opts.Parent = actorOf.GetContext()
 	}
 
-	ctx, err := generateActor[*FreeActor[T]](actorOf.GetSystem(), &FreeActor[T]{actor: ins}, opts)
+	ctx, err := generateActor[*FreeActor[T]](actorOf.GetSystem(), &FreeActor[T]{actor: ins}, opts, false)
 	if err != nil {
 		system.deadLetters.DeadLetter(NewDeadLetterEvent(DeadLetterEventTypeActorOf, DeadLetterEventActorOf{
 			Error:  err,

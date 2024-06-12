@@ -23,24 +23,24 @@ type ActorContext interface {
 	// GetParent 获取当前上下文的父 Actor 的引用
 	GetParent() ActorRef
 
-	// BindBehavior 动态的绑定一个行为，当行为存在时，Actor.OnReceive 将会被覆盖
-	BindBehavior(behavior Behavior)
+	// Become 切换 Actor 在面对特定消息的行为。通过调用 BehaviorOf 函数可以创建一个特定消息类型的行为，将 Actor 的消息处理逻辑切换为指定的新行为。新的行为会覆盖当前的行为，直到下次调用 Become 或 UnBecome 为止
+	Become(behavior Behavior)
 
-	// UnbindBehavior 解绑一个已绑定的行为
-	UnbindBehavior(message Message)
+	// UnBecome 恢复 Actor 在面对特性消息的行为为之前的行为，多次调用 UnBecome 会依次恢复之前的行为，直到没有行为为止
+	UnBecome(message Message)
 
 	// ActorOf 创建一个 Actor 并返回 ActorRef
 	//  - ActorOfO 对象可通过 OfO 函数快速创建
 	ActorOf(ofo ActorOfO) ActorRef
 
-	// Destroy 销毁当前 Actor，该操作将会触发 Actor 的 OnDestroy 生命周期
-	Destroy()
+	// Terminate 销毁当前 Actor，该操作将会触发 Actor 的 OnTerminate 生命周期
+	Terminate()
 }
 
 type _ActorContext struct {
 	*_internalActorContext
 	*_ActorCore
-	behaviors map[reflect.Type]Behavior // 行为
+	behaviors map[reflect.Type][]Behavior
 }
 
 func (c *_ActorContext) GetId() ActorId {
@@ -59,26 +59,35 @@ func (c *_ActorContext) GetParent() ActorRef {
 	return c.parent
 }
 
-func (c *_ActorContext) BindBehavior(behavior Behavior) {
+func (c *_ActorContext) Become(behavior Behavior) {
 	if c.behaviors == nil {
-		c.behaviors = make(map[reflect.Type]Behavior)
+		c.behaviors = make(map[reflect.Type][]Behavior)
 	}
 
-	c.behaviors[behavior.getMessageType()] = behavior
+	messageType := behavior.getMessageType()
+	c.behaviors[messageType] = append(c.behaviors[messageType], behavior)
 }
 
-func (c *_ActorContext) UnbindBehavior(message Message) {
+func (c *_ActorContext) UnBecome(message Message) {
 	if c.behaviors == nil {
 		return
 	}
 
-	delete(c.behaviors, reflect.TypeOf(message))
+	messageType := reflect.TypeOf(message)
+	if behaviors, ok := c.behaviors[messageType]; ok {
+		if len(behaviors) > 0 {
+			c.behaviors[messageType] = behaviors[:len(behaviors)-1]
+		}
+		if len(behaviors) == 0 {
+			delete(c.behaviors, messageType)
+		}
+	}
 }
 
 func (c *_ActorContext) ActorOf(ofo ActorOfO) ActorRef {
 	return ofo.generate(c)
 }
 
-func (c *_ActorContext) Destroy() {
-	c.Tell(OnDestroy{})
+func (c *_ActorContext) Terminate() {
+	c.Tell(OnTerminate{})
 }

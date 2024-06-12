@@ -1,7 +1,7 @@
 package vivid
 
 type ActorRef interface {
-	// Id 获取 Actor ID
+	// I'd 获取 Actor ID
 	Id() ActorId
 
 	// Tell 向 Actor 发送一条消息，当消息发送失败时将会进入死信队列中，以下列举一些特殊场景

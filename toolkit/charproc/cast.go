@@ -1,11 +1,15 @@
 package charproc
 
+import "unicode"
+
 // FirstUpper 返回字符串的首字母大写形式
 func FirstUpper(s string) string {
 	if len(s) == 0 {
 		return s
 	}
-	return string(s[0]-32) + s[1:]
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
 
 // FirstLower 返回字符串的首字母小写形式
@@ -13,7 +17,9 @@ func FirstLower(s string) string {
 	if len(s) == 0 {
 		return s
 	}
-	return string(s[0]+32) + s[1:]
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+	return string(r)
 }
 
 // LenWithChinese 返回含中文字符串的长度，一个中文字符长度为 1

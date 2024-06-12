@@ -14,8 +14,8 @@ type AccountManager struct {
 
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
-		ctx.BindBehavior(vivid.BehaviorOf(e.onConnOpened))
+	case vivid.OnBoot:
+		ctx.Become(vivid.BehaviorOf(e.onConnOpened))
 		e.EventBus().Subscribe("conn-opened", ctx, transport.ServerConnOpenedEvent{})
 	}
 }
@@ -34,7 +34,7 @@ type Account struct {
 
 func (c *Account) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		c.ConnActor.OnReceive(ctx)
 	case transport.ConnReceivePacketMessage:
 		c.Write(m.Packet)

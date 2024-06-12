@@ -17,7 +17,7 @@ type Conn struct {
 
 func (c *Conn) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		c.ConnActor.OnReceive(ctx)
 	case transport.ConnReceivePacketMessage:
 		c.Write(m.Packet)
@@ -30,7 +30,7 @@ type AccountManager struct {
 
 func (e *AccountManager) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		e.eventBus.Subscribe(pulse.SubscribeId(ctx.GetRef().Id()), ctx.GetRef(), transport.ServerConnOpenedEvent{})
 	case transport.ServerConnOpenedEvent:
 		vivid.ActorOf[*Conn](ctx, vivid.NewActorOptions[*Conn]().WithInit(func(conn *Conn) {

@@ -8,6 +8,7 @@ import (
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/toolkit/collection"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/panjf2000/gnet/v2"
 	"time"
 )
@@ -66,7 +67,7 @@ func (g *gnetEngine) Launch(ctx context.Context, srv transport.ServerCore) error
 	default:
 		return fmt.Errorf("unsupported schema: %s", g.schema)
 	}
-	return gnet.Run(g, addr)
+	return gnet.Run(g, addr, gnet.WithLogger(log.NewGNetLogger(log.GetDefault())))
 }
 
 func (g *gnetEngine) Shutdown() error {

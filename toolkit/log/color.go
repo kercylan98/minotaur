@@ -1,85 +1,22 @@
 package log
 
-import "github.com/fatih/color"
-
-// Base attributes
-const (
-	ColorReset Attribute = iota
-	ColorBold
-	ColorFaint
-	ColorItalic
-	ColorUnderline
-	ColorBlinkSlow
-	ColorBlinkRapid
-	ColorReverseVideo
-	ColorConcealed
-	ColorCrossedOut
+type (
+	ColorType uint16 // 日志颜色类型
 )
 
 const (
-	ColorResetBold Attribute = iota + 22
-	ColorResetItalic
-	ColorResetUnderline
-	ColorResetBlinking
-	_
-	ColorResetReversed
-	ColorResetConcealed
-	ColorResetCrossedOut
+	ColorTypeTime             ColorType = iota + 1 // 时间颜色
+	ColorTypeDebugLevel                            // Debug 级别颜色
+	ColorTypeInfoLevel                             // Info 级别颜色
+	ColorTypeWarnLevel                             // Warn 级别颜色
+	ColorTypeErrorLevel                            // Error 级别颜色
+	ColorTypeCaller                                // 调用者颜色
+	ColorTypeMessage                               // 消息颜色
+	ColorTypeAttrKey                               // 属性键颜色
+	ColorTypeAttrValue                             // 属性值颜色
+	ColorTypeAttrDelimiter                         // 属性分隔符颜色
+	ColorTypeAttrErrorKey                          // 错误键颜色
+	ColorTypeAttrErrorValue                        // 错误值颜色
+	ColorTypeErrorTrack                            // 错误追踪颜色
+	ColorTypeErrorTrackHeader                      // 错误追踪头部颜色
 )
-
-// Foreground text colors
-const (
-	ColorFgBlack Attribute = iota + 30
-	ColorFgRed
-	ColorFgGreen
-	ColorFgYellow
-	ColorFgBlue
-	ColorFgMagenta
-	ColorFgCyan
-	ColorFgWhite
-)
-
-// Foreground Hi-Intensity text colors
-const (
-	ColorFgHiBlack Attribute = iota + 90
-	ColorFgHiRed
-	ColorFgHiGreen
-	ColorFgHiYellow
-	ColorFgHiBlue
-	ColorFgHiMagenta
-	ColorFgHiCyan
-	ColorFgHiWhite
-)
-
-// Background text colors
-const (
-	ColorBgBlack Attribute = iota + 40
-	ColorBgRed
-	ColorBgGreen
-	ColorBgYellow
-	ColorBgBlue
-	ColorBgMagenta
-	ColorBgCyan
-	ColorBgWhite
-)
-
-// Background Hi-Intensity text colors
-const (
-	ColorBgHiBlack Attribute = iota + 100
-	ColorBgHiRed
-	ColorBgHiGreen
-	ColorBgHiYellow
-	ColorBgHiBlue
-	ColorBgHiMagenta
-	ColorBgHiCyan
-	ColorBgHiWhite
-)
-
-func NewColor(attributes ...Attribute) *Color {
-	c := &Color{
-		Color: color.New(attributes...),
-		attrs: attributes,
-	}
-	c.Color.EnableColor()
-	return c
-}

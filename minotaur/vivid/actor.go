@@ -17,6 +17,13 @@ func (i *FreeActor[T]) GetActor() T {
 }
 
 func onReceive(actor Actor, ctx MessageContext) {
+	defer func() {
+		if reason := recover(); reason != nil {
+			actorCtx := ctx.GetContext()
+			actorCtx.supervisorExec(ctx.GetContext().(*_ActorCore), ctx.GetMessage(), reason)
+		}
+	}()
+
 	actorCtx, _ := ctx.GetContext().(*_ActorCore)
 	if actorCtx == nil {
 		actor.OnReceive(ctx)

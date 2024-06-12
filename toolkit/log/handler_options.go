@@ -88,7 +88,7 @@ func (o *HandlerOptions) applyDefault() *HandlerOptions {
 		WithColor(ColorTypeErrorTrack, color.FgWhite).
 		WithColor(ColorTypeErrorTrackHeader, color.FgYellow).
 		WithCaller(true).
-		WithCallerSkip(5).
+		WithCallerSkip(6).
 		WithMessageFormatter(func(message string) string {
 			return charproc.BigCamel(message)
 		})

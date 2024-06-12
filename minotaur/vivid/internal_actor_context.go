@@ -1,6 +1,7 @@
 package vivid
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -27,6 +28,12 @@ type internalActorContext interface {
 
 	// matchBehavior 匹配行为
 	matchBehavior(message Message) Behavior
+
+	// getParent 获取父 Actor
+	getParent() ActorContext
+
+	// supervisorExec 监管策略执行
+	supervisorExec(core *_ActorCore, message, reason Message)
 }
 
 type _internalActorContext struct {
@@ -68,10 +75,36 @@ func (c *_internalActorContext) matchBehavior(message Message) Behavior {
 		return nil
 	}
 
-	behavior, ok := c.behaviors[reflect.TypeOf(message)]
+	behaviors, ok := c.behaviors[reflect.TypeOf(message)]
 	if !ok {
 		return nil
 	}
 
-	return behavior
+	return behaviors[len(behaviors)-1]
+}
+
+func (c *_internalActorContext) getParent() ActorContext {
+	return c.parent
+}
+
+func (c *_internalActorContext) supervisorExec(core *_ActorCore, message, reason Message) {
+	if c._ActorCore.supervisor != nil {
+		directive := c._ActorCore.supervisor(message, reason)
+		switch directive {
+		case DirectiveStop:
+			core.Terminate()
+		case DirectiveRestart:
+			core.Tell(OnTerminate{
+				restart: true,
+			})
+		case DirectiveResume:
+			// ignore
+		case DirectiveEscalate:
+			c.getParent().supervisorExec(core, message, reason)
+		default:
+			panic(fmt.Errorf("unknown directive: %d", directive))
+		}
+	} else {
+		c.getParent().supervisorExec(core, message, reason)
+	}
 }

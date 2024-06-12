@@ -37,11 +37,11 @@ type MessageContext interface {
 	// Instantly 是否是立即执行的消息
 	Instantly() bool
 
-	// BindBehavior 该函数是 ActorContext.BindBehavior 的快捷方式
-	BindBehavior(behavior Behavior)
+	// Become 该函数是 ActorContext.Become 的快捷方式
+	Become(behavior Behavior)
 
-	// UnbindBehavior 该函数是 ActorContext.UnbindBehavior 的快捷方式
-	UnbindBehavior(message Message)
+	// UnBecome 该函数是 ActorContext.UnBecome 的快捷方式
+	UnBecome(message Message)
 
 	// ActorOf 该函数是 ActorContext.ActorOf 的快捷方式
 	ActorOf(ofo ActorOfO) ActorRef
@@ -244,12 +244,12 @@ func (c *_MessageContext) Instantly() bool {
 	return c.InstantlyExec
 }
 
-func (c *_MessageContext) BindBehavior(behavior Behavior) {
-	c.GetContext().BindBehavior(behavior)
+func (c *_MessageContext) Become(behavior Behavior) {
+	c.GetContext().Become(behavior)
 }
 
-func (c *_MessageContext) UnbindBehavior(message Message) {
-	c.GetContext().UnbindBehavior(message)
+func (c *_MessageContext) UnBecome(message Message) {
+	c.GetContext().UnBecome(message)
 }
 
 func (c *_MessageContext) ActorOf(ofo ActorOfO) ActorRef {

@@ -45,7 +45,7 @@ type ConnActor struct {
 
 func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		c.reader = ctx.GetRef()
 		c.writer = vivid.ActorOf[*ConnWriteActor](c.server, vivid.NewActorOptions[*ConnWriteActor]().WithConstruct(func() *ConnWriteActor {
 			return &ConnWriteActor{
@@ -74,6 +74,6 @@ func (c *ConnActor) React(packet Packet) {
 
 func (c *ConnActor) Close() {
 	_ = c.conn.Close()
-	c.reader.Tell(vivid.OnDestroy{})
-	c.writer.Tell(vivid.OnDestroy{})
+	c.reader.Tell(vivid.OnTerminate{})
+	c.writer.Tell(vivid.OnTerminate{})
 }

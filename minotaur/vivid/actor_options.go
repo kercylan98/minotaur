@@ -11,6 +11,15 @@ type ActorOptions[T Actor] struct {
 	Construct        T                             // Actor 构造器
 	Init             func(T)                       // Actor 初始化函数
 	MessageHook      func(ctx MessageContext) bool // 消息钩子
+	Supervisor       Supervisor                    // 监管策略
+}
+
+// WithSupervisor 设置 Actor 的监管策略
+func (o *ActorOptions[T]) WithSupervisor(supervisor Supervisor) *ActorOptions[T] {
+	o.options = append(o.options, func(opts *ActorOptions[T]) {
+		opts.Supervisor = supervisor
+	})
+	return o
 }
 
 // WithInit 设置 Actor 的初始化函数

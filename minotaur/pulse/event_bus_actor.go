@@ -38,9 +38,9 @@ type EventBusActor struct {
 
 func (e *EventBusActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case vivid.OnOptionApply[*EventBusActor]:
+	case vivid.OnInit[*EventBusActor]:
 		m.Options.WithMailboxFactory(vivid.PriorityMailboxFactoryId)
-	case vivid.OnPreStart:
+	case vivid.OnBoot:
 		e.onPreStart()
 	case SubscribeMessage:
 		e.onSubscribe(m)
@@ -129,6 +129,6 @@ func (e *EventBusActor) onPublish(ctx vivid.MessageContext, m PublishMessage) {
 			}
 		}()))
 		eventActor.Tell(priorityEventMessage{event: m.Event})
-		eventActor.Tell(vivid.OnDestroy{})
+		eventActor.Tell(vivid.OnTerminate{})
 	}
 }
