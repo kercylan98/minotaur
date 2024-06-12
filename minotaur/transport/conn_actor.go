@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"net"
 )
@@ -44,12 +45,14 @@ func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	switch ctx.GetMessage().(type) {
 	case vivid.OnBoot:
 		c.reader = ctx.GetRef()
-		c.writer = vivid.ActorOf[*ConnWriteActor](c.server, vivid.NewActorOptions[*ConnWriteActor]().WithConstruct(func() *ConnWriteActor {
-			return &ConnWriteActor{
-				conn:   c.conn,
-				writer: c.connWriter,
-			}
-		}()))
+		c.writer = vivid.ActorOf[*ConnWriteActor](c.server, vivid.NewActorOptions[*ConnWriteActor]().
+			WithName(fmt.Sprintf("conn-write-%s", c.conn.RemoteAddr().String())).
+			WithConstruct(func() *ConnWriteActor {
+				return &ConnWriteActor{
+					conn:   c.conn,
+					writer: c.connWriter,
+				}
+			}()))
 	case ConnReceivePacketMessage:
 
 	}

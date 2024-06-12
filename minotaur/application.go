@@ -58,6 +58,10 @@ func (a *Application) Launch() {
 		a.server.Protocol().Launch(a.options.Network)
 	}
 
+	for _, hook := range a.options.LaunchedHooks {
+		hook(a)
+	}
+
 	var systemSignal = make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	select {

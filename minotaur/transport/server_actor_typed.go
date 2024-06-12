@@ -12,10 +12,10 @@ type ServerActorTyped interface {
 	Shutdown()
 
 	// SubscribeConnOpenedEvent 订阅连接打开事件
-	SubscribeConnOpenedEvent(subscribeId vivid.SubscribeId, subscriber vivid.Subscriber, handler func(ServerConnOpenedEvent), options ...vivid.SubscribeOption)
+	SubscribeConnOpenedEvent(subscribeId vivid.SubscribeId, handler func(ctx vivid.MessageContext, event ServerConnOpenedEvent), options ...vivid.SubscribeOption)
 
 	// SubscribeConnClosedEvent 订阅连接关闭事件
-	SubscribeConnClosedEvent(subscribeId vivid.SubscribeId, subscriber vivid.Subscriber, handler func(ServerConnClosedEvent), options ...vivid.SubscribeOption)
+	SubscribeConnClosedEvent(subscribeId vivid.SubscribeId, handler func(ctx vivid.MessageContext, event ServerConnClosedEvent), options ...vivid.SubscribeOption)
 }
 
 type ServerActorTypedImpl struct {
@@ -30,10 +30,10 @@ func (s *ServerActorTypedImpl) Shutdown() {
 	s.ref.Tell(ServerShutdownMessage{})
 }
 
-func (s *ServerActorTypedImpl) SubscribeConnOpenedEvent(subscribeId vivid.SubscribeId, subscriber vivid.Subscriber, handler func(ServerConnOpenedEvent), options ...vivid.SubscribeOption) {
-	s.ref.GetSystem().Subscribe(subscribeId, subscriber, handler, options...)
+func (s *ServerActorTypedImpl) SubscribeConnOpenedEvent(subscribeId vivid.SubscribeId, handler func(ctx vivid.MessageContext, event ServerConnOpenedEvent), options ...vivid.SubscribeOption) {
+	s.ref.Tell(ServerSubscribeConnOpenedMessage{SubscribeId: subscribeId, Handler: handler, Options: options})
 }
 
-func (s *ServerActorTypedImpl) SubscribeConnClosedEvent(subscribeId vivid.SubscribeId, subscriber vivid.Subscriber, handler func(ServerConnClosedEvent), options ...vivid.SubscribeOption) {
-	s.ref.GetSystem().Subscribe(subscribeId, subscriber, handler, options...)
+func (s *ServerActorTypedImpl) SubscribeConnClosedEvent(subscribeId vivid.SubscribeId, handler func(ctx vivid.MessageContext, event ServerConnClosedEvent), options ...vivid.SubscribeOption) {
+	s.ref.Tell(ServerSubscribeConnClosedMessage{SubscribeId: subscribeId, Handler: handler, Options: options})
 }

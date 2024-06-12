@@ -26,6 +26,18 @@ type (
 	ServerConnClosedMessage struct {
 		conn net.Conn
 	}
+
+	ServerSubscribeConnOpenedMessage struct {
+		SubscribeId vivid.SubscribeId
+		Handler     func(ctx vivid.MessageContext, event ServerConnOpenedEvent)
+		Options     []vivid.SubscribeOption
+	}
+
+	ServerSubscribeConnClosedMessage struct {
+		SubscribeId vivid.SubscribeId
+		Handler     func(ctx vivid.MessageContext, event ServerConnClosedEvent)
+		Options     []vivid.SubscribeOption
+	}
 )
 
 type (
@@ -47,7 +59,6 @@ func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*S
 
 type ServerActor struct {
 	ServerActorTyped
-	system      *vivid.ActorSystem
 	network     Network
 	core        *serverCore
 	connections map[net.Conn]*ConnActor
@@ -67,11 +78,16 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 		s.onServerConnOpened(ctx, m)
 	case ServerConnClosedMessage:
 		s.onServerConnClosed(ctx, m)
+	case ServerSubscribeConnOpenedMessage:
+		ctx.Become(vivid.BehaviorOf[ServerConnOpenedEvent](m.Handler))
+		ctx.GetSystem().Subscribe(m.SubscribeId, ctx, ServerConnOpenedEvent{})
+	case ServerSubscribeConnClosedMessage:
+		ctx.Become(vivid.BehaviorOf[ServerConnClosedEvent](m.Handler))
+		ctx.GetSystem().Subscribe(m.SubscribeId, ctx, ServerConnClosedEvent{})
 	}
 }
 
 func (s *ServerActor) onBoot(ctx vivid.MessageContext) {
-	s.system = ctx.GetSystem()
 	s.connections = make(map[net.Conn]*ConnActor)
 	s.core = new(serverCore).init(ctx.GetRef())
 }
@@ -101,6 +117,9 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 
 func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
 	conn := newConn(ctx.GetContext(), m.conn, m.writer)
+	vivid.ActorOfI(ctx, conn, func(options *vivid.ActorOptions[*ConnActor]) {
+		options.WithName(fmt.Sprintf("conn-%s", m.conn.RemoteAddr().String()))
+	})
 	s.connections[m.conn] = conn
 	ctx.Reply(ConnCore(conn))
 	ctx.GetSystem().Publish(ctx, ServerConnOpenedEvent{ConnActor: conn})

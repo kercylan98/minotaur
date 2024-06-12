@@ -12,6 +12,8 @@ type Options struct {
 	ActorSystemName   string            // Actor 系统名称
 	EventBusActorName string            // 事件总线 Actor 名称
 	Network           transport.Network // 网络
+
+	LaunchedHooks []func(app *Application) // 启动钩子
 }
 
 // defaultApply 设置缺省值
@@ -33,6 +35,12 @@ func (o *Options) apply(options ...Option) *Options {
 		option(o)
 	}
 	return o.defaultApply()
+}
+
+func WithLaunchedHook(hooks ...func(app *Application)) Option {
+	return func(o *Options) {
+		o.LaunchedHooks = append(o.LaunchedHooks, hooks...)
+	}
 }
 
 func WithLogger(logger *log.Logger) Option {
