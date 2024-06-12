@@ -118,7 +118,12 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
 	conn := newConn(ctx.GetContext(), m.conn, m.writer)
 	vivid.ActorOfI(ctx, conn, func(options *vivid.ActorOptions[*ConnActor]) {
-		options.WithName(fmt.Sprintf("conn-%s", m.conn.RemoteAddr().String()))
+		options.
+			WithName(fmt.Sprintf("conn-reader-%s", m.conn.RemoteAddr().String())).
+			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
+				log.Error("connOpened", log.String("message", reflect.TypeOf(message).String()), log.Any("reason", reason))
+				return vivid.DirectiveStop
+			})
 	})
 	s.connections[m.conn] = conn
 	ctx.Reply(ConnCore(conn))

@@ -10,6 +10,11 @@ type (
 	ConnReceivePacketMessage struct {
 		Packet
 	}
+
+	ConnSubscribeReceivePacketEvent struct {
+		Id      string
+		Handler func(ctx vivid.MessageContext, event ConnReceivePacketMessage)
+	}
 )
 
 func newConn(server vivid.ActorContext, c net.Conn, writer ConnWriter) *ConnActor {
@@ -42,19 +47,21 @@ type ConnActor struct {
 }
 
 func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
-	switch ctx.GetMessage().(type) {
+	switch m := ctx.GetMessage().(type) {
 	case vivid.OnBoot:
 		c.reader = ctx.GetRef()
 		c.writer = vivid.ActorOf[*ConnWriteActor](c.server, vivid.NewActorOptions[*ConnWriteActor]().
-			WithName(fmt.Sprintf("conn-write-%s", c.conn.RemoteAddr().String())).
+			WithName(fmt.Sprintf("conn-writer-%s", c.conn.RemoteAddr().String())).
 			WithConstruct(func() *ConnWriteActor {
 				return &ConnWriteActor{
 					conn:   c.conn,
 					writer: c.connWriter,
 				}
 			}()))
+	case ConnSubscribeReceivePacketEvent:
+		ctx.GetSystem().Subscribe(m.Id, ctx, ConnReceivePacketMessage{})
 	case ConnReceivePacketMessage:
-
+		ctx.GetSystem().Publish(c.reader, m.Packet)
 	}
 }
 
@@ -70,6 +77,10 @@ func (c *ConnActor) React(packet Packet) {
 		panic("should not happen, reader is nil")
 	}
 	c.reader.Tell(ConnReceivePacketMessage{packet})
+}
+
+func (c *ConnActor) SubscribeReceivePacketEvent(id vivid.SubscribeId, handler func(ctx vivid.MessageContext, event ConnReceivePacketMessage)) {
+	c.reader.Tell(ConnSubscribeReceivePacketEvent{id, handler})
 }
 
 func (c *ConnActor) Close() {

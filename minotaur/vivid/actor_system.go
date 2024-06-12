@@ -464,9 +464,9 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 
 	// 生命周期
 	if restart {
-		core.Tell(OnRestart{})
+		core.Tell(OnRestart{}, WithInstantly(true))
 	}
-	core.Tell(OnBoot{})
+	core.Tell(OnBoot{}, WithInstantly(true))
 
 	return core, nil
 }

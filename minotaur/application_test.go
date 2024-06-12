@@ -1,6 +1,7 @@
 package minotaur_test
 
 import (
+	"github.com/gobwas/ws"
 	"github.com/kercylan98/minotaur/minotaur"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/transport/network"
@@ -16,7 +17,7 @@ func TestNewApplication(t *testing.T) {
 				Protocol().
 				SubscribeConnOpenedEvent("conn_opened",
 					func(ctx vivid.MessageContext, event transport.ServerConnOpenedEvent) {
-						t.Log("conn opened")
+						event.Write(transport.NewPacket([]byte("Hello, World!")).SetContext(ws.OpText))
 					},
 				)
 		}),
