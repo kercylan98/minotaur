@@ -9,59 +9,17 @@ import (
 	"reflect"
 )
 
-type (
-	// ServerLaunchMessage 服务器启动消息，服务器在收到该消息后将开始运行，运行过程是异步的
-	ServerLaunchMessage struct {
-		Network Network // 网络接口
-	}
-
-	// ServerShutdownMessage 服务器关闭消息，服务器在收到该消息后将停止运行
-	ServerShutdownMessage struct{}
-
-	ServerConnOpenedMessage struct {
-		conn   net.Conn
-		writer ConnWriter
-	}
-
-	ServerConnClosedMessage struct {
-		conn net.Conn
-	}
-
-	ServerSubscribeConnOpenedMessage struct {
-		SubscribeId vivid.SubscribeId
-		Handler     func(ctx vivid.MessageContext, event ServerConnOpenedEvent)
-		Options     []vivid.SubscribeOption
-	}
-
-	ServerSubscribeConnClosedMessage struct {
-		SubscribeId vivid.SubscribeId
-		Handler     func(ctx vivid.MessageContext, event ServerConnClosedEvent)
-		Options     []vivid.SubscribeOption
-	}
-)
-
-type (
-	ServerConnOpenedEvent struct {
-		*ConnActor
-	}
-
-	ServerConnClosedEvent struct {
-		*ConnActor
-	}
-)
-
 func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) vivid.TypedActorRef[ServerActorTyped] {
 	ref := vivid.ActorOf[*ServerActor](system, options...)
 	return vivid.Typed[ServerActorTyped](ref, &ServerActorTypedImpl{
-		ref: ref,
+		ServerActorRef: ref,
 	})
 }
 
 type ServerActor struct {
 	ServerActorTyped
 	network     Network
-	core        *serverCore
-	connections map[net.Conn]*ConnActor
+	connections map[net.Conn]vivid.TypedActorRef[ConnActorTyped]
 }
 
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
@@ -79,17 +37,12 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	case ServerConnClosedMessage:
 		s.onServerConnClosed(ctx, m)
 	case ServerSubscribeConnOpenedMessage:
-		ctx.Become(vivid.BehaviorOf[ServerConnOpenedEvent](m.Handler))
-		ctx.GetSystem().Subscribe(m.SubscribeId, ctx, ServerConnOpenedEvent{})
-	case ServerSubscribeConnClosedMessage:
-		ctx.Become(vivid.BehaviorOf[ServerConnClosedEvent](m.Handler))
-		ctx.GetSystem().Subscribe(m.SubscribeId, ctx, ServerConnClosedEvent{})
+
 	}
 }
 
 func (s *ServerActor) onBoot(ctx vivid.MessageContext) {
-	s.connections = make(map[net.Conn]*ConnActor)
-	s.core = new(serverCore).init(ctx.GetRef())
+	s.connections = make(map[net.Conn]vivid.TypedActorRef[ConnActorTyped])
 }
 
 func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMessage) {
@@ -103,8 +56,11 @@ func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMes
 	log.Info("Minotaur Server", log.String("", "RunningInfo"), log.String("network", reflect.TypeOf(s.network).String()), log.String("listen", fmt.Sprintf("%s://%s%s", s.network.Schema(), ip.String(), s.network.Address())))
 	log.Info("Minotaur Server", log.String("", "============================================================================"))
 
+	serverExpandTyped := vivid.Typed[ServerActorExpandTyped](ctx, &ServerActorExpandTypedImpl{
+		ServerActorRef: ctx,
+	})
 	go func() {
-		if err = s.network.Launch(ctx, s.core); err != nil {
+		if err = s.network.Launch(ctx, serverExpandTyped); err != nil {
 			panic(err)
 		}
 	}()
@@ -116,31 +72,34 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 }
 
 func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
-	conn := newConn(ctx.GetContext(), m.conn, m.writer)
-	vivid.ActorOfI(ctx, conn, func(options *vivid.ActorOptions[*ConnActor]) {
+	// 创建连接 Actor 并绑定到服务器
+	connRef := ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ConnActor]) {
 		options.
-			WithName(fmt.Sprintf("conn-reader-%s", m.conn.RemoteAddr().String())).
+			WithName("conn" + m.conn.RemoteAddr().String()).
 			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
 				log.Error("connOpened", log.String("message", reflect.TypeOf(message).String()), log.Any("reason", reason))
 				return vivid.DirectiveStop
 			})
+	}))
+	connRef.Tell(ConnectionInitMessage{Conn: m.conn, Writer: m.writer}, vivid.WithInstantly(true))
+	connTyped := vivid.Typed[ConnActorTyped](connRef, &ConnActorTypedImpl{
+		ConnActorRef: connRef,
 	})
-	s.connections[m.conn] = conn
-	ctx.Reply(ConnCore(conn))
-	ctx.GetSystem().Publish(ctx, ServerConnOpenedEvent{ConnActor: conn})
+	connExpandTyped := vivid.Typed[ConnActorExpandTyped](connRef, &ConnActorExpandTypedImpl{
+		ConnActorRef: connRef,
+	})
+
+	s.connections[m.conn] = connTyped
+	ctx.Reply(connExpandTyped)
+
+	// 发布连接打开事件
+	ctx.GetSystem().Publish(ctx, ServerConnectionOpenedEvent{Conn: connTyped})
 }
 
 func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnClosedMessage) {
 	conn, ok := s.connections[m.conn]
 	if ok {
 		delete(s.connections, m.conn)
-		if conn.reader != nil {
-			conn.reader.Tell(vivid.OnTerminate{})
-		}
-		if conn.writer != nil {
-			conn.writer.Tell(vivid.OnTerminate{})
-		}
-
-		ctx.GetSystem().Publish(ctx, ServerConnClosedEvent{ConnActor: conn})
+		conn.Stop()
 	}
 }

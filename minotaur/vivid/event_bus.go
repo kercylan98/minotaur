@@ -9,7 +9,6 @@ import (
 type (
 	// SubscribeMessage 订阅事件消息
 	SubscribeMessage struct {
-		SubscribeId     SubscribeId    // 订阅 ID
 		Event           EventType      // 订阅的事件
 		Subscriber      Subscriber     // 事件订阅者
 		Producer        *Producer      // 生产者过滤
@@ -19,7 +18,8 @@ type (
 
 	// UnsubscribeMessage 取消订阅事件消息
 	UnsubscribeMessage struct {
-		SubscribeId SubscribeId // 订阅 ID
+		Event      EventType  // 取消订阅的事件
+		Subscriber Subscriber // 事件订阅者
 	}
 
 	// PublishMessage 发布事件消息
@@ -31,8 +31,7 @@ type (
 
 // EventBusActor 基于 Actor 模型实现的事件总线
 type EventBusActor struct {
-	subscribes     map[EventType]map[SubscribeId]subscribeInfo
-	subscribeTypes map[SubscribeId]EventType
+	subscribes map[EventType]map[Subscriber]subscribeInfo // 不同事件类型的订阅者
 }
 
 func (e *EventBusActor) OnReceive(ctx MessageContext) {
@@ -40,7 +39,7 @@ func (e *EventBusActor) OnReceive(ctx MessageContext) {
 	case OnInit[*EventBusActor]:
 		m.Options.WithMailboxFactory(PriorityMailboxFactoryId)
 	case OnBoot:
-		e.onPreStart()
+		e.onBoot()
 	case SubscribeMessage:
 		e.onSubscribe(m)
 	case UnsubscribeMessage:
@@ -50,58 +49,49 @@ func (e *EventBusActor) OnReceive(ctx MessageContext) {
 	}
 }
 
-func (e *EventBusActor) onPreStart() {
-	e.subscribes = make(map[EventType]map[SubscribeId]subscribeInfo)
-	e.subscribeTypes = make(map[SubscribeId]EventType)
+func (e *EventBusActor) onBoot() {
+	e.subscribes = make(map[EventType]map[Subscriber]subscribeInfo)
 }
 
 func (e *EventBusActor) onSubscribe(m SubscribeMessage) {
 	info := subscribeInfo{
-		subscribeId: m.SubscribeId,
-		subscriber:  m.Subscriber,
-		priority:    m.Priority,
-		producer:    m.Producer,
+		subscriber: m.Subscriber,
+		priority:   m.Priority,
+		producer:   m.Producer,
 	}
 
 	subscribeMap, exists := e.subscribes[m.Event]
 	if !exists {
-		subscribeMap = make(map[SubscribeId]subscribeInfo)
+		subscribeMap = make(map[Subscriber]subscribeInfo)
 		e.subscribes[m.Event] = subscribeMap
 	}
 
-	subscribeMap[m.SubscribeId] = info
+	subscribeMap[m.Subscriber] = info
 }
 
 func (e *EventBusActor) onUnsubscribe(m UnsubscribeMessage) {
-	eventType := e.subscribeTypes[m.SubscribeId]
-	if eventType == nil {
+	subscribe := e.subscribes[m.Event]
+	if subscribe == nil {
 		return
 	}
 
-	subscribeMap, exists := e.subscribes[eventType]
-	if !exists {
-		return
-	}
-
-	delete(subscribeMap, m.SubscribeId)
-	delete(e.subscribeTypes, m.SubscribeId)
-	if len(subscribeMap) == 0 {
-		delete(e.subscribes, eventType)
-	}
+	delete(subscribe, m.Subscriber)
 }
 
 func (e *EventBusActor) onPublish(ctx MessageContext, m PublishMessage) {
+	// 获取订阅者集合
 	subscribeMap, exists := e.subscribes[reflect.TypeOf(m.Event)]
 	if !exists {
 		return
 	}
 
+	// 获取生产者 ActorId
 	var producerActorId = GetActorIdByActorRef(m.Producer)
 	var subscribeNoPriorityList []subscribeInfo
 	var subscribePriorityList []subscribeInfo
 	for _, info := range subscribeMap {
 		if info.producer != nil && producerActorId != m.Producer.Id() {
-			continue
+			continue // 过滤生产者，部分订阅者只接收指定生产者的事件
 		}
 		if info.priority == nil {
 			subscribeNoPriorityList = append(subscribeNoPriorityList, info)

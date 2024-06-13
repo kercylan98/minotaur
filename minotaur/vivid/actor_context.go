@@ -35,6 +35,15 @@ type ActorContext interface {
 
 	// Terminate 销毁当前 Actor，该操作将会触发 Actor 的 OnTerminate 生命周期
 	Terminate()
+
+	// Subscribe 订阅事件
+	Subscribe(event Message, options ...SubscribeOption)
+
+	// Unsubscribe 取消订阅事件
+	Unsubscribe(event Message)
+
+	// Publish 发布事件
+	Publish(event Message)
 }
 
 type _ActorContext struct {
@@ -90,4 +99,16 @@ func (c *_ActorContext) ActorOf(ofo ActorOfO) ActorRef {
 
 func (c *_ActorContext) Terminate() {
 	c.Tell(OnTerminate{})
+}
+
+func (c *_ActorContext) Subscribe(event Message, options ...SubscribeOption) {
+	c.system.Subscribe(c, event, options...)
+}
+
+func (c *_ActorContext) Unsubscribe(event Message) {
+	c.system.Unsubscribe(c, event)
+}
+
+func (c *_ActorContext) Publish(event Message) {
+	c.system.Publish(c, event)
 }

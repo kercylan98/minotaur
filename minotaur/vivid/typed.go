@@ -7,7 +7,7 @@ import (
 
 type TypedActorRef[Protocol any] interface {
 	ActorRef
-	Protocol() Protocol
+	Api() Protocol
 }
 
 type typedWrapper[Protocol any] struct {
@@ -15,13 +15,13 @@ type typedWrapper[Protocol any] struct {
 	protocol Protocol
 }
 
-func (m *typedWrapper[Protocol]) Protocol() Protocol {
+func (m *typedWrapper[Protocol]) Api() Protocol {
 	return m.protocol
 }
 
-// Typed 创建一个类型化包装的 ActorRef，该 ActorRef 可以通过 Protocol 方法获取其类型化的协议
+// Typed 创建一个类型化包装的 ActorRef，该 ActorRef 可以通过 Api 方法获取其类型化的协议
 func Typed[Protocol any](ref ActorRef, protocol Protocol) TypedActorRef[Protocol] {
-	// 检查 Protocol 是否为接口类型
+	// 检查 Api 是否为接口类型
 	typ := reflect.TypeOf((*Protocol)(nil)).Elem()
 	if typ.Kind() != reflect.Interface {
 		panic(fmt.Errorf("protocol must be an interface type, but got %s", typ.String()))

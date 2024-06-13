@@ -3,6 +3,7 @@ package network
 import (
 	"context"
 	"github.com/kercylan98/minotaur/minotaur/transport"
+	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/xtaci/kcp-go/v5"
 	"runtime"
 	"sync"
@@ -32,7 +33,7 @@ type kcpCore struct {
 	closed atomic.Bool
 }
 
-func (k *kcpCore) Launch(ctx context.Context, srv transport.ServerCore) error {
+func (k *kcpCore) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
 	//TODO implement me
 	panic("implement me")
 }

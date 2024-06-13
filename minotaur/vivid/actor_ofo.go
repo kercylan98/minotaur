@@ -19,7 +19,7 @@ func (o *actorOfO[T]) generate(of ActorOwner) ActorRef {
 }
 
 // OfO 创建一个 ActorOfO 对象
-func OfO[T Actor](options ...func(actorOptions *ActorOptions[T])) ActorOfO {
+func OfO[T Actor](options ...func(options *ActorOptions[T])) ActorOfO {
 	return &actorOfO[T]{
 		options: options,
 	}

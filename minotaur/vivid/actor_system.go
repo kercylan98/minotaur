@@ -471,21 +471,21 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	return core, nil
 }
 
-func (s *ActorSystem) Subscribe(subscribeId SubscribeId, subscriber Subscriber, event Event, options ...SubscribeOption) {
+func (s *ActorSystem) Subscribe(subscriber Subscriber, event Event, options ...SubscribeOption) {
 	opts := new(SubscribeOptions).apply(options)
 	s.eventBusActor.Tell(SubscribeMessage{
 		Producer:        opts.Producer,
 		Subscriber:      subscriber,
 		Event:           reflect.TypeOf(event),
-		SubscribeId:     subscribeId,
 		Priority:        opts.Priority,
 		PriorityTimeout: opts.PriorityTimeout,
 	}, WithPriority(math.MinInt64), WithInstantly(true))
 }
 
-func (s *ActorSystem) Unsubscribe(subscribeId SubscribeId) {
+func (s *ActorSystem) Unsubscribe(subscriber Subscriber, event Event) {
 	s.eventBusActor.Tell(UnsubscribeMessage{
-		SubscribeId: subscribeId,
+		Event:      reflect.TypeOf(event),
+		Subscriber: subscriber,
 	}, WithPriority(math.MinInt64), WithInstantly(true))
 }
 

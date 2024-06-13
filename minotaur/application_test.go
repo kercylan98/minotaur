@@ -10,18 +10,19 @@ import (
 )
 
 func TestNewApplication(t *testing.T) {
-	app := minotaur.NewApplication(
+	minotaur.NewApplication(
 		minotaur.WithNetwork(network.WebSocket(":9988")),
-		minotaur.WithLaunchedHook(func(app *minotaur.Application) {
-			app.GetServer().
-				Protocol().
-				SubscribeConnOpenedEvent("conn_opened",
-					func(ctx vivid.MessageContext, event transport.ServerConnOpenedEvent) {
-						event.Write(transport.NewPacket([]byte("Hello, World!")).SetContext(ws.OpText))
-					},
-				)
-		}),
-	)
+	).Launch(func(app *minotaur.Application, ctx vivid.MessageContext) {
 
-	app.Launch()
+		switch m := ctx.GetMessage().(type) {
+		case vivid.OnBoot:
+			app.GetServer().Api().SubscribeConnOpenedEvent(app)
+		case transport.ServerConnectionOpenedEvent:
+			m.Conn.Api().Write(transport.NewPacket([]byte("Hello, World!")).SetContext(ws.OpText))
+			m.Conn.Api().BecomeReactPacketMessage(func(context vivid.MessageContext, message transport.ConnectionReactPacketMessage) {
+				m.Conn.Api().Write(message.Packet) // Echo
+			})
+		}
+
+	})
 }

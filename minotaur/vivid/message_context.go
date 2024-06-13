@@ -43,8 +43,17 @@ type MessageContext interface {
 	// UnBecome 该函数是 ActorContext.UnBecome 的快捷方式
 	UnBecome(message Message)
 
-	// ActorOf 该函数是 ActorContext.ActorOf 的快捷方式
+	// ActorOf 创建一个 Actor 对象，该函数是 ActorContext.ActorOf 的快捷方式
 	ActorOf(ofo ActorOfO) ActorRef
+
+	// Subscribe 订阅事件，该函数是 ActorContext.Subscribe 的快捷方式
+	Subscribe(event Message, options ...SubscribeOption)
+
+	// Unsubscribe 取消订阅事件，该函数是 ActorContext.Unsubscribe 的快捷方式
+	Unsubscribe(event Message)
+
+	// Publish 发布事件，该函数是 ActorContext.Publish 的快捷方式
+	Publish(event Message)
 }
 
 func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
@@ -258,4 +267,16 @@ func (c *_MessageContext) UnBecome(message Message) {
 
 func (c *_MessageContext) ActorOf(ofo ActorOfO) ActorRef {
 	return c.GetContext().ActorOf(ofo)
+}
+
+func (c *_MessageContext) Subscribe(event Message, options ...SubscribeOption) {
+	c.GetContext().Subscribe(event, options...)
+}
+
+func (c *_MessageContext) Unsubscribe(event Message) {
+	c.GetContext().Unsubscribe(event)
+}
+
+func (c *_MessageContext) Publish(event Message) {
+	c.GetContext().Publish(event)
 }

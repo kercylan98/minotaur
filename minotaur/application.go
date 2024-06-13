@@ -14,23 +14,32 @@ func NewApplication(options ...Option) *Application {
 
 	actorSystem := vivid.NewActorSystem(opts.ActorSystemName)
 	ctx, cancel := context.WithCancel(actorSystem.Context())
-	return &Application{
+	app := &Application{
 		options:     opts,
 		ctx:         ctx,
 		cancel:      cancel,
 		closed:      make(chan struct{}),
 		actorSystem: &actorSystem,
 	}
+	return app
 }
 
 // Application 基于 Minotaur 的应用程序结构
 type Application struct {
+	vivid.ActorRef
 	options     *Options
 	ctx         context.Context
 	cancel      context.CancelFunc
 	closed      chan struct{}
 	actorSystem *vivid.ActorSystem
 	server      vivid.TypedActorRef[transport.ServerActorTyped]
+	handlers    []func(app *Application, ctx vivid.MessageContext)
+}
+
+func (a *Application) onReceive(ctx vivid.MessageContext) {
+	for _, handler := range a.handlers {
+		handler(a, ctx)
+	}
 }
 
 func (a *Application) GetSystem() *vivid.ActorSystem {
@@ -48,19 +57,20 @@ func (a *Application) GetContext() vivid.ActorContext {
 	return a.actorSystem.GetContext()
 }
 
-func (a *Application) Launch() {
+func (a *Application) Launch(handlers ...func(app *Application, ctx vivid.MessageContext)) {
 	defer func(a *Application) {
 		close(a.closed)
 	}(a)
+	a.handlers = handlers
 
 	if a.options.Network != nil {
 		a.server = transport.NewServerActor(a.actorSystem, vivid.NewActorOptions[*transport.ServerActor]().WithName("server"))
-		a.server.Protocol().Launch(a.options.Network)
+		a.server.Tell(transport.ServerLaunchMessage{Network: a.options.Network})
 	}
 
-	for _, hook := range a.options.LaunchedHooks {
-		hook(a)
-	}
+	a.ActorRef = vivid.ActorOfI(a.actorSystem, &applicationActor{a}, func(options *vivid.ActorOptions[*applicationActor]) {
+		options.WithName("app")
+	})
 
 	var systemSignal = make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

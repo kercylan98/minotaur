@@ -6,11 +6,7 @@ import (
 	"net"
 )
 
-type (
-	connWriteMessage struct {
-		Packet Packet
-	}
-)
+type ()
 
 type ConnWriter func(packet Packet) error
 
@@ -21,12 +17,12 @@ type ConnWriteActor struct {
 
 func (c *ConnWriteActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
-	case connWriteMessage:
+	case ConnectionWritePacketMessage:
 		c.onConnWriteMessage(ctx, m)
 	}
 }
 
-func (c *ConnWriteActor) onConnWriteMessage(ctx vivid.MessageContext, m connWriteMessage) {
+func (c *ConnWriteActor) onConnWriteMessage(ctx vivid.MessageContext, m ConnectionWritePacketMessage) {
 	if err := c.writer(m.Packet); err != nil {
 		log.Error("ConnActor write error: %v", err)
 	}

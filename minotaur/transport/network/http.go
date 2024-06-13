@@ -3,6 +3,7 @@ package network
 import (
 	"context"
 	"github.com/kercylan98/minotaur/minotaur/transport"
+	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"net/http"
 )
 
@@ -16,7 +17,7 @@ type httpCore[H http.Handler] struct {
 	srv     *http.Server
 }
 
-func (h *httpCore[H]) Launch(ctx context.Context, srv transport.ServerCore) error {
+func (h *httpCore[H]) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
 	return h.srv.ListenAndServe()
 }
 

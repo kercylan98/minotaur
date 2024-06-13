@@ -7,6 +7,7 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/minotaur/transport"
+	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/panjf2000/gnet/v2"
@@ -39,10 +40,10 @@ type gnetEngine struct {
 	pattern  string
 	eng      gnet.Engine
 	upgrader ws.Upgrader
-	srv      transport.ServerCore
+	srv      vivid.TypedActorRef[transport.ServerActorExpandTyped]
 }
 
-func (g *gnetEngine) Launch(ctx context.Context, srv transport.ServerCore) error {
+func (g *gnetEngine) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
 	g.srv = srv
 
 	var addr string
@@ -95,7 +96,7 @@ func (g *gnetEngine) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	if g.schema == schemaWebSocket {
 		c.SetContext(newWebsocketWrapper(c))
 	} else {
-		conn := g.srv.Attach(c, func(packet transport.Packet) error {
+		conn := g.srv.Api().Attach(c, func(packet transport.Packet) error {
 			return c.AsyncWrite(packet.GetBytes(), func(c gnet.Conn, err error) error {
 				return nil
 			})
@@ -112,7 +113,7 @@ func (g *gnetEngine) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 }
 
 func (g *gnetEngine) OnClose(c gnet.Conn, err error) (action gnet.Action) {
-	g.srv.Detach(c)
+	g.srv.Api().Detach(c)
 	return
 }
 
@@ -126,7 +127,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 
 		if err := wrapper.upgrade(g.upgrader, func() {
 			// 协议升级成功后视为连接建立
-			conn := g.srv.Attach(c, func(packet transport.Packet) error {
+			conn := g.srv.Api().Attach(c, func(packet transport.Packet) error {
 				return wsutil.WriteServerMessage(c, ws.OpText, packet.GetBytes())
 			})
 
@@ -151,7 +152,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		for _, message := range messages {
 			packet := transport.NewPacket(message.Payload)
 			packet.SetContext(message.OpCode)
-			wrapper.ref.React(packet)
+			wrapper.ref.Api().React(packet)
 		}
 	} else {
 		buf, err := c.Next(-1)
@@ -162,7 +163,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		var clone = make([]byte, len(buf))
 		copy(clone, buf)
 
-		c.Context().(transport.ConnCore).React(transport.NewPacket(clone))
+		c.Context().(vivid.TypedActorRef[transport.ConnActorExpandTyped]).Api().React(transport.NewPacket(clone))
 	}
 	return
 }
