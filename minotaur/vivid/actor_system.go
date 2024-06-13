@@ -208,6 +208,13 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 	}
 	s.GetLogger().Debug("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()))
 
+	// 服务解绑
+	if core.runtimeMods != nil {
+		if err := core.runtimeMods.Shutdown(); err != nil {
+			s.GetLogger().Error("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()), log.Err(err))
+		}
+	}
+
 	// 宣布 Actor 死亡
 	s.waitGroup.Done()
 	if !root {

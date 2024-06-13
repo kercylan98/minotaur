@@ -22,6 +22,12 @@ func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 		if err := c.Writer(m.Packet); err != nil {
 			ctx.Stop()
 		}
+	case ConnectionLoadModMessage:
+		ctx.LoadMod(m.Mods...)
+	case ConnectionUnloadModMessage:
+		ctx.UnloadMod(m.Mods...)
+	case ConnectionApplyModMessage:
+		ctx.ApplyMod()
 	case vivid.OnTerminate:
 		_ = c.Conn.Close()
 	}

@@ -54,6 +54,15 @@ type MessageContext interface {
 
 	// Publish 发布事件，该函数是 ActorContext.Publish 的快捷方式
 	Publish(event Message)
+
+	// LoadMod 加载模组，该函数是 ActorContext.LoadMod 的快捷方式
+	LoadMod(mods ...ModInfo)
+
+	// UnloadMod 卸载模组，该函数是 ActorContext.UnloadMod 的快捷方式
+	UnloadMod(mods ...ModInfo)
+
+	// ApplyMod 应用模组，该函数是 ActorContext.ApplyMod 的快捷方式
+	ApplyMod()
 }
 
 func newMessageContext(system *ActorSystem, message Message, priority int64, instantly, hasReply bool) *_MessageContext {
@@ -279,4 +288,16 @@ func (c *_MessageContext) Unsubscribe(event Message) {
 
 func (c *_MessageContext) Publish(event Message) {
 	c.GetContext().Publish(event)
+}
+
+func (c *_MessageContext) LoadMod(mods ...ModInfo) {
+	c.GetContext().LoadMod(mods...)
+}
+
+func (c *_MessageContext) UnloadMod(mods ...ModInfo) {
+	c.GetContext().UnloadMod(mods...)
+}
+
+func (c *_MessageContext) ApplyMod() {
+	c.GetContext().ApplyMod()
 }

@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"context"
+	"github.com/samber/do/v2"
 	"reflect"
 )
 
@@ -44,12 +45,24 @@ type ActorContext interface {
 
 	// Publish 发布事件
 	Publish(event Message)
+
+	// LoadMod 加载模组
+	LoadMod(mods ...ModInfo)
+
+	// UnloadMod 卸载模组
+	UnloadMod(mods ...ModInfo)
+
+	// ApplyMod 应用模组
+	ApplyMod()
 }
 
 type _ActorContext struct {
 	*_internalActorContext
 	*_ActorCore
-	behaviors map[reflect.Type][]Behavior
+	behaviors   map[reflect.Type][]Behavior // 行为栈，用于存储 Actor 在面对特定消息时的行为
+	mods        []ModInfo                   // 声明的模组
+	runtimeMods do.Injector                 // 运行时模组
+	currentMods []ModInfo                   // 当前生命周期的模组
 }
 
 func (c *_ActorContext) GetId() ActorId {
@@ -111,4 +124,44 @@ func (c *_ActorContext) Unsubscribe(event Message) {
 
 func (c *_ActorContext) Publish(event Message) {
 	c.system.Publish(c, event)
+}
+
+func (c *_ActorContext) LoadMod(mods ...ModInfo) {
+	// 重复的加载顺序调整到最后
+	c.UnloadMod(mods...)
+	c.mods = append(c.mods, mods...)
+}
+
+func (c *_ActorContext) UnloadMod(mods ...ModInfo) {
+	for _, mod := range mods {
+		modType := mod.getModType()
+		for _, m := range c.mods {
+			if m.getModType() == modType {
+				m.setUnload()
+				break
+			}
+		}
+	}
+}
+
+func (c *_ActorContext) ApplyMod() {
+	if c.runtimeMods == nil {
+		c.runtimeMods = do.New()
+	}
+	var currentMods []ModInfo
+	for _, mod := range c.mods {
+		if !mod.isUnload() {
+			currentMods = append(currentMods, mod)
+			mod.provide(c.runtimeMods)
+		} else {
+			mod.shutdown()
+		}
+	}
+	c.currentMods = currentMods
+
+	for i := ModLifeCycleOnInit; i <= ModLifeCycleOnStart; i++ {
+		for _, mod := range c.currentMods {
+			mod.onLifeCycle(c, i)
+		}
+	}
 }

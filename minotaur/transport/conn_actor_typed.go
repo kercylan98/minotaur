@@ -14,6 +14,15 @@ type ConnActorTyped interface {
 
 	// SubscribePacketReceivedEvent 订阅数据包接收事件
 	SubscribePacketReceivedEvent(subscriber vivid.Subscriber)
+
+	// LoadMod 加载模块
+	LoadMod(mods ...vivid.ModInfo)
+
+	// UnloadMod 卸载模块
+	UnloadMod(mods ...vivid.ModInfo)
+
+	// ApplyMod 应用模块
+	ApplyMod()
 }
 
 type ConnActorTypedImpl struct {
@@ -34,4 +43,16 @@ func (c *ConnActorTypedImpl) SubscribePacketReceivedEvent(subscriber vivid.Subsc
 
 func (c *ConnActorTypedImpl) BecomeReactPacketMessage(handler func(vivid.MessageContext, ConnectionReactPacketMessage)) {
 	c.ConnActorRef.Tell(ConnectionBecomeReactPacketMessage{Behavior: vivid.BehaviorOf[ConnectionReactPacketMessage](handler)})
+}
+
+func (c *ConnActorTypedImpl) LoadMod(mods ...vivid.ModInfo) {
+	c.ConnActorRef.Tell(ConnectionLoadModMessage{Mods: mods}, vivid.WithInstantly(true))
+}
+
+func (c *ConnActorTypedImpl) UnloadMod(mods ...vivid.ModInfo) {
+	c.ConnActorRef.Tell(ConnectionUnloadModMessage{Mods: mods}, vivid.WithInstantly(true))
+}
+
+func (c *ConnActorTypedImpl) ApplyMod() {
+	c.ConnActorRef.Tell(ConnectionApplyModMessage{}, vivid.WithInstantly(true))
 }

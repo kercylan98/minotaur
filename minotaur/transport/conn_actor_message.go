@@ -26,4 +26,18 @@ type (
 	ConnectionWritePacketMessage struct {
 		Packet Packet
 	}
+
+	// ConnectionLoadModMessage 加载模块消息
+	ConnectionLoadModMessage struct {
+		Mods []vivid.ModInfo
+	}
+
+	// ConnectionUnloadModMessage 卸载模块消息
+	ConnectionUnloadModMessage struct {
+		Mods []vivid.ModInfo
+	}
+
+	// ConnectionApplyModMessage 应用模块消息
+	ConnectionApplyModMessage struct {
+	}
 )

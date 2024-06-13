@@ -34,6 +34,9 @@ type internalActorContext interface {
 
 	// supervisorExec 监管策略执行
 	supervisorExec(core *_ActorCore, message, reason Message)
+
+	// getCore 获取 ActorCore
+	getCore() *_ActorCore
 }
 
 type _internalActorContext struct {
@@ -107,4 +110,8 @@ func (c *_internalActorContext) supervisorExec(core *_ActorCore, message, reason
 	} else {
 		c.getParent().supervisorExec(core, message, reason)
 	}
+}
+
+func (c *_internalActorContext) getCore() *_ActorCore {
+	return c._ActorCore
 }
