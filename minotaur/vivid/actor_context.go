@@ -152,8 +152,10 @@ func (c *_ActorContext) ApplyMod() {
 	for _, mod := range c.mods {
 		if !mod.isUnload() {
 			currentMods = append(currentMods, mod)
-			mod.provide(c.runtimeMods)
-		} else {
+			if !mod.isLoaded() {
+				mod.provide(c.runtimeMods)
+			}
+		} else if mod.isLoaded() {
 			mod.shutdown()
 		}
 	}

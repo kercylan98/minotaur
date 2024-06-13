@@ -10,17 +10,17 @@ import (
 )
 
 type AccountMod struct {
-	bag BagModInterface
+	bag BagModExposer
 }
 
-type AccountModInterface interface {
+type AccountModExposer interface {
 	vivid.Mod
 }
 
 type BagMod struct {
 }
 
-type BagModInterface interface {
+type BagModExposer interface {
 	vivid.Mod
 	PingBag()
 }
@@ -42,7 +42,7 @@ func (a *AccountMod) OnLifeCycle(ctx vivid.ActorContext, lifeCycle vivid.ModLife
 	case vivid.ModLifeCycleOnInit:
 		log.Info("AccountMod", log.String("lifeCycle", "OnInit"))
 	case vivid.ModLifeCycleOnPreload:
-		a.bag = vivid.InvokeMod[BagModInterface](ctx)
+		a.bag = vivid.InvokeMod[BagModExposer](ctx)
 	case vivid.ModLifeCycleOnStart:
 		a.bag.PingBag()
 	default:
@@ -60,8 +60,8 @@ func TestNewApplication(t *testing.T) {
 		case transport.ServerConnectionOpenedEvent:
 			conn := m.Conn
 
-			conn.Api().LoadMod(vivid.ModOf[AccountModInterface](&AccountMod{}))
-			conn.Api().LoadMod(vivid.ModOf[BagModInterface](&BagMod{}))
+			conn.Api().LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
+			conn.Api().LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
 
 			conn.Api().ApplyMod()
 		}

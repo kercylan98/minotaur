@@ -15,13 +15,13 @@ type ConnActorTyped interface {
 	// SubscribePacketReceivedEvent 订阅数据包接收事件
 	SubscribePacketReceivedEvent(subscriber vivid.Subscriber)
 
-	// LoadMod 加载模块
+	// LoadMod 加载模组
 	LoadMod(mods ...vivid.ModInfo)
 
-	// UnloadMod 卸载模块
+	// UnloadMod 卸载模组
 	UnloadMod(mods ...vivid.ModInfo)
 
-	// ApplyMod 应用模块
+	// ApplyMod 应用模组
 	ApplyMod()
 }
 
