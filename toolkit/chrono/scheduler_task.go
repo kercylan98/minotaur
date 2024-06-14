@@ -35,8 +35,10 @@ func (t *schedulerTask) Next(prev time.Time) time.Time {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	if t.kill || (t.expr != nil && t.total > 0 && t.trigger > t.total) {
-		return time.Time{}
+	if t.kill || (t.total > 0 && t.trigger >= t.total) {
+		if t.expr == nil {
+			return time.Time{}
+		}
 	}
 	if t.expr != nil {
 		next := t.expr.Next(prev)
@@ -51,18 +53,18 @@ func (t *schedulerTask) Next(prev time.Time) time.Time {
 }
 
 func (t *schedulerTask) caller() {
-	t.lock.Lock()
+	t.lock.RLock()
 
 	if t.kill {
-		t.lock.Unlock()
+		t.lock.RUnlock()
 		return
 	}
 
 	if t.total > 0 && t.trigger > t.total {
-		t.lock.Unlock()
+		t.lock.RUnlock()
 		t.scheduler.UnregisterTask(t.name)
 	} else {
-		t.lock.Unlock()
+		t.lock.RUnlock()
 	}
 	t.function.Call(t.args)
 }

@@ -7,18 +7,11 @@ const (
 )
 
 var (
-	buildInSchedulerPool *SchedulerPool
-	builtInScheduler     *Scheduler
+	builtInScheduler *Scheduler
 )
 
 func init() {
-	buildInSchedulerPool = NewDefaultSchedulerPool()
 	builtInScheduler = NewScheduler(DefaultSchedulerTick, BuiltInSchedulerWheelSize)
-}
-
-// BuiltInSchedulerPool 获取内置的由 NewDefaultSchedulerPool 函数创建的时间调度器对象池
-func BuiltInSchedulerPool() *SchedulerPool {
-	return buildInSchedulerPool
 }
 
 // BuiltInScheduler 获取内置的由 NewScheduler(DefaultSchedulerTick, BuiltInSchedulerWheelSize) 创建的时间调度器

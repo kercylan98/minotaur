@@ -27,5 +27,5 @@ func (F *FIFOFactory) Put(mailbox Mailbox) {
 	if !ok {
 		return
 	}
-	F.pool.Release(fifo)
+	F.pool.Put(fifo)
 }

@@ -27,5 +27,5 @@ func (P *PriorityFactory) Put(mailbox Mailbox) {
 	if !ok {
 		return
 	}
-	P.pool.Release(priority)
+	P.pool.Put(priority)
 }
