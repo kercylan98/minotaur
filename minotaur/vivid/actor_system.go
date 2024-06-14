@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"math"
 	"os"
@@ -34,6 +35,7 @@ func NewActorSystem(name string) ActorSystem {
 		name:            name,
 		logger:          new(atomic.Pointer[log.Logger]),
 		eventSeq:        new(atomic.Int64),
+		scheduler:       chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize),
 	}
 	s.logger.Store(log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name)))
 	s.core = new(_ActorSystemCore).init(&s)
@@ -75,10 +77,11 @@ type ActorSystem struct {
 	codec             Codec
 	server            Server
 	client            Client
-	messageSeq        *atomic.Uint64
-	askWaits          map[uint64]chan<- Message
-	askWaitsLock      *sync.RWMutex
-	waitGroup         *toolkit.DynamicWaitGroup
+	messageSeq        *atomic.Uint64            // 全局消息序号，用于生成唯一消息标识
+	askWaits          map[uint64]chan<- Message // 等待回复的消息
+	askWaitsLock      *sync.RWMutex             // 等待回复的消息锁
+	waitGroup         *toolkit.DynamicWaitGroup // Actor 等待组
+	scheduler         *chrono.Scheduler         // 调度器
 
 	name    string // ActorSystem 名称
 	network string // 网络类型
@@ -108,6 +111,7 @@ func (s *ActorSystem) Shutdown() {
 	s.unbindActor(s.userGuardActor, false, true)
 	s.unbindActor(s.eventBusActor, false, true)
 	s.waitGroup.Wait()
+	s.scheduler.Close()
 }
 
 func (s *ActorSystem) GetSystem() *ActorSystem {
@@ -173,8 +177,12 @@ func (s *ActorSystem) UnbindDispatcher(id DispatcherId) {
 }
 
 func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCallback ...func(core *_ActorCore)) {
+	// 解绑空闲超时调度器
+	s.scheduler.UnregisterTask(actor.GetId().String())
+
 	// 等待消息处理完毕后拒绝新消息
 	core := actor.(*_ActorCore)
+	core.terminated = true
 	core.messageGroup.Wait(func() {
 		core.dispatcher.Detach(s.core, core)
 		s.actorRW.Lock()
@@ -205,6 +213,12 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 		}
 	}(actor)
 
+	// 服务解绑
+	if core.runtimeMods != nil {
+		core.UnloadMod(core.currentMods...)
+		core.ApplyMod()
+	}
+
 	var logType string
 	if restart {
 		logType = "restart"
@@ -212,12 +226,6 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 		logType = "stop"
 	}
 	s.GetLogger().Debug("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()))
-
-	// 服务解绑
-	if core.runtimeMods != nil {
-		core.UnloadMod(core.currentMods...)
-		core.ApplyMod()
-	}
 
 	// 宣布 Actor 死亡
 	s.waitGroup.Done()
@@ -251,6 +259,14 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 	}
 }
 
+// GetActorRef 根据 ActorId 获取 Actor 引用，当 Actor 不存在时将会返回一个远程 Actor 引用
+func (s *ActorSystem) GetActorRef(id ActorId) ActorRef {
+	if core := s.getActor(id); core != nil {
+		return core._LocalActorRef
+	}
+	return newRemoteActorRef(s, id)
+}
+
 func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
 	s.actorRW.RLock()
 	defer s.actorRW.RUnlock()
@@ -271,12 +287,16 @@ func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore,
 
 	switch m := message.GetMessage().(type) {
 	case OnTerminate:
-		// 异步重启
-		s.waitGroup.Add(1)
-		go func(s *ActorSystem, actor *_ActorCore, restart bool) {
-			defer s.waitGroup.Done()
-			s.unbindActor(actor, restart, true)
-		}(s, actor, m.restart)
+		if !actor.terminated {
+			// unbindActor 虽然也会将 Actor 标记为 terminated，但是由于是异步的，因此提前标记
+			actor.terminated = true
+			// 异步停止
+			s.waitGroup.Add(1)
+			go func(s *ActorSystem, actor *_ActorCore, restart bool) {
+				defer s.waitGroup.Done()
+				s.unbindActor(actor, restart, true)
+			}(s, actor, m.restart)
+		}
 	}
 }
 

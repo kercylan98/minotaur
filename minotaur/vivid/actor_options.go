@@ -1,5 +1,7 @@
 package vivid
 
+import "time"
+
 type ActorOption[T Actor] func(opts *ActorOptions[T])
 
 type ActorOptions[T Actor] struct {
@@ -13,6 +15,16 @@ type ActorOptions[T Actor] struct {
 	MessageHook         func(ctx MessageContext) bool // 消息钩子
 	Supervisor          Supervisor                    // 监管策略
 	StopOnParentRestart bool                          // 父 Actor 重启时是否停止
+	IdleTimeout         time.Duration                 // 空闲超时时间
+}
+
+// WithIdleTimeout 设置 Actor 的空闲超时时间
+//   - 当 Actor 在空闲超时时间内没有收到任何消息时，将会被释放
+func (o *ActorOptions[T]) WithIdleTimeout(timeout time.Duration) *ActorOptions[T] {
+	o.options = append(o.options, func(opts *ActorOptions[T]) {
+		opts.IdleTimeout = timeout
+	})
+	return o
 }
 
 // WithStopOnParentRestart 设置 Actor 在父 Actor 重启时是否停止

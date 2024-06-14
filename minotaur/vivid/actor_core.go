@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kercylan98/minotaur/toolkit"
 	"sync"
+	"time"
 )
 
 type ActorCore interface {
@@ -33,6 +34,7 @@ func newActorCore[T Actor](system *ActorSystem, id ActorId, actor T, options *Ac
 		messageHook:         options.MessageHook,
 		supervisor:          options.Supervisor,
 		stopOnParentRestart: options.StopOnParentRestart,
+		idleTimeout:         options.IdleTimeout,
 		restartHandler: func(parent *_ActorCore) *_ActorCore {
 			options.Parent = parent
 			ctx, err := generateActor(system, actor, options, true)
@@ -78,6 +80,7 @@ type _ActorCore struct {
 	supervisor          Supervisor                           // 监管策略
 	restartHandler      func(parent *_ActorCore) *_ActorCore // 重启处理器
 	stopOnParentRestart bool                                 // 父 Actor 重启时是否停止
+	idleTimeout         time.Duration                        // 空闲超时时间
 }
 
 func (a *_ActorCore) GetContext() ActorContext {
@@ -102,4 +105,14 @@ func (a *_ActorCore) ModifyMessageCounter(delta int64) {
 
 func (a *_ActorCore) GetSystem() *ActorSystem {
 	return a.system
+}
+
+func (a *_ActorCore) refreshIdleTimeout() {
+	if idleTimeout := a.idleTimeout; idleTimeout > 0 {
+		id := a.id.String()
+		a.system.scheduler.RegisterAfterTask(id, idleTimeout, func() {
+			a.Terminate()
+			a.system.GetLogger().Debug("ActorIdleTimeout", "actor", id, "timeout", idleTimeout)
+		})
+	}
 }

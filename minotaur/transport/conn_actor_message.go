@@ -3,6 +3,7 @@ package transport
 import (
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"net"
+	"time"
 )
 
 type (
@@ -45,5 +46,10 @@ type (
 
 	// ConnectionApplyModMessage 应用模组消息
 	ConnectionApplyModMessage struct {
+	}
+
+	// ConnectionSetZombieTimeoutMessage 设置僵尸连接超时时间消息
+	ConnectionSetZombieTimeoutMessage struct {
+		Timeout time.Duration
 	}
 )

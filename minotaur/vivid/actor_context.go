@@ -2,8 +2,10 @@ package vivid
 
 import (
 	"context"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/samber/do/v2"
 	"reflect"
+	"time"
 )
 
 // ActorContext 针对 Actor 的上下文，该上下文暴露给 Actor 自身使用，但不提供外部自行实现
@@ -54,6 +56,12 @@ type ActorContext interface {
 
 	// ApplyMod 应用模组
 	ApplyMod()
+
+	// Terminated 判断 Actor 是否已经被销毁
+	Terminated() bool
+
+	// SetIdleTimeout 设置 Actor 的空闲超时时间，当 Actor 被重启时，该值不会被使用
+	SetIdleTimeout(timeout time.Duration)
 }
 
 type _ActorContext struct {
@@ -61,8 +69,9 @@ type _ActorContext struct {
 	*_ActorCore
 	behaviors   map[reflect.Type][]Behavior // 行为栈，用于存储 Actor 在面对特定消息时的行为
 	mods        []ModInfo                   // 声明的模组
-	runtimeMods do.Injector                 // 运行时模组
 	currentMods []ModInfo                   // 当前生命周期的模组
+	runtimeMods do.Injector                 // 运行时模组
+	terminated  bool                        // 是否已经终止
 }
 
 func (c *_ActorContext) GetId() ActorId {
@@ -89,7 +98,6 @@ func (c *_ActorContext) Become(behavior Behavior, discardOld ...bool) {
 	messageType := behavior.getMessageType()
 	if len(discardOld) > 0 && discardOld[0] {
 		c.behaviors[messageType] = c.behaviors[messageType][:0]
-		return
 	}
 	c.behaviors[messageType] = append([]Behavior{behavior}, c.behaviors[messageType]...)
 }
@@ -132,17 +140,17 @@ func (c *_ActorContext) Publish(event Message) {
 }
 
 func (c *_ActorContext) LoadMod(mods ...ModInfo) {
-	// 重复的加载顺序调整到最后
 	c.UnloadMod(mods...)
 	c.mods = append(c.mods, mods...)
 }
 
 func (c *_ActorContext) UnloadMod(mods ...ModInfo) {
+	// 标记相同类型的模组为卸载状态
 	for _, mod := range mods {
 		modType := mod.getModType()
 		for _, m := range c.mods {
 			if m.getModType() == modType {
-				m.setUnload()
+				m.setStatus(modStatusUnload)
 				break
 			}
 		}
@@ -155,12 +163,16 @@ func (c *_ActorContext) ApplyMod() {
 	}
 	var currentMods []ModInfo
 	for _, mod := range c.mods {
-		if !mod.isUnload() {
+		switch mod.getStatus() {
+		case modStatusWaiting:
+			c.getSystem().GetLogger().Debug("LoadMod", log.String("actor", c.GetId().String()), log.String("mod", mod.getModType().String()))
+			mod.provide(c, c.runtimeMods)
+			mod.setStatus(modStatusLoaded)
 			currentMods = append(currentMods, mod)
-			if !mod.isLoaded() {
-				mod.provide(c, c.runtimeMods)
-			}
-		} else if mod.isLoaded() {
+		case modStatusLoaded:
+			currentMods = append(currentMods, mod)
+		case modStatusUnload:
+			c.getSystem().GetLogger().Debug("UnloadMod", log.String("actor", c.GetId().String()), log.String("mod", mod.getModType().String()))
 			mod.shutdown()
 		}
 	}
@@ -171,6 +183,15 @@ func (c *_ActorContext) ApplyMod() {
 			mod.onLifeCycle(c, i)
 		}
 	}
+	c.getSystem().GetLogger().Debug("ApplyMod", log.String("actor", c.GetId().String()), log.Int("count", len(c.currentMods)))
 
 	c.mods = currentMods
+}
+
+func (c *_ActorContext) Terminated() bool {
+	return c.terminated
+}
+
+func (c *_ActorContext) SetIdleTimeout(timeout time.Duration) {
+	c.idleTimeout = timeout
 }

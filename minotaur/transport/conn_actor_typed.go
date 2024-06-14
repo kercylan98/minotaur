@@ -1,6 +1,9 @@
 package transport
 
-import "github.com/kercylan98/minotaur/minotaur/vivid"
+import (
+	"github.com/kercylan98/minotaur/minotaur/vivid"
+	"time"
+)
 
 type Conn = vivid.TypedActorRef[ConnActorTyped]
 
@@ -26,6 +29,9 @@ type ConnActorTyped interface {
 
 	// SetTerminateHandler 设置连接终止处理器
 	SetTerminateHandler(handler ConnTerminateHandler)
+
+	// SetZombieTimeout 设置僵尸连接超时时间
+	SetZombieTimeout(timeout time.Duration)
 }
 
 type ConnActorTypedImpl struct {
@@ -59,4 +65,8 @@ func (c *ConnActorTypedImpl) UnloadMod(mods ...vivid.ModInfo) {
 
 func (c *ConnActorTypedImpl) ApplyMod() {
 	c.ConnActorRef.Tell(ConnectionApplyModMessage{}, vivid.WithInstantly(true))
+}
+
+func (c *ConnActorTypedImpl) SetZombieTimeout(timeout time.Duration) {
+	c.ConnActorRef.Tell(ConnectionSetZombieTimeoutMessage{Timeout: timeout})
 }

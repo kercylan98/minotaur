@@ -19,18 +19,27 @@ func (i *FreeActor[T]) GetActor() T {
 }
 
 func onReceive(actor Actor, ctx MessageContext) {
+	var core *_ActorCore
+	var ok bool
 	defer func() {
 		if reason := recover(); reason != nil {
 			ctx.GetSystem().GetLogger().Error("ActorPanic", log.Any("reason", reason))
-			actorCtx := ctx.GetContext()
-			actorCtx.supervisorExec(ctx.GetContext().(*_ActorCore), ctx.GetMessage(), reason)
+			core.supervisorExec(core, ctx.GetMessage(), reason)
 		}
 	}()
 
-	actorCtx, _ := ctx.GetContext().(*_ActorCore)
-	if actorCtx == nil {
-		actor.OnReceive(ctx)
+	actorCtx := ctx.GetContext()
+	if core, ok = actorCtx.(*_ActorCore); ok && core == nil {
+		actor.OnReceive(ctx) // OnInit
 		return
+	}
+
+	// 空闲时间重置
+	switch ctx.GetMessage().(type) {
+	case OnTerminate:
+	default:
+		core.refreshIdleTimeout()
+		defer core.refreshIdleTimeout()
 	}
 
 	behavior := actorCtx.matchBehavior(ctx.GetMessage())

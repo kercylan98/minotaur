@@ -30,6 +30,8 @@ func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 		ctx.UnloadMod(m.Mods...)
 	case ConnectionApplyModMessage:
 		ctx.ApplyMod()
+	case ConnectionSetZombieTimeoutMessage:
+		ctx.SetIdleTimeout(m.Timeout)
 	case vivid.OnTerminate:
 		if c.TerminateHandler != nil {
 			c.TerminateHandler(ctx, c.Typed, m)

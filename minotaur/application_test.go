@@ -59,9 +59,8 @@ func TestNewApplication(t *testing.T) {
 			app.GetServer().Api().SubscribeConnOpenedEvent(app)
 		case transport.ServerConnectionOpenedEvent:
 			conn := m.Conn
-
 			conn.Api().SetPacketHandler(func(ctx vivid.MessageContext, conn transport.Conn, packet transport.ConnectionReactPacketMessage) {
-
+				conn.Api().Write(packet)
 			})
 			conn.Api().LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
 			conn.Api().LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
