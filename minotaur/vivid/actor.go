@@ -1,5 +1,7 @@
 package vivid
 
+import "github.com/kercylan98/minotaur/toolkit/log"
+
 type Actor interface {
 	OnReceive(ctx MessageContext)
 }
@@ -19,6 +21,7 @@ func (i *FreeActor[T]) GetActor() T {
 func onReceive(actor Actor, ctx MessageContext) {
 	defer func() {
 		if reason := recover(); reason != nil {
+			ctx.GetSystem().GetLogger().Error("ActorPanic", log.Any("reason", reason))
 			actorCtx := ctx.GetContext()
 			actorCtx.supervisorExec(ctx.GetContext().(*_ActorCore), ctx.GetMessage(), reason)
 		}

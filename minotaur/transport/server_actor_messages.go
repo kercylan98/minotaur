@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"net"
 )
 
@@ -21,10 +20,5 @@ type (
 
 	ServerConnClosedMessage struct {
 		conn net.Conn
-	}
-
-	ServerSubscribeConnOpenedMessage struct {
-		Handler func(ctx vivid.MessageContext, event ServerConnectionOpenedEvent)
-		Options []vivid.SubscribeOption
 	}
 )

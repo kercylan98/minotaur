@@ -59,7 +59,7 @@ func InvokeMod[Exposer Mod](ctx ActorContext) Exposer {
 // ModInfo 描述了模组的信息，该接口不对外暴露，仅供内部使用
 type ModInfo interface {
 	onLifeCycle(ctx ActorContext, lifeCycle ModLifeCycle)
-	provide(injector do.Injector)
+	provide(ctx ActorContext, injector do.Injector)
 	getModType() reflect.Type
 	setUnload()
 	setLoaded()
@@ -80,9 +80,10 @@ func (m *modInfo[T]) onLifeCycle(ctx ActorContext, lifeCycle ModLifeCycle) {
 	m.mod.OnLifeCycle(ctx, lifeCycle)
 }
 
-func (m *modInfo[T]) provide(injector do.Injector) {
+func (m *modInfo[T]) provide(ctx ActorContext, injector do.Injector) {
 	do.ProvideValue[T](injector, m.mod.(T))
 	m.shutdownHandler = func() {
+		m.onLifeCycle(ctx, ModLifeCycleOnStop)
 		do.MustShutdown[T](injector)
 	}
 }

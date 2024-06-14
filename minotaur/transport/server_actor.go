@@ -20,12 +20,18 @@ type ServerActor struct {
 	ServerActorTyped
 	network     Network
 	connections map[net.Conn]vivid.TypedActorRef[ConnActorTyped]
+	restart     bool
 }
 
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
+	case vivid.OnRestart:
+		s.restart = true
 	case vivid.OnBoot:
 		s.onBoot(ctx)
+		if s.restart {
+			s.onServerLaunch(ctx, ServerLaunchMessage{Network: s.network})
+		}
 	case vivid.OnTerminate:
 		s.onServerShutdown(ctx, ServerShutdownMessage{})
 	case ServerLaunchMessage:
@@ -36,8 +42,6 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 		s.onServerConnOpened(ctx, m)
 	case ServerConnClosedMessage:
 		s.onServerConnClosed(ctx, m)
-	case ServerSubscribeConnOpenedMessage:
-
 	}
 }
 
@@ -76,6 +80,7 @@ func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnO
 	connRef := ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ConnActor]) {
 		options.
 			WithName("conn-" + m.conn.RemoteAddr().String()).
+			WithStopOnParentRestart(true).
 			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
 				log.Error("connOpened", log.String("message", reflect.TypeOf(message).String()), log.Any("reason", reason))
 				return vivid.DirectiveStop

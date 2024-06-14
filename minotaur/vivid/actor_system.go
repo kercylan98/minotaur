@@ -185,9 +185,8 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 	// 重启顺序
 	var restartOrder []*_ActorCore
 	if restart {
-		restartOrder = append(restartOrder, core)
 		deadCallback = append(deadCallback, func(core *_ActorCore) {
-			restartOrder = append(restartOrder, core)
+			restartOrder = append([]*_ActorCore{core}, restartOrder...)
 		})
 	}
 
@@ -197,7 +196,11 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 		defer actor.getLockable().Unlock()
 		var children = actor.getChildren()
 		for name, child := range children {
-			s.unbindActor(child, false, false, deadCallback...)
+			if child.stopOnParentRestart {
+				s.unbindActor(child, false, false)
+			} else {
+				s.unbindActor(child, false, false, deadCallback...)
+			}
 			actor.unbindChild(name)
 		}
 	}(actor)
@@ -212,9 +215,8 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 
 	// 服务解绑
 	if core.runtimeMods != nil {
-		if err := core.runtimeMods.Shutdown(); err != nil {
-			s.GetLogger().Error("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()), log.Err(err))
-		}
+		core.UnloadMod(core.currentMods...)
+		core.ApplyMod()
 	}
 
 	// 宣布 Actor 死亡
@@ -235,6 +237,7 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 
 	// 此刻 Actor 及其子 Actor 已经全部解绑
 	if root && restart {
+		restartOrder = append([]*_ActorCore{core}, restartOrder...)
 		var restarted = make(map[ActorId]*_ActorCore)
 		for i, c := range restartOrder {
 			var parent = c.getParent().(*_internalActorContext).core

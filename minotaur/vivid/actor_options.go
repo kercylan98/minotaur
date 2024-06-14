@@ -3,15 +3,24 @@ package vivid
 type ActorOption[T Actor] func(opts *ActorOptions[T])
 
 type ActorOptions[T Actor] struct {
-	options          []ActorOption[T]
-	Name             string                        // Actor 名称
-	Parent           ActorContext                  // 父 actor 上下文
-	DispatcherId     DispatcherId                  // 调度器 ID
-	MailboxFactoryId MailboxFactoryId              // 邮箱工厂 ID
-	Construct        T                             // Actor 构造器
-	Init             func(T)                       // Actor 初始化函数
-	MessageHook      func(ctx MessageContext) bool // 消息钩子
-	Supervisor       Supervisor                    // 监管策略
+	options             []ActorOption[T]
+	Name                string                        // Actor 名称
+	Parent              ActorContext                  // 父 actor 上下文
+	DispatcherId        DispatcherId                  // 调度器 ID
+	MailboxFactoryId    MailboxFactoryId              // 邮箱工厂 ID
+	Construct           T                             // Actor 构造器
+	Init                func(T)                       // Actor 初始化函数
+	MessageHook         func(ctx MessageContext) bool // 消息钩子
+	Supervisor          Supervisor                    // 监管策略
+	StopOnParentRestart bool                          // 父 Actor 重启时是否停止
+}
+
+// WithStopOnParentRestart 设置 Actor 在父 Actor 重启时是否停止
+func (o *ActorOptions[T]) WithStopOnParentRestart(stop bool) *ActorOptions[T] {
+	o.options = append(o.options, func(opts *ActorOptions[T]) {
+		opts.StopOnParentRestart = stop
+	})
+	return o
 }
 
 // WithSupervisor 设置 Actor 的监管策略

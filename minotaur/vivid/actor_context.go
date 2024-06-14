@@ -158,7 +158,7 @@ func (c *_ActorContext) ApplyMod() {
 		if !mod.isUnload() {
 			currentMods = append(currentMods, mod)
 			if !mod.isLoaded() {
-				mod.provide(c.runtimeMods)
+				mod.provide(c, c.runtimeMods)
 			}
 		} else if mod.isLoaded() {
 			mod.shutdown()
@@ -171,4 +171,6 @@ func (c *_ActorContext) ApplyMod() {
 			mod.onLifeCycle(c, i)
 		}
 	}
+
+	c.mods = currentMods
 }

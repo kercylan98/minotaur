@@ -25,13 +25,14 @@ func newActorCore[T Actor](system *ActorSystem, id ActorId, actor T, options *Ac
 		_ActorContext: &_ActorContext{
 			_internalActorContext: &_internalActorContext{},
 		},
-		system:       system,
-		parent:       options.Parent,
-		childrenRW:   new(sync.RWMutex),
-		children:     make(map[ActorName]*_ActorCore),
-		messageGroup: toolkit.NewDynamicWaitGroup(),
-		messageHook:  options.MessageHook,
-		supervisor:   options.Supervisor,
+		system:              system,
+		parent:              options.Parent,
+		childrenRW:          new(sync.RWMutex),
+		children:            make(map[ActorName]*_ActorCore),
+		messageGroup:        toolkit.NewDynamicWaitGroup(),
+		messageHook:         options.MessageHook,
+		supervisor:          options.Supervisor,
+		stopOnParentRestart: options.StopOnParentRestart,
 		restartHandler: func(parent *_ActorCore) *_ActorCore {
 			options.Parent = parent
 			ctx, err := generateActor(system, actor, options, true)
@@ -59,23 +60,24 @@ func newActorCore[T Actor](system *ActorSystem, id ActorId, actor T, options *Ac
 }
 
 type _ActorCore struct {
-	context.Context                                      // 上下文
-	Actor                                                // Actor 对象
-	*_ActorContext                                       // ActorContext
-	*_LocalActorRef                                      // ActorRef
-	id              ActorId                              // Actor ID
-	parent          ActorContext                         // 父 ActorContext
-	childrenRW      *sync.RWMutex                        // 保护 children 的读写锁
-	children        map[ActorName]*_ActorCore            // 通过名字索引子 ActorContext，用于范围查找
-	isEnd           bool                                 // 是否为终结节点
-	system          *ActorSystem                         // Actor 所属的 Actor 系统
-	dispatcher      Dispatcher                           // Actor 所绑定的 Dispatcher
-	mailboxFactory  MailboxFactory                       // Actor 所绑定的 MailboxFactory
-	mailbox         Mailbox                              // Actor 所绑定的 Mailbox
-	messageGroup    *toolkit.DynamicWaitGroup            // 等待消息处理完毕的消息组
-	messageHook     func(MessageContext) bool            // 消息钩子
-	supervisor      Supervisor                           // 监管策略
-	restartHandler  func(parent *_ActorCore) *_ActorCore // 重启处理器
+	context.Context                                          // 上下文
+	Actor                                                    // Actor 对象
+	*_ActorContext                                           // ActorContext
+	*_LocalActorRef                                          // ActorRef
+	id                  ActorId                              // Actor ID
+	parent              ActorContext                         // 父 ActorContext
+	childrenRW          *sync.RWMutex                        // 保护 children 的读写锁
+	children            map[ActorName]*_ActorCore            // 通过名字索引子 ActorContext，用于范围查找
+	isEnd               bool                                 // 是否为终结节点
+	system              *ActorSystem                         // Actor 所属的 Actor 系统
+	dispatcher          Dispatcher                           // Actor 所绑定的 Dispatcher
+	mailboxFactory      MailboxFactory                       // Actor 所绑定的 MailboxFactory
+	mailbox             Mailbox                              // Actor 所绑定的 Mailbox
+	messageGroup        *toolkit.DynamicWaitGroup            // 等待消息处理完毕的消息组
+	messageHook         func(MessageContext) bool            // 消息钩子
+	supervisor          Supervisor                           // 监管策略
+	restartHandler      func(parent *_ActorCore) *_ActorCore // 重启处理器
+	stopOnParentRestart bool                                 // 父 Actor 重启时是否停止
 }
 
 func (a *_ActorCore) GetContext() ActorContext {

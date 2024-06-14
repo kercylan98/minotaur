@@ -56,4 +56,5 @@ func (c *ConnActor) onInit(ctx vivid.MessageContext, m ConnectionInitMessage) {
 		ConnActorRef:       ctx.GetRef(),
 		ConnWriterActorRef: c.Writer,
 	})
+	m.ActorHook(c)
 }
