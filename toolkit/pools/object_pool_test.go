@@ -84,7 +84,7 @@ func TestObjectPool_Release(t *testing.T) {
 			msg := pool.Get()
 			m := *msg
 			m["test"] = 1
-			pool.Release(msg)
+			pool.Put(msg)
 			if len(m) != 0 {
 				t.Error("TestObjectPool_Release failed")
 			}

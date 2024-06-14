@@ -86,7 +86,7 @@ func (e *EventBusActor) onPublish(ctx MessageContext, m PublishMessage) {
 	}
 
 	// 获取生产者 ActorId
-	var producerActorId = GetActorIdByActorRef(m.Producer)
+	var producerActorId = m.Producer.Id()
 	var subscribeNoPriorityList []subscribeInfo
 	var subscribePriorityList []subscribeInfo
 	for _, info := range subscribeMap {

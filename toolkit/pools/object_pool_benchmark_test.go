@@ -18,7 +18,7 @@ func BenchmarkPool_Get2Put(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			msg := pool.Get()
-			pool.Release(msg)
+			pool.Put(msg)
 		}
 	})
 	b.StopTimer()

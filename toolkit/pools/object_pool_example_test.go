@@ -15,7 +15,7 @@ func ExampleNewObjectPool() {
 
 	m := *p.Get()
 	m[1] = 1
-	p.Release(&m)
+	p.Put(&m)
 	fmt.Println(m)
 	// Output:
 	// map[]

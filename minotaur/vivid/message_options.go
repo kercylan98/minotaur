@@ -22,7 +22,6 @@ func (o *MessageOptions) apply(options []MessageOption) *MessageOptions {
 }
 
 // WithInstantly 设置消息是否立即执行，如果设置为立即执行，消息将会被立即执行，否则将会被放入邮箱等待执行
-//   - 由于没有放入邮箱等待执行，该消息是在当前线程中执行的，如果存在循环调用，可能会导致死锁
 //   - 该可选项在跨网络调用时可能不会产生效果
 //   - 该可选项将提供给 Dispatcher 进行处理，根据不同的 Dispatcher 实现，该可选项可能会被忽略
 func WithInstantly(instantly bool) MessageOption {

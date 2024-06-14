@@ -32,8 +32,8 @@ func (op *ObjectPool[T]) Get() T {
 	return op.p.Get().(T)
 }
 
-// Release 将使用完成的对象放回缓冲区
-func (op *ObjectPool[T]) Release(data T) {
+// Put 将使用完成的对象放回缓冲区
+func (op *ObjectPool[T]) Put(data T) {
 	op.releaser(data)
 	op.p.Put(data)
 }

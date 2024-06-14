@@ -103,17 +103,3 @@ func GetActor[T any](ctx Context) (t T) {
 		return t
 	}
 }
-
-// GetActorIdByActorRef 通过 ActorRef 获取 ActorId
-func GetActorIdByActorRef(ref ActorRef) ActorId {
-	switch v := ref.(type) {
-	case *_ActorCore:
-		return v.GetId()
-	case *_LocalActorRef:
-		return v.core.GetId()
-	case *_RemoteActorRef:
-		return v.actorId
-	default:
-		return ""
-	}
-}

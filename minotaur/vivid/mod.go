@@ -34,6 +34,14 @@ const (
 	ModLifeCycleOnStop
 )
 
+const (
+	modStatusWaiting modStatus = iota // 等待加载
+	modStatusLoaded                   // 已加载
+	modStatusUnload                   // 已卸载
+)
+
+type modStatus uint8
+
 // Mod 模组是用于对 Actor 在生命周期中的功能扩展
 type Mod interface {
 	// OnLifeCycle 模组生命周期回调，当模组生命周期发生变化时，将会调用该函数
@@ -61,18 +69,15 @@ type ModInfo interface {
 	onLifeCycle(ctx ActorContext, lifeCycle ModLifeCycle)
 	provide(ctx ActorContext, injector do.Injector)
 	getModType() reflect.Type
-	setUnload()
-	setLoaded()
-	isUnload() bool
-	isLoaded() bool
+	setStatus(status modStatus)
+	getStatus() modStatus
 	shutdown()
 }
 
 type modInfo[T Mod] struct {
 	mod             Mod
 	modType         reflect.Type
-	unload          bool
-	loaded          bool
+	status          modStatus
 	shutdownHandler func()
 }
 
@@ -92,20 +97,12 @@ func (m *modInfo[T]) getModType() reflect.Type {
 	return m.modType
 }
 
-func (m *modInfo[T]) setUnload() {
-	m.unload = true
+func (m *modInfo[T]) setStatus(status modStatus) {
+	m.status = status
 }
 
-func (m *modInfo[T]) isUnload() bool {
-	return m.unload
-}
-
-func (m *modInfo[T]) setLoaded() {
-	m.loaded = false
-}
-
-func (m *modInfo[T]) isLoaded() bool {
-	return m.loaded
+func (m *modInfo[T]) getStatus() modStatus {
+	return m.status
 }
 
 func (m *modInfo[T]) shutdown() {
