@@ -14,11 +14,11 @@ type GNetLogger struct {
 }
 
 func (l *GNetLogger) Debugf(format string, args ...interface{}) {
-	l.Logger.Debug("GNET", String("msg", fmt.Sprintf(format, args...)))
+	//l.Logger.Debug("GNET", String("msg", fmt.Sprintf(format, args...)))
 }
 
 func (l *GNetLogger) Infof(format string, args ...interface{}) {
-	l.Logger.Info("GNET", String("msg", fmt.Sprintf(format, args...)))
+	//l.Logger.Info("GNET", String("msg", fmt.Sprintf(format, args...)))
 }
 
 func (l *GNetLogger) Warnf(format string, args ...interface{}) {

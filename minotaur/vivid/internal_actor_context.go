@@ -79,11 +79,11 @@ func (c *_internalActorContext) matchBehavior(message Message) Behavior {
 	}
 
 	behaviors, ok := c.behaviors[reflect.TypeOf(message)]
-	if !ok {
+	if !ok || len(behaviors) == 0 {
 		return nil
 	}
 
-	return behaviors[len(behaviors)-1]
+	return behaviors[0]
 }
 
 func (c *_internalActorContext) getParent() ActorContext {

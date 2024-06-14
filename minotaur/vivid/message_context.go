@@ -38,7 +38,7 @@ type MessageContext interface {
 	Instantly() bool
 
 	// Become 该函数是 ActorContext.Become 的快捷方式
-	Become(behavior Behavior)
+	Become(behavior Behavior, discardOld ...bool)
 
 	// UnBecome 该函数是 ActorContext.UnBecome 的快捷方式
 	UnBecome(message Message)
@@ -266,8 +266,8 @@ func (c *_MessageContext) Instantly() bool {
 	return c.InstantlyExec
 }
 
-func (c *_MessageContext) Become(behavior Behavior) {
-	c.GetContext().Become(behavior)
+func (c *_MessageContext) Become(behavior Behavior, discardOld ...bool) {
+	c.GetContext().Become(behavior, discardOld...)
 }
 
 func (c *_MessageContext) UnBecome(message Message) {

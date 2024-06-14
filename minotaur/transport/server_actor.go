@@ -75,16 +75,17 @@ func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnO
 	// 创建连接 Actor 并绑定到服务器
 	connRef := ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ConnActor]) {
 		options.
-			WithName("conn" + m.conn.RemoteAddr().String()).
+			WithName("conn-" + m.conn.RemoteAddr().String()).
 			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
 				log.Error("connOpened", log.String("message", reflect.TypeOf(message).String()), log.Any("reason", reason))
 				return vivid.DirectiveStop
 			})
 	}))
-	connRef.Tell(ConnectionInitMessage{Conn: m.conn, Writer: m.writer}, vivid.WithInstantly(true))
-	connTyped := vivid.Typed[ConnActorTyped](connRef, &ConnActorTypedImpl{
-		ConnActorRef: connRef,
-	})
+	var connActor *ConnActor
+	connRef.Tell(ConnectionInitMessage{Conn: m.conn, Writer: m.writer, ActorHook: func(actor *ConnActor) {
+		connActor = actor
+	}}, vivid.WithInstantly(true)) // 由于是立即执行，可以直接获取写入器引用
+	connTyped := connActor.Typed
 	connExpandTyped := vivid.Typed[ConnActorExpandTyped](connRef, &ConnActorExpandTypedImpl{
 		ConnActorRef: connRef,
 	})

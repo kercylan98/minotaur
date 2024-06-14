@@ -25,7 +25,7 @@ type ActorContext interface {
 	GetParent() ActorRef
 
 	// Become 切换 Actor 在面对特定消息的行为。通过调用 BehaviorOf 函数可以创建一个特定消息类型的行为，将 Actor 的消息处理逻辑切换为指定的新行为。新的行为会覆盖当前的行为，直到下次调用 Become 或 UnBecome 为止
-	Become(behavior Behavior)
+	Become(behavior Behavior, discardOld ...bool)
 
 	// UnBecome 恢复 Actor 在面对特性消息的行为为之前的行为，多次调用 UnBecome 会依次恢复之前的行为，直到没有行为为止
 	UnBecome(message Message)
@@ -81,13 +81,17 @@ func (c *_ActorContext) GetParent() ActorRef {
 	return c.parent
 }
 
-func (c *_ActorContext) Become(behavior Behavior) {
+func (c *_ActorContext) Become(behavior Behavior, discardOld ...bool) {
 	if c.behaviors == nil {
 		c.behaviors = make(map[reflect.Type][]Behavior)
 	}
 
 	messageType := behavior.getMessageType()
-	c.behaviors[messageType] = append(c.behaviors[messageType], behavior)
+	if len(discardOld) > 0 && discardOld[0] {
+		c.behaviors[messageType] = c.behaviors[messageType][:0]
+		return
+	}
+	c.behaviors[messageType] = append([]Behavior{behavior}, c.behaviors[messageType]...)
 }
 
 func (c *_ActorContext) UnBecome(message Message) {
@@ -98,7 +102,8 @@ func (c *_ActorContext) UnBecome(message Message) {
 	messageType := reflect.TypeOf(message)
 	if behaviors, ok := c.behaviors[messageType]; ok {
 		if len(behaviors) > 0 {
-			c.behaviors[messageType] = behaviors[:len(behaviors)-1]
+			behaviors = behaviors[1:]
+			c.behaviors[messageType] = behaviors
 		}
 		if len(behaviors) == 0 {
 			delete(c.behaviors, messageType)

@@ -30,11 +30,11 @@ type Handler struct {
 }
 
 func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.opts.Level
+	return level >= h.opts.leveler.Level()
 }
 
 func (h *Handler) Handle(ctx context.Context, record slog.Record) error {
-	if !h.Enabled(ctx, h.opts.Level) {
+	if !h.Enabled(ctx, h.opts.leveler.Level()) {
 		return nil
 	}
 

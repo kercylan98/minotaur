@@ -2,18 +2,14 @@ package transport
 
 import "github.com/kercylan98/minotaur/minotaur/vivid"
 
+type Conn = vivid.TypedActorRef[ConnActorTyped]
+
 type ConnActorTyped interface {
 	// Write 向连接内写入数据包
 	Write(packet Packet)
 
 	// Close 关闭连接
 	Close()
-
-	// BecomeReactPacketMessage 切换响应数据包消息行为，默认情况下会发布 ConnectionReceivePacketEvent 事件，可以通过 SubscribePacketReceivedEvent 订阅
-	BecomeReactPacketMessage(handler func(vivid.MessageContext, ConnectionReactPacketMessage))
-
-	// SubscribePacketReceivedEvent 订阅数据包接收事件
-	SubscribePacketReceivedEvent(subscriber vivid.Subscriber)
 
 	// LoadMod 加载模组
 	LoadMod(mods ...vivid.ModInfo)
@@ -23,26 +19,34 @@ type ConnActorTyped interface {
 
 	// ApplyMod 应用模组
 	ApplyMod()
+
+	// SetPacketHandler 设置数据包处理器
+	//   - 该函数是通过 become 实现，并且会丢弃旧的行为
+	SetPacketHandler(handler ConnPacketHandler)
+
+	// SetTerminateHandler 设置连接终止处理器
+	SetTerminateHandler(handler ConnTerminateHandler)
 }
 
 type ConnActorTypedImpl struct {
-	ConnActorRef vivid.ActorRef
+	ConnActorRef       vivid.ActorRef
+	ConnWriterActorRef vivid.ActorRef
 }
 
 func (c *ConnActorTypedImpl) Write(packet Packet) {
-	c.ConnActorRef.Tell(ConnectionWritePacketMessage{Packet: packet})
+	c.ConnWriterActorRef.Tell(packet)
 }
 
 func (c *ConnActorTypedImpl) Close() {
 	c.ConnActorRef.Stop()
 }
 
-func (c *ConnActorTypedImpl) SubscribePacketReceivedEvent(subscriber vivid.Subscriber) {
-	c.ConnActorRef.GetSystem().Subscribe(subscriber, ConnectionReceivePacketEvent{})
+func (c *ConnActorTypedImpl) SetPacketHandler(handler ConnPacketHandler) {
+	c.ConnActorRef.Tell(ConnectionSetPacketHandlerMessage{Handler: handler})
 }
 
-func (c *ConnActorTypedImpl) BecomeReactPacketMessage(handler func(vivid.MessageContext, ConnectionReactPacketMessage)) {
-	c.ConnActorRef.Tell(ConnectionBecomeReactPacketMessage{Behavior: vivid.BehaviorOf[ConnectionReactPacketMessage](handler)})
+func (c *ConnActorTypedImpl) SetTerminateHandler(handler ConnTerminateHandler) {
+	c.ConnActorRef.Tell(ConnectionSetTerminateHandlerMessage{Handler: handler})
 }
 
 func (c *ConnActorTypedImpl) LoadMod(mods ...vivid.ModInfo) {

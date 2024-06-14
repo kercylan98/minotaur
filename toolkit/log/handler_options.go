@@ -8,11 +8,24 @@ import (
 	"time"
 )
 
+type (
+	Leveler  = slog.Leveler
+	LevelVar = slog.LevelVar
+	Level    = slog.Level
+)
+
+const (
+	LevelDebug = slog.LevelDebug
+	LevelInfo  = slog.LevelInfo
+	LevelWarn  = slog.LevelWarn
+	LevelError = slog.LevelError
+)
+
 // NewDevHandlerOptions 创建一个适用于开发环境的 HandlerOptions
 //   - 该可选项默认提供了一个具有色彩且日志级别为 slog.LevelDebug，并且具有对 error 类型的堆栈美化后的追踪的 HandlerOptions
 func NewDevHandlerOptions() *HandlerOptions {
 	return new(HandlerOptions).
-		WithLevel(slog.LevelDebug).
+		WithLevel(LevelDebug).
 		WithEnableColor(true).
 		WithErrTrackLevel(slog.LevelError).
 		WithTrackBeautify(true)
@@ -22,10 +35,10 @@ func NewDevHandlerOptions() *HandlerOptions {
 //   - 与 NewDevHandlerOptions 不同的是，该可选项的日志级别会被输出为适用于 Goland 控制台色彩的字符串
 func NewDevGolandHandlerOptions() *HandlerOptions {
 	return NewDevHandlerOptions().
-		WithLevelStr(slog.LevelDebug, "DEBUG").
-		WithLevelStr(slog.LevelInfo, "INFO").
-		WithLevelStr(slog.LevelWarn, "WARN").
-		WithLevelStr(slog.LevelError, "ERROR")
+		WithLevelStr(LevelDebug, "DEBUG").
+		WithLevelStr(LevelInfo, "INFO").
+		WithLevelStr(LevelWarn, "WARN").
+		WithLevelStr(LevelError, "ERROR")
 }
 
 // NewTestHandlerOptions 创建一个适用于测试环境的 HandlerOptions
@@ -39,7 +52,7 @@ func NewTestHandlerOptions() *HandlerOptions {
 //   - 该可选项适用于在服务器上运行，该可选项与 NewDevHandlerOptions 相似，但是不包含任何色彩，且不包含对 error 的追踪，默认日志级别为 slog.LevelInfo
 func NewProdHandlerOptions() *HandlerOptions {
 	return new(HandlerOptions).
-		WithLevel(slog.LevelInfo).
+		WithLevel(LevelInfo).
 		WithEnableColor(false)
 }
 
@@ -52,30 +65,30 @@ type HandlerOption func(opts *HandlerOptions)
 
 type HandlerOptions struct {
 	options          []HandlerOption
-	Level            slog.Level                 // 日志级别
+	leveler          Leveler                    // 日志级别
 	TimeLayout       string                     // 时间格式
 	ColorTypes       map[ColorType]*color.Color // 颜色类型
 	EnableColor      bool                       // 是否启用颜色
 	AttrKeys         map[AttrKey]string         // 属性键
 	Delimiter        string                     // 分隔符
-	LevelStr         map[slog.Level]string      // 日志级别字符串
+	LevelStr         map[Level]string           // 日志级别字符串
 	Caller           bool                       // 是否显示调用者
 	CallerSkip       int                        // 调用者跳过层数
 	CallerFormatter  CallerFormatter            // 调用者格式化
 	MessageFormatter MessageFormatter           // 消息格式化
-	ErrTrackLevel    map[slog.Level]struct{}    // 错误追踪级别
+	ErrTrackLevel    map[Level]struct{}         // 错误追踪级别
 	TrackBeautify    bool                       // 错误追踪美化
 }
 
 func (o *HandlerOptions) applyDefault() *HandlerOptions {
 	return o.
-		WithLevel(slog.LevelInfo).
+		WithLevel(LevelInfo).
 		WithTimeLayout(time.DateTime).
 		WithDelimiter("=").
-		WithLevelStr(slog.LevelDebug, "DBG").
-		WithLevelStr(slog.LevelInfo, "INF").
-		WithLevelStr(slog.LevelWarn, "WAR").
-		WithLevelStr(slog.LevelError, "ERR").
+		WithLevelStr(LevelDebug, "DBG").
+		WithLevelStr(LevelInfo, "INF").
+		WithLevelStr(LevelWarn, "WAR").
+		WithLevelStr(LevelError, "ERR").
 		WithColor(ColorTypeDebugLevel, color.FgHiCyan).
 		WithColor(ColorTypeInfoLevel, color.FgHiGreen).
 		WithColor(ColorTypeWarnLevel, color.FgHiYellow).
@@ -207,9 +220,9 @@ func (o *HandlerOptions) WithTimeLayout(layout string) *HandlerOptions {
 }
 
 // WithLevel 设置日志级别
-func (o *HandlerOptions) WithLevel(level slog.Level) *HandlerOptions {
+func (o *HandlerOptions) WithLevel(level Leveler) *HandlerOptions {
 	o.options = append(o.options, func(opts *HandlerOptions) {
-		opts.Level = level
+		opts.leveler = level
 	})
 	return o
 }

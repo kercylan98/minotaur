@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// NewActorSystem 创建一个 ActorSystem，ActorSystem 是 Actor 的容器，用于管理 Actor 的生命周期、消息分发等
 func NewActorSystem(name string) ActorSystem {
 	s := ActorSystem{
 		dispatchers:     make(map[DispatcherId]Dispatcher),
@@ -53,6 +54,7 @@ func NewActorSystem(name string) ActorSystem {
 	return s
 }
 
+// ActorSystem Actor 系统
 type ActorSystem struct {
 	logger            *atomic.Pointer[log.Logger]
 	core              *_ActorSystemCore

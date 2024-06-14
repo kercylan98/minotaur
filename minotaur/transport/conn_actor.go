@@ -6,22 +6,24 @@ import (
 )
 
 type ConnActor struct {
-	Conn   net.Conn
-	Writer ConnWriter
+	Conn             net.Conn
+	Writer           vivid.ActorRef
+	Typed            vivid.TypedActorRef[ConnActorTyped]
+	TerminateHandler ConnTerminateHandler
 }
 
 func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
 	case vivid.OnBoot:
 	case ConnectionInitMessage:
-		c.Conn, c.Writer = m.Conn, m.Writer
-		ctx.Become(vivid.BehaviorOf[ConnectionReactPacketMessage](c.onReactPacket))
-	case ConnectionBecomeReactPacketMessage:
-		ctx.Become(m.Behavior)
-	case ConnectionWritePacketMessage:
-		if err := c.Writer(m.Packet); err != nil {
-			ctx.Stop()
-		}
+		c.onInit(ctx, m)
+	case ConnectionSetPacketHandlerMessage:
+		behavior := vivid.BehaviorOf(func(ctx vivid.MessageContext, packet ConnectionReactPacketMessage) {
+			m.Handler(ctx, c.Typed, packet)
+		})
+		ctx.Become(behavior, true)
+	case ConnectionSetTerminateHandlerMessage:
+		c.TerminateHandler = m.Handler
 	case ConnectionLoadModMessage:
 		ctx.LoadMod(m.Mods...)
 	case ConnectionUnloadModMessage:
@@ -29,10 +31,29 @@ func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	case ConnectionApplyModMessage:
 		ctx.ApplyMod()
 	case vivid.OnTerminate:
+		if c.TerminateHandler != nil {
+			c.TerminateHandler(ctx, c.Typed, m)
+		}
 		_ = c.Conn.Close()
 	}
 }
 
-func (c *ConnActor) onReactPacket(ctx vivid.MessageContext, message ConnectionReactPacketMessage) {
-	ctx.Publish(ConnectionReceivePacketEvent{})
+func (c *ConnActor) onInit(ctx vivid.MessageContext, m ConnectionInitMessage) {
+	c.Conn = m.Conn
+	c.Writer = ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ConnWriteActor]) {
+		options.WithName("writer")
+		options.WithInit(func(actor *ConnWriteActor) {
+			actor.Writer = m.Writer
+		})
+
+		options.WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
+			// 关闭连接及其写入器
+			ctx.Stop()
+			return vivid.DirectiveStop
+		})
+	}))
+	c.Typed = vivid.Typed[ConnActorTyped](ctx.GetRef(), &ConnActorTypedImpl{
+		ConnActorRef:       ctx.GetRef(),
+		ConnWriterActorRef: c.Writer,
+	})
 }
