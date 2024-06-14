@@ -25,35 +25,37 @@ type (
 
 func NewPriority(handler func(message MessageContext), opts ...*PriorityOptions) *Priority {
 	p := &Priority{
-		opts:    NewPriorityOptions().Apply(opts...),
-		status:  priorityStateNone,
-		cond:    sync.NewCond(&sync.Mutex{}),
-		closed:  make(chan struct{}),
-		handler: handler,
+		opts:      NewPriorityOptions().Apply(opts...),
+		status:    priorityStateNone,
+		cond:      sync.NewCond(&sync.Mutex{}),
+		closed:    make(chan struct{}),
+		handler:   handler,
+		instantly: make(chan *instantlyMessage, 1),
 	}
 	p.buffer = make(priorityHeap, 0, p.opts.BufferSize)
 	return p
 }
 
 type Priority struct {
-	opts    *PriorityOptions             // 配置
-	status  priorityState                // 队列状态
-	cond    *sync.Cond                   // 消息队列条件变量
-	buffer  priorityHeap                 // 消息缓冲区
-	closed  chan struct{}                // 关闭信号
-	handler func(message MessageContext) // 消息处理函数
+	opts      *PriorityOptions             // 配置
+	status    priorityState                // 队列状态
+	cond      *sync.Cond                   // 消息队列条件变量
+	buffer    priorityHeap                 // 消息缓冲区
+	closed    chan struct{}                // 关闭信号
+	handler   func(message MessageContext) // 消息处理函数
+	instantly chan *instantlyMessage       // 立即处理的消息
 }
 
-func (p *Priority) Start() {
-	p.cond.L.Lock()
-	if p.status != priorityStateNone {
-		p.cond.L.Unlock()
+func (m *Priority) Start() {
+	m.cond.L.Lock()
+	if m.status != priorityStateNone {
+		m.cond.L.Unlock()
 		return
 	}
-	p.status = priorityStateRunning
-	p.cond.L.Unlock()
+	m.status = priorityStateRunning
+	m.cond.L.Unlock()
 
-	p.closed = make(chan struct{})
+	m.closed = make(chan struct{})
 	go func(p *Priority) {
 		defer func(p *Priority) {
 			close(p.closed)
@@ -63,6 +65,7 @@ func (p *Priority) Start() {
 		}(p)
 
 		for {
+			p.processInstantly()
 			p.cond.L.Lock()
 			if p.buffer.Len() == 0 {
 				if p.status == priorityStateStopping {
@@ -81,48 +84,65 @@ func (p *Priority) Start() {
 
 			p.handler(msg)
 		}
-	}(p)
+	}(m)
 }
 
-func (p *Priority) Stop() {
-	p.cond.L.Lock()
-	if p.status != priorityStateRunning {
-		p.cond.L.Unlock()
+func (m *Priority) Stop() {
+	m.cond.L.Lock()
+	if m.status != priorityStateRunning {
+		m.cond.L.Unlock()
 		return
 	}
-	p.status = priorityStateStopping
-	p.cond.L.Unlock()
-	p.cond.Signal()
+	m.status = priorityStateStopping
+	m.cond.L.Unlock()
+	m.cond.Signal()
 }
 
-func (p *Priority) Enqueue(message MessageContext) bool {
-	p.cond.L.Lock()
-	if p.status != priorityStateRunning {
-		p.cond.L.Unlock()
+func (m *Priority) Enqueue(message MessageContext, instantly bool) bool {
+	m.cond.L.Lock()
+	if m.status != priorityStateRunning {
+		m.cond.L.Unlock()
 		return false
 	}
-	heap.Push(&p.buffer, message)
-	p.cond.L.Unlock()
-	p.cond.Signal()
+
+	if instantly {
+		m.cond.L.Unlock()
+		elem := &instantlyMessage{message: message}
+		elem.mu.Lock()
+		m.instantly <- elem
+		m.cond.Broadcast()
+		elem.mu.Lock()
+		elem.mu.Unlock()
+		return true
+	}
+
+	heap.Push(&m.buffer, message)
+	m.cond.L.Unlock()
+	m.cond.Signal()
 	return true
 }
 
-func (p *Priority) GetLockable() sync.Locker {
-	return p.cond.L
-}
-
-func (p *Priority) reset() {
-	p.cond.L.Lock()
-	if p.status < fifoStateStopping {
-		p.cond.L.Unlock()
-		p.Stop()
+func (m *Priority) reset() {
+	m.cond.L.Lock()
+	if m.status < fifoStateStopping {
+		m.cond.L.Unlock()
+		m.Stop()
 	} else {
-		p.cond.L.Unlock()
+		m.cond.L.Unlock()
 	}
 
-	p.cond.L.Lock()
-	defer p.cond.L.Unlock()
+	m.cond.L.Lock()
+	defer m.cond.L.Unlock()
 
-	p.status = priorityStateNone
-	p.buffer = p.buffer[:0]
+	m.status = priorityStateNone
+	m.buffer = m.buffer[:0]
+}
+
+func (m *Priority) processInstantly() {
+	select {
+	case elem := <-m.instantly:
+		defer elem.mu.Unlock()
+		m.handler(elem.message)
+	default:
+	}
 }

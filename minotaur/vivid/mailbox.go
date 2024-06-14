@@ -21,8 +21,10 @@ type Mailbox interface {
 	Stop()
 
 	// Enqueue 将一个消息放入队列
-	Enqueue(message MessageContext) bool
+	Enqueue(message MessageContext, instantly bool) bool
+}
 
-	// GetLockable 获取队列的锁
-	GetLockable() sync.Locker
+type instantlyMessage struct {
+	message MessageContext
+	mu      sync.Mutex
 }

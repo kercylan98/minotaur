@@ -25,11 +25,12 @@ type (
 
 func NewFIFO(handler func(message MessageContext), opts ...*FIFOOptions) *FIFO {
 	f := &FIFO{
-		opts:    NewFIFOOptions().Apply(opts...),
-		status:  fifoStateNone,
-		cond:    sync.NewCond(&sync.Mutex{}),
-		closed:  make(chan struct{}),
-		handler: handler,
+		opts:      NewFIFOOptions().Apply(opts...),
+		status:    fifoStateNone,
+		cond:      sync.NewCond(&sync.Mutex{}),
+		closed:    make(chan struct{}),
+		handler:   handler,
+		instantly: make(chan *instantlyMessage, 1),
 	}
 	f.buffer = buffer.NewRing[MessageContext](int(f.opts.BufferSize))
 	return f
@@ -37,24 +38,25 @@ func NewFIFO(handler func(message MessageContext), opts ...*FIFOOptions) *FIFO {
 
 // FIFO 是一个先进先出的消息队列
 type FIFO struct {
-	opts    *FIFOOptions                 // 配置
-	status  fifoState                    // 队列状态
-	cond    *sync.Cond                   // 消息队列条件变量
-	buffer  *buffer.Ring[MessageContext] // 消息缓冲区
-	closed  chan struct{}                // 关闭信号
-	handler func(message MessageContext) // 消息处理函数
+	opts      *FIFOOptions                 // 配置
+	status    fifoState                    // 队列状态
+	cond      *sync.Cond                   // 消息队列条件变量
+	buffer    *buffer.Ring[MessageContext] // 消息缓冲区
+	closed    chan struct{}                // 关闭信号
+	handler   func(message MessageContext) // 消息处理函数
+	instantly chan *instantlyMessage       // 立即处理的消息
 }
 
-func (f *FIFO) Start() {
-	f.cond.L.Lock()
-	if f.status != fifoStateNone {
-		f.cond.L.Unlock()
+func (m *FIFO) Start() {
+	m.cond.L.Lock()
+	if m.status != fifoStateNone {
+		m.cond.L.Unlock()
 		return
 	}
-	f.status = fifoStateRunning
-	f.cond.L.Unlock()
+	m.status = fifoStateRunning
+	m.cond.L.Unlock()
 
-	f.closed = make(chan struct{})
+	m.closed = make(chan struct{})
 	go func(f *FIFO) {
 		defer func(f *FIFO) {
 			close(f.closed)
@@ -62,6 +64,8 @@ func (f *FIFO) Start() {
 		}(f)
 
 		for {
+			f.processInstantly()
+
 			f.cond.L.Lock()
 			elements := f.buffer.ReadAll()
 			if len(elements) == 0 {
@@ -76,60 +80,80 @@ func (f *FIFO) Start() {
 			f.cond.L.Unlock()
 
 			for i := 0; i < len(elements); i++ {
+				f.processInstantly()
 				elem := elements[i]
 				f.handler(elem)
 			}
 		}
-	}(f)
+	}(m)
 }
 
-func (f *FIFO) Stop() {
-	f.cond.L.Lock()
-	if f.status != fifoStateRunning {
-		f.cond.L.Unlock()
+func (m *FIFO) Stop() {
+	m.cond.L.Lock()
+	if m.status != fifoStateRunning {
+		m.cond.L.Unlock()
 		return
 	}
-	f.status = fifoStateStopping
-	f.cond.L.Unlock()
+	m.status = fifoStateStopping
+	m.cond.L.Unlock()
 
-	f.cond.Signal()
+	m.cond.Signal()
 
-	<-f.closed
+	<-m.closed
 }
 
-func (f *FIFO) Enqueue(message MessageContext) bool {
-	f.cond.L.Lock()
-	if f.status != fifoStateNone {
-		if f.status != fifoStateRunning {
-			if f.opts.StopMode != FIFOStopModeDrain {
-				f.cond.L.Unlock()
+func (m *FIFO) Enqueue(message MessageContext, instantly bool) bool {
+	m.cond.L.Lock()
+	if m.status != fifoStateNone {
+		if m.status != fifoStateRunning {
+			if m.opts.StopMode != FIFOStopModeDrain {
+				m.cond.L.Unlock()
 				return false
 			}
 		}
 	}
 
-	f.buffer.Write(message)
-	f.cond.L.Unlock()
-	f.cond.Broadcast()
+	if instantly {
+		m.cond.L.Unlock()
+		elem := &instantlyMessage{message: message}
+		elem.mu.Lock()
+		m.instantly <- elem
+		m.cond.Broadcast()
+		elem.mu.Lock()
+		elem.mu.Unlock()
+		return true
+	}
+
+	m.buffer.Write(message)
+	m.cond.L.Unlock()
+	m.cond.Broadcast()
 	return true
 }
 
-func (f *FIFO) GetLockable() sync.Locker {
-	return f.cond.L
-}
-
-func (f *FIFO) reset() {
-	f.cond.L.Lock()
-	if f.status < fifoStateStopping {
-		f.cond.L.Unlock()
-		f.Stop()
+func (m *FIFO) reset() {
+	m.cond.L.Lock()
+	if m.status < fifoStateStopping {
+		m.cond.L.Unlock()
+		m.Stop()
 	} else {
-		f.cond.L.Unlock()
+		m.cond.L.Unlock()
 	}
 
-	f.cond.L.Lock()
-	defer f.cond.L.Unlock()
+	m.cond.L.Lock()
+	defer m.cond.L.Unlock()
 
-	f.buffer.Reset()
-	f.status = fifoStateNone
+	m.buffer.Reset()
+	m.status = fifoStateNone
+
+	close(m.instantly)
+	m.instantly = make(chan *instantlyMessage, 1)
+}
+
+func (m *FIFO) processInstantly() {
+	select {
+	case elem := <-m.instantly:
+		defer elem.mu.Unlock()
+		m.handler(elem.message)
+	default:
+	}
 }

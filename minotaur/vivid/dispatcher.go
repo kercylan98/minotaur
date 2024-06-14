@@ -38,14 +38,5 @@ func (d *_Dispatcher) Detach(system ActorSystemCore, actor ActorCore) {
 
 func (d *_Dispatcher) Send(system ActorSystemCore, actor ActorCore, message MessageContext) bool {
 	mailbox := actor.GetMailbox()
-	if message.Instantly() {
-		mailbox.GetLockable().Lock()
-		defer func() {
-			actor.ModifyMessageCounter(-1)
-			mailbox.GetLockable().Unlock()
-		}()
-		onReceive(actor, message)
-		return true
-	}
-	return mailbox.Enqueue(message)
+	return mailbox.Enqueue(message, message.Instantly())
 }
