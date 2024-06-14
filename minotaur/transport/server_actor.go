@@ -7,7 +7,6 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"net"
 	"reflect"
-	"time"
 )
 
 func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) vivid.TypedActorRef[ServerActorTyped] {
@@ -82,7 +81,6 @@ func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnO
 		options.
 			WithName("conn-" + m.conn.RemoteAddr().String()).
 			WithStopOnParentRestart(true).
-			WithIdleTimeout(time.Second).
 			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
 				return vivid.DirectiveStop
 			})

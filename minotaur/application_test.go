@@ -50,6 +50,9 @@ func (a *AccountMod) OnLifeCycle(ctx vivid.ActorContext, lifeCycle vivid.ModLife
 }
 
 func TestNewApplication(t *testing.T) {
+	minotaur.EnableHttpPProf(":9989", "/debug/pprof", func(err error) {
+		panic(err)
+	})
 	minotaur.NewApplication(
 		minotaur.WithNetwork(network.WebSocket(":9988")),
 	).Launch(func(app *minotaur.Application, ctx vivid.MessageContext) {
