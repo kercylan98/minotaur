@@ -31,96 +31,62 @@ func newKcpCore(addr string) transport.Network {
 type kcpCore struct {
 	addr   string
 	closed atomic.Bool
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func (k *kcpCore) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
-	//TODO implement me
-	panic("implement me")
+	k.ctx, k.cancel = context.WithCancel(ctx)
+	lis, err := kcp.ListenWithOptions(k.addr, nil, 0, 0)
+	if err != nil {
+		return err
+	}
+	defer func(lis *kcp.Listener) {
+		_ = lis.Close()
+	}(lis)
+	for !k.closed.Load() {
+		var session *kcp.UDPSession
+		if session, err = lis.AcceptKCP(); err != nil {
+			continue
+		}
+
+		// 注册连接
+		conn := srv.Api().Attach(session, func(packet transport.Packet) error {
+			_, err = session.Write(packet.GetBytes())
+			return err
+		})
+
+		// 处理连接数据
+		go func(ctx context.Context, session *kcp.UDPSession, conn vivid.TypedActorRef[transport.ConnActorExpandTyped]) {
+			var buf = make([]byte, 1024)
+			var n int
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if n, err = session.Read(buf); err != nil {
+						conn.Stop()
+						return
+					}
+					conn.Api().React(transport.NewPacket(buf[:n]))
+				}
+			}
+		}(k.ctx, session, conn)
+	}
+	return nil
 }
 
 func (k *kcpCore) Shutdown() error {
-	//TODO implement me
-	panic("implement me")
+	k.closed.Store(true)
+	k.cancel()
+	return nil
 }
 
 func (k *kcpCore) Schema() string {
-	//TODO implement me
-	panic("implement me")
+	return "udp(kcp)"
 }
 
 func (k *kcpCore) Address() string {
-	//TODO implement me
-	panic("implement me")
+	return k.addr
 }
-
-//
-//func (k *kcpCore) OnPreStart(ctx vivids.ActorContext) (err error) {
-//	k.ctx = ctx
-//	ctx.Future(func() vivids.Message {
-//		lis, err := kcp.ListenWithOptions(k.addr, nil, 0, 0)
-//		if err != nil {
-//			return err
-//		}
-//		defer func(lis *kcp.Listener) {
-//			_ = lis.Close()
-//		}(lis)
-//		for !k.closed.Load() {
-//			var conn *kcp.UDPSession
-//			var srvConn server.Conn
-//			if conn, err = lis.AcceptKCP(); err != nil {
-//				continue
-//			}
-//
-//			// 注册连接
-//			srvConn, err = k.ctx.GetParentActor().Ask(server.ServerNetworkConnectionOpenedEvent{
-//				Conn: conn,
-//				ConnectionWriter: func(packet server.Packet) (err error) {
-//					if _, err = conn.Write(packet.GetBytes()); err != nil {
-//						return k.ctx.GetParentActor().Tell(server.NetworkConnectionAsyncWriteErrorMessage{
-//							Conn:   srvConn,
-//							Packet: packet,
-//							Error:  err,
-//						})
-//					}
-//					return
-//				},
-//			})
-//
-//			// 处理连接数据
-//			go func(ctx context.Context, conn *kcp.UDPSession, srvConn server.Conn) {
-//				var buf = make([]byte, 1024)
-//				var n int
-//				for {
-//					select {
-//					case <-ctx.Done():
-//						return
-//					default:
-//						if n, err = conn.Read(buf); err != nil {
-//							srvConn.Close()
-//							return
-//						}
-//						k.controller.ReactPacket(conn, server.NewPacket(buf[:n]))
-//					}
-//				}
-//			}(ctx, conn, srvConn)
-//		}
-//
-//		return nil
-//	})
-//
-//	return
-//}
-//
-//func (k *kcpCore) OnReceived(ctx vivids.MessageContext) (err error) {
-//	switch v := ctx.GetMessage().(type) {
-//	case error:
-//		ctx.NotifyTerminated(v)
-//	}
-//
-//	return
-//}
-//
-//func (k *kcpCore) OnDestroy(ctx vivids.ActorContext) (err error) {
-//	k.closed.Store(true)
-//	return nil
-//}
