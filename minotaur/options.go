@@ -19,7 +19,7 @@ type Options struct {
 // defaultApply 设置缺省值
 func (o *Options) defaultApply() *Options {
 	if o.ActorSystemName == "" {
-		o.ActorSystemName = "minotaur"
+		o.ActorSystemName = "app"
 	}
 	if o.EventBusActorName == "" {
 		o.EventBusActorName = "event_bus"

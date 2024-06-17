@@ -15,9 +15,13 @@ type httpCore[H http.Handler] struct {
 	addr    string
 	handler H
 	srv     *http.Server
+	hook    []func(handler H)
 }
 
 func (h *httpCore[H]) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
+	for _, f := range h.hook {
+		f(h.handler)
+	}
 	return h.srv.ListenAndServe()
 }
 
