@@ -6,16 +6,16 @@ import (
 )
 
 // Http 创建一个基于 http.ServeMux 的 HTTP 的网络
-func Http(addr string, hook ...func(handler *HttpServe)) transport.Network {
+func Http(addr string, hook ...HttpLaunchBeforeHook[*HttpServe]) transport.Network {
 	return HttpWithHandler(addr, &HttpServe{ServeMux: http.NewServeMux()}, hook...)
 }
 
 // HttpWithHandler 创建一个基于 http.Handler 的 HTTP 的网络
-func HttpWithHandler[H http.Handler](addr string, handler H, hook ...func(handler H)) transport.Network {
+func HttpWithHandler[H http.Handler](addr string, handler H, hook ...HttpLaunchBeforeHook[H]) transport.Network {
 	c := &httpCore[H]{
 		addr:    addr,
 		handler: handler,
-		hook:    hook,
+		hooks:   hook,
 		srv: &http.Server{
 			Addr:                         addr,
 			Handler:                      handler,

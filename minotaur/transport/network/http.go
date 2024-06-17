@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+type HttpLaunchBeforeHook[H http.Handler] func(ctx vivid.ActorContext, handler H)
+
 type HttpServe struct {
 	*http.ServeMux
 }
@@ -15,12 +17,12 @@ type httpCore[H http.Handler] struct {
 	addr    string
 	handler H
 	srv     *http.Server
-	hook    []func(handler H)
+	hooks   []HttpLaunchBeforeHook[H]
 }
 
 func (h *httpCore[H]) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
-	for _, f := range h.hook {
-		f(h.handler)
+	for _, f := range h.hooks {
+		f(ctx.(vivid.ActorContext), h.handler)
 	}
 	return h.srv.ListenAndServe()
 }
