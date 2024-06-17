@@ -13,7 +13,7 @@ import (
 func NewApplication(options ...Option) *Application {
 	opts := new(Options).apply(options...)
 
-	actorSystem := vivid.NewActorSystem(opts.ActorSystemName)
+	actorSystem := vivid.NewActorSystem(opts.ActorSystemName, opts.ActorSystemOptions...)
 	ctx, cancel := context.WithCancel(actorSystem.Context())
 	app := &Application{
 		options:     opts,
@@ -86,6 +86,12 @@ func (a *Application) Launch(handlers ...func(app *Application, ctx vivid.Messag
 	a.ActorRef = vivid.ActorOfI(a.actorSystem, &applicationActor{a}, func(options *vivid.ActorOptions[*applicationActor]) {
 		options.WithName("app")
 	})
+
+	if a.actorSystem.ClusterEnabled() {
+		if err := a.actorSystem.JoinCluster(); err != nil {
+			panic(err)
+		}
+	}
 
 	var systemSignal = make(chan os.Signal, 1)
 	signal.Notify(systemSignal, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

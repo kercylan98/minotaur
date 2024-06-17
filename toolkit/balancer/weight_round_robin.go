@@ -58,11 +58,10 @@ func (r *WeightRoundRobin[I, T]) Add(instance T) {
 	r.instances = append(r.instances, instance)
 }
 
-func (r *WeightRoundRobin[I, T]) Remove(instance T) {
+func (r *WeightRoundRobin[I, T]) Remove(instanceId I) {
 	r.rw.Lock()
 	defer r.rw.Unlock()
 
-	instanceId := instance.GetId()
 	if idx, ok := r.idx[instanceId]; ok {
 		delete(r.idx, instanceId)
 		r.instances = append(r.instances[:idx], r.instances[idx+1:]...)

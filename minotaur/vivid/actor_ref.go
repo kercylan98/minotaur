@@ -98,8 +98,8 @@ func (r *_RemoteActorRef) send(ctx MessageContext) {
 	if err != nil {
 		return
 	}
-	if err = r.system.client.Exec(data); err != nil {
-
+	if err = r.system.cluster.SendToNode(r.actorId.Address(), data); err != nil {
+		//panic(err)
 	}
 }
 

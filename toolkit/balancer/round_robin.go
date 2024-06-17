@@ -43,12 +43,12 @@ func (r *RoundRobin[I, T]) Add(instance T) {
 
 }
 
-func (r *RoundRobin[I, T]) Remove(instance T) {
+func (r *RoundRobin[I, T]) Remove(instanceId I) {
 	r.rw.Lock()
 	defer r.rw.Unlock()
 
-	if idx, ok := r.idx[instance.GetId()]; ok {
-		delete(r.idx, instance.GetId())
+	if idx, ok := r.idx[instanceId]; ok {
+		delete(r.idx, instanceId)
 		r.instances = append(r.instances[:idx], r.instances[idx+1:]...)
 		for i := idx; i < len(r.instances); i++ {
 			r.idx[r.instances[i].GetId()] = i // 更新索引

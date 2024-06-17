@@ -2,37 +2,35 @@ package vivid
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/convert"
+	"net"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
 const (
-	actorIdPrefix          = "minotaur"
-	actorIdParseLocal      = `^` + actorIdPrefix + `://([^/@]+@)?([^/:]+):(\d+)/([^/]+)/([^/]+)$`
-	actorIdParseTcp        = `^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)$`
-	actorIdParseTcpCluster = `^` + actorIdPrefix + `\.tcp://([^/:]+):(\d+)/([^/]+)/([^/]+)/([^/]+)$`
-	actorIdMinLength       = 12
+	actorIdPrefix    = "minotaur"
+	actorIdMinLength = 12
 )
 
 // ActorId 是一个 Actor 的唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了 Actor 完整的资源定位信息
 //   - minotaur://my-system/user/my-localActorRef
-//   - minotaur.tcp://localhost:1234/user/my-localActorRef
-//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActorRef
+//   - minotaur://localhost:1234/user/my-localActorRef
+//   - minotaur://my-node@localhost:1234/user/my-localActorRef
 type ActorId string
 
 type ActorName = string
 type ActorPath = string
 
-func NewActorId(network, cluster, host string, port uint16, system, path ActorPath) ActorId {
-	networkLen := uint16(len(network))
+func NewActorId(cluster, host string, port uint16, system, actorPath ActorPath) ActorId {
+	if strings.HasPrefix(actorPath, "/") {
+		actorPath = actorPath[1:]
+	}
+	networkLen := uint16(0) // Abandoned, occupying a place
 	clusterLen := uint16(len(cluster))
 	hostLen := uint16(len(host))
 	systemLen := uint16(len(system))
-	pathLen := uint16(len(path))
+	pathLen := uint16(len(actorPath))
 
 	// 计算需要的字节数
 	size := networkLen + clusterLen + hostLen + systemLen + pathLen + 12 // 添加端口号和长度信息
@@ -54,7 +52,7 @@ func NewActorId(network, cluster, host string, port uint16, system, path ActorPa
 	offset += 2
 
 	// 写入网络信息
-	copy(actorId[offset:], network)
+	copy(actorId[offset:], "")
 	offset += networkLen
 
 	// 写入集群信息
@@ -70,7 +68,7 @@ func NewActorId(network, cluster, host string, port uint16, system, path ActorPa
 	offset += systemLen
 
 	// 写入路径信息
-	copy(actorId[offset:], path)
+	copy(actorId[offset:], actorPath)
 	offset += pathLen
 
 	// 写入端口信息
@@ -78,53 +76,6 @@ func NewActorId(network, cluster, host string, port uint16, system, path ActorPa
 
 	// 转换为字符串
 	return ActorId(actorId)
-}
-
-// ParseActorId 用于解析可读的 ActorId 字符串为 ActorId 对象
-//   - minotaur://my-system/user/my-localActorRef
-//   - minotaur.tcp://localhost:1234/user/my-localActorRef
-//   - minotaur.tcp://my-cluster@localhost:1234/user/my-localActorRef
-func ParseActorId(actorId string) (ActorId, error) {
-	var network, cluster, host, system, name string
-	var port int
-	var portStr string
-
-	// 定义正则表达式来匹配不同格式的 ActorId
-	re1 := regexp.MustCompile(actorIdParseLocal)
-	re2 := regexp.MustCompile(actorIdParseTcp)
-	re3 := regexp.MustCompile(actorIdParseTcpCluster)
-
-	if matches := re1.FindStringSubmatch(actorId); matches != nil {
-		cluster = matches[1]
-		host = matches[2]
-		portStr = matches[3]
-		system = matches[4]
-		name = matches[5]
-		network = "tcp"
-	} else if matches := re2.FindStringSubmatch(actorId); matches != nil {
-		host = matches[1]
-		portStr = matches[2]
-		system = matches[3]
-		name = matches[4]
-		network = "tcp"
-	} else if matches := re3.FindStringSubmatch(actorId); matches != nil {
-		system = matches[1]
-		name = matches[2]
-		network = ""
-		cluster = ""
-		host = ""
-		portStr = "0"
-	} else {
-		return "", fmt.Errorf("%w: %s", ErrInvalidActorId, actorId)
-	}
-
-	// 将端口号从字符串转换为整数
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s, %w", ErrInvalidActorId, actorId, err)
-	}
-
-	return NewActorId(network, cluster, host, uint16(port), system, name), nil
 }
 
 // Invalid 检查 ActorId 是否无效
@@ -203,19 +154,25 @@ func (a ActorId) Name() ActorName {
 
 // IsLocal 检查 ActorId 是否是本地 ActorId
 func (a ActorId) IsLocal(system *ActorSystem) bool {
-	if a.Network() != system.network {
+	if a.Cluster() != system.cluster.GetClusterName() {
 		return false
 	}
-	if a.Cluster() != system.cluster {
+	if a.Host() != system.cluster.GetHost() {
 		return false
 	}
-	if a.Host() != system.host {
-		return false
-	}
-	if a.Port() != system.port {
+	if a.Port() != system.cluster.GetPort() {
 		return false
 	}
 	return true
+}
+
+// Address 获取 ActorId 的地址信息
+func (a ActorId) Address() string {
+	host, port := a.Host(), a.Port()
+	if port == 0 {
+		return host
+	}
+	return net.JoinHostPort(host, convert.Uint16ToString(port))
 }
 
 // String 获取 ActorId 的字符串表示
@@ -230,16 +187,23 @@ func (a ActorId) String() string {
 		builder.WriteString(network)
 	}
 	builder.WriteString("://")
+	host := a.Host()
+	port := a.Port()
 	if cluster := a.Cluster(); cluster != "" {
-		builder.WriteString(cluster)
-		builder.WriteString("@")
+		if host != "" || port != 0 {
+			builder.WriteString(cluster)
+			builder.WriteString("@")
+		} else {
+			builder.WriteString(cluster)
+			builder.WriteString("@/")
+		}
 	}
-	builder.WriteString(a.Host())
-	if port := a.Port(); port != 0 {
+	builder.WriteString(host)
+	if port != 0 {
 		builder.WriteString(":")
 		builder.WriteString(convert.Uint16ToString(port))
 	}
-	if a.Host() != "" {
+	if host != "" {
 		builder.WriteString("/")
 	}
 	builder.WriteString(a.System())

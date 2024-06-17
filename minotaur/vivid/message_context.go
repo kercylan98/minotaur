@@ -75,9 +75,8 @@ func newMessageContext(system *ActorSystem, message Message, priority int64, ins
 	return &_MessageContext{
 		system:        system,
 		Seq:           system.messageSeq.Add(1),
-		Network:       system.network,
-		Host:          system.host,
-		Port:          system.port,
+		Host:          system.cluster.GetHost(),
+		Port:          system.cluster.GetPort(),
 		Message:       message,
 		Priority:      priority,
 		InstantlyExec: instantly,
@@ -90,7 +89,6 @@ func newMessageContext(system *ActorSystem, message Message, priority int64, ins
 type _MessageContext struct {
 	system   *ActorSystem // 创建上下文的 Actor 系统
 	Seq      uint64       // 消息序号
-	Network  string       // 产生消息的网络
 	Host     string       // 产生消息的主机
 	Port     uint16       // 产生消息的端口
 	Message  Message      // 消息内容
@@ -236,7 +234,7 @@ func (c *_MessageContext) Reply(message Message) {
 	sender := c.GetSender()
 	localSender, isLocal := sender.(*_LocalActorRef)
 	noSender, isNoSender := sender.(*_NoSenderActorRef)
-	if isLocal || (isNoSender && c.Network == c.system.network && c.Host == c.system.host && c.Port == c.system.port) {
+	if isLocal || (isNoSender && c.Host == c.system.cluster.GetHost() && c.Port == c.system.cluster.GetPort()) {
 		var system *ActorSystem
 		if isLocal {
 			system = localSender.core.system

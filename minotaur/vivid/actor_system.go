@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/kercylan98/minotaur/minotaur/cluster"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
+	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"math"
+	"net"
 	"os"
 	"path"
 	"reflect"
@@ -18,8 +21,9 @@ import (
 )
 
 // NewActorSystem 创建一个 ActorSystem，ActorSystem 是 Actor 的容器，用于管理 Actor 的生命周期、消息分发等
-func NewActorSystem(name string) ActorSystem {
+func NewActorSystem(name string, options ...*ActorSystemOptions) ActorSystem {
 	s := ActorSystem{
+		options:         new(ActorSystemOptions).apply(options...),
 		dispatchers:     make(map[DispatcherId]Dispatcher),
 		dispatcherRW:    new(sync.RWMutex),
 		mailboxFactors:  make(map[MailboxFactoryId]MailboxFactory),
@@ -53,11 +57,33 @@ func NewActorSystem(name string) ActorSystem {
 	if err != nil {
 		panic(err)
 	}
+
+	if len(s.options.ClusterOptions) > 0 {
+		s.options.ClusterOptions = append([]cluster.Option{cluster.WithLogger(s.GetLogger())}, s.options.ClusterOptions...)
+		s.cluster, err = cluster.NewNode(s.options.ClusterOptions...)
+		if err != nil {
+			panic(err)
+		}
+
+		go func(ctx context.Context, system *ActorSystem) {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case b := <-system.cluster.Read():
+					system.onProcessServerMessage(b)
+				}
+			}
+		}(s.ctx, &s)
+	}
+
 	return s
 }
 
 // ActorSystem Actor 系统
 type ActorSystem struct {
+	options           *ActorSystemOptions
+	cluster           *cluster.Node
 	logger            *atomic.Pointer[log.Logger]
 	core              *_ActorSystemCore
 	ctx               context.Context
@@ -75,37 +101,60 @@ type ActorSystem struct {
 	eventBusActor     *_ActorCore        // 事件总线 Actor
 	eventSeq          *atomic.Int64      // 全局事件序号，仅标记事件产生顺序
 	codec             Codec
-	server            Server
-	client            Client
 	messageSeq        *atomic.Uint64            // 全局消息序号，用于生成唯一消息标识
 	askWaits          map[uint64]chan<- Message // 等待回复的消息
 	askWaitsLock      *sync.RWMutex             // 等待回复的消息锁
 	waitGroup         *toolkit.DynamicWaitGroup // Actor 等待组
 	scheduler         *chrono.Scheduler         // 调度器
 
-	name    string // ActorSystem 名称
-	network string // 网络类型
-	host    string // 主机地址
-	port    uint16 // 端口
-	cluster string // 集群名称
+	name string // ActorSystem 名称
 }
 
+// ClusterEnabled 是否启用集群
+func (s *ActorSystem) ClusterEnabled() bool {
+	return s.cluster != nil
+}
+
+// JoinCluster 加入集群
+func (s *ActorSystem) JoinCluster(addresses ...string) error {
+	if s.cluster == nil {
+		return ErrClusterNotEnabled
+	}
+	self := net.JoinHostPort(s.cluster.GetHost(), convert.Uint16ToString(s.cluster.GetPort()))
+	hasSelf := false
+	for _, address := range addresses {
+		if address == self {
+			hasSelf = true
+			break
+		}
+	}
+	if !hasSelf {
+		addresses = append([]string{self}, addresses...)
+	}
+	return s.cluster.Join(addresses...)
+}
+
+// SetLogger 设置日志记录器
 func (s *ActorSystem) SetLogger(logger *log.Logger) {
 	s.logger.Store(logger)
 }
 
+// GetLogger 获取日志记录器
 func (s *ActorSystem) GetLogger() *log.Logger {
 	return s.logger.Load()
 }
 
+// ActorOf 创建一个 Actor
 func (s *ActorSystem) ActorOf(ofo ActorOfO) ActorRef {
 	return s.userGuardActor.ActorOf(ofo)
 }
 
+// Context 获取 Actor 系统上下文
 func (s *ActorSystem) Context() context.Context {
 	return s.ctx
 }
 
+// Shutdown 关闭 Actor 系统
 func (s *ActorSystem) Shutdown() {
 	defer s.cancel()
 	s.unbindActor(s.userGuardActor, false, true)
@@ -114,14 +163,17 @@ func (s *ActorSystem) Shutdown() {
 	s.scheduler.Close()
 }
 
+// GetSystem 获取 Actor 系统
 func (s *ActorSystem) GetSystem() *ActorSystem {
 	return s
 }
 
+// GetDeadLetters 获取死信队列
 func (s *ActorSystem) GetDeadLetters() DeadLetterStream {
 	return s.deadLetters
 }
 
+// BindMailboxFactory 绑定邮箱工厂
 func (s *ActorSystem) BindMailboxFactory(f MailboxFactory) MailboxFactoryId {
 	s.mailboxFactorRW.Lock()
 	defer s.mailboxFactorRW.Unlock()
@@ -132,6 +184,7 @@ func (s *ActorSystem) BindMailboxFactory(f MailboxFactory) MailboxFactoryId {
 	return s.mailboxFactorGuid
 }
 
+// UnbindMailboxFactory 解绑邮箱工厂
 func (s *ActorSystem) UnbindMailboxFactory(id MailboxFactoryId) {
 	if id == FIFOMailboxFactoryId {
 		return
@@ -156,6 +209,7 @@ func (s *ActorSystem) getDispatcher(id DispatcherId) Dispatcher {
 	return s.dispatchers[id]
 }
 
+// BindDispatcher 绑定分发器
 func (s *ActorSystem) BindDispatcher(d Dispatcher) DispatcherId {
 	s.dispatcherRW.Lock()
 	defer s.dispatcherRW.Unlock()
@@ -166,6 +220,7 @@ func (s *ActorSystem) BindDispatcher(d Dispatcher) DispatcherId {
 	return s.dispatcherGuid
 }
 
+// UnbindDispatcher 解绑分发器
 func (s *ActorSystem) UnbindDispatcher(id DispatcherId) {
 	if id == DefaultDispatcherId {
 		return
@@ -274,6 +329,7 @@ func (s *ActorSystem) getActor(id ActorId) *_ActorCore {
 	return s.actors[id]
 }
 
+// GetContext 获取 Actor 系统用户 Actor 上下文
 func (s *ActorSystem) GetContext() ActorContext {
 	return s.userGuardActor
 }
@@ -383,8 +439,8 @@ func (s *ActorSystem) onProcessServerMessage(bytes []byte) {
 		s.askWaitsLock.RUnlock()
 		if existWait {
 			wait <- ctx.Message
-			return
 		}
+		return
 	}
 
 	// 查找接收者
@@ -434,7 +490,7 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	}
 
 	// 绝大多数情况均会成功，提前创建资源，减少锁粒度
-	var actorId = NewActorId(system.network, system.cluster, system.host, system.port, system.name, actorPath)
+	var actorId = NewActorId(system.cluster.GetClusterName(), system.cluster.GetHost(), system.cluster.GetPort(), system.name, actorPath)
 	var core = newActorCore(system, actorId, actor, options)
 
 	// 检查是否重名

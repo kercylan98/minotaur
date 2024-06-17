@@ -2,16 +2,18 @@ package minotaur
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/transport"
+	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
 type Option func(*Options)
 
 type Options struct {
-	Logger            *log.Logger       // 日志记录器
-	ActorSystemName   string            // Actor 系统名称
-	EventBusActorName string            // 事件总线 Actor 名称
-	Network           transport.Network // 网络
+	Logger             *log.Logger                 // 日志记录器
+	ActorSystemName    string                      // Actor 系统名称
+	EventBusActorName  string                      // 事件总线 Actor 名称
+	Network            transport.Network           // 网络
+	ActorSystemOptions []*vivid.ActorSystemOptions // Actor 系统配置
 }
 
 // defaultApply 设置缺省值
@@ -50,6 +52,12 @@ func WithNetwork(network transport.Network) Option {
 func WithActorSystemName(name string) Option {
 	return func(o *Options) {
 		o.ActorSystemName = name
+	}
+}
+
+func WithActorSystemOptions(options ...*vivid.ActorSystemOptions) Option {
+	return func(o *Options) {
+		o.ActorSystemOptions = append(o.ActorSystemOptions, options...)
 	}
 }
 

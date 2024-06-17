@@ -17,7 +17,7 @@ type Balancer[I constraints.Ordered, T Item[I]] interface {
 	Add(instance T)
 
 	// Remove 移除一个实例
-	Remove(instance T)
+	Remove(instance I)
 
 	// GetInstances 获取所有实例
 	GetInstances() []T
