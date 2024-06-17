@@ -22,7 +22,7 @@ type httpCore[H http.Handler] struct {
 
 func (h *httpCore[H]) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
 	for _, f := range h.hooks {
-		f(ctx.(vivid.ActorContext), h.handler)
+		f(ctx.(vivid.MessageContext).GetContext(), h.handler)
 	}
 	return h.srv.ListenAndServe()
 }
