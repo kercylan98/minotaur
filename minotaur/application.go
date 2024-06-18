@@ -33,7 +33,7 @@ type Application struct {
 	cancel      context.CancelFunc
 	closed      chan struct{}
 	actorSystem *vivid.ActorSystem
-	server      vivid.TypedActorRef[transport.ServerActorTyped]
+	server      transport.ServerActorTyped
 	handlers    []func(app *Application, ctx vivid.MessageContext)
 }
 
@@ -59,7 +59,7 @@ func (a *Application) GetSystem() *vivid.ActorSystem {
 }
 
 // GetServer 获取 ServerActor
-func (a *Application) GetServer() vivid.TypedActorRef[transport.ServerActorTyped] {
+func (a *Application) GetServer() transport.ServerActorTyped {
 	if a.server == nil {
 		panic("server actor not initialized or not launched, please with WithNetwork option to initialize it")
 	}

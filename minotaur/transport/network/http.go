@@ -20,7 +20,7 @@ type httpCore[H http.Handler] struct {
 	hooks   []HttpLaunchBeforeHook[H]
 }
 
-func (h *httpCore[H]) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
+func (h *httpCore[H]) Launch(ctx context.Context, srv transport.ServerActorTyped) error {
 	for _, f := range h.hooks {
 		f(ctx.(vivid.MessageContext).GetContext(), h.handler)
 	}

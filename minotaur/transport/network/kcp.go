@@ -3,7 +3,6 @@ package network
 import (
 	"context"
 	"github.com/kercylan98/minotaur/minotaur/transport"
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/xtaci/kcp-go/v5"
 	"runtime"
 	"sync"
@@ -35,7 +34,7 @@ type kcpCore struct {
 	cancel context.CancelFunc
 }
 
-func (k *kcpCore) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.ServerActorExpandTyped]) error {
+func (k *kcpCore) Launch(ctx context.Context, srv transport.ServerActorTyped) error {
 	k.ctx, k.cancel = context.WithCancel(ctx)
 	lis, err := kcp.ListenWithOptions(k.addr, nil, 0, 0)
 	if err != nil {
@@ -51,13 +50,13 @@ func (k *kcpCore) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.
 		}
 
 		// 注册连接
-		conn := srv.Api().Attach(session, func(packet transport.Packet) error {
+		conn := srv.Attach(session, func(packet transport.Packet) error {
 			_, err = session.Write(packet.GetBytes())
 			return err
 		})
 
 		// 处理连接数据
-		go func(ctx context.Context, session *kcp.UDPSession, conn vivid.TypedActorRef[transport.ConnActorExpandTyped]) {
+		go func(ctx context.Context, session *kcp.UDPSession, conn transport.Conn) {
 			var buf = make([]byte, 1024)
 			var n int
 			for {
@@ -69,7 +68,7 @@ func (k *kcpCore) Launch(ctx context.Context, srv vivid.TypedActorRef[transport.
 						conn.Stop()
 						return
 					}
-					conn.Api().React(transport.NewPacket(buf[:n]))
+					conn.React(transport.NewPacket(buf[:n]))
 				}
 			}
 		}(k.ctx, session, conn)

@@ -9,17 +9,15 @@ import (
 	"reflect"
 )
 
-func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) vivid.TypedActorRef[ServerActorTyped] {
-	ref := vivid.ActorOf[*ServerActor](system, options...)
-	return vivid.Typed[ServerActorTyped](ref, &ServerActorTypedImpl{
-		ServerActorRef: ref,
-	})
+func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) ServerActorTyped {
+	return vivid.ActorOfT[*ServerActor, ServerActorTyped](system, options...)
 }
 
 type ServerActor struct {
-	ServerActorTyped
+	vivid.ActorRef
+	typed       ServerActorTyped
 	network     Network
-	connections map[net.Conn]vivid.TypedActorRef[ConnActorTyped]
+	connections map[net.Conn]ConnActorTyped
 	restart     bool
 }
 
@@ -28,10 +26,13 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	case vivid.OnRestart:
 		s.restart = true
 	case vivid.OnBoot:
+		s.ActorRef = ctx
 		s.onBoot(ctx)
 		if s.restart {
 			s.onServerLaunch(ctx, ServerLaunchMessage{Network: s.network})
 		}
+	case vivid.OnActorTyped[ServerActorTyped]:
+		s.typed = m.Typed
 	case vivid.OnTerminate:
 		s.onServerShutdown(ctx, ServerShutdownMessage{})
 	case ServerLaunchMessage:
@@ -46,7 +47,7 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 }
 
 func (s *ServerActor) onBoot(ctx vivid.MessageContext) {
-	s.connections = make(map[net.Conn]vivid.TypedActorRef[ConnActorTyped])
+	s.connections = make(map[net.Conn]ConnActorTyped)
 }
 
 func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMessage) {
@@ -60,11 +61,8 @@ func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMes
 	log.Info("Minotaur Server", log.String("", "RunningInfo"), log.String("network", reflect.TypeOf(s.network).String()), log.String("listen", fmt.Sprintf("%s://%s%s", s.network.Schema(), ip.String(), s.network.Address())))
 	log.Info("Minotaur Server", log.String("", "============================================================================"))
 
-	serverExpandTyped := vivid.Typed[ServerActorExpandTyped](ctx, &ServerActorExpandTypedImpl{
-		ServerActorRef: ctx,
-	})
 	go func() {
-		if err = s.network.Launch(ctx, serverExpandTyped); err != nil {
+		if err = s.network.Launch(ctx, s.typed); err != nil {
 			panic(err)
 		}
 	}()
@@ -77,25 +75,17 @@ func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdow
 
 func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnOpenedMessage) {
 	// 创建连接 Actor 并绑定到服务器
-	connRef := ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ConnActor]) {
+	connTyped := vivid.ActorOfFT[*ConnActor, ConnActorTyped](ctx, func(options *vivid.ActorOptions[*ConnActor]) {
 		options.
 			WithName("conn-" + m.conn.RemoteAddr().String()).
 			WithStopOnParentRestart(true).
 			WithSupervisor(func(message, reason vivid.Message) vivid.Directive {
 				return vivid.DirectiveStop
 			})
-	}))
-	var connActor *ConnActor
-	connRef.Tell(ConnectionInitMessage{Conn: m.conn, Writer: m.writer, ActorHook: func(actor *ConnActor) {
-		connActor = actor
-	}}, vivid.WithInstantly(true)) // 由于是立即执行，可以直接获取写入器引用
-	connTyped := connActor.Typed
-	connExpandTyped := vivid.Typed[ConnActorExpandTyped](connRef, &ConnActorExpandTypedImpl{
-		ConnActorRef: connRef,
 	})
-
 	s.connections[m.conn] = connTyped
-	ctx.Reply(connExpandTyped)
+	connTyped.Init(m.conn, m.writer)
+	ctx.Reply(connTyped)
 
 	// 发布连接打开事件
 	ctx.GetSystem().Publish(ctx, ServerConnectionOpenedEvent{Conn: connTyped})
@@ -107,4 +97,13 @@ func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnC
 		delete(s.connections, m.conn)
 		conn.Stop()
 	}
+}
+
+func (s *ServerActor) Attach(conn net.Conn, writer ConnWriter) ConnActorTyped {
+	typed, _ := s.Ask(ServerConnOpenedMessage{conn, writer}).(ConnActorTyped)
+	return typed
+}
+
+func (s *ServerActor) Detach(conn net.Conn) {
+	s.Tell(ServerConnClosedMessage{conn})
 }

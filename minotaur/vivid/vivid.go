@@ -31,7 +31,9 @@ func ActorOfIT[A Actor, T ActorTyped](actorOf ActorOwner, actor A, options ...fu
 	ask := ref.Ask(onActorRefTyped{
 		ref: ref,
 	}, WithInstantly(true))
-	return ask.(T)
+	typed := ask.(T)
+	ref.Tell(OnActorTyped[T]{Typed: typed}, WithInstantly(true))
+	return typed
 }
 
 func ActorOfF[T Actor](actorOf ActorOwner, options ...func(options *ActorOptions[T])) ActorRef {
@@ -42,12 +44,14 @@ func ActorOfF[T Actor](actorOf ActorOwner, options ...func(options *ActorOptions
 	return ActorOf(actorOf, opts)
 }
 
-func ActorOfFT[A Actor, T ActorTyped](actorOf ActorOwner, actor A, options ...func(options *ActorOptions[A])) T {
-	ref := ActorOfI(actorOf, actor, options...)
+func ActorOfFT[A Actor, T ActorTyped](actorOf ActorOwner, options ...func(options *ActorOptions[A])) T {
+	ref := ActorOfF(actorOf, options...)
 	ask := ref.Ask(onActorRefTyped{
 		ref: ref,
 	}, WithInstantly(true))
-	return ask.(T)
+	typed := ask.(T)
+	ref.Tell(OnActorTyped[T]{Typed: typed}, WithInstantly(true))
+	return typed
 }
 
 func ActorOfT[A Actor, T ActorTyped](actorOf ActorOwner, options ...*ActorOptions[A]) T {
@@ -55,7 +59,9 @@ func ActorOfT[A Actor, T ActorTyped](actorOf ActorOwner, options ...*ActorOption
 	ask := ref.Ask(onActorRefTyped{
 		ref: ref,
 	}, WithInstantly(true))
-	return ask.(T)
+	typed := ask.(T)
+	ref.Tell(OnActorTyped[T]{Typed: typed}, WithInstantly(true))
+	return typed
 }
 
 func ActorOf[T Actor](actorOf ActorOwner, options ...*ActorOptions[T]) ActorRef {

@@ -7,7 +7,6 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/minotaur/transport"
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/panjf2000/gnet/v2"
 	"io"
 	"time"
@@ -25,12 +24,12 @@ func newWebsocketWrapper(conn gnet.Conn) *websocketWrapper {
 
 // websocketWrapper websocket 包装器
 type websocketWrapper struct {
-	ref      vivid.TypedActorRef[transport.ConnActorExpandTyped] // 引用
-	conn     gnet.Conn                                           // 连接
-	upgraded bool                                                // 是否已经升级
-	hs       ws.Handshake                                        // 握手信息
-	active   time.Time                                           // 活跃时间
-	buf      bytes.Buffer                                        // 缓冲区
+	ref      transport.ConnActorTyped // 引用
+	conn     gnet.Conn                // 连接
+	upgraded bool                     // 是否已经升级
+	hs       ws.Handshake             // 握手信息
+	active   time.Time                // 活跃时间
+	buf      bytes.Buffer             // 缓冲区
 
 	header *ws.Header   // 当前头部
 	cache  bytes.Buffer // 缓存的数据

@@ -25,3 +25,8 @@ type OnTerminate struct {
 type onActorRefTyped struct {
 	ref ActorRef
 }
+
+// OnActorTyped 该消息在 Actor 被类型化后发送，用于在 Actor 本身的消息中获取到类型化的 ActorRef
+type OnActorTyped[T ActorTyped] struct {
+	Typed T
+}

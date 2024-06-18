@@ -6,15 +6,19 @@ import (
 )
 
 type ConnActor struct {
+	vivid.ActorRef
 	Conn             net.Conn
 	Writer           vivid.ActorRef
-	Typed            vivid.TypedActorRef[ConnActorTyped]
+	Typed            ConnActorTyped
 	TerminateHandler ConnTerminateHandler
 }
 
 func (c *ConnActor) OnReceive(ctx vivid.MessageContext) {
 	switch m := ctx.GetMessage().(type) {
 	case vivid.OnBoot:
+		c.ActorRef = ctx
+	case vivid.OnActorTyped[ConnActorTyped]:
+		c.Typed = m.Typed
 	case ConnectionInitMessage:
 		c.onInit(ctx, m)
 	case ConnectionSetPacketHandlerMessage:
@@ -54,9 +58,7 @@ func (c *ConnActor) onInit(ctx vivid.MessageContext, m ConnectionInitMessage) {
 			return vivid.DirectiveStop
 		})
 	}))
-	c.Typed = vivid.Typed[ConnActorTyped](ctx.GetRef(), &ConnActorTypedImpl{
-		ConnActorRef:       ctx.GetRef(),
-		ConnWriterActorRef: c.Writer,
-	})
-	m.ActorHook(c)
+	if m.ActorHook != nil {
+		m.ActorHook(c)
+	}
 }

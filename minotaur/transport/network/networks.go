@@ -6,11 +6,13 @@ import (
 )
 
 // Http 创建一个基于 http.ServeMux 的 HTTP 的网络
+//   - 当 hook 不为空时，将在 transport.Network 启动前获取到来自 transport.ServerActor 的引用及 http.ServeMux 的实例
 func Http(addr string, hook ...HttpLaunchBeforeHook[*HttpServe]) transport.Network {
 	return HttpWithHandler(addr, &HttpServe{ServeMux: http.NewServeMux()}, hook...)
 }
 
 // HttpWithHandler 创建一个基于 http.Handler 的 HTTP 的网络
+//   - 当 hook 不为空时，将在 transport.Network 启动前获取到来自 transport.ServerActor 的引用及 H 的实例
 func HttpWithHandler[H http.Handler](addr string, handler H, hook ...HttpLaunchBeforeHook[H]) transport.Network {
 	c := &httpCore[H]{
 		addr:    addr,
@@ -22,6 +24,20 @@ func HttpWithHandler[H http.Handler](addr string, handler H, hook ...HttpLaunchB
 			DisableGeneralOptionsHandler: false,
 		},
 	}
+	return c
+}
+
+// HttpWithServerAndHandler 创建一个基于 http.Server 和 http.Handler 的 HTTP 的网络
+//   - 当 hook 不为空时，将在 transport.Network 启动前获取到来自 transport.ServerActor 的引用及 H 的实例
+func HttpWithServerAndHandler[H http.Handler](addr string, srv *http.Server, handler H, hook ...HttpLaunchBeforeHook[H]) transport.Network {
+	c := &httpCore[H]{
+		addr:    addr,
+		handler: handler,
+		hooks:   hook,
+		srv:     srv,
+	}
+	srv.Addr = addr
+	srv.Handler = handler
 	return c
 }
 

@@ -2,12 +2,19 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/vivid"
+	"net"
 	"time"
 )
 
-type Conn = vivid.TypedActorRef[ConnActorTyped]
+type Conn = ConnActorTyped
 
 type ConnActorTyped interface {
+	vivid.ActorTyped
+
+	Init(conn net.Conn, writer ConnWriter)
+
+	React(packet Packet)
+
 	// Write 向连接内写入数据包
 	Write(packet Packet)
 
@@ -34,39 +41,42 @@ type ConnActorTyped interface {
 	SetZombieTimeout(timeout time.Duration)
 }
 
-type ConnActorTypedImpl struct {
-	ConnActorRef       vivid.ActorRef
-	ConnWriterActorRef vivid.ActorRef
+func (c *ConnActor) Init(conn net.Conn, writer ConnWriter) {
+	c.Tell(ConnectionInitMessage{Conn: conn, Writer: writer})
 }
 
-func (c *ConnActorTypedImpl) Write(packet Packet) {
-	c.ConnWriterActorRef.Tell(packet)
+func (c *ConnActor) React(packet Packet) {
+	c.Tell(ConnectionReactPacketMessage{Packet: packet})
 }
 
-func (c *ConnActorTypedImpl) Close() {
-	c.ConnActorRef.Stop()
+func (c *ConnActor) Write(packet Packet) {
+	c.Writer.Tell(packet)
 }
 
-func (c *ConnActorTypedImpl) SetPacketHandler(handler ConnPacketHandler) {
-	c.ConnActorRef.Tell(ConnectionSetPacketHandlerMessage{Handler: handler})
+func (c *ConnActor) Close() {
+	c.Stop()
 }
 
-func (c *ConnActorTypedImpl) SetTerminateHandler(handler ConnTerminateHandler) {
-	c.ConnActorRef.Tell(ConnectionSetTerminateHandlerMessage{Handler: handler})
+func (c *ConnActor) SetPacketHandler(handler ConnPacketHandler) {
+	c.Tell(ConnectionSetPacketHandlerMessage{Handler: handler})
 }
 
-func (c *ConnActorTypedImpl) LoadMod(mods ...vivid.ModInfo) {
-	c.ConnActorRef.Tell(ConnectionLoadModMessage{Mods: mods}, vivid.WithInstantly(true))
+func (c *ConnActor) SetTerminateHandler(handler ConnTerminateHandler) {
+	c.Tell(ConnectionSetTerminateHandlerMessage{Handler: handler})
 }
 
-func (c *ConnActorTypedImpl) UnloadMod(mods ...vivid.ModInfo) {
-	c.ConnActorRef.Tell(ConnectionUnloadModMessage{Mods: mods}, vivid.WithInstantly(true))
+func (c *ConnActor) LoadMod(mods ...vivid.ModInfo) {
+	c.Tell(ConnectionLoadModMessage{Mods: mods}, vivid.WithInstantly(true))
 }
 
-func (c *ConnActorTypedImpl) ApplyMod() {
-	c.ConnActorRef.Tell(ConnectionApplyModMessage{}, vivid.WithInstantly(true))
+func (c *ConnActor) UnloadMod(mods ...vivid.ModInfo) {
+	c.Tell(ConnectionUnloadModMessage{Mods: mods}, vivid.WithInstantly(true))
 }
 
-func (c *ConnActorTypedImpl) SetZombieTimeout(timeout time.Duration) {
-	c.ConnActorRef.Tell(ConnectionSetZombieTimeoutMessage{Timeout: timeout})
+func (c *ConnActor) ApplyMod() {
+	c.Tell(ConnectionApplyModMessage{}, vivid.WithInstantly(true))
+}
+
+func (c *ConnActor) SetZombieTimeout(timeout time.Duration) {
+	c.Tell(ConnectionSetZombieTimeoutMessage{Timeout: timeout})
 }

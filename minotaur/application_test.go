@@ -62,9 +62,9 @@ func (c *ClusterActor) OnReceive(ctx vivid.MessageContext) {
 }
 
 func TestNewApplication(t *testing.T) {
-	minotaur.EnableHttpPProf(":9989", "/debug/pprof", func(err error) {
-		panic(err)
-	})
+	//minotaur.EnableHttpPProf(":9989", "/debug/pprof", func(err error) {
+	//	panic(err)
+	//})
 	minotaur.NewApplication(
 		minotaur.WithNetwork(network.WebSocket(":10000")),
 		minotaur.WithActorSystemOptions(vivid.NewActorSystemOptions().
@@ -80,19 +80,19 @@ func TestNewApplication(t *testing.T) {
 
 		switch m := ctx.GetMessage().(type) {
 		case vivid.OnBoot:
-			app.GetServer().Api().SubscribeConnOpenedEvent(app)
+			app.GetServer().SubscribeConnOpenedEvent(app)
 			ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ClusterActor]) {
 				options.WithName("cluster")
 			}))
 		case transport.ServerConnectionOpenedEvent:
 			conn := m.Conn
-			conn.Api().SetPacketHandler(func(ctx vivid.MessageContext, conn transport.Conn, packet transport.ConnectionReactPacketMessage) {
-				conn.Api().Write(packet)
+			conn.SetPacketHandler(func(ctx vivid.MessageContext, conn transport.Conn, packet transport.ConnectionReactPacketMessage) {
+				conn.Write(packet)
 			})
-			conn.Api().LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
-			conn.Api().LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
+			conn.LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
+			conn.LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
 
-			conn.Api().ApplyMod()
+			conn.ApplyMod()
 		}
 
 	})
@@ -115,7 +115,7 @@ func TestNewApplication2(t *testing.T) {
 
 		switch m := ctx.GetMessage().(type) {
 		case vivid.OnBoot:
-			app.GetServer().Api().SubscribeConnOpenedEvent(app)
+			app.GetServer().SubscribeConnOpenedEvent(app)
 			ctx.ActorOf(vivid.OfO(func(options *vivid.ActorOptions[*ClusterActor]) {
 				options.WithName("cluster")
 			}))
@@ -129,13 +129,13 @@ func TestNewApplication2(t *testing.T) {
 			}()
 		case transport.ServerConnectionOpenedEvent:
 			conn := m.Conn
-			conn.Api().SetPacketHandler(func(ctx vivid.MessageContext, conn transport.Conn, packet transport.ConnectionReactPacketMessage) {
-				conn.Api().Write(packet)
+			conn.SetPacketHandler(func(ctx vivid.MessageContext, conn transport.Conn, packet transport.ConnectionReactPacketMessage) {
+				conn.Write(packet)
 			})
-			conn.Api().LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
-			conn.Api().LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
+			conn.LoadMod(vivid.ModOf[AccountModExposer](&AccountMod{}))
+			conn.LoadMod(vivid.ModOf[BagModExposer](&BagMod{}))
 
-			conn.Api().ApplyMod()
+			conn.ApplyMod()
 		}
 
 	})
