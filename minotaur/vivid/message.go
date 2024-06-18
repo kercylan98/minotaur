@@ -20,3 +20,8 @@ type OnRestart struct {
 type OnTerminate struct {
 	restart bool // 是否重启
 }
+
+// onActorRefTyped 该消息将在 ActorOfT 时发送，用于 ActorRef 的类型转换
+type onActorRefTyped struct {
+	ref ActorRef
+}

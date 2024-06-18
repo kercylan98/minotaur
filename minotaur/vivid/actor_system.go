@@ -163,6 +163,11 @@ func (s *ActorSystem) Shutdown() {
 	s.scheduler.Close()
 }
 
+// AwaitShutdown 等待 Actor 系统关闭
+func (s *ActorSystem) AwaitShutdown() {
+	s.waitGroup.Wait()
+}
+
 // GetSystem 获取 Actor 系统
 func (s *ActorSystem) GetSystem() *ActorSystem {
 	return s
@@ -373,7 +378,6 @@ func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ..
 	if opts.ContextHook != nil {
 		opts.ContextHook(ctx)
 	}
-	receiver.send(ctx)
 
 	// 等待回复
 	if opts.reply {
@@ -395,7 +399,7 @@ func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ..
 			opts.ReplyTimeout = time.Second
 		}
 
-		waiter := make(chan Message)
+		waiter := make(chan Message, 1)
 		timeoutCtx, cancel := context.WithTimeout(s.ctx, opts.ReplyTimeout)
 		defer func(seq uint64, waiter chan Message, cancel context.CancelFunc) {
 			cancel()
@@ -408,6 +412,7 @@ func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ..
 		s.askWaitsLock.Lock()
 		s.askWaits[ctx.GetSeq()] = waiter
 		s.askWaitsLock.Unlock()
+		receiver.send(ctx)
 
 		select {
 		case <-timeoutCtx.Done():
@@ -417,6 +422,8 @@ func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ..
 		case reply := <-waiter:
 			return reply
 		}
+	} else {
+		receiver.send(ctx)
 	}
 
 	return nil

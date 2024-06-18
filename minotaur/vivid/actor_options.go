@@ -1,6 +1,8 @@
 package vivid
 
-import "time"
+import (
+	"time"
+)
 
 type ActorOption[T Actor] func(opts *ActorOptions[T])
 

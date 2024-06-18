@@ -3,6 +3,7 @@ package vivid
 import (
 	"errors"
 	"github.com/kercylan98/minotaur/toolkit/buffer"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -52,6 +53,7 @@ func (s *_DeadLetterStream) getEvents(typ DeadLetterEventType) *deadLetterEvents
 }
 
 func (s *_DeadLetterStream) DeadLetter(deadLetter DeadLetterEvent) {
+	log.Error("DeadLetter", log.Any("deadLetter", deadLetter))
 	events := s.getEvents(deadLetter.Type)
 
 	deadLetter.Seq = s.seq.Add(1)

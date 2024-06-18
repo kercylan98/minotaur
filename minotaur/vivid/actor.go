@@ -36,6 +36,9 @@ func onReceive(actor Actor, ctx MessageContext) {
 
 	// 空闲时间重置
 	switch ctx.GetMessage().(type) {
+	case onActorRefTyped:
+		ctx.Reply(ctx.GetActor())
+		return
 	case OnTerminate:
 	default:
 		core.refreshIdleTimeout()
