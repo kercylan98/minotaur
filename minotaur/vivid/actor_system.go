@@ -12,7 +12,6 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"math"
 	"net"
-	"os"
 	"path"
 	"reflect"
 	"sync"
@@ -41,7 +40,11 @@ func NewActorSystem(name string, options ...*ActorSystemOptions) ActorSystem {
 		eventSeq:        new(atomic.Int64),
 		scheduler:       chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize),
 	}
-	s.logger.Store(log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name)))
+	if s.options.Logger == nil {
+		//s.options.Logger = log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name))
+		s.options.Logger = log.NewSilentLogger()
+	}
+	s.logger.Store(s.options.Logger)
 	s.core = new(_ActorSystemCore).init(&s)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.BindDispatcher(new(_Dispatcher)) // default dispatcher
