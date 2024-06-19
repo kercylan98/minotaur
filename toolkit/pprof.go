@@ -1,4 +1,4 @@
-package minotaur
+package toolkit
 
 import (
 	"errors"

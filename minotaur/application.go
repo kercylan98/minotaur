@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
+	"github.com/kercylan98/minotaur/toolkit"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,12 +46,12 @@ func (a *Application) onReceive(ctx vivid.MessageContext) {
 
 // EnablePProf 启用 PProf
 func (a *Application) EnablePProf(addr, prefix string, errorHandler func(err error)) {
-	EnableHttpPProf(addr, prefix, errorHandler)
+	toolkit.EnableHttpPProf(addr, prefix, errorHandler)
 }
 
 // DisablePProf 禁用 PProf
 func (a *Application) DisablePProf(addr string) {
-	DisableHttpPProf(addr)
+	toolkit.DisableHttpPProf(addr)
 }
 
 // GetSystem 获取 ActorSystem
