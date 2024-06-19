@@ -20,7 +20,7 @@ jobs:
           changelog-types: >
             [
               {"type":"🎨","section":"🎨 Improve Code Structure/Format | 改进代码结构/格式","hidden":false},
-              {"type":"⚡","section":"⚡️ Improve Performance | 提高性能","hidden":false},
+              {"type":"⚡️","section":"⚡️ Improve Performance | 提高性能","hidden":false},
               {"type":"🔥","section":"🔥 Remove Code or Files | 删除代码或文件","hidden":false},
               {"type":"🐛","section":"🐛 Fix a Bug | 修复错误","hidden":false},
               {"type":"🚑","section":"🚑️ Critical Fix | 关键修补程序","hidden":false},
