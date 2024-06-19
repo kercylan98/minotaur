@@ -1,0 +1,44 @@
+package vivid
+
+import (
+	"fmt"
+	"github.com/kercylan98/minotaur/toolkit/log"
+)
+
+var TestSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+
+func GetBenchmarkTestSystem() *ActorSystem {
+	sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+	return &sys
+}
+
+// IneffectiveActor 无效的 Actor，仅实现了 Actor 接口，但是没有任何行为。用于测试用途
+type IneffectiveActor struct {
+}
+
+func (i *IneffectiveActor) OnReceive(ctx MessageContext) {}
+
+// PrintlnActor 仅包含一个打印消息的行为的 Actor，用于测试用途
+type PrintlnActor struct {
+	ActorRef
+}
+
+func (p *PrintlnActor) OnReceive(ctx MessageContext) {
+	switch m := ctx.GetMessage().(type) {
+	case OnBoot:
+		p.ActorRef = ctx
+	case string:
+		fmt.Println(m)
+	}
+}
+
+func (p *PrintlnActor) Println(message string) {
+	p.Tell(message)
+}
+
+// PrintlnActorTyped 是 PrintlnActor 的类型化引用，定义了一个消息发送函数，用于测试用途
+type PrintlnActorTyped interface {
+	ActorRef
+
+	Println(message string)
+}

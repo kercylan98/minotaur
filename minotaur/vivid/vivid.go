@@ -18,6 +18,7 @@ func BehaviorOf[T Message](handler func(ctx MessageContext, message T)) Behavior
 	return adp
 }
 
+// ActorOfI 使用一个已有的 Actor 实例创建 Actor 并返回 ActorRef
 func ActorOfI[T Actor](actorOf ActorOwner, actor T, options ...func(options *ActorOptions[T])) ActorRef {
 	var opts = NewActorOptions[T]().WithConstruct(actor)
 	for _, opt := range options {
@@ -26,6 +27,7 @@ func ActorOfI[T Actor](actorOf ActorOwner, actor T, options ...func(options *Act
 	return ActorOf(actorOf, opts)
 }
 
+// ActorOfIT 使用一个已有的 Actor 实例创建 Actor 并返回 ActorRef 的类型化引用
 func ActorOfIT[A Actor, T ActorTyped](actorOf ActorOwner, actor A, options ...func(options *ActorOptions[A])) T {
 	ref := ActorOfI(actorOf, actor, options...)
 	ask := ref.Ask(onActorRefTyped{
@@ -36,6 +38,7 @@ func ActorOfIT[A Actor, T ActorTyped](actorOf ActorOwner, actor A, options ...fu
 	return typed
 }
 
+// ActorOfF 使用传入的可选项创建 Actor 并返回 ActorRef，该函数简化了对于泛型的声明
 func ActorOfF[T Actor](actorOf ActorOwner, options ...func(options *ActorOptions[T])) ActorRef {
 	var opts = NewActorOptions[T]()
 	for _, opt := range options {
@@ -44,6 +47,7 @@ func ActorOfF[T Actor](actorOf ActorOwner, options ...func(options *ActorOptions
 	return ActorOf(actorOf, opts)
 }
 
+// ActorOfFT 使用传入的可选项创建 Actor 并返回 ActorRef 的类型化引用，该函数简化了对于泛型的声明
 func ActorOfFT[A Actor, T ActorTyped](actorOf ActorOwner, options ...func(options *ActorOptions[A])) T {
 	ref := ActorOfF(actorOf, options...)
 	ask := ref.Ask(onActorRefTyped{
@@ -54,6 +58,7 @@ func ActorOfFT[A Actor, T ActorTyped](actorOf ActorOwner, options ...func(option
 	return typed
 }
 
+// ActorOfT 使用传入的可选项创建 Actor 并返回 ActorRef 类型化引用
 func ActorOfT[A Actor, T ActorTyped](actorOf ActorOwner, options ...*ActorOptions[A]) T {
 	ref := ActorOf(actorOf, options...)
 	ask := ref.Ask(onActorRefTyped{
@@ -64,6 +69,7 @@ func ActorOfT[A Actor, T ActorTyped](actorOf ActorOwner, options ...*ActorOption
 	return typed
 }
 
+// ActorOf 使用传入的可选项创建 Actor 并返回 ActorRef
 func ActorOf[T Actor](actorOf ActorOwner, options ...*ActorOptions[T]) ActorRef {
 	var opts = parseActorOptions(options...)
 	var ins = opts.Construct
