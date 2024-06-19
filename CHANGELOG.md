@@ -1,5 +1,149 @@
 # Changelog
 
+## [0.6.0](https://github.com/kercylan98/minotaur/compare/v0.5.4...v0.6.0) (2024-06-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **minotaur:** ServerActor and ConnActor now use a more streamlined typing system that may affect consumers of the old API.
+* **vivid:** ActorId generation and parsing logic has been modified to support cluster identifiers. This may affect existing systems that rely on the previous format.
+* **vivid:** GetActorIdByActorRef function has been removed. Update yourcode to use the new Id() method from the ActorRef interface.
+* **chrono:** This modifies the internal scheduler logic, which might affect existing clients relying on the previous behavior.
+* **vivid:** Mailbox now requires an additional parameter for Enqueue method to specify if the message should be delivered instantly. This may affect the clients relying on the previous signature of the Enqueue method.
+
+### Other | 其他更改
+
+* ECS 优化 ([0f9116a](https://github.com/kercylan98/minotaur/commit/0f9116a463ee2f58fe5a82e85eee319dd90d3e87))
+* ecs 基本实现 ([bf15fe7](https://github.com/kercylan98/minotaur/commit/bf15fe71473ce8107974b634a0e87d2054f1e9c0))
+* ecs 基本实现 ([dff6faa](https://github.com/kercylan98/minotaur/commit/dff6faa834318048356c44f06ebc38ccaa71c0a3))
+* ecs 增加、删除实体组件 ([820fbf6](https://github.com/kercylan98/minotaur/commit/820fbf62f3d68d26b367675472a3c93104de4656))
+* ecs 调整 ([33c1327](https://github.com/kercylan98/minotaur/commit/33c13271a76fe9e4b3149e743e5ece6cccf06528))
+* reactor 内存优化 ([5b0ea56](https://github.com/kercylan98/minotaur/commit/5b0ea566d5ded2a8506c9f115eaf3e54485463ad))
+* reactor 实现 ([1408fdc](https://github.com/kercylan98/minotaur/commit/1408fdcff0e2595b7a09289952c1af7e0fe7faec))
+* server v2 优化 ([80ce168](https://github.com/kercylan98/minotaur/commit/80ce16836399681bdbb81321446e0f9721eff65a))
+* server/v2 基本通讯模型实现 ([89e868b](https://github.com/kercylan98/minotaur/commit/89e868bd1c7712374041608bf563a77a0caa261c))
+* v2 actor dispatcher 去锁 ([e9019eb](https://github.com/kercylan98/minotaur/commit/e9019ebfef6b75b11c44d214d38a085cc3e55925))
+* v2 actor 优化 ([a246abd](https://github.com/kercylan98/minotaur/commit/a246abd7a185c8919021564495bfbd9b7ff6a0fc))
+* v2 actor 体验优化 ([a08d445](https://github.com/kercylan98/minotaur/commit/a08d445cf3e7656a432e860ec25093a7a798101a))
+* v2 actor 体验优化 ([4da7377](https://github.com/kercylan98/minotaur/commit/4da7377ac9df5827a7dd61683ee6816cb7107eb3))
+* v2 actor 基本模型 ([6f657da](https://github.com/kercylan98/minotaur/commit/6f657dae500a05d5e2f003f318548196ef861065))
+* v2 actor 子 Actor、查询 ([bcf8d66](https://github.com/kercylan98/minotaur/commit/bcf8d660dd77ca1fbe28d384d74ee5d056b30f46))
+* v2 actor 本地远程 tell、ask ([d39d3e9](https://github.com/kercylan98/minotaur/commit/d39d3e979fb860ec095ed3362ccf13a7c56633f5))
+* v2 actor 行为支持 ([804810e](https://github.com/kercylan98/minotaur/commit/804810ea90500f505d6cf97f0bcc64e223d1d77f))
+* v2 actor 远程 ASK 实现 ([d83738b](https://github.com/kercylan98/minotaur/commit/d83738b2001adef5381206737086f293bc532cbf))
+* v2 actor 重构 ([ab05ba7](https://github.com/kercylan98/minotaur/commit/ab05ba71523827929369d3e3a72484bea7073873))
+* v2 actor 销毁 ([9e2dceb](https://github.com/kercylan98/minotaur/commit/9e2dceb4c3fc572f45e73712912aeb71a2b2a7e0))
+* v2 application 测试类编写 ([0bf3dc4](https://github.com/kercylan98/minotaur/commit/0bf3dc43124b0947ff8c787ea92bceeaa29bf57b))
+* v2 geometry 包调整 ([438134f](https://github.com/kercylan98/minotaur/commit/438134f940b835a8c6e758200359888588af4d42))
+* v2 geometry 包调整 ([2632859](https://github.com/kercylan98/minotaur/commit/26328590a90d915e05af923a742c2180186737be))
+* v2 geometry 包调整、astar、navmesh 移动到 navigate 包 ([bd21158](https://github.com/kercylan98/minotaur/commit/bd21158cda884ee30d58ec1684ba5e5984cab25e))
+* v2 modular 增加 onRunning 阶段 ([e118662](https://github.com/kercylan98/minotaur/commit/e1186622d2c31c6a951bf82a73b7246b92cdcc19))
+* v2 nexus 包增加 IndependentGoroutine 的 broker 实现，该 broker 中将对每个 topic 使用单独的 goroutine 进行维护 ([1de5d7c](https://github.com/kercylan98/minotaur/commit/1de5d7c55d3e663a0696b0046c4922d6334908bc))
+* v2 rpc 优化 ([5a1067a](https://github.com/kercylan98/minotaur/commit/5a1067aaa4b119fb7c436bcec3510a7fe01db8cf))
+* v2 RPC 优化 ([0a402b7](https://github.com/kercylan98/minotaur/commit/0a402b7be02181d315c6941814f9455618d6a5a6))
+* v2 RPC 基本实现 ([4c6af40](https://github.com/kercylan98/minotaur/commit/4c6af40e1e9e754a37aed6de3600770ddc8b0212))
+* v2 rpc 结合 actor 基本实现 ([b772094](https://github.com/kercylan98/minotaur/commit/b772094aa2e91b10bdff11acaaba957e9ae69739))
+* v2 RPC 调用器定义 ([6d3caf1](https://github.com/kercylan98/minotaur/commit/6d3caf15f7398e98706accf2978022e803a6ef18))
+* v2 server ([2e0c52e](https://github.com/kercylan98/minotaur/commit/2e0c52ee5c3b6f64379bd665c543fb08254ed881))
+* v2 server 增加 kcp 网络支持 ([7121b8b](https://github.com/kercylan98/minotaur/commit/7121b8bb42252ce3b659d7498215b0cd8cf11f71))
+* v2 server 增加 kcp 网络支持 ([831833d](https://github.com/kercylan98/minotaur/commit/831833d133dc63525a3474e13bbc3d76a4d093d9))
+* v2 server 增加 tcp\udp\unix 网络支持 ([102a9ec](https://github.com/kercylan98/minotaur/commit/102a9ec25bc8fc9bf7b847b407e4324678614828))
+* v2 server 增加僵尸连接超时可选项 ([c4e95d9](https://github.com/kercylan98/minotaur/commit/c4e95d9aa77e1408ef2186c10f87015e87fd7b9d))
+* v2 server 慢消息检测及追踪 ([7e12b58](https://github.com/kercylan98/minotaur/commit/7e12b580dff847947f1d6e6e2018fdef851ea8b4))
+* v2 server 死锁检测及父级调用栈追踪 ([7be4bfb](https://github.com/kercylan98/minotaur/commit/7be4bfbfe68a113f7dea6e10a98006cd15c8d159))
+* v2 server 连接增加异步写 ([db31f5a](https://github.com/kercylan98/minotaur/commit/db31f5a25cc2fa47fe8f6ea91eeeb6f85d8ca00c))
+* v2 toolkit 新增 convert 和 constrains 包 ([a44501e](https://github.com/kercylan98/minotaur/commit/a44501ef8318fbf0558162947cb331d84964bfe4))
+* v2 toolkit 新增 random 包及 json 相关函数 ([95762a4](https://github.com/kercylan98/minotaur/commit/95762a4860694310f7c2dc5e17a2463f06d4e9d8))
+* v2 vivid 体验优化 ([c683c7d](https://github.com/kercylan98/minotaur/commit/c683c7ddaf61377ab97079e8843902701dc80119))
+* v2 vivid 体验优化 ([bd92df0](https://github.com/kercylan98/minotaur/commit/bd92df019d28288fed86c3e066fb442ac8f8433c))
+* v2 vivid 体验优化 ([9d1280d](https://github.com/kercylan98/minotaur/commit/9d1280d4eb6a5fa59ad78cf55220360d7653268f))
+* v2 vivid 体验优化，结合 actor 实现服务器 ([064deb1](https://github.com/kercylan98/minotaur/commit/064deb1abe2f6639e15f812f710d4f9db7aba2b6))
+* v2 vivid 体验优化、邮箱池返回了未重置的邮箱修复 ([a10a132](https://github.com/kercylan98/minotaur/commit/a10a13280cd8efdb7888de0745ac8f6a0b2f15dc))
+* v2 vivid 体验优化前 ([8b0abd8](https://github.com/kercylan98/minotaur/commit/8b0abd8ed7fe7b176e769b4d92ad41f3bb10fc61))
+* v2 vivid 体验重构 ([353a550](https://github.com/kercylan98/minotaur/commit/353a550e7f4be0fdd2864839a2810217bfcf6c06))
+* v2 vivid 增加 Actor 监督策略，支持重启、停止、继续、升级。修复部分问题 ([fa08dab](https://github.com/kercylan98/minotaur/commit/fa08dabb56cee655e9bd743f5d58906615fec46c))
+* v2 vivid 增加 Mod ([0db0ba3](https://github.com/kercylan98/minotaur/commit/0db0ba373fb0429ce03dc5a7263b7ed9408f5a8b))
+* v2 vivid 增加事件总线 ([ffd79f3](https://github.com/kercylan98/minotaur/commit/ffd79f3edfde6a5e4d5dc7228bef0d87118ad343))
+* v2 vivid 增加消息重定向 FlowOf ([363ea4a](https://github.com/kercylan98/minotaur/commit/363ea4ae69490b2b21c126bd2bb7061def74f8d4))
+* v2 vivid 增加立即执行消息可选项 ([c795fb6](https://github.com/kercylan98/minotaur/commit/c795fb6283ef9dbe0708f0383a3fb8ea5e6349ae))
+* v2 vivid 实现优先级邮箱、 pulse 采用优先级邮箱 ([96d6da9](https://github.com/kercylan98/minotaur/commit/96d6da9720a49c5d7b52bdd4597584ac35911a28))
+* v2 vivid 结合 server ([816595d](https://github.com/kercylan98/minotaur/commit/816595d7f85a8a300f44e3d93061da0ca0c4a41a))
+* v2 vivid 结合 server ([6531767](https://github.com/kercylan98/minotaur/commit/6531767d25bdaef27200b78d8b43421047986906))
+* v2 vivid 重构 ([22f729f](https://github.com/kercylan98/minotaur/commit/22f729f2f7c29c71bd9457092e7ba2112affef3f))
+* v2 vivid、transport 优化体验 ([5196791](https://github.com/kercylan98/minotaur/commit/519679149c699d7307c36844c868abaf6fe46071))
+* v2 vivid.ActorOf 性能优化 ([4340467](https://github.com/kercylan98/minotaur/commit/43404671a514b7d159ff20815b209d1e08d59116))
+* v2 事件总线去掉不必要的锁 ([9f92fd4](https://github.com/kercylan98/minotaur/commit/9f92fd41af208ca62d4219143658427f6d25478d))
+* v2 优化体验 ([9987b13](https://github.com/kercylan98/minotaur/commit/9987b13462896e15394c362cc97bc8886849663a))
+* v2 分布式 actor ([3c09637](https://github.com/kercylan98/minotaur/commit/3c09637970040de28c79845aa2b3e84d21f9d437))
+* v2 分布式 actor ([9bffd4b](https://github.com/kercylan98/minotaur/commit/9bffd4b6f301ccf840093ea4d00ed28e74bfef00))
+* v2 可用代码调整 ([b534791](https://github.com/kercylan98/minotaur/commit/b53479191972efbb5b447ee52d14f67380715fea))
+* v2 基于 Nats 的 RPC 基本实现 ([e15ed85](https://github.com/kercylan98/minotaur/commit/e15ed8533cdac4644cb1415547a812c88cbf0b3e))
+* v2 基于 Nats 的 RPC 基本实现 ([ac1f2d0](https://github.com/kercylan98/minotaur/commit/ac1f2d082d58ef13f46259b9c879921a38f08214))
+* v2 增加 pulse 包，基于 vivid(actor) 实现的事件总线 ([54f356b](https://github.com/kercylan98/minotaur/commit/54f356b74845fab1195ce48d91534cb9ddea6862))
+* v2 封存未重构的 v1 包 ([edfd562](https://github.com/kercylan98/minotaur/commit/edfd5622743c8c942c491bb6907ae9ceaf58e78c))
+* v2 日志包优化 log2 ([1982b30](https://github.com/kercylan98/minotaur/commit/1982b30fe05f796771086e26b1fab1fdef370a1d))
+* v2 更改 ecs 包为内部包，toolkit 下新增 codec、cipher、fileproc 包 ([a02e8cf](https://github.com/kercylan98/minotaur/commit/a02e8cfd8baf1ecce0b0de56435337803b840b43))
+* v2 消息 recover ([26e78d6](https://github.com/kercylan98/minotaur/commit/26e78d640222a0879d6735b0f855124fd2b7ad67))
+* v2 移除不合理设计 ([635d0f4](https://github.com/kercylan98/minotaur/commit/635d0f475f8f312aba63432fa976be8122aaf246))
+* v2 移除无用内容， vivid 注释优化 ([306bb0f](https://github.com/kercylan98/minotaur/commit/306bb0fe5a10bcc1208ef8b04401de191374d3a0))
+* v2 部分内容修正 ([51af0a9](https://github.com/kercylan98/minotaur/commit/51af0a98d4efcdededad08b54bd8d146e089ff6b))
+* v2 配置导出重构 ([51cd30b](https://github.com/kercylan98/minotaur/commit/51cd30b9af01b672dd166734b516146c050e5c67))
+* v2 配置导表工具重构 ([302736f](https://github.com/kercylan98/minotaur/commit/302736f523f12f21e6d01e9a7d114e0cf0f5d22c))
+* 优化 ([64c1653](https://github.com/kercylan98/minotaur/commit/64c165317bb50fe7e63593353843c5a31b50aee2))
+* 优化消息分发 ([e84a6ee](https://github.com/kercylan98/minotaur/commit/e84a6ee1aea38150f771f75f790b8648c3a0df99))
+* 修正 ([e90b164](https://github.com/kercylan98/minotaur/commit/e90b164021a5533a2ad8ee2e35dd164be500a492))
+* 新 server 包调整 ([7239a27](https://github.com/kercylan98/minotaur/commit/7239a278ee7c0db55b701510c5ff477ba4f666b5))
+* 新版 server 包完善 ([ffc3421](https://github.com/kercylan98/minotaur/commit/ffc3421b29e00eaf509a18b1a0a99e8952d72011))
+* 新版 server 同步、异步消息实现 ([7cb5dd0](https://github.com/kercylan98/minotaur/commit/7cb5dd069a015c2322045e2a156c64998fc51f50))
+* 新版 server 完善通知、事件 ([49b8efd](https://github.com/kercylan98/minotaur/commit/49b8efd9b2b02dcfba2137301a1255a465b72f51))
+* 新版 server 消息并发安全控制完善 ([ac929b6](https://github.com/kercylan98/minotaur/commit/ac929b6fcd10d2b9d6afde4ed5e57b253aedc897))
+* 新版 server、logger 完善 ([e4eee31](https://github.com/kercylan98/minotaur/commit/e4eee31ede332b22796e6f47ace0a4e5481a62db))
+* 更新 protobuf 版本至 v1.33.0，以解决 CVE-2024-24786 问题 ([31caa80](https://github.com/kercylan98/minotaur/commit/31caa80e2905c4a1aecc799c4908630b525810cd))
+* 服务器消息优化 ([35e13d9](https://github.com/kercylan98/minotaur/commit/35e13d9cd5e055746f6f8da3a966876a67b7415d))
+* 服务器消息优化前 ([16704bf](https://github.com/kercylan98/minotaur/commit/16704bfbb603b532c86eb2d6c717fe5313586fb8))
+* 服务器消息组件抽离 ([cc3573b](https://github.com/kercylan98/minotaur/commit/cc3573b792e93210c3acd929596587d45454102a))
+* 服务器消息组件抽离 ([7ecb13b](https://github.com/kercylan98/minotaur/commit/7ecb13b7c8ed8ba9a3bafdecdf537e8552f6fc83))
+* 跨队列消息 ([409350f](https://github.com/kercylan98/minotaur/commit/409350f530ca370c84e43d2b99df0516c63c56a8))
+* 重构 modular 包 ([e372b71](https://github.com/kercylan98/minotaur/commit/e372b7124de3cba35735425afdfa2b39efd5a802))
+
+
+### Features | 新特性
+
+* **actor-context:** add discardOld parameter to Become method ([0bf8601](https://github.com/kercylan98/minotaur/commit/0bf86015bd26429d2178b8ac3295b9a5e3d333b3))
+* **actor:** implement idle timeout and improve actor termination ([e306a53](https://github.com/kercylan98/minotaur/commit/e306a5319604677772f81082abb0aa08d4af9286))
+* **examples:** add websocket echo server implementation ([671ed64](https://github.com/kercylan98/minotaur/commit/671ed649550c16a1557053ce3c87b2a776584486))
+* **login:** implement account module with basic authentication ([929d706](https://github.com/kercylan98/minotaur/commit/929d7066ad47c0fb039e78bbc6882a8725eddf35))
+* **minotaur:** add hooks for HTTP server customization ([b6334f6](https://github.com/kercylan98/minotaur/commit/b6334f66dbd51f4a7c8c28ac98d8140691f138db))
+* **minotaur:** add hooks for HTTP server launch ([beb79bf](https://github.com/kercylan98/minotaur/commit/beb79bfb4364520022419f3a39881d6fd3fb36ac))
+* **minotaur:** add pprof support and improve application functions ([875f881](https://github.com/kercylan98/minotaur/commit/875f8819a7479f005cec0d0a9b42d1cf00836e6b))
+* super 包新增 WaitGroup 结构，用法同 sync.WaitGroup，包含一个额外的 Exec 函数，用于便捷的执行异步函数。移除 stack.go 相关的无用代码 ([c98d15b](https://github.com/kercylan98/minotaur/commit/c98d15b0f242cff42f8114f03105b147a5a563c6))
+* times 包新增 GetWeekdayDateRelativeToNowWithOffset 及 GetWeekdayTimeRelativeToNowWithOffset 函数，用于取代 GetCurrWeekDate 和 GetLastWeekDate 函数 ([92d6c56](https://github.com/kercylan98/minotaur/commit/92d6c5680d1a97540b5c00fe7643fa657e7c20f7))
+* **transport:** implement kcp core functionality ([b47311b](https://github.com/kercylan98/minotaur/commit/b47311b7c9a79471aafa152df946d7e37d39bf0b))
+* **vivid:** add cluster support and refactor actor system ([7d6abf8](https://github.com/kercylan98/minotaur/commit/7d6abf8ccfd8ced1713832bd912706a92329b643))
+* **vivid:** add stop on parent restart feature for actors ([bfed382](https://github.com/kercylan98/minotaur/commit/bfed3827df1aa06508f66024561cc4fbf548dbfb))
+* **vivid:** add typed actor support and improve ask pattern ([4d12837](https://github.com/kercylan98/minotaur/commit/4d12837fbb236b7c3f47d4ef5027267c03de62b4))
+* 新增 charproc 包处理字符、文本操作 ([f0f5f8a](https://github.com/kercylan98/minotaur/commit/f0f5f8a39636da358e866137d9308c6be0c80420))
+* 新增 chrono 包，用于替代原本的 timer 及 times 包 ([e608e92](https://github.com/kercylan98/minotaur/commit/e608e9257ef2f3031319f586fcb2738c65214fb1))
+* 新增 mask 包，增加 DynamicMask 高性能可变长度掩码实现 ([0878d1a](https://github.com/kercylan98/minotaur/commit/0878d1acbb36aab39e4a347e6f93d5c8fab2a48b))
+* 新版 server 包 HTTP 基础实现 ([b2c0bb0](https://github.com/kercylan98/minotaur/commit/b2c0bb0da3dd87520fa5fcf574d88c47f5a26a4a))
+* 新版 server 包 HTTP 基础实现 ([37f35aa](https://github.com/kercylan98/minotaur/commit/37f35aa602e7172a5719ec35f17e99744be9c483))
+* 新版 server 包 websocket 基础实现、actor 模型实现 ([92c4280](https://github.com/kercylan98/minotaur/commit/92c42800f13391940b8fc7c36eb0fb3b99f066ae))
+* 新版 server 包 websocket 基础实现、actor 模型实现 ([ef1bb32](https://github.com/kercylan98/minotaur/commit/ef1bb321d7b38b3353ed9095c87cff9228f2dbfc))
+
+
+### Bug Fixes | 修复
+
+* 修复 timer.Ticker 死锁 ([612c41f](https://github.com/kercylan98/minotaur/commit/612c41ffd8858ff5f8f792316fc4a51a795df2a7))
+* 修复循环依赖问题 ([6d8258b](https://github.com/kercylan98/minotaur/commit/6d8258b153fb7d3354d910d0d31e5cdf790364a0))
+
+
+### Code Refactoring | 重构
+
+* **chrono:** update scheduler and task management logic ([4732b99](https://github.com/kercylan98/minotaur/commit/4732b9972719bd2ce9b62715eafa63c199e0d1d8))
+* **minotaur:** simplify actor typing and improve network handling ([d542b36](https://github.com/kercylan98/minotaur/commit/d542b3669f3cfb4b113fa027925fbc3efd1f398f))
+* **vivid:** optimize actor reference handling and mod status management ([1220b60](https://github.com/kercylan98/minotaur/commit/1220b601bc1675f09db5d0f7fa2de15f0426d4a2))
+* **vivid:** optimize message dispatching for instant delivery ([cf23e79](https://github.com/kercylan98/minotaur/commit/cf23e7926adabd23bb6a0158259a717addd4cb5e))
+
 ## [0.5.4](https://github.com/kercylan98/minotaur/compare/v0.5.3...v0.5.4) (2024-03-12)
 
 
