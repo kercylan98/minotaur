@@ -28,17 +28,17 @@ func NewApplication(options ...Option) *Application {
 // Application 基于 Minotaur 的应用程序结构
 type Application struct {
 	vivid.ActorRef
-	options     *Options
-	ctx         context.Context
-	cancel      context.CancelFunc
-	closed      chan struct{}
-	actorSystem *vivid.ActorSystem
-	server      transport.ServerActorTyped
-	handlers    []func(app *Application, ctx vivid.MessageContext)
+	options          *Options
+	ctx              context.Context
+	cancel           context.CancelFunc
+	closed           chan struct{}
+	actorSystem      *vivid.ActorSystem
+	server           transport.ServerActorTyped
+	onReceiveHandler []func(app *Application, ctx vivid.MessageContext)
 }
 
 func (a *Application) onReceive(ctx vivid.MessageContext) {
-	for _, handler := range a.handlers {
+	for _, handler := range a.onReceiveHandler {
 		handler(a, ctx)
 	}
 }
@@ -72,11 +72,11 @@ func (a *Application) GetContext() vivid.ActorContext {
 }
 
 // Launch 启动应用程序
-func (a *Application) Launch(handlers ...func(app *Application, ctx vivid.MessageContext)) {
+func (a *Application) Launch(onReceive ...func(app *Application, ctx vivid.MessageContext)) {
 	defer func(a *Application) {
 		close(a.closed)
 	}(a)
-	a.handlers = handlers
+	a.onReceiveHandler = onReceive
 
 	if a.options.Network != nil {
 		a.server = transport.NewServerActor(a.actorSystem, vivid.NewActorOptions[*transport.ServerActor]().WithName("server"))
