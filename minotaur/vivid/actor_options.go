@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+type ActorContextHook func(ctx ActorContext)
+
 type ActorOption[T Actor] func(opts *ActorOptions[T])
 
 type ActorOptions[T Actor] struct {
@@ -18,6 +20,15 @@ type ActorOptions[T Actor] struct {
 	Supervisor          Supervisor                    // 监管策略
 	StopOnParentRestart bool                          // 父 Actor 重启时是否停止
 	IdleTimeout         time.Duration                 // 空闲超时时间
+	ActorContextHook    ActorContextHook              // Actor 上下文钩子
+}
+
+// WithActorContextHook 设置 Actor 上下文钩子
+func (o *ActorOptions[T]) WithActorContextHook(hook ActorContextHook) *ActorOptions[T] {
+	o.options = append(o.options, func(opts *ActorOptions[T]) {
+		opts.ActorContextHook = hook
+	})
+	return o
 }
 
 // WithIdleTimeout 设置 Actor 的空闲超时时间
@@ -103,10 +114,6 @@ func (o *ActorOptions[T]) WithName(name string) *ActorOptions[T] {
 
 func NewActorOptions[T Actor]() *ActorOptions[T] {
 	return &ActorOptions[T]{}
-}
-
-func NewFreeActorOptions[T any]() *ActorOptions[*FreeActor[T]] {
-	return &ActorOptions[*FreeActor[T]]{}
 }
 
 func (o *ActorOptions[T]) applyOption(opts ...ActorOption[T]) *ActorOptions[T] {

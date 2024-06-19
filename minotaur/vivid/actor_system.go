@@ -566,6 +566,12 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	}
 	core.Tell(OnBoot{}, WithInstantly(true))
 
+	if options.ActorContextHook != nil {
+		system.waitGroup.Add(1)
+		defer system.waitGroup.Done()
+		options.ActorContextHook(core)
+	}
+
 	return core, nil
 }
 
