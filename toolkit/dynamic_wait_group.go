@@ -1,6 +1,7 @@
 package toolkit
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -27,7 +28,7 @@ func (d *DynamicWaitGroup) Add(delta int64) {
 		d.ChangeHook(d.c, delta)
 	}
 	if d.c < 0 {
-		panic("negative counter in DynamicWaitGroup")
+		panic(fmt.Errorf("negative DynamicWaitGroup counter: %d", d.c))
 	}
 	if d.c == 0 { // 如果计数变为0，唤醒所有等待的 goroutine
 		d.wait.Broadcast()
