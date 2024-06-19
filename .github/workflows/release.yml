@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - develop  # 确保分支名称与实际默认分支一致
+      - master  # 确保分支名称与实际默认分支一致
 
 name: Release
 
