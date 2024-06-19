@@ -38,13 +38,14 @@ func NewFIFO(handler func(message MessageContext), opts ...*FIFOOptions) *FIFO {
 
 // FIFO 是一个先进先出的消息队列
 type FIFO struct {
-	opts      *FIFOOptions                 // 配置
-	status    fifoState                    // 队列状态
-	cond      *sync.Cond                   // 消息队列条件变量
-	buffer    *buffer.Ring[MessageContext] // 消息缓冲区
-	closed    chan struct{}                // 关闭信号
-	handler   func(message MessageContext) // 消息处理函数
-	instantly chan *instantlyMessage       // 立即处理的消息
+	opts         *FIFOOptions                 // 配置
+	status       fifoState                    // 队列状态
+	cond         *sync.Cond                   // 消息队列条件变量
+	buffer       *buffer.Ring[MessageContext] // 消息缓冲区
+	closed       chan struct{}                // 关闭信号
+	handler      func(message MessageContext) // 消息处理函数
+	instantly    chan *instantlyMessage       // 立即处理的消息
+	instantlyNum int64                        // 立即处理的消息数量
 }
 
 func (m *FIFO) Start() {
@@ -59,6 +60,8 @@ func (m *FIFO) Start() {
 	m.closed = make(chan struct{})
 	go func(f *FIFO) {
 		defer func(f *FIFO) {
+			m.cond.L.Lock()
+			defer m.cond.L.Unlock()
 			close(f.closed)
 			f.buffer.Reset()
 		}(f)
@@ -68,7 +71,7 @@ func (m *FIFO) Start() {
 
 			f.cond.L.Lock()
 			elements := f.buffer.ReadAll()
-			if len(elements) == 0 {
+			if len(elements) == 0 && f.instantlyNum == 0 {
 				if f.status == fifoStateStopping {
 					f.status = fifoStateStopped
 					f.cond.L.Unlock()
@@ -114,6 +117,7 @@ func (m *FIFO) Enqueue(message MessageContext, instantly bool) bool {
 	}
 
 	if instantly {
+		m.instantlyNum++
 		m.cond.L.Unlock()
 		elem := &instantlyMessage{message: message}
 		elem.mu.Lock()
@@ -152,7 +156,12 @@ func (m *FIFO) reset() {
 func (m *FIFO) processInstantly() {
 	select {
 	case elem := <-m.instantly:
-		defer elem.mu.Unlock()
+		defer func() {
+			elem.mu.Unlock()
+			m.cond.L.Lock()
+			m.instantlyNum--
+			m.cond.L.Unlock()
+		}()
 		m.handler(elem.message)
 	default:
 	}

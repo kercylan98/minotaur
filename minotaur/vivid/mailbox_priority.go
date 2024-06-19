@@ -37,13 +37,14 @@ func NewPriority(handler func(message MessageContext), opts ...*PriorityOptions)
 }
 
 type Priority struct {
-	opts      *PriorityOptions             // 配置
-	status    priorityState                // 队列状态
-	cond      *sync.Cond                   // 消息队列条件变量
-	buffer    priorityHeap                 // 消息缓冲区
-	closed    chan struct{}                // 关闭信号
-	handler   func(message MessageContext) // 消息处理函数
-	instantly chan *instantlyMessage       // 立即处理的消息
+	opts         *PriorityOptions             // 配置
+	status       priorityState                // 队列状态
+	cond         *sync.Cond                   // 消息队列条件变量
+	buffer       priorityHeap                 // 消息缓冲区
+	closed       chan struct{}                // 关闭信号
+	handler      func(message MessageContext) // 消息处理函数
+	instantly    chan *instantlyMessage       // 立即处理的消息
+	instantlyNum int64                        // 立即处理的消息数量
 }
 
 func (m *Priority) Start() {
@@ -58,6 +59,8 @@ func (m *Priority) Start() {
 	m.closed = make(chan struct{})
 	go func(p *Priority) {
 		defer func(p *Priority) {
+			p.cond.L.Lock()
+			defer p.cond.L.Unlock()
 			close(p.closed)
 			if err := recover(); err != nil {
 				panic(err)
@@ -67,7 +70,7 @@ func (m *Priority) Start() {
 		for {
 			p.processInstantly()
 			p.cond.L.Lock()
-			if p.buffer.Len() == 0 {
+			if p.buffer.Len() == 0 && p.instantlyNum == 0 {
 				if p.status == priorityStateStopping {
 					p.status = priorityStateStopped
 					p.cond.L.Unlock()
@@ -106,6 +109,7 @@ func (m *Priority) Enqueue(message MessageContext, instantly bool) bool {
 	}
 
 	if instantly {
+		m.instantlyNum++
 		m.cond.L.Unlock()
 		elem := &instantlyMessage{message: message}
 		elem.mu.Lock()
@@ -141,7 +145,12 @@ func (m *Priority) reset() {
 func (m *Priority) processInstantly() {
 	select {
 	case elem := <-m.instantly:
-		defer elem.mu.Unlock()
+		defer func() {
+			elem.mu.Unlock()
+			m.cond.L.Lock()
+			m.instantlyNum--
+			m.cond.L.Unlock()
+		}()
 		m.handler(elem.message)
 	default:
 	}
