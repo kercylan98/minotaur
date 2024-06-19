@@ -5,7 +5,11 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
-var TestSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+var TestActorSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+
+type (
+	ExportUserGuardActor = userGuardActor
+)
 
 func GetBenchmarkTestSystem() *ActorSystem {
 	sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
@@ -41,4 +45,25 @@ type PrintlnActorTyped interface {
 	ActorRef
 
 	Println(message string)
+}
+
+// PanicActor 在接收到 error 类型消息时将触发 panic，用于测试用途
+type PanicActor struct {
+	RestartHook func()
+	PanicHook   func(err error)
+}
+
+func (p *PanicActor) OnReceive(ctx MessageContext) {
+	switch m := ctx.GetMessage().(type) {
+	case OnRestart:
+		if p.RestartHook != nil {
+			p.RestartHook()
+		}
+		ctx.Stop()
+	case error:
+		if p.PanicHook != nil {
+			p.PanicHook(m)
+		}
+		panic(fmt.Errorf("panic actor panic: %w", m))
+	}
 }
