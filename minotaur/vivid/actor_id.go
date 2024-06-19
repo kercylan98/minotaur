@@ -211,3 +211,44 @@ func (a ActorId) String() string {
 	builder.WriteString(a.Path())
 	return builder.String()
 }
+
+func NewActorIdBuilder() *ActorIdBuilder {
+	return &ActorIdBuilder{}
+}
+
+type ActorIdBuilder struct {
+	Cluster string
+	Host    string
+	Port    uint16
+	System  string
+	Path    ActorPath
+}
+
+func (b *ActorIdBuilder) Build() ActorId {
+	return NewActorId(b.Cluster, b.Host, b.Port, b.System, b.Path)
+}
+
+func (b *ActorIdBuilder) SetCluster(cluster string) *ActorIdBuilder {
+	b.Cluster = cluster
+	return b
+}
+
+func (b *ActorIdBuilder) SetHost(host string) *ActorIdBuilder {
+	b.Host = host
+	return b
+}
+
+func (b *ActorIdBuilder) SetPort(port uint16) *ActorIdBuilder {
+	b.Port = port
+	return b
+}
+
+func (b *ActorIdBuilder) SetSystem(system string) *ActorIdBuilder {
+	b.System = system
+	return b
+}
+
+func (b *ActorIdBuilder) SetPath(path ActorPath) *ActorIdBuilder {
+	b.Path = path
+	return b
+}
