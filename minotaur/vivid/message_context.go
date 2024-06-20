@@ -64,9 +64,6 @@ type MessageContext interface {
 	// ApplyMod 应用模组，该函数是 ActorContext.ApplyMod 的快捷方式
 	ApplyMod()
 
-	// Terminated 是否已经终止
-	Terminated() bool
-
 	// SetIdleTimeout 设置空闲超时时间
 	SetIdleTimeout(timeout time.Duration)
 }
@@ -304,10 +301,6 @@ func (c *_MessageContext) UnloadMod(mods ...ModInfo) {
 
 func (c *_MessageContext) ApplyMod() {
 	c.GetContext().ApplyMod()
-}
-
-func (c *_MessageContext) Terminated() bool {
-	return c.GetContext().Terminated()
 }
 
 func (c *_MessageContext) SetIdleTimeout(timeout time.Duration) {

@@ -16,23 +16,26 @@ func NewDynamicWaitGroup() *DynamicWaitGroup {
 type DynamicWaitGroup struct {
 	c          int64
 	wait       *sync.Cond
-	ChangeHook func(curr int64, delta int64)
+	ChangeHook func(before, delta, curr int64)
 }
 
-// Add 增加等待的计数
-func (d *DynamicWaitGroup) Add(delta int64) {
+// Add 增加等待的计数，返回当前的计数
+func (d *DynamicWaitGroup) Add(delta int64) int64 {
 	d.wait.L.Lock()
-	defer d.wait.L.Unlock()
+	before := d.c
 	d.c += delta
+	curr := d.c
+	d.wait.L.Unlock()
 	if d.ChangeHook != nil {
-		d.ChangeHook(d.c, delta)
+		d.ChangeHook(before, delta, curr)
 	}
-	if d.c < 0 {
-		panic(fmt.Errorf("negative DynamicWaitGroup counter: %d", d.c))
+	if curr < 0 {
+		panic(fmt.Errorf("negative DynamicWaitGroup counter: %d", curr))
 	}
-	if d.c == 0 { // 如果计数变为0，唤醒所有等待的 goroutine
+	if curr == 0 { // 如果计数变为0，唤醒所有等待的 goroutine
 		d.wait.Broadcast()
 	}
+	return curr
 }
 
 // DoneAll 减少等待的计数到0
@@ -44,8 +47,8 @@ func (d *DynamicWaitGroup) DoneAll() {
 }
 
 // Done 减少等待的计数
-func (d *DynamicWaitGroup) Done() {
-	d.Add(-1)
+func (d *DynamicWaitGroup) Done() int64 {
+	return d.Add(-1)
 }
 
 // Wait 等待所有的计数完成

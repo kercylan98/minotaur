@@ -57,12 +57,16 @@ type ActorContext interface {
 	// ApplyMod 应用模组
 	ApplyMod()
 
-	// Terminated 判断 Actor 是否已经被销毁
-	Terminated() bool
-
 	// SetIdleTimeout 设置 Actor 的空闲超时时间，当 Actor 被重启时，该值不会被使用
 	SetIdleTimeout(timeout time.Duration)
 }
+
+const (
+	actorStatusRunning actorStatus = iota
+	actorStatusTerminated
+)
+
+type actorStatus = int32
 
 type _ActorContext struct {
 	*_internalActorContext
@@ -71,7 +75,7 @@ type _ActorContext struct {
 	mods        []ModInfo                   // 声明的模组
 	currentMods []ModInfo                   // 当前生命周期的模组
 	runtimeMods do.Injector                 // 运行时模组
-	terminated  bool                        // 是否已经终止
+	status      actorStatus                 // 是否已经终止
 }
 
 func (c *_ActorContext) GetId() ActorId {
@@ -186,10 +190,6 @@ func (c *_ActorContext) ApplyMod() {
 	c.getSystem().GetLogger().Debug("ApplyMod", log.String("actor", c.GetId().String()), log.Int("count", len(c.currentMods)))
 
 	c.mods = currentMods
-}
-
-func (c *_ActorContext) Terminated() bool {
-	return c.terminated
 }
 
 func (c *_ActorContext) SetIdleTimeout(timeout time.Duration) {

@@ -40,6 +40,10 @@ func NewActorSystem(name string, options ...*ActorSystemOptions) ActorSystem {
 		eventSeq:        new(atomic.Int64),
 		scheduler:       chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize),
 	}
+	//s.waitGroup.ChangeHook = func(before, delta, curr int64) {
+	//	log.Info("ActorSystem.WG", log.Int64("before", before), log.Int64("delta", delta), log.Int64("curr", curr))
+	//	//debug.PrintStack()
+	//}
 	if s.options.Logger == nil {
 		//s.options.Logger = log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithCallerSkip(5))).With(log.String("ActorSystem", name))
 		s.options.Logger = log.NewSilentLogger()
@@ -162,13 +166,13 @@ func (s *ActorSystem) Shutdown() {
 	defer s.cancel()
 	s.unbindActor(s.userGuardActor, false, true)
 	s.unbindActor(s.eventBusActor, false, true)
-	s.waitGroup.Wait()
+	s.waitGroup.Wait() // 等待 Actor 销毁结束
 	s.scheduler.Close()
 }
 
 // AwaitShutdown 等待 Actor 系统关闭
 func (s *ActorSystem) AwaitShutdown() {
-	s.waitGroup.Wait()
+	s.waitGroup.Wait() // 等待 ActorSystem 关闭
 }
 
 // GetSystem 获取 Actor 系统
@@ -240,12 +244,15 @@ func (s *ActorSystem) UnbindDispatcher(id DispatcherId) {
 }
 
 func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCallback ...func(core *_ActorCore)) {
+	core := actor.getCore()
+	if !atomic.CompareAndSwapInt32(&core.status, actorStatusRunning, actorStatusTerminated) {
+		return
+	}
+
 	// 解绑空闲超时调度器
 	s.scheduler.UnregisterTask(actor.GetId().String())
 
 	// 等待消息处理完毕后拒绝新消息
-	core := actor.(*_ActorCore)
-	core.terminated = true
 	core.messageGroup.Wait(func() {
 		core.dispatcher.Detach(s.core, core)
 		s.actorRW.Lock()
@@ -291,7 +298,7 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 	s.GetLogger().Debug("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()))
 
 	// 宣布 Actor 死亡
-	s.waitGroup.Done()
+	s.waitGroup.Done() // Actor 生命周期结束
 	if !root {
 		for _, f := range deadCallback {
 			f(core)
@@ -351,16 +358,12 @@ func (s *ActorSystem) sendToDispatcher(dispatcher Dispatcher, actor *_ActorCore,
 
 	switch m := message.GetMessage().(type) {
 	case OnTerminate:
-		if !actor.terminated {
-			// unbindActor 虽然也会将 Actor 标记为 terminated，但是由于是异步的，因此提前标记
-			actor.terminated = true
-			// 异步停止
-			s.waitGroup.Add(1)
-			go func(s *ActorSystem, actor *_ActorCore, restart bool) {
-				defer s.waitGroup.Done()
-				s.unbindActor(actor, restart, true)
-			}(s, actor, m.restart)
-		}
+		// 异步停止
+		s.waitGroup.Add(1) // 等待 Actor 销毁结束
+		go func(s *ActorSystem, actor *_ActorCore, restart bool) {
+			defer s.waitGroup.Done() // Actor 销毁结束
+			s.unbindActor(actor, restart, true)
+		}(s, actor, m.restart)
 	}
 }
 
@@ -393,9 +396,9 @@ func (s *ActorSystem) sendMessage(receiver ActorRef, message Message, options ..
 			sender.core.messageGroup.Add(1)
 			defer sender.core.messageGroup.Done()
 		default:
-			// 不应存在远程发送者，其他类型增加消息总计数
-			s.waitGroup.Add(1)
-			defer s.waitGroup.Done()
+			// 不存在远程发送者，其他类型增加消息总计数
+			s.waitGroup.Add(1)       // 等待 Ask 消息响应
+			defer s.waitGroup.Done() // Ask 消息响应结束
 		}
 
 		if opts.ReplyTimeout == 0 {
@@ -533,7 +536,7 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	}
 
 	// 启动 Actor
-	system.waitGroup.Add(1)
+	system.waitGroup.Add(1) // 等待 Actor 生命周期结束
 	core.dispatcher.Attach(system.core, core)
 
 	if options.Init != nil {
@@ -567,8 +570,8 @@ func generateActor[T Actor](system *ActorSystem, actor T, options *ActorOptions[
 	core.Tell(OnBoot{}, WithInstantly(true))
 
 	if options.ActorContextHook != nil {
-		system.waitGroup.Add(1)
-		defer system.waitGroup.Done()
+		system.waitGroup.Add(1)       // 等待上下文钩子执行完毕
+		defer system.waitGroup.Done() // 上下文钩子执行完毕
 		options.ActorContextHook(core)
 	}
 

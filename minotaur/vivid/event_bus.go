@@ -55,9 +55,10 @@ func (e *EventBusActor) onBoot() {
 
 func (e *EventBusActor) onSubscribe(m SubscribeMessage) {
 	info := subscribeInfo{
-		subscriber: m.Subscriber,
-		priority:   m.Priority,
-		producer:   m.Producer,
+		subscriber:      m.Subscriber,
+		priority:        m.Priority,
+		producer:        m.Producer,
+		priorityTimeout: m.PriorityTimeout,
 	}
 
 	subscribeMap, exists := e.subscribes[m.Event]
