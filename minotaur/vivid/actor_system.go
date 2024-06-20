@@ -19,6 +19,11 @@ import (
 	"time"
 )
 
+const (
+	logTypeRestart = "restart"
+	logTypeStop    = "stop"
+)
+
 // NewActorSystem 创建一个 ActorSystem，ActorSystem 是 Actor 的容器，用于管理 Actor 的生命周期、消息分发等
 func NewActorSystem(name string, options ...*ActorSystemOptions) ActorSystem {
 	s := ActorSystem{
@@ -291,9 +296,9 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 
 	var logType string
 	if restart {
-		logType = "restart"
+		logType = logTypeRestart
 	} else {
-		logType = "stop"
+		logType = logTypeStop
 	}
 	s.GetLogger().Debug("unbindActor", log.String("type", logType), log.String("actor", actor.GetId().String()))
 

@@ -31,7 +31,7 @@ func TestPriorityEventActor_OnReceive(t *testing.T) {
 	var wg = new(sync.WaitGroup)
 	defer func() {
 		wg.Wait()
-		vivid.TestActorSystem.Shutdown()
+		vivid.GetTestActorSystem().Shutdown()
 		for _, s := range result {
 			t.Log(s)
 		}
@@ -41,7 +41,7 @@ func TestPriorityEventActor_OnReceive(t *testing.T) {
 		}
 	}()
 
-	vivid.ActorOfF(&vivid.TestActorSystem, func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
+	vivid.ActorOfF(vivid.GetTestActorSystem(), func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
 		options.WithInit(func(actor *TestPriorityEventSubscriberActor) {
 			actor.Priority = 3
 			actor.Output = &result
@@ -49,7 +49,7 @@ func TestPriorityEventActor_OnReceive(t *testing.T) {
 			actor.wg = wg
 		})
 	})
-	vivid.ActorOfF(&vivid.TestActorSystem, func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
+	vivid.ActorOfF(vivid.GetTestActorSystem(), func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
 		options.WithInit(func(actor *TestPriorityEventSubscriberActor) {
 			actor.Priority = 2
 			actor.Output = &result
@@ -57,7 +57,7 @@ func TestPriorityEventActor_OnReceive(t *testing.T) {
 			actor.wg = wg
 		})
 	})
-	vivid.ActorOfF(&vivid.TestActorSystem, func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
+	vivid.ActorOfF(vivid.GetTestActorSystem(), func(options *vivid.ActorOptions[*TestPriorityEventSubscriberActor]) {
 		options.WithInit(func(actor *TestPriorityEventSubscriberActor) {
 			actor.Priority = 1
 			actor.Output = &result
@@ -66,5 +66,5 @@ func TestPriorityEventActor_OnReceive(t *testing.T) {
 		})
 	})
 
-	vivid.TestActorSystem.Publish(vivid.TestActorSystem.GetContext(), "")
+	vivid.GetTestActorSystem().Publish(vivid.GetTestActorSystem().GetContext(), "")
 }

@@ -6,6 +6,6 @@ import (
 )
 
 func TestActorOf(t *testing.T) {
-	defer vivid.TestActorSystem.Shutdown()
-	vivid.ActorOf[*vivid.IneffectiveActor](&vivid.TestActorSystem)
+	defer vivid.GetTestActorSystem().Shutdown()
+	vivid.ActorOf[*vivid.IneffectiveActor](vivid.GetTestActorSystem())
 }

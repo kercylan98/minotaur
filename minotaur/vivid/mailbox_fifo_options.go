@@ -2,7 +2,7 @@ package vivid
 
 func NewFIFOOptions() *FIFOOptions {
 	return &FIFOOptions{
-		BufferSize: 1024,
+		BufferSize: 32,
 		StopMode:   FIFOStopModeGraceful,
 	}
 }

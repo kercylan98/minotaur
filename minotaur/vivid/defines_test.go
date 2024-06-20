@@ -5,14 +5,17 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
-var TestActorSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.GetDefault()))
-
 type (
 	ExportUserGuardActor = userGuardActor
 )
 
+func GetTestActorSystem() *ActorSystem {
+	sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.GetDefault()))
+	return &sys
+}
+
 func GetBenchmarkTestSystem() *ActorSystem {
-	sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+	sys := NewActorSystem("benchmark", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
 	return &sys
 }
 
