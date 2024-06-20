@@ -5,7 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
-var TestActorSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+var TestActorSystem = NewActorSystem("test", NewActorSystemOptions().WithLogger(log.GetDefault()))
 
 type (
 	ExportUserGuardActor = userGuardActor
