@@ -34,11 +34,9 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	case vivid.OnActorTyped[ServerActorTyped]:
 		s.typed = m.Typed
 	case vivid.OnTerminate:
-		s.onServerShutdown(ctx, ServerShutdownMessage{})
+		s.onServerTerminate(ctx)
 	case ServerLaunchMessage:
 		s.onServerLaunch(ctx, m)
-	case ServerShutdownMessage:
-		s.onServerShutdown(ctx, m)
 	case ServerConnOpenedMessage:
 		s.onServerConnOpened(ctx, m)
 	case ServerConnClosedMessage:
@@ -68,7 +66,7 @@ func (s *ServerActor) onServerLaunch(ctx vivid.MessageContext, m ServerLaunchMes
 	}()
 }
 
-func (s *ServerActor) onServerShutdown(ctx vivid.MessageContext, m ServerShutdownMessage) {
+func (s *ServerActor) onServerTerminate(ctx vivid.MessageContext) {
 	log.Info("Minotaur Server", log.String("", "shutdown"))
 	ctx.Reply(s.network.Shutdown())
 }
@@ -95,7 +93,7 @@ func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnC
 	conn, ok := s.connections[m.conn]
 	if ok {
 		delete(s.connections, m.conn)
-		conn.Stop()
+		conn.Stop(true)
 	}
 }
 
