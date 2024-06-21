@@ -57,6 +57,9 @@ type ActorContext interface {
 	// ApplyMod 应用模组
 	ApplyMod()
 
+	// WatchModUnloaded 监听模组卸载事件
+	WatchModUnloaded(handler ModUnloadedHandler)
+
 	// SetIdleTimeout 设置 Actor 的空闲超时时间，当 Actor 被重启时，该值不会被使用
 	SetIdleTimeout(timeout time.Duration)
 }
@@ -71,11 +74,12 @@ type actorStatus = int32
 type _ActorContext struct {
 	*_internalActorContext
 	*_ActorCore
-	behaviors   map[reflect.Type][]Behavior // 行为栈，用于存储 Actor 在面对特定消息时的行为
-	mods        []ModInfo                   // 声明的模组
-	currentMods []ModInfo                   // 当前生命周期的模组
-	runtimeMods do.Injector                 // 运行时模组
-	status      actorStatus                 // 是否已经终止
+	behaviors          map[reflect.Type][]Behavior // 行为栈，用于存储 Actor 在面对特定消息时的行为
+	mods               []ModInfo                   // 声明的模组
+	currentMods        []ModInfo                   // 当前生命周期的模组
+	runtimeMods        do.Injector                 // 运行时模组
+	modUnloadedHandler ModUnloadedHandler          // 模组卸载事件处理器
+	status             actorStatus                 // 是否已经终止
 }
 
 func (c *_ActorContext) GetId() ActorId {
@@ -178,18 +182,26 @@ func (c *_ActorContext) ApplyMod() {
 		case modStatusUnload:
 			c.getSystem().GetLogger().Debug("UnloadMod", log.String("actor", c.GetId().String()), log.String("mod", mod.getModType().String()))
 			mod.shutdown()
+
+			if c.modUnloadedHandler != nil {
+				c.modUnloadedHandler(mod)
+			}
 		}
 	}
 	c.currentMods = currentMods
 
-	for i := ModLifeCycleOnInit; i <= ModLifeCycleOnStart; i++ {
+	for i := ModLifecycleOnInit; i <= ModLifecycleOnStart; i++ {
 		for _, mod := range c.currentMods {
-			mod.onLifeCycle(c, i)
+			mod.onLifecycle(c, i)
 		}
 	}
 	c.getSystem().GetLogger().Debug("ApplyMod", log.String("actor", c.GetId().String()), log.Int("count", len(c.currentMods)))
 
 	c.mods = currentMods
+}
+
+func (c *_ActorContext) WatchModUnloaded(handler ModUnloadedHandler) {
+	c.modUnloadedHandler = handler
 }
 
 func (c *_ActorContext) SetIdleTimeout(timeout time.Duration) {

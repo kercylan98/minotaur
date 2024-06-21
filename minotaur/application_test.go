@@ -27,9 +27,9 @@ type BagModExposer interface {
 	PingBag()
 }
 
-func (b BagMod) OnLifeCycle(ctx vivid.ActorContext, lifeCycle vivid.ModLifeCycle) {
+func (b BagMod) OnLifecycle(ctx vivid.ActorContext, lifeCycle vivid.ModLifecycle) {
 	switch lifeCycle {
-	case vivid.ModLifeCycleOnInit:
+	case vivid.ModLifecycleOnInit:
 		log.Info("BagMod", log.String("lifeCycle", "OnInit"))
 	default:
 	}
@@ -39,13 +39,13 @@ func (b BagMod) PingBag() {
 	log.Info("BagMod", log.String("ping", "pong"))
 }
 
-func (a *AccountMod) OnLifeCycle(ctx vivid.ActorContext, lifeCycle vivid.ModLifeCycle) {
+func (a *AccountMod) OnLifecycle(ctx vivid.ActorContext, lifeCycle vivid.ModLifecycle) {
 	switch lifeCycle {
-	case vivid.ModLifeCycleOnInit:
+	case vivid.ModLifecycleOnInit:
 		log.Info("AccountMod", log.String("lifeCycle", "OnInit"))
-	case vivid.ModLifeCycleOnPreload:
+	case vivid.ModLifecycleOnPreload:
 		a.bag = vivid.InvokeMod[BagModExposer](ctx)
-	case vivid.ModLifeCycleOnStart:
+	case vivid.ModLifecycleOnStart:
 		a.bag.PingBag()
 	default:
 	}
