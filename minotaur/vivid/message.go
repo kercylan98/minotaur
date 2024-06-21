@@ -19,6 +19,8 @@ type OnRestart struct {
 // OnTerminate 在 Actor 收到该消息后，将会被安全的终止
 type OnTerminate struct {
 	restart bool // 是否重启
+
+	Context any // 用户自定义的上下文
 }
 
 // onActorRefTyped 该消息将在 ActorOfT 时发送，用于 ActorRef 的类型转换

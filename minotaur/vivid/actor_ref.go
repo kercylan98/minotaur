@@ -18,7 +18,7 @@ type ActorRef interface {
 	Ask(msg Message, opts ...MessageOption) Message
 
 	// Stop 停止 Actor
-	Stop()
+	Stop(ctx ...any)
 
 	// GetSystem 获取 Actor 所在的 ActorSystem
 	GetSystem() *ActorSystem
@@ -46,8 +46,15 @@ func (r *_LocalActorRef) Ask(msg Message, opts ...MessageOption) Message {
 	})...)
 }
 
-func (r *_LocalActorRef) Stop() {
-	r.Tell(OnTerminate{})
+func (r *_LocalActorRef) Stop(ctx ...any) {
+	switch len(ctx) {
+	case 0:
+		r.Tell(OnTerminate{})
+	case 1:
+		r.Tell(OnTerminate{Context: ctx[0]})
+	default:
+		r.Tell(OnTerminate{Context: ctx})
+	}
 }
 
 func (r *_LocalActorRef) GetSystem() *ActorSystem {
@@ -85,8 +92,15 @@ func (r *_RemoteActorRef) Ask(msg Message, opts ...MessageOption) Message {
 	})...)
 }
 
-func (r *_RemoteActorRef) Stop() {
-	r.Tell(OnTerminate{})
+func (r *_RemoteActorRef) Stop(ctx ...any) {
+	switch len(ctx) {
+	case 0:
+		r.Tell(OnTerminate{})
+	case 1:
+		r.Tell(OnTerminate{Context: ctx[0]})
+	default:
+		r.Tell(OnTerminate{Context: ctx})
+	}
 }
 
 func (r *_RemoteActorRef) GetSystem() *ActorSystem {
@@ -134,8 +148,15 @@ func (r *_DeadLetterActorRef) Ask(msg Message, opts ...MessageOption) Message {
 	return nil
 }
 
-func (r *_DeadLetterActorRef) Stop() {
-	r.Tell(OnTerminate{})
+func (r *_DeadLetterActorRef) Stop(ctx ...any) {
+	switch len(ctx) {
+	case 0:
+		r.Tell(OnTerminate{})
+	case 1:
+		r.Tell(OnTerminate{Context: ctx[0]})
+	default:
+		r.Tell(OnTerminate{Context: ctx})
+	}
 }
 
 func (r *_DeadLetterActorRef) GetSystem() *ActorSystem {
