@@ -18,4 +18,6 @@ type (
 	ServerConnClosedMessage struct {
 		conn net.Conn
 	}
+
+	ServerStatusMessage struct{}
 )

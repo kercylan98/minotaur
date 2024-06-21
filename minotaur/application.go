@@ -5,14 +5,16 @@ import (
 	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/kercylan98/minotaur/toolkit"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 // NewApplication 创建一个应用程序
 func NewApplication(options ...Option) *Application {
-	opts := new(Options).apply(options...)
+	opts := defaultOptions().apply(options...)
 
 	actorSystem := vivid.NewActorSystem(opts.ActorSystemName, opts.ActorSystemOptions...)
 	ctx, cancel := context.WithCancel(actorSystem.Context())
@@ -100,6 +102,9 @@ func (a *Application) Launch(onReceive ...func(app *Application, ctx vivid.Messa
 	case <-systemSignal:
 	case <-a.ctx.Done():
 	}
+
+	a.tryGracefulShutdown()
+
 	a.actorSystem.Shutdown()
 }
 
@@ -117,4 +122,53 @@ func (a *Application) ActorSystem() *vivid.ActorSystem {
 // ActorOf 创建一个 Actor
 func (a *Application) ActorOf(ofo vivid.ActorOfO) vivid.ActorRef {
 	return a.actorSystem.ActorOf(ofo)
+}
+
+func (a *Application) tryGracefulShutdown() {
+	if a.server != nil && a.options.NetworkShutdownMode == NetworkShutdownModeGraceful {
+		var ctx context.Context
+		var cancel context.CancelFunc
+		if a.options.NetworkGracefulShutdownTimeout > 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), a.options.NetworkGracefulShutdownTimeout)
+		} else {
+			ctx, cancel = context.WithCancel(context.Background())
+		}
+		defer cancel()
+
+		var lastHit = time.Now()
+		var logger = func(attrs ...log.Attr) {
+			if a.options.NetworkGracefulShutdownPromptHandler == nil {
+				return
+			}
+			now := time.Now()
+			if time.Since(lastHit) > a.options.NetworkGracefulShutdownPromptInterval {
+				a.options.NetworkGracefulShutdownPromptHandler(attrs...)
+				lastHit = now
+			}
+		}
+
+		for {
+			now := time.Now()
+			status, err := a.server.Status()
+			switch {
+			case err != nil:
+				logger(log.Err(err))
+			case status.ConnectionNum > 0:
+				logger(log.String("message", "waiting for all connections to close"), log.Int("connection_num", status.ConnectionNum))
+			case status.LastConnectionOpenedTime.After(now.Add(-a.options.NetworkGracefulShutdownWaitTime)):
+				logger(log.String("message", "wait for no more new connections to come in"), log.Time("expected_shutdown_time", status.LastConnectionOpenedTime.Add(a.options.NetworkGracefulShutdownWaitTime)))
+			default:
+				logger(log.String("message", "all connections are closed, shutdown server"))
+				return
+			}
+
+			select {
+			case <-ctx.Done():
+				logger(log.String("message", "timeout, shutdown server"))
+				return
+			default:
+				time.Sleep(time.Second)
+			}
+		}
+	}
 }

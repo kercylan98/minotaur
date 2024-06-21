@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"net"
 	"reflect"
+	"time"
 )
 
 func NewServerActor(system *vivid.ActorSystem, options ...*vivid.ActorOptions[*ServerActor]) ServerActorTyped {
@@ -19,6 +20,7 @@ type ServerActor struct {
 	network     Network
 	connections map[net.Conn]ConnActorTyped
 	restart     bool
+	status      *ServerStatus
 }
 
 func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
@@ -26,6 +28,7 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 	case vivid.OnRestart:
 		s.restart = true
 	case vivid.OnBoot:
+		s.status = new(ServerStatus)
 		s.ActorRef = ctx
 		s.onBoot(ctx)
 		if s.restart {
@@ -41,6 +44,8 @@ func (s *ServerActor) OnReceive(ctx vivid.MessageContext) {
 		s.onServerConnOpened(ctx, m)
 	case ServerConnClosedMessage:
 		s.onServerConnClosed(ctx, m)
+	case ServerStatusMessage:
+		ctx.Reply(*s.status)
 	}
 }
 
@@ -87,6 +92,9 @@ func (s *ServerActor) onServerConnOpened(ctx vivid.MessageContext, m ServerConnO
 
 	// 发布连接打开事件
 	ctx.GetSystem().Publish(ctx, ServerConnectionOpenedEvent{Conn: connTyped})
+
+	s.status.ConnectionNum++
+	s.status.LastConnectionOpenedTime = time.Now()
 }
 
 func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnClosedMessage) {
@@ -94,6 +102,12 @@ func (s *ServerActor) onServerConnClosed(ctx vivid.MessageContext, m ServerConnC
 	if ok {
 		delete(s.connections, m.conn)
 		conn.Stop(true)
+
+		s.status.ConnectionNum--
+		s.status.LastConnectionClosedTime = time.Now()
+		if s.status.ConnectionNum < 0 {
+			panic("connection num is less than 0")
+		}
 	}
 }
 
@@ -104,4 +118,12 @@ func (s *ServerActor) Attach(conn net.Conn, writer ConnWriter) ConnActorTyped {
 
 func (s *ServerActor) Detach(conn net.Conn) {
 	s.Tell(ServerConnClosedMessage{conn})
+}
+
+func (s *ServerActor) Status() (ServerStatus, error) {
+	status, ok := s.Ask(ServerStatusMessage{}).(ServerStatus)
+	if !ok {
+		return status, fmt.Errorf("load status failed")
+	}
+	return status, nil
 }

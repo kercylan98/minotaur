@@ -54,7 +54,7 @@ func (c *ConnActor) Write(packet Packet) {
 }
 
 func (c *ConnActor) Close() {
-	c.Stop()
+	c.Stop(true)
 }
 
 func (c *ConnActor) SetPacketHandler(handler ConnPacketHandler) {

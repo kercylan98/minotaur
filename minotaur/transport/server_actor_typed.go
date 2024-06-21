@@ -14,6 +14,9 @@ type ServerActorTyped interface {
 	// Detach 用于将一个连接从服务器上解绑
 	Detach(conn net.Conn)
 
+	// Status 获取服务器状态
+	Status() (ServerStatus, error)
+
 	// SubscribeConnOpenedEvent 订阅连接打开事件
 	SubscribeConnOpenedEvent(subscriber vivid.Subscriber, options ...vivid.SubscribeOption)
 }
