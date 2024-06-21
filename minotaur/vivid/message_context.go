@@ -119,8 +119,8 @@ func (c *_MessageContext) Ask(msg Message, opts ...MessageOption) Message {
 	return c.GetRef().Ask(msg, opts...)
 }
 
-func (c *_MessageContext) Stop() {
-	c.GetRef().Stop()
+func (c *_MessageContext) Stop(ctx ...any) {
+	c.GetRef().Stop(ctx...)
 }
 
 func (c *_MessageContext) send(ctx MessageContext) {
