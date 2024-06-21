@@ -3,20 +3,36 @@ package vivid
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"sync"
 )
 
 type (
 	ExportUserGuardActor = userGuardActor
 )
 
+var (
+	actorSystem     *ActorSystem
+	actorSystemLock sync.Mutex
+)
+
 func GetTestActorSystem() *ActorSystem {
-	sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.GetDefault()))
-	return &sys
+	actorSystemLock.Lock()
+	defer actorSystemLock.Unlock()
+	if actorSystem == nil {
+		sys := NewActorSystem("test", NewActorSystemOptions().WithLogger(log.GetDefault()))
+		actorSystem = &sys
+	}
+	return actorSystem
 }
 
 func GetBenchmarkTestSystem() *ActorSystem {
-	sys := NewActorSystem("benchmark", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
-	return &sys
+	actorSystemLock.Lock()
+	defer actorSystemLock.Unlock()
+	if actorSystem == nil {
+		sys := NewActorSystem("benchmark", NewActorSystemOptions().WithLogger(log.NewSilentLogger()))
+		actorSystem = &sys
+	}
+	return actorSystem
 }
 
 // IneffectiveActor 无效的 Actor，仅实现了 Actor 接口，但是没有任何行为。用于测试用途

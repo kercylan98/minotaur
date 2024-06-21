@@ -77,10 +77,10 @@ func (m *Priority) Start() {
 					break
 				}
 				p.cond.Wait()
-				if p.buffer.Len() == 0 {
-					p.cond.L.Unlock()
-					continue
-				}
+			}
+			if p.buffer.Len() == 0 {
+				p.cond.L.Unlock()
+				continue
 			}
 			msg := heap.Pop(&p.buffer).(MessageContext)
 			p.cond.L.Unlock()

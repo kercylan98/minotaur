@@ -252,6 +252,8 @@ func (s *ActorSystem) unbindActor(actor ActorContext, restart, root bool, deadCa
 	core := actor.getCore()
 	if !atomic.CompareAndSwapInt32(&core.status, actorStatusRunning, actorStatusTerminated) {
 		return
+	} else {
+		core.Stop()
 	}
 
 	// 解绑空闲超时调度器
