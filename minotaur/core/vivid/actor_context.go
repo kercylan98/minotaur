@@ -1,7 +1,6 @@
 package vivid
 
 import (
-	"fmt"
 	"github.com/alphadose/haxmap"
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
@@ -42,8 +41,12 @@ type actorContext struct {
 	children    *haxmap.Map[core.Address, ActorRef]
 }
 
+func (ctx *actorContext) System() *ActorSystem {
+	return ctx.actorSystem
+}
+
 func (ctx *actorContext) Terminate(target ActorRef) {
-	ctx.actorSystem.processes.GetProcess(target).Terminate(ctx.ref)
+	ctx.System().getProcess(target).Terminate(ctx.ref)
 }
 
 func (ctx *actorContext) ActorOf(producer ActorProducer) ActorRef {
@@ -69,7 +72,7 @@ func (ctx *actorContext) Message() Message {
 }
 
 func (ctx *actorContext) Tell(target ActorRef, message vivid.Message) {
-	ctx.actorSystem.processes.GetProcess(target).SendUserMessage(ctx.ref, message)
+	ctx.System().sendUserMessage(ctx.ref, target, message)
 }
 
 func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
@@ -121,12 +124,10 @@ func (ctx *actorContext) onTerminated(message OnTerminated) {
 
 	ctx.actorSystem.processes.Unregister(ctx.ref.Address())
 	if ctx.parent != nil {
-		ctx.actorSystem.processes.GetProcess(ctx.parent).SendSystemMessage(ctx.ref, OnTerminated{TerminatedActor: ctx.ref})
+		ctx.System().sendSystemMessage(ctx.ref, ctx.parent, OnTerminated{TerminatedActor: ctx.ref})
 	}
 
 	if dmb, ok := ctx.mailbox.(*defaultMailbox); ok {
 		releaseDefaultMailbox(dmb)
 	}
-
-	fmt.Println("actor terminated", ctx.ref.Address().String())
 }

@@ -32,7 +32,19 @@ func (sys *ActorSystem) Shutdown() {
 }
 
 func (sys *ActorSystem) Terminate(target ActorRef) {
-	sys.processes.GetProcess(target).Terminate(sys.root.Ref())
+	sys.sendSystemMessage(sys.root.Ref(), target, onTerminate)
+}
+
+func (sys *ActorSystem) sendSystemMessage(sender, target ActorRef, message Message) {
+	sys.getProcess(target).SendSystemMessage(sender, message)
+}
+
+func (sys *ActorSystem) sendUserMessage(sender, target ActorRef, message Message) {
+	sys.getProcess(target).SendUserMessage(sender, message)
+}
+
+func (sys *ActorSystem) getProcess(target ActorRef) core.Process {
+	return sys.processes.GetProcess(target)
 }
 
 func (sys *ActorSystem) ActorOf(producer ActorProducer) ActorRef {

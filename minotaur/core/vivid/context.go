@@ -28,6 +28,7 @@ type SpawnerContext interface {
 type basicContextCompose interface {
 	Parent() ActorRef
 	Ref() ActorRef
+	System() *ActorSystem
 }
 
 type senderContextCompose interface {
