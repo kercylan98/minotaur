@@ -44,8 +44,7 @@ type actorContext struct {
 func (ctx *actorContext) Reply(message Message) {
 	rm, ok := ctx.message.(RegulatoryMessage)
 	if !ok || rm.Sender == nil {
-		// TODO: 死信
-		return
+		rm.Sender = ctx.System().deadLetter.ref
 	}
 	ctx.System().sendUserMessage(ctx.ref, rm.Sender, message)
 }

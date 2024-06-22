@@ -17,6 +17,7 @@ func NewActorSystem(name string) *ActorSystem {
 		deadLetter: new(deadLetterProcess),
 	}
 	system.processes = core.NewProcessManager("", 1, 100, system.deadLetter)
+	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 
 	system.root = spawn(system, new(root), new(ActorOptions).WithName("user"), nil)
 	return system
@@ -24,7 +25,7 @@ func NewActorSystem(name string) *ActorSystem {
 
 type ActorSystem struct {
 	processes  *core.ProcessManager
-	deadLetter DeadLetter
+	deadLetter *deadLetterProcess
 	root       ActorContext
 	name       string
 	closed     chan struct{}

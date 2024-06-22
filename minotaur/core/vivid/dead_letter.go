@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
 var _ DeadLetter = &deadLetterProcess{}
@@ -11,6 +12,11 @@ type DeadLetter interface {
 }
 
 type deadLetterProcess struct {
+	ref ActorRef
+}
+
+func (d *deadLetterProcess) Ref() ActorRef {
+	return d.ref
 }
 
 func (d *deadLetterProcess) GetAddress() core.Address {
@@ -26,7 +32,7 @@ func (d *deadLetterProcess) Dead() {
 }
 
 func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
-
+	log.Error("dead letter: %v", message)
 }
 
 func (d *deadLetterProcess) SendSystemMessage(sender *core.ProcessRef, message core.Message) {

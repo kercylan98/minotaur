@@ -2,7 +2,9 @@ package vivid_test
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/toolkit"
 	"testing"
+	"time"
 )
 
 func BenchmarkActorContext_Tell(b *testing.B) {
@@ -37,6 +39,11 @@ func BenchmarkActorContext_Ask(b *testing.B) {
 }
 
 func BenchmarkActorContext_FutureAsk(b *testing.B) {
+	go func() {
+		toolkit.EnableHttpPProf(":19828", "/debug/pprof", func(err error) {
+			panic(err)
+		})
+	}()
 	system := vivid.NewActorSystem("benchmark")
 	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
 		return &vivid.StringEchoActor{}
@@ -45,11 +52,12 @@ func BenchmarkActorContext_FutureAsk(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := system.Context().FutureAsk(ref, m).Wait(); err != nil {
+		if err := system.Context().FutureAsk(ref, m, func(options *vivid.MessageOptions) {
+			options.WithFutureTimeout(time.Second * 1)
+		}).Wait(); err != nil {
 			panic(err)
 		}
 	}
 	b.StopTimer()
-
-	system.Shutdown()
+	//system.Shutdown()
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -47,7 +46,7 @@ type future struct {
 	actorSystem *ActorSystem
 	address     core.Address
 	ref         ActorRef
-	status      uint32
+	ok          bool
 	cond        *sync.Cond
 	result      Message
 	err         error
@@ -68,10 +67,10 @@ func (f *future) bindTimeout(timeout time.Duration) {
 
 func (f *future) Result() (Message, error) {
 	f.cond.L.Lock()
-	defer f.cond.L.Unlock()
-	for !f.Deaden() {
+	for !f.ok {
 		f.cond.Wait()
 	}
+	f.cond.L.Unlock()
 	return f.result, f.err
 }
 
@@ -85,11 +84,11 @@ func (f *future) GetAddress() core.Address {
 }
 
 func (f *future) Deaden() bool {
-	return atomic.LoadUint32(&f.status) == 1
+	return f.ok
 }
 
 func (f *future) Dead() {
-	atomic.StoreUint32(&f.status, 1)
+
 }
 
 func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) {
@@ -109,15 +108,16 @@ func (f *future) onTimeout() {
 
 func (f *future) Terminate(_ *core.ProcessRef) {
 	f.cond.L.Lock()
-	if f.Deaden() {
+	if f.ok {
 		f.cond.L.Unlock()
 		return
 	}
+	f.ok = true
 
 	if f.timer != nil {
 		f.timer.Stop()
 	}
-	f.Dead()
+	
 	f.actorSystem.processes.Unregister(f.ref)
 
 	f.cond.L.Unlock()
