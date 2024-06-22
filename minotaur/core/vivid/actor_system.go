@@ -14,8 +14,8 @@ func NewActorSystem(name string) *ActorSystem {
 	system := &ActorSystem{
 		processes: core.NewProcessManager("", 1, 100),
 		name:      name,
+		closed:    make(chan struct{}),
 	}
-
 	system.root = spawn(system, new(root), new(ActorOptions).WithName("user"), nil)
 	return system
 }
@@ -25,6 +25,10 @@ type ActorSystem struct {
 	root      ActorContext
 	name      string
 	closed    chan struct{}
+}
+
+func (sys *ActorSystem) Context() ActorContext {
+	return sys.root
 }
 
 func (sys *ActorSystem) Shutdown() {

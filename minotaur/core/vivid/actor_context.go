@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -41,6 +42,16 @@ type actorContext struct {
 	children    *haxmap.Map[core.Address, ActorRef]
 }
 
+func (ctx *actorContext) Reply(message Message) {
+	rm, ok := ctx.message.(regulatoryMessages)
+	if !ok || rm.Sender == nil {
+		// TODO: 死信
+		return
+	}
+
+	ctx.System().sendUserMessage(ctx.ref, rm.Sender, message)
+}
+
 func (ctx *actorContext) System() *ActorSystem {
 	return ctx.actorSystem
 }
@@ -68,11 +79,36 @@ func (ctx *actorContext) Ref() ActorRef {
 }
 
 func (ctx *actorContext) Message() Message {
-	return ctx.message
+	switch m := ctx.message.(type) {
+	case regulatoryMessages:
+		return m.Message
+	default:
+		return ctx.message
+	}
 }
 
 func (ctx *actorContext) Tell(target ActorRef, message vivid.Message) {
 	ctx.System().sendUserMessage(ctx.ref, target, message)
+}
+
+func (ctx *actorContext) Ask(target ActorRef, message vivid.Message) {
+	ctx.AgentAsk(target, message, ctx.ref)
+}
+
+func (ctx *actorContext) AgentAsk(target ActorRef, message vivid.Message, agent ActorRef) {
+	ctx.System().sendUserMessage(ctx.ref, target, regulatoryMessages{
+		Sender:  agent,
+		Message: message,
+	})
+}
+
+func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message) Future {
+	f := NewFuture(ctx.System(), time.Second*3)
+	ctx.System().sendUserMessage(ctx.ref, target, regulatoryMessages{
+		Sender:  f.Ref(),
+		Message: message,
+	})
+	return f
 }
 
 func (ctx *actorContext) ProcessUserMessage(msg core.Message) {

@@ -22,7 +22,7 @@ type Process interface {
 	SendSystemMessage(sender *ProcessRef, message Message)
 
 	// Terminate 终止进程
-	Terminate(sender *ProcessRef)
+	Terminate(*ProcessRef)
 }
 
 // ProcessRef 进程外部引用

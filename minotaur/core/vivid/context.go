@@ -32,11 +32,23 @@ type basicContextCompose interface {
 }
 
 type senderContextCompose interface {
+	// Tell 向目标 Actor 发送消息
 	Tell(target ActorRef, message vivid.Message)
+
+	// Ask 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是无限期的
+	Ask(target ActorRef, message vivid.Message)
+
+	// AgentAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是有限期的，在收到回复时将会由代理 Actor 进行处理
+	AgentAsk(target ActorRef, message vivid.Message, agent ActorRef)
+
+	// FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 Future 对象，可被用于获取响应消息
+	FutureAsk(target ActorRef, message vivid.Message) Future
 }
 
 type receiverContextCompose interface {
 	Message() Message
+
+	Reply(message Message)
 }
 
 type spawnerContextCompose interface {
