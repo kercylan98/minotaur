@@ -45,7 +45,9 @@ func BenchmarkActorContext_FutureAsk(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = system.Context().FutureAsk(ref, m).Wait()
+		if err := system.Context().FutureAsk(ref, m).Wait(); err != nil {
+			panic(err)
+		}
 	}
 	b.StopTimer()
 

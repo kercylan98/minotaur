@@ -47,7 +47,6 @@ func (ctx *actorContext) Reply(message Message) {
 		// TODO: 死信
 		return
 	}
-
 	ctx.System().sendUserMessage(ctx.ref, rm.Sender, message)
 }
 

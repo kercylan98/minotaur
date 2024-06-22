@@ -103,8 +103,8 @@ func (f *future) SendSystemMessage(sender *core.ProcessRef, message core.Message
 }
 
 func (f *future) onTimeout() {
-	f.Terminate(nil)
 	f.err = ErrFutureTimeout
+	f.Terminate(nil)
 }
 
 func (f *future) Terminate(_ *core.ProcessRef) {

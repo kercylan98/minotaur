@@ -44,6 +44,48 @@ func (b *Ring[T]) Read() (T, error) {
 	return v, nil
 }
 
+// ReadMulti 读取多个数据
+func (b *Ring[T]) ReadMulti(n int) ([]T, error) {
+	if n <= 0 {
+		return nil, nil
+	}
+
+	if b.r == b.w {
+		return nil, ErrBufferIsEmpty
+	}
+
+	var length int
+	if b.w > b.r {
+		length = b.w - b.r
+	} else {
+		length = len(b.buf) - b.r + b.w
+	}
+
+	if n > length {
+		n = length
+	}
+
+	data := make([]T, n) // 预分配空间
+
+	if b.w > b.r {
+		copy(data, b.buf[b.r:b.r+n])
+		b.r += n
+	} else {
+		copied := copy(data, b.buf[b.r:])
+		if copied < n {
+			copy(data[copied:], b.buf[:n-copied])
+		}
+		b.r += n - copied
+	}
+
+	if b.r == b.size {
+		b.r = 0
+	}
+
+	return data, nil
+
+}
+
 // ReadAll 读取所有数据
 func (b *Ring[T]) ReadAll() []T {
 	if b.r == b.w {

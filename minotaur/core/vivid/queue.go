@@ -42,3 +42,10 @@ func (q *unboundedQueue) Dequeue() core.Message {
 	q.rw.Unlock()
 	return m
 }
+
+func (q *unboundedQueue) DequeueBatch(batch int) []core.Message {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+	ms, _ := q.Ring.ReadMulti(batch)
+	return ms
+}

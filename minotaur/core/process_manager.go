@@ -1,8 +1,8 @@
 package core
 
-func NewProcessManager(host string, port uint64, bucketSize int) *ProcessManager {
+func NewProcessManager(host string, port uint64, bucketSize int, defaultProcess ...Process) *ProcessManager {
 	mgr := &ProcessManager{
-		processRegisterTable: newProcessRegisterTable(bucketSize),
+		processRegisterTable: newProcessRegisterTable(bucketSize, defaultProcess...),
 		host:                 host,
 		port:                 port,
 	}

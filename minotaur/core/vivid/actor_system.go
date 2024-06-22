@@ -12,19 +12,22 @@ var (
 
 func NewActorSystem(name string) *ActorSystem {
 	system := &ActorSystem{
-		processes: core.NewProcessManager("", 1, 100),
-		name:      name,
-		closed:    make(chan struct{}),
+		name:       name,
+		closed:     make(chan struct{}),
+		deadLetter: new(deadLetterProcess),
 	}
+	system.processes = core.NewProcessManager("", 1, 100, system.deadLetter)
+
 	system.root = spawn(system, new(root), new(ActorOptions).WithName("user"), nil)
 	return system
 }
 
 type ActorSystem struct {
-	processes *core.ProcessManager
-	root      ActorContext
-	name      string
-	closed    chan struct{}
+	processes  *core.ProcessManager
+	deadLetter DeadLetter
+	root       ActorContext
+	name       string
+	closed     chan struct{}
 }
 
 func (sys *ActorSystem) Context() ActorContext {
