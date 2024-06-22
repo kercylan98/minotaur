@@ -99,7 +99,7 @@ func (g *GolangSingleFile) generateSignature() {
 	// 生成签名和配置三个函数的映射
 	g.builder.Fprintf("signedConfigGetters = map[ConfigSign]any {\n")
 	for configName := range g.table.GetConfigs() {
-		g.builder.Fprintf("%sSign: Get%s,\n", g.formatName(configName), g.formatName(configName))
+		g.builder.Fprintf("%sSign: GetProcess%s,\n", g.formatName(configName), g.formatName(configName))
 	}
 	g.builder.WriteString("}\n\n")
 	g.builder.Fprintf("signedConfigSetters = map[ConfigSign]any {\n")
@@ -177,8 +177,8 @@ func (g *GolangSingleFile) generateBasicFunc() {
 		variableType := builder.String()
 
 		// getter
-		g.builder.Fprintf("// Get%s 获取%s, 该函数将返回已加载的配置\n", g.formatName(config.GetName()), config.GetDescription())
-		g.builder.Fprintf("func Get%s() %s {\n", g.formatName(config.GetName()), variableType)
+		g.builder.Fprintf("// GetProcess%s 获取%s, 该函数将返回已加载的配置\n", g.formatName(config.GetName()), config.GetDescription())
+		g.builder.Fprintf("func GetProcess%s() %s {\n", g.formatName(config.GetName()), variableType)
 		g.builder.Fprintf("return *loaded%s.Load()\n", g.formatName(config.GetName()))
 		g.builder.WriteString("}\n\n")
 

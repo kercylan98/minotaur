@@ -11,7 +11,7 @@ func TestUnbounded_Get(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		ub.Put(i + 1)
 		fmt.Println(<-ub.Get())
-		//<-ub.Get()
+		//<-ub.GetProcess()
 		ub.Load()
 	}
 }

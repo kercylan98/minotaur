@@ -14,9 +14,6 @@ const (
 )
 
 // ActorId 是一个 Actor 的唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了 Actor 完整的资源定位信息
-//   - minotaur://my-system/user/my-localActorRef
-//   - minotaur://localhost:1234/user/my-localActorRef
-//   - minotaur://my-node@localhost:1234/user/my-localActorRef
 type ActorId string
 
 type ActorName = string
