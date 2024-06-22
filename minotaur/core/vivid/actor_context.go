@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"sync/atomic"
-	"time"
 )
 
 var (
@@ -19,7 +18,7 @@ const (
 	actorStatusTerminated
 )
 
-func newActorContext(system *ActorSystem, actor Actor, parent ActorRef, ref ActorRef, mailbox *defaultMailbox) *actorContext {
+func newActorContext(system *ActorSystem, actor Actor, parent ActorRef, ref ActorRef, mailbox Mailbox) *actorContext {
 	ctx := &actorContext{
 		actorSystem: system,
 		actor:       actor,
@@ -43,7 +42,7 @@ type actorContext struct {
 }
 
 func (ctx *actorContext) Reply(message Message) {
-	rm, ok := ctx.message.(regulatoryMessages)
+	rm, ok := ctx.message.(RegulatoryMessage)
 	if !ok || rm.Sender == nil {
 		// TODO: 死信
 		return
@@ -80,35 +79,55 @@ func (ctx *actorContext) Ref() ActorRef {
 
 func (ctx *actorContext) Message() Message {
 	switch m := ctx.message.(type) {
-	case regulatoryMessages:
+	case RegulatoryMessage:
 		return m.Message
 	default:
 		return ctx.message
 	}
 }
 
-func (ctx *actorContext) Tell(target ActorRef, message vivid.Message) {
+func (ctx *actorContext) Tell(target ActorRef, message vivid.Message, options ...MessageOption) {
+	//opts := generateMessageOptions(options...)
 	ctx.System().sendUserMessage(ctx.ref, target, message)
 }
 
-func (ctx *actorContext) Ask(target ActorRef, message vivid.Message) {
-	ctx.AgentAsk(target, message, ctx.ref)
-}
+func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message, options ...MessageOption) Future {
+	opts := generateMessageOptions(options...)
+	if len(opts.MessageHooks) > 0 {
+		cover := func(cover Message) {
+			message = cover
+		}
+		opts.hookMessage(message, cover)
+	}
 
-func (ctx *actorContext) AgentAsk(target ActorRef, message vivid.Message, agent ActorRef) {
-	ctx.System().sendUserMessage(ctx.ref, target, regulatoryMessages{
-		Sender:  agent,
-		Message: message,
-	})
-}
-
-func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message) Future {
-	f := NewFuture(ctx.System(), time.Second*3)
-	ctx.System().sendUserMessage(ctx.ref, target, regulatoryMessages{
+	f := NewFuture(ctx.System(), opts.FutureTimeout)
+	m := RegulatoryMessage{
 		Sender:  f.Ref(),
 		Message: message,
-	})
+	}
+
+	opts.hookRegulatoryMessage(&m)
+	ctx.System().sendUserMessage(ctx.ref, target, m)
 	return f
+}
+
+func (ctx *actorContext) Ask(target ActorRef, message vivid.Message, options ...MessageOption) {
+	opts := generateMessageOptions(options...)
+	if len(opts.MessageHooks) > 0 {
+		cover := func(cover Message) {
+			message = cover
+		}
+		opts.hookMessage(message, cover)
+	}
+
+	m := RegulatoryMessage{
+		Sender:  ctx.ref,
+		Message: message,
+	}
+
+	opts.hookAskRegulatoryMessage(&m)
+	opts.hookRegulatoryMessage(&m)
+	ctx.System().sendUserMessage(ctx.ref, target, m)
 }
 
 func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
@@ -158,7 +177,7 @@ func (ctx *actorContext) onTerminated(message OnTerminated) {
 		return
 	}
 
-	ctx.actorSystem.processes.Unregister(ctx.ref.Address())
+	ctx.actorSystem.processes.Unregister(ctx.ref)
 	if ctx.parent != nil {
 		ctx.System().sendSystemMessage(ctx.ref, ctx.parent, OnTerminated{TerminatedActor: ctx.ref})
 	}

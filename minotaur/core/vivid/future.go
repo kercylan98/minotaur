@@ -103,8 +103,8 @@ func (f *future) SendSystemMessage(sender *core.ProcessRef, message core.Message
 }
 
 func (f *future) onTimeout() {
-	f.err = ErrFutureTimeout
 	f.Terminate(nil)
+	f.err = ErrFutureTimeout
 }
 
 func (f *future) Terminate(_ *core.ProcessRef) {
@@ -114,8 +114,11 @@ func (f *future) Terminate(_ *core.ProcessRef) {
 		return
 	}
 
+	if f.timer != nil {
+		f.timer.Stop()
+	}
 	f.Dead()
-	f.actorSystem.processes.Unregister(f.ref.Address())
+	f.actorSystem.processes.Unregister(f.ref)
 
 	f.cond.L.Unlock()
 	f.cond.Broadcast()

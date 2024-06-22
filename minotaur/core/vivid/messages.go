@@ -1,10 +1,12 @@
 package vivid
 
-import "github.com/kercylan98/minotaur/minotaur/core"
+import (
+	"github.com/kercylan98/minotaur/minotaur/core"
+)
 
 type Message = core.Message
 
-type regulatoryMessages struct {
+type RegulatoryMessage struct {
 	Sender  ActorRef
 	Message Message
 }

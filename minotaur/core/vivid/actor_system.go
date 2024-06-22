@@ -89,7 +89,11 @@ func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generated
 
 	var address = core.NewAddress("", system.name, "", 0, actorPath)
 
-	mailbox := newDefaultMailbox()
+	mailbox := options.Mailbox
+	if mailbox == nil {
+		mailbox = newDefaultMailbox()
+	}
+
 	process := NewProcess(address, mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
@@ -101,7 +105,11 @@ func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generated
 		generatedHook(ctx)
 	}
 
-	mailbox.OnInit(ctx, new(asyncDispatcher))
+	dispatcher := options.Dispatcher
+	if dispatcher == nil {
+		dispatcher = defaultDispatcher
+	}
+	mailbox.OnInit(ctx, dispatcher)
 	ctx.Tell(ref, onBoot)
 
 	return ctx
