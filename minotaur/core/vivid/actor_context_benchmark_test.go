@@ -38,6 +38,31 @@ func BenchmarkActorContext_Ask(b *testing.B) {
 	system.Shutdown()
 }
 
+func BenchmarkActorContext_FutureAsk_Accuracy(b *testing.B) {
+	system := vivid.NewActorSystem("benchmark")
+	actor := &vivid.StringEchoCounterActor{}
+	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
+		return actor
+	})
+	var m = "hi"
+	var count = 0
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		count++
+		if err := system.Context().FutureAsk(ref, m).Wait(); err != nil {
+			panic(err)
+		}
+	}
+	b.StopTimer()
+
+	system.Shutdown()
+	b.Logf("send %d times, receive %d times", count, actor.Counter)
+	if count != actor.Counter {
+		b.Fatal("not accurate")
+	}
+}
+
 func BenchmarkActorContext_FutureAsk(b *testing.B) {
 	os.Remove("cpu.pprof")
 	f, _ := os.OpenFile("cpu.pprof", os.O_CREATE|os.O_RDWR, 0644)

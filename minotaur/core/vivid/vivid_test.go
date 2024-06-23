@@ -16,3 +16,15 @@ func (e *StringEchoActor) OnReceive(ctx ActorContext) {
 		ctx.Reply(m)
 	}
 }
+
+type StringEchoCounterActor struct {
+	Counter int
+}
+
+func (e *StringEchoCounterActor) OnReceive(ctx ActorContext) {
+	switch m := ctx.Message().(type) {
+	case string:
+		ctx.Reply(m)
+		e.Counter++
+	}
+}

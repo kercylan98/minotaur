@@ -1,10 +1,9 @@
 package vivid
 
 import (
-	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/pools"
-	"path"
 	"sync/atomic"
 )
 
@@ -18,7 +17,7 @@ func NewActorSystem(name string) *ActorSystem {
 		closed:     make(chan struct{}),
 		deadLetter: new(deadLetterProcess),
 	}
-	system.processes = core.NewProcessManager("", 1, 100, system.deadLetter)
+	system.processes = core.NewProcessManager("", 1, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 
 	system.root = spawn(system, new(root), new(ActorOptions).WithName("user"), nil)
@@ -33,6 +32,7 @@ type ActorSystem struct {
 	closed       chan struct{}
 	futurePool   *pools.ObjectPool[*future]
 	nextFutureId atomic.Uint64
+	nextActorId  atomic.Uint64
 }
 
 func (sys *ActorSystem) Context() ActorContext {
@@ -85,14 +85,14 @@ func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generated
 		}
 	}
 	if options.Name == "" {
-		options.Name = uuid.NewString()
+		options.Name = convert.Uint64ToString(system.nextActorId.Add(1))
 	}
 
 	var actorPath = options.Name
 	if options.Parent != nil {
-		actorPath = path.Join(options.Parent.Address().Path(), options.Name)
+		actorPath = options.Parent.Address().Path() + "/" + options.Name
 	} else {
-		actorPath = path.Clean("/" + options.Name)
+		actorPath = "/" + options.Name
 	}
 
 	var address = core.NewAddress("", system.name, "", 0, actorPath)
