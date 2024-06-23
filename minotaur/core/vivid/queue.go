@@ -1,51 +1,60 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
-	"github.com/kercylan98/minotaur/toolkit/buffer"
-	"github.com/kercylan98/minotaur/toolkit/pools"
-	"sync"
+	"sync/atomic"
+	"unsafe"
 )
 
-var unboundedQueuePool = pools.NewObjectPool[unboundedQueue](func() *unboundedQueue {
-	return &unboundedQueue{
-		Ring: buffer.NewRing[Message](256),
-		rw:   &sync.Mutex{},
+// Lock-free queue implementation
+type lfQueue struct {
+	head, tail unsafe.Pointer
+}
+
+type lfNode struct {
+	value unsafe.Pointer
+	next  unsafe.Pointer
+}
+
+func newLfQueue() *lfQueue {
+	node := unsafe.Pointer(&lfNode{})
+	return &lfQueue{head: node, tail: node}
+}
+
+func (q *lfQueue) Enqueue(value unsafe.Pointer) {
+	node := unsafe.Pointer(&lfNode{value: value})
+	for {
+		tail := atomic.LoadPointer(&q.tail)
+		next := atomic.LoadPointer(&(*lfNode)(tail).next)
+		if tail == atomic.LoadPointer(&q.tail) {
+			if next == nil {
+				if atomic.CompareAndSwapPointer(&(*lfNode)(tail).next, next, node) {
+					atomic.CompareAndSwapPointer(&q.tail, tail, node)
+					return
+				}
+			} else {
+				atomic.CompareAndSwapPointer(&q.tail, tail, next)
+			}
+		}
 	}
-}, func(data *unboundedQueue) {
-	data.Ring.Reset()
-})
+}
 
-func releaseDefaultMailbox(mailbox *defaultMailbox) {
-	if v, ok := mailbox.queue.(*unboundedQueue); ok {
-		unboundedQueuePool.Put(v)
+func (q *lfQueue) Dequeue() unsafe.Pointer {
+	for {
+		head := atomic.LoadPointer(&q.head)
+		tail := atomic.LoadPointer(&q.tail)
+		next := atomic.LoadPointer(&(*lfNode)(head).next)
+		if head == atomic.LoadPointer(&q.head) {
+			if head == tail {
+				if next == nil {
+					return nil
+				}
+				atomic.CompareAndSwapPointer(&q.tail, tail, next)
+			} else {
+				value := (*lfNode)(next).value
+				if atomic.CompareAndSwapPointer(&q.head, head, next) {
+					return value
+				}
+			}
+		}
 	}
-	if v, ok := mailbox.systemQueue.(*unboundedQueue); ok {
-		unboundedQueuePool.Put(v)
-	}
-}
-
-type unboundedQueue struct {
-	*buffer.Ring[Message]
-	rw *sync.Mutex
-}
-
-func (q *unboundedQueue) Enqueue(message core.Message) {
-	q.rw.Lock()
-	defer q.rw.Unlock()
-	q.Write(message)
-}
-
-func (q *unboundedQueue) Dequeue() core.Message {
-	q.rw.Lock()
-	m, _ := q.Read()
-	q.rw.Unlock()
-	return m
-}
-
-func (q *unboundedQueue) DequeueBatch(batch int) []core.Message {
-	q.rw.Lock()
-	defer q.rw.Unlock()
-	ms, _ := q.Ring.ReadMulti(batch)
-	return ms
 }

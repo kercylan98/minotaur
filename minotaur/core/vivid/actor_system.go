@@ -3,7 +3,9 @@ package vivid
 import (
 	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/pools"
 	"path"
+	"sync/atomic"
 )
 
 var (
@@ -24,11 +26,13 @@ func NewActorSystem(name string) *ActorSystem {
 }
 
 type ActorSystem struct {
-	processes  *core.ProcessManager
-	deadLetter *deadLetterProcess
-	root       ActorContext
-	name       string
-	closed     chan struct{}
+	processes    *core.ProcessManager
+	deadLetter   *deadLetterProcess
+	root         ActorContext
+	name         string
+	closed       chan struct{}
+	futurePool   *pools.ObjectPool[*future]
+	nextFutureId atomic.Uint64
 }
 
 func (sys *ActorSystem) Context() ActorContext {

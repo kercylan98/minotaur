@@ -1,6 +1,9 @@
 package vivid
 
-import "time"
+import (
+	"github.com/kercylan98/minotaur/toolkit/pools"
+	"time"
+)
 
 type MessageOption func(options *MessageOptions)
 
@@ -69,14 +72,29 @@ func (o *MessageOptions) apply() *MessageOptions {
 	return o
 }
 
-func generateMessageOptions(options ...MessageOption) *MessageOptions {
-	var opts = &MessageOptions{
+var messageOptionsPool = pools.NewObjectPool[MessageOptions](func() *MessageOptions {
+	return &MessageOptions{
 		FutureTimeout: time.Second,
 	}
+}, func(data *MessageOptions) {
+	data.options = data.options[:0]
+	data.FutureTimeout = time.Second
+	data.AskReplyAgent = nil
+	data.RegulatoryMessageHooks = data.RegulatoryMessageHooks[:0]
+	data.AskRegulatoryMessageHooks = data.AskRegulatoryMessageHooks[:0]
+	data.MessageHooks = data.MessageHooks[:0]
+})
+
+func generateMessageOptions(options ...MessageOption) *MessageOptions {
+	var opts = messageOptionsPool.Get()
 	for _, opt := range options {
 		opt(opts)
 	}
 	return opts.apply()
+}
+
+func releaseMessageOptions(opts *MessageOptions) {
+	messageOptionsPool.Put(opts)
 }
 
 func (o *MessageOptions) hookRegulatoryMessage(m *RegulatoryMessage) {

@@ -85,12 +85,16 @@ func (ctx *actorContext) Message() Message {
 }
 
 func (ctx *actorContext) Tell(target ActorRef, message vivid.Message, options ...MessageOption) {
-	//opts := generateMessageOptions(options...)
+	opts := generateMessageOptions(options...)
+	defer releaseMessageOptions(opts)
+
 	ctx.System().sendUserMessage(ctx.ref, target, message)
 }
 
 func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message, options ...MessageOption) Future {
 	opts := generateMessageOptions(options...)
+	defer releaseMessageOptions(opts)
+
 	if len(opts.MessageHooks) > 0 {
 		cover := func(cover Message) {
 			message = cover
@@ -111,6 +115,8 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message, optio
 
 func (ctx *actorContext) Ask(target ActorRef, message vivid.Message, options ...MessageOption) {
 	opts := generateMessageOptions(options...)
+	defer releaseMessageOptions(opts)
+
 	if len(opts.MessageHooks) > 0 {
 		cover := func(cover Message) {
 			message = cover
@@ -178,9 +184,5 @@ func (ctx *actorContext) onTerminated(message OnTerminated) {
 	ctx.actorSystem.processes.Unregister(ctx.ref)
 	if ctx.parent != nil {
 		ctx.System().sendSystemMessage(ctx.ref, ctx.parent, OnTerminated{TerminatedActor: ctx.ref})
-	}
-
-	if dmb, ok := ctx.mailbox.(*defaultMailbox); ok {
-		releaseDefaultMailbox(dmb)
 	}
 }

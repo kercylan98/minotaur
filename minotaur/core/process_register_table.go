@@ -29,10 +29,11 @@ type processRegisterTable struct {
 
 // Register 注册一个进程
 func (prt *processRegisterTable) Register(process Process) (ref *ProcessRef, exists bool) {
-	bucket := prt.registerTable.GetBucket(process.GetAddress())
-	_, exists = bucket.GetOrSet(process.GetAddress(), process)
+	address := process.GetAddress()
+	bucket := prt.registerTable.GetBucket(address)
+	_, exists = bucket.GetOrSet(address, process)
 	return &ProcessRef{
-		address: process.GetAddress(),
+		address: address,
 	}, exists
 }
 

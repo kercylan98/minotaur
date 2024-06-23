@@ -1,10 +1,15 @@
 package vivid
 
 import (
-	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/convert"
 	"sync"
+	"sync/atomic"
 	"time"
+)
+
+const (
+	futurePrefix = "/future/"
 )
 
 var (
@@ -12,15 +17,26 @@ var (
 	_ Future       = &future{}
 )
 
-func generateFutureAddress(system *ActorSystem) core.Address {
-	return core.NewAddress("", system.name, "", 0, "/future/"+uuid.NewString())
+var futurePool = sync.Pool{
+	New: func() interface{} {
+		return &future{}
+	},
 }
 
 func NewFuture(system *ActorSystem, timeout time.Duration) Future {
-	f := &future{
-		actorSystem: system,
-		address:     generateFutureAddress(system),
-		cond:        sync.NewCond(new(sync.Mutex)),
+	f := futurePool.Get().(*future)
+	f.actorSystem = system
+	f.address = core.NewAddress("", system.name, "", 0, futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1)))
+	atomic.StoreUint32(&f.ok, 0)
+	f.result = nil
+	f.err = nil
+	if cap(f.done) == 0 {
+		f.done = make(chan struct{}, 1)
+	} else {
+		select {
+		case <-f.done:
+		default:
+		}
 	}
 	ref, exist := system.processes.Register(f)
 	if exist {
@@ -32,13 +48,8 @@ func NewFuture(system *ActorSystem, timeout time.Duration) Future {
 }
 
 type Future interface {
-	// Ref 返回该 Future 的 ActorRef
 	Ref() ActorRef
-
-	// Result 阻塞并等待结果
 	Result() (Message, error)
-
-	// Wait 不关注结果，只等待是否完成
 	Wait() error
 }
 
@@ -46,8 +57,8 @@ type future struct {
 	actorSystem *ActorSystem
 	address     core.Address
 	ref         ActorRef
-	ok          bool
-	cond        *sync.Cond
+	ok          uint32
+	done        chan struct{}
 	result      Message
 	err         error
 	timer       *time.Timer
@@ -61,17 +72,18 @@ func (f *future) bindTimeout(timeout time.Duration) {
 	if timeout <= 0 {
 		return
 	}
-
-	f.timer = time.AfterFunc(timeout, f.onTimeout)
+	if f.timer == nil {
+		f.timer = time.AfterFunc(timeout, f.onTimeout)
+	} else {
+		f.timer.Reset(timeout)
+	}
 }
 
 func (f *future) Result() (Message, error) {
-	f.cond.L.Lock()
-	for !f.ok {
-		f.cond.Wait()
+	select {
+	case <-f.done:
+		return f.result, f.err
 	}
-	f.cond.L.Unlock()
-	return f.result, f.err
 }
 
 func (f *future) Wait() error {
@@ -84,11 +96,11 @@ func (f *future) GetAddress() core.Address {
 }
 
 func (f *future) Deaden() bool {
-	return f.ok
+	return atomic.LoadUint32(&f.ok) == 1
 }
 
 func (f *future) Dead() {
-
+	// No-op
 }
 
 func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) {
@@ -107,19 +119,17 @@ func (f *future) onTimeout() {
 }
 
 func (f *future) Terminate(_ *core.ProcessRef) {
-	f.cond.L.Lock()
-	if f.ok {
-		f.cond.L.Unlock()
+	if !atomic.CompareAndSwapUint32(&f.ok, 0, 1) {
 		return
 	}
-	f.ok = true
 
 	if f.timer != nil {
 		f.timer.Stop()
 	}
-	
 	f.actorSystem.processes.Unregister(f.ref)
-
-	f.cond.L.Unlock()
-	f.cond.Broadcast()
+	select {
+	case f.done <- struct{}{}:
+	default:
+	}
+	futurePool.Put(f)
 }

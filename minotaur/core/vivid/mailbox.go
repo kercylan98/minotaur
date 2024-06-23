@@ -3,6 +3,7 @@ package vivid
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"sync/atomic"
+	"unsafe"
 )
 
 type Mailbox interface {
@@ -23,20 +24,20 @@ const (
 
 var _ Mailbox = &defaultMailbox{}
 
-func newDefaultMailbox() *defaultMailbox {
-	return &defaultMailbox{
-		queue:       unboundedQueuePool.Get(),
-		systemQueue: unboundedQueuePool.Get(),
-	}
-}
-
 type defaultMailbox struct {
-	queue       core.Queue
-	systemQueue core.Queue
+	queue       *lfQueue
+	systemQueue *lfQueue
 	processor   core.MessageProcessor
 	dispatcher  Dispatcher
 	status      uint32
 	num         int32
+}
+
+func newDefaultMailbox() *defaultMailbox {
+	return &defaultMailbox{
+		queue:       newLfQueue(),
+		systemQueue: newLfQueue(),
+	}
 }
 
 func (m *defaultMailbox) OnInit(processor core.MessageProcessor, dispatcher Dispatcher) {
@@ -45,13 +46,13 @@ func (m *defaultMailbox) OnInit(processor core.MessageProcessor, dispatcher Disp
 }
 
 func (m *defaultMailbox) DeliveryUserMessage(message Message) {
-	m.queue.Enqueue(message)
+	m.queue.Enqueue(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.num, 1)
 	m.dispatch()
 }
 
 func (m *defaultMailbox) DeliverySystemMessage(message Message) {
-	m.systemQueue.Enqueue(message)
+	m.systemQueue.Enqueue(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.num, 1)
 	m.dispatch()
 }
@@ -63,25 +64,30 @@ func (m *defaultMailbox) dispatch() {
 }
 
 func (m *defaultMailbox) process() {
-	var msg Message
 	for {
-		if msg = m.systemQueue.Dequeue(); msg != nil {
+		var msg Message
+		if ptr := m.systemQueue.Dequeue(); ptr != nil {
+			msg = *(*Message)(ptr)
 			atomic.AddInt32(&m.num, -1)
 			m.processor.ProcessSystemMessage(msg)
 			continue
 		}
 
-		if msg = m.queue.Dequeue(); msg == nil {
-			break
+		if ptr := m.queue.Dequeue(); ptr != nil {
+			msg = *(*Message)(ptr)
+			atomic.AddInt32(&m.num, -1)
+			m.processor.ProcessUserMessage(msg)
+			continue
 		}
 
-		atomic.AddInt32(&m.num, -1)
-		m.processor.ProcessUserMessage(msg)
-	}
+		atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
 
-	atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
+		if atomic.LoadInt32(&m.num) > 0 {
+			if atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusIdle, defaultMailboxStatusRunning) {
+				continue
+			}
+		}
 
-	if atomic.LoadInt32(&m.num) > 0 {
-		m.dispatch()
+		break
 	}
 }

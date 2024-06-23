@@ -32,7 +32,7 @@ func (d *deadLetterProcess) Dead() {
 }
 
 func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
-	log.Error("dead letter: %v", message)
+	log.Error("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
 }
 
 func (d *deadLetterProcess) SendSystemMessage(sender *core.ProcessRef, message core.Message) {

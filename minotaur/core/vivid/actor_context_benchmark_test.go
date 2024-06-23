@@ -2,9 +2,9 @@ package vivid_test
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/toolkit"
+	"os"
+	"runtime/pprof"
 	"testing"
-	"time"
 )
 
 func BenchmarkActorContext_Tell(b *testing.B) {
@@ -39,11 +39,12 @@ func BenchmarkActorContext_Ask(b *testing.B) {
 }
 
 func BenchmarkActorContext_FutureAsk(b *testing.B) {
-	go func() {
-		toolkit.EnableHttpPProf(":19828", "/debug/pprof", func(err error) {
-			panic(err)
-		})
-	}()
+	os.Remove("cpu.pprof")
+	f, _ := os.OpenFile("cpu.pprof", os.O_CREATE|os.O_RDWR, 0644)
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
 	system := vivid.NewActorSystem("benchmark")
 	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
 		return &vivid.StringEchoActor{}
@@ -52,12 +53,10 @@ func BenchmarkActorContext_FutureAsk(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := system.Context().FutureAsk(ref, m, func(options *vivid.MessageOptions) {
-			options.WithFutureTimeout(time.Second * 1)
-		}).Wait(); err != nil {
+		if err := system.Context().FutureAsk(ref, m).Wait(); err != nil {
 			panic(err)
 		}
 	}
 	b.StopTimer()
-	//system.Shutdown()
+	system.Shutdown()
 }
