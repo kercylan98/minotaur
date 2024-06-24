@@ -21,7 +21,7 @@ func (o *oneForOne) OnAccident(system *vivid.ActorSystem, accident vivid.Acciden
 	case vivid.DirectiveEscalate:
 		accident.Responsible().Escalate(accident)
 	case vivid.DirectiveResume:
-		panic("not impl")
+		accident.Responsible().Resume(accident.AccidentActor())
 	default:
 		panic("not support directive")
 	}

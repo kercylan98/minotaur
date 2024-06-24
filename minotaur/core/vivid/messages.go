@@ -19,13 +19,17 @@ type (
 	_OnTerminated struct { // 需要迁移到 protobuf
 		TerminatedActor ActorRef
 	}
-	_OnRestart   struct{}
-	OnRestarting struct{}
+	_OnRestart        struct{}
+	OnRestarting      struct{}
+	_OnResumeMailbox  struct{}
+	_OnSuspendMailbox struct{}
 )
 
 var (
-	onLaunch     OnLaunch
-	onTerminate  OnTerminate
-	onRestart    _OnRestart
-	onRestarting OnRestarting
+	onLaunch         OnLaunch
+	onTerminate      OnTerminate
+	onRestart        _OnRestart
+	onRestarting     OnRestarting
+	onResumeMailbox  _OnResumeMailbox
+	onSuspendMailbox _OnSuspendMailbox
 )

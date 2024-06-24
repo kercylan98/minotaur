@@ -14,8 +14,8 @@ type Supervisor interface {
 	//  - 当 children 为空时，停止所有子级 Actor
 	Stop(children ...ActorRef)
 
-	// Resume 恢复Actor
-	Resume()
+	// Resume 恢复子级 Actor
+	Resume(children ...ActorRef)
 
 	// Escalate 升级
 	Escalate(accident Accident)

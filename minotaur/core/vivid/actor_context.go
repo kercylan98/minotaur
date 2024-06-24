@@ -45,6 +45,8 @@ type actorContext struct {
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
+	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSuspendMailbox)
+
 	ctx.Escalate(&accident{
 		accidentActor:      ctx.ref,
 		reason:             reason,
@@ -237,8 +239,14 @@ func (ctx *actorContext) Stop(children ...ActorRef) {
 	ctx.onTerminated(_OnTerminated{TerminatedActor: ctx.ref})
 }
 
-func (ctx *actorContext) Resume() {
+func (ctx *actorContext) Resume(children ...ActorRef) {
+	if len(children) == 0 {
+		children = ctx.Children()
+	}
 
+	for _, ref := range children {
+		ctx.System().sendSystemMessage(ctx.ref, ref, onResumeMailbox)
+	}
 }
 
 func (ctx *actorContext) Escalate(accident Accident) {
@@ -278,7 +286,7 @@ func (ctx *actorContext) onRestarted(m _OnTerminated) {
 	}
 
 	ctx.actor = ctx.producer()
-
+	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onResumeMailbox)
 	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onLaunch)
 }
 
