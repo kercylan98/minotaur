@@ -19,16 +19,8 @@ type (
 	_OnTerminated struct { // 需要迁移到 protobuf
 		TerminatedActor ActorRef
 	}
-	_OnAccidents struct {
-		Responsible        Supervisor // 理应负责的监管者
-		AccidentActor      ActorRef
-		SupervisorStrategy SupervisorStrategy
-		Reason             Message
-		Message            Message
-	}
 	_OnRestart   struct{}
 	OnRestarting struct{}
-	_OnRestarted struct{}
 )
 
 var (

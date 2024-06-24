@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/minotaur/core/vivid"
 	"testing"
-	"time"
 )
 
 type SupervisorActor struct {
 }
 
-func (s *SupervisorActor) OnAccident(system *vivid.ActorSystem, supervisor vivid.Supervisor, accident vivid.ActorRef, reason, message vivid.Message) {
-	supervisor.Restart(accident)
+func (s *SupervisorActor) OnAccident(system *vivid.ActorSystem, accident vivid.Accident) {
+	accident.Responsible().Restart(accident.AccidentActor())
 }
 
 func (s *SupervisorActor) OnReceive(ctx vivid.ActorContext) {
@@ -32,6 +31,7 @@ func (a *AccidentActor) OnReceive(ctx vivid.ActorContext) {
 	switch ctx.Message().(type) {
 	case vivid.OnLaunch:
 		fmt.Println("accident launched")
+		ctx.System().Done()
 	case vivid.OnTerminate:
 		fmt.Println("accident terminated")
 	case vivid.OnRestarting:
@@ -44,9 +44,10 @@ func (a *AccidentActor) OnReceive(ctx vivid.ActorContext) {
 
 func TestSupervisor(t *testing.T) {
 	system := vivid.NewActorSystem("test")
+	system.Add(2)
 	system.ActorOf(func() vivid.Actor {
 		return new(SupervisorActor)
 	})
 
-	time.Sleep(time.Second)
+	system.Wait()
 }

@@ -12,14 +12,14 @@ type oneForOne struct {
 	decide vivid.SupervisorDecide
 }
 
-func (o *oneForOne) OnAccident(system *vivid.ActorSystem, supervisor vivid.Supervisor, accident vivid.ActorRef, reason, message vivid.Message) {
-	switch o.decide(reason, message) {
+func (o *oneForOne) OnAccident(system *vivid.ActorSystem, accident vivid.Accident) {
+	switch o.decide(accident.Reason(), accident.Message()) {
 	case vivid.DirectiveRestart:
-		supervisor.Restart(accident)
+		accident.Responsible().Restart(accident.AccidentActor())
 	case vivid.DirectiveStop:
-		supervisor.Stop(accident)
+		accident.Responsible().Stop(accident.AccidentActor())
 	case vivid.DirectiveEscalate:
-		supervisor.Escalate(reason, message, nil)
+		accident.Responsible().Escalate(accident)
 	case vivid.DirectiveResume:
 		panic("not impl")
 	default:

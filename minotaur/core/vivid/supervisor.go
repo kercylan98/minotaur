@@ -18,5 +18,61 @@ type Supervisor interface {
 	Resume()
 
 	// Escalate 升级
-	Escalate(accidents *_OnAccidents)
+	Escalate(accident Accident)
+}
+
+// Accident 事故现场，该接口为内部实现，提供可自定义监督策略的能力
+type Accident interface {
+	// AccidentActor 事故发生的 Actor
+	AccidentActor() ActorRef
+
+	// Responsible 事故应该由哪个监管者负责
+	Responsible() Supervisor
+
+	// Reason 事故原因
+	Reason() Message
+
+	// Message 导致事故的消息
+	Message() Message
+
+	trySetResponsible(Supervisor)
+	trySupervisorStrategy(*ActorSystem) bool
+}
+
+type accident struct {
+	responsible        Supervisor // 理应负责的监管者
+	accidentActor      ActorRef
+	supervisorStrategy SupervisorStrategy
+	reason             Message
+	message            Message
+}
+
+func (a *accident) AccidentActor() ActorRef {
+	return a.accidentActor
+}
+
+func (a *accident) Responsible() Supervisor {
+	return a.responsible
+}
+
+func (a *accident) Reason() Message {
+	return a.reason
+}
+
+func (a *accident) Message() Message {
+	return a.message
+}
+
+func (a *accident) trySetResponsible(s Supervisor) {
+	if a.responsible == nil {
+		a.responsible = s
+	}
+}
+
+func (a *accident) trySupervisorStrategy(system *ActorSystem) bool {
+	if a.supervisorStrategy != nil {
+		a.supervisorStrategy.OnAccident(system, a)
+		return true
+	}
+	return false
 }

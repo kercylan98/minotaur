@@ -12,5 +12,5 @@ type Directive uint8
 
 // SupervisorStrategy 监管策略
 type SupervisorStrategy interface {
-	OnAccident(system *ActorSystem, supervisor Supervisor, accident ActorRef, reason, message Message)
+	OnAccident(system *ActorSystem, accident Accident)
 }

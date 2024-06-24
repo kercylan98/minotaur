@@ -45,11 +45,11 @@ type actorContext struct {
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
-	ctx.Escalate(&_OnAccidents{
-		AccidentActor:      ctx.ref,
-		Reason:             reason,
-		Message:            ctx.Message(),
-		SupervisorStrategy: ctx.options.SupervisorStrategy,
+	ctx.Escalate(&accident{
+		accidentActor:      ctx.ref,
+		reason:             reason,
+		message:            ctx.Message(),
+		supervisorStrategy: ctx.options.SupervisorStrategy,
 	})
 }
 
@@ -175,8 +175,8 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 		default:
 			panic("unexpected status")
 		}
-	case *_OnAccidents:
-		ctx.onAccidents(m)
+	case Accident:
+		ctx.onAccident(m)
 	case _OnRestart:
 		ctx.onRestart(m)
 	}
@@ -241,9 +241,9 @@ func (ctx *actorContext) Resume() {
 
 }
 
-func (ctx *actorContext) Escalate(accidents *_OnAccidents) {
+func (ctx *actorContext) Escalate(accident Accident) {
 	if parent := ctx.Parent(); parent != nil {
-		ctx.System().sendSystemMessage(ctx.ref, parent, accidents)
+		ctx.System().sendSystemMessage(ctx.ref, parent, accident)
 	} else {
 		panic("the root actor should not continue to upgrade!")
 	}
@@ -282,21 +282,18 @@ func (ctx *actorContext) onRestarted(m _OnTerminated) {
 	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onLaunch)
 }
 
-func (ctx *actorContext) onAccidents(m *_OnAccidents) {
+func (ctx *actorContext) onAccident(m Accident) {
 	// 当责任人为空时，该父级理应是第一责任人
-	if m.Responsible == nil {
-		m.Responsible = ctx
-	}
+	m.trySetResponsible(ctx)
 
 	// 如果指定了监管策略，那么执行
-	if m.SupervisorStrategy != nil {
-		m.SupervisorStrategy.OnAccident(ctx.System(), m.Responsible, m.AccidentActor, m.Reason, m.Message)
+	if m.trySupervisorStrategy(ctx.System()) {
 		return
 	}
 
 	// 如果该 Actor 本身实现了监管策略，那么执行
 	if strategy, ok := ctx.actor.(SupervisorStrategy); ok {
-		strategy.OnAccident(ctx.System(), m.Responsible, m.AccidentActor, m.Reason, m.Message)
+		strategy.OnAccident(ctx.System(), m)
 		return
 	}
 
