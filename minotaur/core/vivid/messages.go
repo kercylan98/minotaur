@@ -20,9 +20,11 @@ type (
 		TerminatedActor ActorRef
 	}
 	_OnAccidents struct {
-		AccidentActor ActorRef
-		Reason        Message
-		Message       Message
+		Responsible        Supervisor // 理应负责的监管者
+		AccidentActor      ActorRef
+		SupervisorStrategy SupervisorStrategy
+		Reason             Message
+		Message            Message
 	}
 	_OnRestart   struct{}
 	OnRestarting struct{}

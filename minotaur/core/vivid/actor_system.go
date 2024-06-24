@@ -100,27 +100,25 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 
 	var address = core.NewAddress("", system.name, "", 0, actorPath)
 
-	mailbox := options.Mailbox
-	if mailbox == nil {
-		mailbox = newDefaultMailbox()
+	if options.Mailbox == nil {
+		options.Mailbox = newDefaultMailbox()
 	}
 
-	process := NewProcess(address, mailbox)
+	process := NewProcess(address, options.Mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
 		panic("actor already exists")
 	}
-	ctx := newActorContext(system, producer, options.Parent, ref, mailbox, childrenContainer)
+	ctx := newActorContext(system, options, producer, ref, childrenContainer)
 
 	if generatedHook != nil {
 		generatedHook(ctx)
 	}
 
-	dispatcher := options.Dispatcher
-	if dispatcher == nil {
-		dispatcher = defaultDispatcher
+	if options.Dispatcher == nil {
+		options.Dispatcher = defaultDispatcher
 	}
-	mailbox.OnInit(ctx, dispatcher)
+	options.Mailbox.OnInit(ctx, options.Dispatcher)
 	ctx.Tell(ref, onLaunch)
 
 	return ctx

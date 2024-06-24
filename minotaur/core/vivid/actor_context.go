@@ -20,14 +20,13 @@ const (
 	actorStatusRestarting
 )
 
-func newActorContext(system *ActorSystem, producer ActorProducer, parent ActorRef, ref ActorRef, mailbox Mailbox, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
+func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
 	ctx := &actorContext{
 		actorSystem: system,
+		options:     options,
 		actor:       producer(),
 		producer:    producer,
-		parent:      parent,
 		ref:         ref,
-		mailbox:     mailbox,
 		children:    container,
 	}
 	return ctx
@@ -35,7 +34,7 @@ func newActorContext(system *ActorSystem, producer ActorProducer, parent ActorRe
 
 type actorContext struct {
 	actorSystem *ActorSystem
-	parent      ActorRef
+	options     *ActorOptions
 	ref         ActorRef
 	message     Message
 	actor       Actor
@@ -46,7 +45,12 @@ type actorContext struct {
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
-	ctx.Escalate(reason, ctx.Message())
+	ctx.Escalate(&_OnAccidents{
+		AccidentActor:      ctx.ref,
+		Reason:             reason,
+		Message:            ctx.Message(),
+		SupervisorStrategy: ctx.options.SupervisorStrategy,
+	})
 }
 
 func (ctx *actorContext) BehaviorOf() Behavior {
@@ -77,10 +81,10 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 }
 
 func (ctx *actorContext) Parent() ActorRef {
-	if ctx.parent == nil {
+	if ctx.options.Parent == nil {
 		panic("root actor has no parent")
 	}
-	return ctx.parent
+	return ctx.options.Parent
 }
 
 func (ctx *actorContext) Ref() ActorRef {
@@ -171,7 +175,7 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 		default:
 			panic("unexpected status")
 		}
-	case _OnAccidents:
+	case *_OnAccidents:
 		ctx.onAccidents(m)
 	case _OnRestart:
 		ctx.onRestart(m)
@@ -206,8 +210,8 @@ func (ctx *actorContext) onTerminated(m _OnTerminated) {
 	}
 
 	ctx.actorSystem.processes.Unregister(ctx.ref)
-	if ctx.parent != nil {
-		ctx.System().sendSystemMessage(ctx.ref, ctx.parent, _OnTerminated{TerminatedActor: ctx.ref})
+	if ctx.Parent() != nil {
+		ctx.System().sendSystemMessage(ctx.ref, ctx.Parent(), _OnTerminated{TerminatedActor: ctx.ref})
 	}
 }
 
@@ -237,9 +241,9 @@ func (ctx *actorContext) Resume() {
 
 }
 
-func (ctx *actorContext) Escalate(reason, message Message) {
-	if ctx.parent != nil {
-		ctx.System().sendSystemMessage(ctx.ref, ctx.parent, _OnAccidents{AccidentActor: ctx.ref, Reason: reason, Message: message})
+func (ctx *actorContext) Escalate(accidents *_OnAccidents) {
+	if parent := ctx.Parent(); parent != nil {
+		ctx.System().sendSystemMessage(ctx.ref, parent, accidents)
 	} else {
 		panic("the root actor should not continue to upgrade!")
 	}
@@ -278,13 +282,24 @@ func (ctx *actorContext) onRestarted(m _OnTerminated) {
 	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onLaunch)
 }
 
-func (ctx *actorContext) onAccidents(m _OnAccidents) {
+func (ctx *actorContext) onAccidents(m *_OnAccidents) {
+	// 当责任人为空时，该父级理应是第一责任人
+	if m.Responsible == nil {
+		m.Responsible = ctx
+	}
+
+	// 如果指定了监管策略，那么执行
+	if m.SupervisorStrategy != nil {
+		m.SupervisorStrategy.OnAccident(ctx.System(), m.Responsible, m.AccidentActor, m.Reason, m.Message)
+		return
+	}
+
 	// 如果该 Actor 本身实现了监管策略，那么执行
 	if strategy, ok := ctx.actor.(SupervisorStrategy); ok {
-		strategy.OnAccident(ctx.System(), ctx, m.AccidentActor, m.Reason, m.Message)
+		strategy.OnAccident(ctx.System(), m.Responsible, m.AccidentActor, m.Reason, m.Message)
 		return
 	}
 
 	// 否则继续升级
-	ctx.Escalate(m.Reason, m.Message)
+	ctx.Escalate(m)
 }

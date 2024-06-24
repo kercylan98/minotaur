@@ -1,5 +1,7 @@
 package vivid
 
+type SupervisorDecide func(reason, message Message) Directive
+
 type Supervisor interface {
 	// Children 获取该监管者下的所有子 Actor
 	Children() []ActorRef
@@ -16,5 +18,5 @@ type Supervisor interface {
 	Resume()
 
 	// Escalate 升级
-	Escalate(reason, message Message)
+	Escalate(accidents *_OnAccidents)
 }
