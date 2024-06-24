@@ -43,9 +43,17 @@ type senderContextCompose interface {
 }
 
 type receiverContextCompose interface {
+	// Message 获取当前 Actor 接收到的消息
 	Message() Message
 
+	// Reply 回复消息
 	Reply(message Message)
+
+	// Behavior 获取当前 Actor 的行为
+	Behavior() Behavior
+
+	// BehaviorOf 生成一个可被持有的行为
+	BehaviorOf() Behavior
 }
 
 type spawnerContextCompose interface {

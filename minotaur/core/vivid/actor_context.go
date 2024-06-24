@@ -39,6 +39,18 @@ type actorContext struct {
 	status      uint32 // atomic
 	mailbox     Mailbox
 	children    *haxmap.Map[core.Address, ActorRef]
+	behavior    *behavior
+}
+
+func (ctx *actorContext) Behavior() Behavior {
+	if ctx.behavior == nil {
+		ctx.behavior = newBehavior()
+	}
+	return ctx.behavior
+}
+
+func (ctx *actorContext) BehaviorOf() Behavior {
+	return newBehavior()
 }
 
 func (ctx *actorContext) Reply(message Message) {

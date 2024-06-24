@@ -2,8 +2,6 @@ package vivid_test
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core/vivid"
-	"os"
-	"runtime/pprof"
 	"testing"
 )
 
@@ -64,12 +62,6 @@ func BenchmarkActorContext_FutureAsk_Accuracy(b *testing.B) {
 }
 
 func BenchmarkActorContext_FutureAsk(b *testing.B) {
-	os.Remove("cpu.pprof")
-	f, _ := os.OpenFile("cpu.pprof", os.O_CREATE|os.O_RDWR, 0644)
-	defer f.Close()
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-
 	system := vivid.NewActorSystem("benchmark")
 	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
 		return &vivid.StringEchoActor{}
