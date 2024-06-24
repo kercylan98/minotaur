@@ -11,15 +11,27 @@ type RegulatoryMessage struct {
 	Message Message
 }
 
+// _ 开头仅为系统消息，非 _ 开头可能为用户消息和系统消息
+
 type (
-	OnBoot       struct{}
-	OnTerminate  struct{}
-	OnTerminated struct { // 需要迁移到 protobuf
+	OnLaunch      struct{}
+	OnTerminate   struct{}
+	_OnTerminated struct { // 需要迁移到 protobuf
 		TerminatedActor ActorRef
 	}
+	_OnAccidents struct {
+		AccidentActor ActorRef
+		Reason        Message
+		Message       Message
+	}
+	_OnRestart   struct{}
+	OnRestarting struct{}
+	_OnRestarted struct{}
 )
 
 var (
-	onBoot      OnBoot
-	onTerminate OnTerminate
+	onLaunch     OnLaunch
+	onTerminate  OnTerminate
+	onRestart    _OnRestart
+	onRestarting OnRestarting
 )

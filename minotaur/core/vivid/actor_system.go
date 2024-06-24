@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/pools"
 	"sync/atomic"
@@ -20,7 +21,7 @@ func NewActorSystem(name string) *ActorSystem {
 	system.processes = core.NewProcessManager("", 1, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 
-	system.root = spawn(system, new(root), new(ActorOptions).WithName("user"), nil)
+	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef]())
 	return system
 }
 
@@ -59,16 +60,18 @@ func (sys *ActorSystem) getProcess(target ActorRef) core.Process {
 	return sys.processes.GetProcess(target)
 }
 
-func (sys *ActorSystem) ActorOf(producer ActorProducer) ActorRef {
-	return sys.root.ActorOf(producer)
+func (sys *ActorSystem) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
+	return sys.root.ActorOf(producer, options...)
 }
 
-func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer func(options *ActorOptions) Actor, generatedHook func(ctx *actorContext)) ActorRef {
-	actor := producer(options)
-	return spawn(sys, actor, options, generatedHook).Ref()
+func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext)) ActorRef {
+	for _, prop := range props {
+		prop(options)
+	}
+	return spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef]()).Ref()
 }
 
-func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generatedHook func(ctx *actorContext)) ActorContext {
+func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions, generatedHook func(ctx *actorContext), childrenContainer mappings.OrderInterface[core.Address, ActorRef]) ActorContext {
 	options.apply()
 
 	var system *ActorSystem
@@ -107,7 +110,7 @@ func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generated
 	if exist {
 		panic("actor already exists")
 	}
-	ctx := newActorContext(system, actor, options.Parent, ref, mailbox)
+	ctx := newActorContext(system, producer, options.Parent, ref, mailbox, childrenContainer)
 
 	if generatedHook != nil {
 		generatedHook(ctx)
@@ -118,7 +121,7 @@ func spawn(spawner SpawnerContext, actor Actor, options *ActorOptions, generated
 		dispatcher = defaultDispatcher
 	}
 	mailbox.OnInit(ctx, dispatcher)
-	ctx.Tell(ref, onBoot)
+	ctx.Tell(ref, onLaunch)
 
 	return ctx
 }

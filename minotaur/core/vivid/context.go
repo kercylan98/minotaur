@@ -26,8 +26,13 @@ type SpawnerContext interface {
 }
 
 type basicContextCompose interface {
+	// Parent 获取当前 Actor 的父级 Actor
 	Parent() ActorRef
+
+	// Ref 获取当前 Actor 的引用
 	Ref() ActorRef
+
+	// System 获取当前 Actor 所在的 Actor 系统
 	System() *ActorSystem
 }
 
@@ -49,16 +54,13 @@ type receiverContextCompose interface {
 	// Reply 回复消息
 	Reply(message Message)
 
-	// Behavior 获取当前 Actor 的行为
-	Behavior() Behavior
-
-	// BehaviorOf 生成一个可被持有的行为
+	// BehaviorOf 生成一个行为
 	BehaviorOf() Behavior
 }
 
 type spawnerContextCompose interface {
 	// ActorOf 以该上下文为父级创建一个新的 Actor，返回新 Actor 的引用
-	ActorOf(producer ActorProducer) ActorRef
+	ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef
 
 	// Terminate 通知目标 Actor 终止
 	Terminate(target ActorRef)

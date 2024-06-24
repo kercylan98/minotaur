@@ -4,4 +4,5 @@ package core
 type MessageProcessor interface {
 	ProcessUserMessage(msg Message)
 	ProcessSystemMessage(msg Message)
+	ProcessRecover(reason Message)
 }

@@ -64,8 +64,23 @@ func (m *defaultMailbox) dispatch() {
 }
 
 func (m *defaultMailbox) process() {
+	m.processHandle()
+	for atomic.LoadInt32(&m.num) > 0 {
+		m.processHandle()
+	}
+
+	atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
+}
+
+func (m *defaultMailbox) processHandle() {
+	defer func() {
+		if reason := recover(); reason != nil {
+			m.processor.ProcessRecover(reason)
+		}
+	}()
+
+	var msg Message
 	for {
-		var msg Message
 		if ptr := m.systemQueue.Dequeue(); ptr != nil {
 			msg = *(*Message)(ptr)
 			atomic.AddInt32(&m.num, -1)
@@ -79,15 +94,6 @@ func (m *defaultMailbox) process() {
 			m.processor.ProcessUserMessage(msg)
 			continue
 		}
-
-		atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
-
-		if atomic.LoadInt32(&m.num) > 0 {
-			if atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusIdle, defaultMailboxStatusRunning) {
-				continue
-			}
-		}
-
 		break
 	}
 }

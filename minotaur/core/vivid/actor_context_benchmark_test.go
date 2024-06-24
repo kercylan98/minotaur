@@ -7,7 +7,7 @@ import (
 
 func BenchmarkActorContext_Tell(b *testing.B) {
 	system := vivid.NewActorSystem("benchmark")
-	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
+	ref := system.ActorOf(func() vivid.Actor {
 		return &vivid.WasteActor{}
 	})
 
@@ -22,7 +22,7 @@ func BenchmarkActorContext_Tell(b *testing.B) {
 
 func BenchmarkActorContext_Ask(b *testing.B) {
 	system := vivid.NewActorSystem("benchmark")
-	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
+	ref := system.ActorOf(func() vivid.Actor {
 		return &vivid.StringEchoActor{}
 	})
 	var m = "hi"
@@ -39,7 +39,7 @@ func BenchmarkActorContext_Ask(b *testing.B) {
 func BenchmarkActorContext_FutureAsk_Accuracy(b *testing.B) {
 	system := vivid.NewActorSystem("benchmark")
 	actor := &vivid.StringEchoCounterActor{}
-	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
+	ref := system.ActorOf(func() vivid.Actor {
 		return actor
 	})
 	var m = "hi"
@@ -63,7 +63,7 @@ func BenchmarkActorContext_FutureAsk_Accuracy(b *testing.B) {
 
 func BenchmarkActorContext_FutureAsk(b *testing.B) {
 	system := vivid.NewActorSystem("benchmark")
-	ref := system.ActorOf(func(options *vivid.ActorOptions) vivid.Actor {
+	ref := system.ActorOf(func() vivid.Actor {
 		return &vivid.StringEchoActor{}
 	})
 	var m = "hi"
