@@ -3,165 +3,140 @@ package core
 import (
 	"encoding/binary"
 	"github.com/kercylan98/minotaur/toolkit/convert"
+	"net"
 	"strings"
 	"unsafe"
 )
 
 const addressPrefix = "minotaur"
+const portLen = 2
+const LengthLen = 2
+const LengthTotalLen = LengthLen * 4
 
-// Address 是一个唯一标识符，该标识符是由紧凑的不可读字符串组成，其中包含了完整的资源定位信息
-// minotaur.$network://$system@$host:$port$path
 type Address string
-
 type Path = string
 
 func NewAddress(network string, system, host string, port uint16, path Path) Address {
 	networkLen, systemLen, hostLen, pathLen := len(network), len(system), len(host), len(path)
-	totalLen := 8 + networkLen + systemLen + hostLen + pathLen + 2
+	totalLen := LengthTotalLen + networkLen + systemLen + hostLen + pathLen + portLen
 
 	buf := make([]byte, totalLen)
-	ptr := unsafe.Pointer(&buf[0])
 
-	writeLength(&ptr, networkLen)
-	writeLength(&ptr, systemLen)
-	writeLength(&ptr, hostLen)
-	writeLength(&ptr, pathLen)
-	writeString(&ptr, network)
-	writeString(&ptr, system)
-	writeString(&ptr, host)
-	writeUint16(&ptr, port)
-	writeString(&ptr, path)
+	writeAddress(buf,
+		uint16(networkLen),
+		uint16(systemLen),
+		uint16(hostLen),
+		uint16(pathLen),
+		network,
+		system,
+		host,
+		port,
+		path,
+	)
 
-	return Address(buf)
+	return Address(unsafe.String(unsafe.SliceData(buf), len(buf)))
 }
 
 func (a Address) Network() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-
-	return readString(&ptr, 0, networkLen)
+	networkLen := readUint16(data, 0)
+	return readString(data, LengthTotalLen, networkLen)
 }
 
 func (a Address) System() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
+	networkLen := readUint16(data, 0)
+	systemLen := readUint16(data, LengthLen)
+	return readString(data, LengthTotalLen+networkLen, systemLen)
 
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-
-	return readString(&ptr, networkLen, systemLen)
 }
 
 func (a Address) Host() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-	hostLen := readLength(&ptr, 2)
-
-	return readString(&ptr, networkLen+systemLen, hostLen)
+	networkLen := readUint16(data, 0)
+	systemLen := readUint16(data, LengthLen)
+	hostLen := readUint16(data, LengthLen*2)
+	return readString(data, LengthTotalLen+networkLen+systemLen, hostLen)
 }
 
 func (a Address) Port() uint16 {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-	hostLen := readLength(&ptr, 2)
-
-	return readUint16(&ptr, networkLen+systemLen+hostLen)
+	networkLen := readUint16(data, 0)
+	systemLen := readUint16(data, LengthLen)
+	hostLen := readUint16(data, LengthLen*2)
+	return readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
 }
 
 func (a Address) Path() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-	hostLen := readLength(&ptr, 2)
-	portLen := 2
-	pathLen := readLength(&ptr, 3)
-
-	return readString(&ptr, networkLen+systemLen+hostLen+portLen, pathLen)
+	networkLen := readUint16(data, 0)
+	systemLen := readUint16(data, LengthLen)
+	hostLen := readUint16(data, LengthLen*2)
+	pathLen := readUint16(data, LengthLen*3)
+	return readString(data, LengthTotalLen+networkLen+systemLen+hostLen+portLen, pathLen)
 }
 
 func (a Address) Address() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-	hostLen := readLength(&ptr, 2)
-
-	host := readString(&ptr, networkLen+systemLen, hostLen)
-	port := readUint16(&ptr, networkLen+systemLen+hostLen)
-	if port == 0 {
-		return host
-	}
-	portStr := convert.Uint16ToString(port)
-	return host + ":" + portStr
+	networkLen := readUint16(data, 0)
+	systemLen := readUint16(data, LengthLen)
+	hostLen := readUint16(data, LengthLen*2)
+	host := readString(data, LengthTotalLen+networkLen+systemLen, hostLen)
+	port := readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
+	return net.JoinHostPort(host, convert.Uint16ToString(port))
 }
 
 func (a Address) String() string {
 	data := []byte(a)
-	ptr := unsafe.Pointer(&data[0])
-
-	networkLen := readLength(&ptr, 0)
-	systemLen := readLength(&ptr, 1)
-	hostLen := readLength(&ptr, 2)
-	pathLen := readLength(&ptr, 3)
-
 	var builder strings.Builder
+
 	builder.WriteString(addressPrefix)
+	networkLen := readUint16(data, 0)
 	if networkLen > 0 {
 		builder.WriteString(".")
-		builder.WriteString(readString(&ptr, 0, networkLen))
+		builder.WriteString(readString(data, LengthTotalLen, networkLen))
 	}
 	builder.WriteString("://")
-	builder.WriteString(readString(&ptr, networkLen, systemLen))
-	if hostLen > 0 {
+	systemLen := readUint16(data, LengthLen)
+	if systemLen > 0 {
+		builder.WriteString(readString(data, LengthTotalLen+networkLen, systemLen))
 		builder.WriteString("@")
-		builder.WriteString(readString(&ptr, networkLen+systemLen, hostLen))
-		port := readUint16(&ptr, networkLen+systemLen+hostLen)
+	}
+	hostLen := readUint16(data, LengthLen*2)
+	if hostLen > 0 {
+		builder.WriteString(readString(data, LengthTotalLen+networkLen+systemLen, hostLen))
+		port := readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
 		if port > 0 {
 			builder.WriteString(":")
 			builder.WriteString(convert.Uint16ToString(port))
 		}
 	}
-
-	builder.WriteString(readString(&ptr, networkLen+systemLen+hostLen+2, pathLen))
+	if pathLen := readUint16(data, LengthLen*3); pathLen > 0 {
+		builder.WriteString(readString(data, LengthTotalLen+networkLen+systemLen+hostLen+portLen, pathLen))
+	}
 	return builder.String()
 }
 
-func writeLength(ptr *unsafe.Pointer, length int) {
-	binary.LittleEndian.PutUint16((*(*[2]byte)(unsafe.Pointer(*ptr)))[:], uint16(length))
-	*ptr = unsafe.Pointer(uintptr(*ptr) + 2)
+func writeAddress(buf []byte, vs ...any) {
+	offset := 0
+	for _, v := range vs {
+		switch val := v.(type) {
+		case string:
+			copy(buf[offset:], val)
+			offset += len(val)
+		case uint16:
+			binary.LittleEndian.PutUint16(buf[offset:], val)
+			offset += 2
+		default:
+			panic("unsupported type")
+		}
+	}
 }
 
-func writeString(ptr *unsafe.Pointer, str string) {
-	copy((*(*[1 << 30]byte)(*ptr))[:len(str)], str)
-	*ptr = unsafe.Pointer(uintptr(*ptr) + uintptr(len(str)))
+func readString(buf []byte, offset, length uint16) string {
+	return string(buf[offset : offset+length])
 }
 
-func writeUint16(ptr *unsafe.Pointer, value uint16) {
-	binary.LittleEndian.PutUint16((*(*[2]byte)(*ptr))[:], value)
-	*ptr = unsafe.Pointer(uintptr(*ptr) + 2)
-}
-
-func readLength(ptr *unsafe.Pointer, index int) int {
-	return int(binary.LittleEndian.Uint16((*(*[2]byte)(unsafe.Pointer(uintptr(*ptr) + uintptr(index*2))))[:]))
-}
-
-func readString(ptr *unsafe.Pointer, start, length int) string {
-	start += 8
-	return string((*(*[1 << 30]byte)(*ptr))[start : start+length])
-}
-
-func readUint16(ptr *unsafe.Pointer, start int) uint16 {
-	start += 8
-	return binary.LittleEndian.Uint16((*(*[2]byte)(unsafe.Pointer(uintptr(*ptr) + uintptr(start))))[:])
+func readUint16(buf []byte, offset uint16) uint16 {
+	return binary.LittleEndian.Uint16(buf[offset : offset+2])
 }
