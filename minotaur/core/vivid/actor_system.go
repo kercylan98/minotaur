@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
 	"sync/atomic"
 )
@@ -12,16 +13,35 @@ var (
 	_ SpawnerContext = &ActorSystem{}
 )
 
-func NewActorSystem(name string) *ActorSystem {
+func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
+	var opts = new(ActorSystemOptions).apply(options)
 	system := &ActorSystem{
-		name:       name,
+		name:       opts.Name,
 		closed:     make(chan struct{}),
 		deadLetter: new(deadLetterProcess),
 	}
-	system.processes = core.NewProcessManager("", 1, 128, system.deadLetter)
+
+	var address core.Address
+	for _, plugin := range opts.modules {
+		if transport, ok := plugin.(TransportModule); ok {
+			if !address.IsEmpty() {
+				panic("only one transport plugin is allowed")
+			}
+			address = transport.ActorSystemAddress().ParseToRoot()
+			if address.System() == "" {
+				address = core.NewRootAddress(address.Network(), opts.Name, address.Host(), address.Port())
+			}
+		}
+	}
+	if address.IsEmpty() {
+		address = core.NewRootAddress("", opts.Name, "", 0)
+	}
+
+	system.processes = core.NewProcessManager(address, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 
 	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef]())
+	system.root.Tell(system.root.Ref(), opts.modules)
 	return system
 }
 
@@ -98,7 +118,9 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		actorPath = "/" + options.Name
 	}
 
-	var address = core.NewAddress("", system.name, "", 0, actorPath)
+	var processAddr = system.processes.Address()
+	var address = core.NewAddress(processAddr.Network(), system.name, processAddr.Host(), processAddr.Port(), actorPath)
+	log.Debug("actorOf", log.String("addr", address.String()))
 
 	if options.Mailbox == nil {
 		options.Mailbox = newDefaultMailbox()

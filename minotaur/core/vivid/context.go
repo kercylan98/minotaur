@@ -1,9 +1,5 @@
 package vivid
 
-import (
-	"github.com/kercylan98/minotaur/minotaur/vivid"
-)
-
 type ActorContext interface {
 	basicContextCompose
 	senderContextCompose
@@ -29,6 +25,9 @@ type basicContextCompose interface {
 	// Parent 获取当前 Actor 的父级 Actor
 	Parent() ActorRef
 
+	// Children 获取当前 Actor 的子级 Actor
+	Children() []ActorRef
+
 	// Ref 获取当前 Actor 的引用
 	Ref() ActorRef
 
@@ -38,13 +37,16 @@ type basicContextCompose interface {
 
 type senderContextCompose interface {
 	// Tell 向目标 Actor 发送消息
-	Tell(target ActorRef, message vivid.Message, options ...MessageOption)
+	Tell(target ActorRef, message Message, options ...MessageOption)
 
 	// Ask 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是无限期的
-	Ask(target ActorRef, message vivid.Message, options ...MessageOption)
+	Ask(target ActorRef, message Message, options ...MessageOption)
 
 	// FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 Future 对象，可被用于获取响应消息
-	FutureAsk(target ActorRef, message vivid.Message, options ...MessageOption) Future
+	FutureAsk(target ActorRef, message Message, options ...MessageOption) Future
+
+	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息，收到的消息类型将是 FutureForwardMessage
+	AwaitForward(target ActorRef, blockFunc func() Message)
 }
 
 type receiverContextCompose interface {

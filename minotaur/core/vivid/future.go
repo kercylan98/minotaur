@@ -17,33 +17,23 @@ var (
 	_ Future       = &future{}
 )
 
-var futurePool = sync.Pool{
-	New: func() interface{} {
-		return &future{}
-	},
-}
-
 func NewFuture(system *ActorSystem, timeout time.Duration) Future {
-	f := futurePool.Get().(*future)
-	f.actorSystem = system
-	f.address = core.NewAddress("", system.name, "", 0, futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1)))
-	atomic.StoreUint32(&f.ok, 0)
-	f.result = nil
-	f.err = nil
-	if cap(f.done) == 0 {
-		f.done = make(chan struct{}, 1)
-	} else {
-		select {
-		case <-f.done:
-		default:
-		}
+	f := &future{
+		actorSystem: system,
+		address:     core.NewAddress("", system.name, "", 0, futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1))),
+		done:        make(chan struct{}),
 	}
+	f.forwards = f.forwards[:0]
+	f.done = make(chan struct{})
+
 	ref, exist := system.processes.Register(f)
 	if exist {
 		panic("future process already exist")
 	}
 	f.ref = ref
-	f.bindTimeout(timeout)
+	if timeout > 0 {
+		time.AfterFunc(timeout, f.onTimeout)
+	}
 	return f
 }
 
@@ -51,39 +41,59 @@ type Future interface {
 	Ref() ActorRef
 	Result() (Message, error)
 	Wait() error
+	Forward(refs ...ActorRef)
+}
+
+type FutureForwardMessage struct {
+	Message Message
+	Error   error
 }
 
 type future struct {
-	actorSystem *ActorSystem
-	address     core.Address
-	ref         ActorRef
-	ok          uint32
-	done        chan struct{}
-	result      Message
-	err         error
-	timer       *time.Timer
+	actorSystem   *ActorSystem
+	address       core.Address
+	ref           ActorRef
+	ok            uint32
+	done          chan struct{}
+	result        Message
+	err           error
+	timer         *time.Timer
+	forwards      []ActorRef
+	forwardsMutex sync.Mutex
 }
 
 func (f *future) Ref() ActorRef {
 	return f.ref
 }
 
-func (f *future) bindTimeout(timeout time.Duration) {
-	if timeout <= 0 {
-		return
-	}
-	if f.timer == nil {
-		f.timer = time.AfterFunc(timeout, f.onTimeout)
-	} else {
-		f.timer.Reset(timeout)
+func (f *future) Forward(refs ...ActorRef) {
+	f.forwardsMutex.Lock()
+	defer f.forwardsMutex.Unlock()
+	ok := atomic.LoadUint32(&f.ok) == 1
+	f.forwards = append(f.forwards, refs...)
+	if ok {
+		f.execForward()
 	}
 }
 
-func (f *future) Result() (Message, error) {
-	select {
-	case <-f.done:
-		return f.result, f.err
+func (f *future) execForward() {
+	if len(f.forwards) == 0 {
+		return
 	}
+
+	msg := FutureForwardMessage{
+		Message: f.result, Error: f.err,
+	}
+
+	for _, ref := range f.forwards {
+		f.actorSystem.sendUserMessage(f.ref, ref, msg)
+	}
+	f.forwards = nil
+}
+
+func (f *future) Result() (Message, error) {
+	<-f.done
+	return f.result, f.err
 }
 
 func (f *future) Wait() error {
@@ -93,14 +103,6 @@ func (f *future) Wait() error {
 
 func (f *future) GetAddress() core.Address {
 	return f.address
-}
-
-func (f *future) Deaden() bool {
-	return atomic.LoadUint32(&f.ok) == 1
-}
-
-func (f *future) Dead() {
-	// No-op
 }
 
 func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) {
@@ -126,10 +128,14 @@ func (f *future) Terminate(_ *core.ProcessRef) {
 	if f.timer != nil {
 		f.timer.Stop()
 	}
-	f.actorSystem.processes.Unregister(f.ref)
-	select {
-	case f.done <- struct{}{}:
-	default:
+	if err, ok := f.result.(error); ok {
+		f.err = err
+		f.result = nil
 	}
-	futurePool.Put(f)
+
+	f.actorSystem.processes.Unregister(f.ref)
+	close(f.done)
+	f.forwardsMutex.Lock()
+	defer f.forwardsMutex.Unlock()
+	f.execForward()
 }

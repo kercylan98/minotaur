@@ -1,10 +1,8 @@
 package core
 
-func NewProcessManager(host string, port uint64, bucketSize int, defaultProcess ...Process) *ProcessManager {
+func NewProcessManager(address Address, bucketSize int, defaultProcess ...Process) *ProcessManager {
 	mgr := &ProcessManager{
-		processRegisterTable: newProcessRegisterTable(bucketSize, defaultProcess...),
-		host:                 host,
-		port:                 port,
+		processRegisterTable: newProcessRegisterTable(address, bucketSize, defaultProcess...),
 	}
 
 	return mgr
@@ -13,14 +11,13 @@ func NewProcessManager(host string, port uint64, bucketSize int, defaultProcess 
 // ProcessManager 进程管理器
 type ProcessManager struct {
 	*processRegisterTable
-	host string
-	port uint64
 }
 
 func (mgr *ProcessManager) GetProcess(ref *ProcessRef) Process {
 	process := ref.cache.Load()
 	if process != nil {
-		if p := *process; p.Deaden() {
+		p := *process
+		if status, ok := p.(ProcessStatus); ok && status.Deaden() {
 			ref.cache.Store(nil)
 		} else {
 			return p

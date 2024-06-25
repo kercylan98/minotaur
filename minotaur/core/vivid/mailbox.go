@@ -66,7 +66,7 @@ func (m *defaultMailbox) dispatch() {
 
 func (m *defaultMailbox) process() {
 	m.processHandle()
-	for atomic.LoadInt32(&m.num) > 0 && (atomic.LoadUint32(&m.suspended) == 1) {
+	for atomic.LoadInt32(&m.num) > 0 {
 		m.processHandle()
 	}
 

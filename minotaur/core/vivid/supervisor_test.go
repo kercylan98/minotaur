@@ -43,7 +43,9 @@ func (a *AccidentActor) OnReceive(ctx vivid.ActorContext) {
 }
 
 func TestSupervisor(t *testing.T) {
-	system := vivid.NewActorSystem("test")
+	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithName("test")
+	})
 	system.Add(2)
 	system.ActorOf(func() vivid.Actor {
 		return new(SupervisorActor)

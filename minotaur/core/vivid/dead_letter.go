@@ -23,14 +23,6 @@ func (d *deadLetterProcess) GetAddress() core.Address {
 	return core.NewAddress("", "system", "dead_letter", 0, "")
 }
 
-func (d *deadLetterProcess) Deaden() bool {
-	return false
-}
-
-func (d *deadLetterProcess) Dead() {
-
-}
-
 func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
 	log.Error("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
 }

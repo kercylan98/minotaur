@@ -16,6 +16,10 @@ const LengthTotalLen = LengthLen * 4
 type Address string
 type Path = string
 
+func NewRootAddress(network string, system, host string, port uint16) Address {
+	return NewAddress(network, system, host, port, "")
+}
+
 func NewAddress(network string, system, host string, port uint16, path Path) Address {
 	networkLen, systemLen, hostLen, pathLen := len(network), len(system), len(host), len(path)
 	totalLen := LengthTotalLen + networkLen + systemLen + hostLen + pathLen + portLen
@@ -86,6 +90,14 @@ func (a Address) Address() string {
 	return net.JoinHostPort(host, convert.Uint16ToString(port))
 }
 
+func (a Address) ParseToRoot() Address {
+	return NewRootAddress(a.Network(), a.System(), a.Host(), a.Port())
+}
+
+func (a Address) IsEmpty() bool {
+	return a == ""
+}
+
 func (a Address) String() string {
 	data := []byte(a)
 	var builder strings.Builder
@@ -105,6 +117,13 @@ func (a Address) String() string {
 	hostLen := readUint16(data, LengthLen*2)
 	if hostLen > 0 {
 		builder.WriteString(readString(data, LengthTotalLen+networkLen+systemLen, hostLen))
+		port := readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
+		if port > 0 {
+			builder.WriteString(":")
+			builder.WriteString(convert.Uint16ToString(port))
+		}
+	} else {
+		builder.WriteString("127.0.0.1")
 		port := readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
 		if port > 0 {
 			builder.WriteString(":")

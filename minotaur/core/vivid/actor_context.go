@@ -2,7 +2,6 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"sync/atomic"
 )
@@ -105,14 +104,14 @@ func (ctx *actorContext) Message() Message {
 	}
 }
 
-func (ctx *actorContext) Tell(target ActorRef, message vivid.Message, options ...MessageOption) {
+func (ctx *actorContext) Tell(target ActorRef, message Message, options ...MessageOption) {
 	opts := generateMessageOptions(options...)
 	defer releaseMessageOptions(opts)
 
 	ctx.System().sendUserMessage(ctx.ref, target, message)
 }
 
-func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message, options ...MessageOption) Future {
+func (ctx *actorContext) FutureAsk(target ActorRef, message Message, options ...MessageOption) Future {
 	opts := generateMessageOptions(options...)
 	defer releaseMessageOptions(opts)
 
@@ -134,7 +133,7 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message vivid.Message, optio
 	return f
 }
 
-func (ctx *actorContext) Ask(target ActorRef, message vivid.Message, options ...MessageOption) {
+func (ctx *actorContext) Ask(target ActorRef, message Message, options ...MessageOption) {
 	opts := generateMessageOptions(options...)
 	defer releaseMessageOptions(opts)
 
@@ -153,6 +152,15 @@ func (ctx *actorContext) Ask(target ActorRef, message vivid.Message, options ...
 	opts.hookAskRegulatoryMessage(&m)
 	opts.hookRegulatoryMessage(&m)
 	ctx.System().sendUserMessage(ctx.ref, target, m)
+}
+
+func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message) {
+	f := NewFuture(ctx.System(), 0)
+	f.Forward(target)
+	go func() {
+		message := blockFunc()
+		ctx.System().sendUserMessage(f.Ref(), f.Ref(), message)
+	}()
 }
 
 func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
