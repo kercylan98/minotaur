@@ -1,0 +1,3 @@
+syntax = "proto3";
+package remote;
+option go_package = "/github.com/kercylan98/minotaur/core/vivid";

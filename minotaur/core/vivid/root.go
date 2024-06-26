@@ -1,18 +1,14 @@
 package vivid
 
+import "github.com/kercylan98/minotaur/toolkit/log"
+
 type root struct {
 }
 
 func (r *root) OnReceive(ctx ActorContext) {
-	switch m := ctx.Message().(type) {
-	case []Module:
-		r.onLoadPlugins(ctx, m)
-	}
+	
 }
-
-func (r *root) onLoadPlugins(ctx ActorContext, m []Module) {
-	support := newModuleSupport(ctx.System())
-	for _, plugin := range m {
-		plugin.OnLoad(support)
-	}
+func (r *root) OnAccident(system *ActorSystem, accident Accident) {
+	log.Error("Accident", log.String("actor", accident.AccidentActor().Address().String()), log.Any("reason", accident.Reason()))
+	accident.Responsible().Stop(accident.AccidentActor())
 }

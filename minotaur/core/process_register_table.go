@@ -11,7 +11,7 @@ type AddressResolver func(address Address) Process
 func newProcessRegisterTable(address Address, bucketSize int, defaultProcess ...Process) *processRegisterTable {
 	t := &processRegisterTable{
 		address: NewAddress(address.Network(), address.System(), address.Host(), address.Port(), ""),
-		registerTable: mappings.NewMutexBucket[Address, Process](bucketSize, func(size int, key Address) int {
+		registerTable: mappings.NewMutexBucket[string, Process](bucketSize, func(size int, key string) int {
 			hash := murmur3.Sum32([]byte(key))
 			index := int(hash) % size
 			return index
@@ -26,7 +26,7 @@ func newProcessRegisterTable(address Address, bucketSize int, defaultProcess ...
 // processRegisterTable 进程注册表
 type processRegisterTable struct {
 	address        Address
-	registerTable  *mappings.MutexBucket[Address, Process]
+	registerTable  *mappings.MutexBucket[string, Process] // key = core.Address.Path()
 	resolver       []AddressResolver
 	defaultProcess Process
 	onlyAddress    bool
@@ -50,8 +50,8 @@ func (prt *processRegisterTable) RegisterAddressResolver(resolver AddressResolve
 // Register 注册一个进程
 func (prt *processRegisterTable) Register(process Process) (ref *ProcessRef, exists bool) {
 	address := process.GetAddress()
-	bucket := prt.registerTable.GetBucket(address)
-	_, exists = bucket.GetOrSet(address, process)
+	bucket := prt.registerTable.GetBucket(address.Path())
+	_, exists = bucket.GetOrSet(address.Path(), process)
 	return &ProcessRef{
 		address: address,
 	}, exists
@@ -59,7 +59,8 @@ func (prt *processRegisterTable) Register(process Process) (ref *ProcessRef, exi
 
 // GetProcess 获取一个进程
 func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
-	if address.Address() != prt.Address().Address() {
+	var currAddress, targetAddress = prt.Address().Address(), address.Address()
+	if currAddress != targetAddress {
 		for _, resolver := range prt.resolver {
 			var process Process
 			if prt.onlyAddress {
@@ -74,8 +75,8 @@ func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
 		return prt.defaultProcess, false
 	}
 
-	bucket := prt.registerTable.GetBucket(address)
-	process, exists := bucket.Get(address)
+	bucket := prt.registerTable.GetBucket(address.Path())
+	process, exists := bucket.Get(address.Path())
 	if exists {
 		return process, exists
 	}
@@ -85,8 +86,8 @@ func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
 
 // Unregister 注销一个进程
 func (prt *processRegisterTable) Unregister(ref *ProcessRef) {
-	bucket := prt.registerTable.GetBucket(ref.address)
-	process, exist := bucket.GetAndDel(ref.address)
+	bucket := prt.registerTable.GetBucket(ref.address.Path())
+	process, exist := bucket.GetAndDel(ref.address.Path())
 	if exist {
 		if status, ok := process.(ProcessStatus); ok {
 			status.Dead()

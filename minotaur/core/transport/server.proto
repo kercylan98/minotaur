@@ -1,0 +1,44 @@
+syntax = "proto3";
+package remote;
+option go_package = "/github.com/kercylan98/minotaur/core/transport";
+
+// ActorSystem 通讯服务
+service ActorSystemCommunication {
+  rpc StreamHandler (stream DistributedMessage) returns (stream DistributedMessage) {}
+}
+
+message DistributedMessage {
+  oneof message_type {
+    ConnectionOpen connection_open = 1;
+    ConnectionOpened connection_opened = 2;
+    ConnectionClosed connection_closed = 3;
+    ConnectionMessage connection_message = 4;
+  }
+}
+
+message ConnectionOpen {
+  string Address = 1;
+}
+
+message ConnectionOpened {
+}
+
+message ConnectionClosed {
+
+}
+
+message ConnectionMessage {
+  bytes sender_address = 1;
+  bytes receiver_address = 2;
+  Message message = 3;
+}
+
+message Message {
+  string type_name = 1;
+  bytes message_data = 2;
+}
+
+message RegulatoryMessage {
+  bytes sender_address = 1;
+  Message message = 2;
+}

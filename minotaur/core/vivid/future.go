@@ -18,9 +18,10 @@ var (
 )
 
 func NewFuture(system *ActorSystem, timeout time.Duration) Future {
+	systemAddress := system.processes.Address()
 	f := &future{
 		actorSystem: system,
-		address:     core.NewAddress("", system.name, "", 0, futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1))),
+		address:     core.NewAddress(systemAddress.Network(), system.name, systemAddress.Host(), systemAddress.Port(), futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1))),
 		done:        make(chan struct{}),
 	}
 	f.forwards = f.forwards[:0]

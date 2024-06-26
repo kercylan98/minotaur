@@ -31,3 +31,8 @@ func (s *ModuleSupport) SetAddressResolverOnlyAddress() {
 func (s *ModuleSupport) GetProcess(address core.Address) core.Process {
 	return s.actorSystem.processes.GetProcess(core.NewProcessRef(address))
 }
+
+// GetDeadLetter 获取死信队列
+func (s *ModuleSupport) GetDeadLetter() DeadLetter {
+	return s.actorSystem.deadLetter
+}

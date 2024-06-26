@@ -39,9 +39,12 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 
 	system.processes = core.NewProcessManager(address, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
+	support := newModuleSupport(system)
+	for _, plugin := range opts.modules {
+		plugin.OnLoad(support)
+	}
 
 	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef]())
-	system.root.Tell(system.root.Ref(), opts.modules)
 	return system
 }
 
