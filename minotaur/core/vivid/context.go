@@ -50,6 +50,9 @@ type senderContextCompose interface {
 }
 
 type receiverContextCompose interface {
+	// Sender 获取当前消息的发送人
+	Sender() ActorRef
+
 	// Message 获取当前 Actor 接收到的消息
 	Message() Message
 

@@ -126,7 +126,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	log.Debug("actorOf", log.String("addr", address.String()))
 
 	if options.Mailbox == nil {
-		options.Mailbox = newDefaultMailbox()
+		options.Mailbox = NewDefaultMailbox(0)
 	}
 
 	process := NewProcess(address, options.Mailbox)
@@ -144,7 +144,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		options.Dispatcher = defaultDispatcher
 	}
 	options.Mailbox.OnInit(ctx, options.Dispatcher)
-	ctx.Tell(ref, onLaunch)
+	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 
 	return ctx
 }

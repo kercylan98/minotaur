@@ -99,6 +99,9 @@ func (a Address) IsEmpty() bool {
 }
 
 func (a Address) String() string {
+	if len(a) == 0 {
+		return ""
+	}
 	data := []byte(a)
 	var builder strings.Builder
 

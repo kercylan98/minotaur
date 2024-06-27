@@ -7,148 +7,162 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/proto"
-	"sync"
 )
 
 func newEndpoint(network *Network, address core.Address) *endpoint {
 	e := &endpoint{
-		once:    new(sync.Once),
 		network: network,
-		address: address,
+		address: address.ParseToRoot(),
 	}
 	return e
 }
 
 type endpoint struct {
-	once    *sync.Once
-	mutex   sync.Mutex
 	network *Network
 	address core.Address
 	stream  ActorSystemCommunication_StreamHandlerClient
+	conn    *grpc.ClientConn
 }
 
-func (e *endpoint) initConn() {
-	e.once.Do(func() {
-		e.mutex.Lock()
-		defer e.mutex.Unlock()
-		addr := e.address.Address()
-		cc, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			e.once = new(sync.Once)
-			log.Error("Network", log.String("connection_endpoint", addr), log.Err(err))
-			return
-		}
-		log.Debug("Network", log.String("connection_endpoint", addr))
-
-		client := NewActorSystemCommunicationClient(cc)
-		stream, err := client.StreamHandler(context.Background())
-		if err != nil {
-			e.once = new(sync.Once)
-			log.Error("Network", log.String("connection_endpoint", addr), log.Err(err))
-			return
-		}
-
-		err = stream.Send(&DistributedMessage{
-			MessageType: &DistributedMessage_ConnectionOpen{
-				ConnectionOpen: &ConnectionOpen{
-					Address: string(e.address.Address()),
-				},
-			},
-		})
-		if err != nil {
-			log.Error("Network", log.String("connection_endpoint", addr), log.Err(err))
-			stream.CloseSend()
-			e.once = new(sync.Once)
-			return
-		}
-
-		e.stream = stream
-		wait := make(chan struct{})
-		var opened sync.Once
-		defer opened.Do(func() { close(wait) })
-
-		go func() {
-			defer func() {
-				e.mutex.Lock()
-				defer e.mutex.Unlock()
-				e.once = new(sync.Once)
-			}()
-			for {
-				in, err := stream.Recv()
-				if err != nil {
-					return
-				}
-
-				switch m := in.MessageType.(type) {
-				case *DistributedMessage_ConnectionOpened:
-					opened.Do(func() { close(wait) })
-				case *DistributedMessage_ConnectionMessage:
-					e.network.server.onConnectionMessage(m)
-				}
-			}
-		}()
-
-		<-wait
-	})
+func (e *endpoint) OnReceive(ctx vivid.ActorContext) {
+	switch m := ctx.Message().(type) {
+	case vivid.OnLaunch:
+		e.onLaunch(ctx, m)
+	case vivid.OnTerminate:
+		e.onTerminate(ctx, m)
+	case []any:
+		e.onSend(ctx, m)
+	}
 }
 
-func (e *endpoint) send(sender *core.ProcessRef, receiver core.Address, message core.Message) {
-	e.initConn()
+func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
+	addr := e.address.Address()
+	cc, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Error("Endpoint", log.String("type", "connect"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
+		return
+	}
+	e.conn = cc
+	log.Debug("Endpoint", log.String("type", "connected"), log.String("addr", addr))
 
-	var (
-		protoMessage   proto.Message
-		isProtoMessage bool
-		typeName       string
-		bytes          []byte
-		err            error
-	)
-
-	var processMessage = func(message core.Message) (typeName string, bytes []byte) {
-		if protoMessage, isProtoMessage = message.(proto.Message); isProtoMessage {
-			typeName = string(proto.MessageName(protoMessage))
-			if bytes, err = proto.Marshal(protoMessage); err != nil {
-				panic(err)
-				return
-			}
-		} else {
-			switch v := message.(type) {
-			case string:
-				typeName = "string"
-				bytes = []byte(v)
-			}
-		}
+	client := NewActorSystemCommunicationClient(cc)
+	stream, err := client.StreamHandler(context.Background())
+	if err != nil {
+		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
 		return
 	}
 
-	if rm, ok := message.(vivid.RegulatoryMessage); ok {
-		sender = rm.Sender
-		typeName, bytes = processMessage(rm.Message)
-		message = &RegulatoryMessage{
-			SenderAddress: []byte(rm.Sender.Address()),
-			Message: &Message{
-				TypeName:    typeName,
-				MessageData: bytes,
-			},
-		}
-	}
-
-	typeName, bytes = processMessage(message)
-
-	err = e.stream.Send(&DistributedMessage{
-		MessageType: &DistributedMessage_ConnectionMessage{
-			ConnectionMessage: &ConnectionMessage{
-				SenderAddress:   []byte(sender.Address()),
-				ReceiverAddress: []byte(receiver),
-				Message: &Message{
-					TypeName:    typeName,
-					MessageData: bytes,
-				},
+	err = stream.Send(&DistributedMessage{
+		MessageType: &DistributedMessage_ConnectionOpen{
+			ConnectionOpen: &ConnectionOpen{
+				Address: e.network.address.Address(),
 			},
 		},
 	})
+	if err != nil {
+		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
+		return
+	}
+
+	in, err := stream.Recv()
+	if err != nil {
+		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
+		return
+	}
+	if _, ok := in.MessageType.(*DistributedMessage_ConnectionOpened); !ok {
+		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
+		return
+	}
+
+	e.stream = stream
+	go func() {
+		defer func() {
+			ctx.Terminate(ctx.Ref())
+			log.Debug("Endpoint", log.String("type", "closed"))
+		}()
+
+		for {
+			in, err := stream.Recv()
+			if err != nil {
+				return
+			}
+
+			switch m := in.MessageType.(type) {
+			case *DistributedMessage_ConnectionMessageBatch:
+				e.network.server.onConnectionMessage(m)
+			default:
+				log.Warn("Endpoint", log.String("type", "unknown message"))
+			}
+		}
+
+	}()
+}
+
+func (e *endpoint) onTerminate(ctx vivid.ActorContext, m vivid.OnTerminate) {
+	e.network.em.delEndpoint(e.address)
+	if e.stream != nil {
+		if err := e.stream.CloseSend(); err != nil {
+			log.Error("Endpoint", log.String("type", "close"), log.String("instance", "stream"), log.Err(err))
+		}
+	}
+	if e.conn != nil {
+		if err := e.conn.Close(); err != nil {
+			log.Error("Endpoint", log.String("type", "close"), log.String("instance", "conn"), log.Err(err))
+		}
+	}
+}
+
+func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
+	var batch = &ConnectionMessageBatch{
+		SenderAddress:                  make([][]byte, len(m)),
+		ReceiverAddress:                make([][]byte, len(m)),
+		RegulatoryMessageSenderAddress: make([][]byte, len(m)),
+		TypeName:                       make([]string, len(m)),
+		MessageData:                    make([][]byte, len(m)),
+		Bad:                            make([]bool, len(m)),
+	}
+
+	var bad = 0
+	var ok bool
+	for i, source := range m {
+		var v messageWrapper
+		if v, ok = source.(messageWrapper); !ok {
+			batch.Bad[i] = true
+			bad++
+			log.Error("Endpoint", log.String("type", "convert"))
+			continue
+		}
+		rm, ok := v.message.(vivid.RegulatoryMessage)
+		if ok {
+			batch.RegulatoryMessageSenderAddress[i] = []byte(rm.Sender.Address())
+			v.message = rm.Message
+		}
+		var err error
+		batch.TypeName[i], batch.MessageData[i], err = e.network.codec.Encode(v.message)
+		if err != nil {
+			batch.Bad[i] = true
+			bad++
+			log.Error("Endpoint", log.String("type", "encode"), log.Err(err))
+			continue
+		}
+		batch.SenderAddress[i], batch.ReceiverAddress[i] = []byte(v.sender.Address()), []byte(v.receiver)
+	}
+
+	if bad == len(m) {
+		return
+	}
+
+	err := e.stream.Send(&DistributedMessage{
+		MessageType: &DistributedMessage_ConnectionMessageBatch{ConnectionMessageBatch: batch},
+	})
 
 	if err != nil {
-		panic(err)
+		log.Error("Endpoint", log.String("type", "send"), log.Err(err))
+		ctx.Terminate(ctx.Ref())
 	}
 }

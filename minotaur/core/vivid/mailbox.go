@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/queues"
 	"sync/atomic"
 	"unsafe"
 )
@@ -22,49 +23,56 @@ const (
 	defaultMailboxStatusRunning
 )
 
-var _ Mailbox = &defaultMailbox{}
+var _ Mailbox = &LockFreeMailbox{}
 
-type defaultMailbox struct {
-	queue       *lfQueue
-	systemQueue *lfQueue
-	processor   core.MessageProcessor
-	dispatcher  Dispatcher
-	status      uint32
-	num         int32
-	suspended   uint32
+type LockFreeMailbox struct {
+	queue                 *queues.LFQueue
+	systemQueue           *queues.LFQueue
+	processor             core.MessageProcessor
+	dispatcher            Dispatcher
+	status                uint32
+	num                   int32
+	suspended             uint32
+	userMessageBatchLimit int
 }
 
-func newDefaultMailbox() *defaultMailbox {
-	return &defaultMailbox{
-		queue:       newLfQueue(),
-		systemQueue: newLfQueue(),
+// NewDefaultMailbox 创建一个默认的邮箱，该邮箱基于 queues.LFQueue 实现
+//   - 默认邮箱在 userMessageBatchLimit 大于 1 时需要注意，一批用户消息将会被处理，而不会被系统消息抢先执行
+func NewDefaultMailbox(userMessageBatchLimit int) *LockFreeMailbox {
+	if userMessageBatchLimit <= 1 {
+		userMessageBatchLimit = 1
+	}
+	return &LockFreeMailbox{
+		queue:                 queues.NewLFQueue(),
+		systemQueue:           queues.NewLFQueue(),
+		userMessageBatchLimit: userMessageBatchLimit,
 	}
 }
 
-func (m *defaultMailbox) OnInit(processor core.MessageProcessor, dispatcher Dispatcher) {
+func (m *LockFreeMailbox) OnInit(processor core.MessageProcessor, dispatcher Dispatcher) {
 	m.processor = processor
 	m.dispatcher = dispatcher
 }
 
-func (m *defaultMailbox) DeliveryUserMessage(message Message) {
-	m.queue.Enqueue(unsafe.Pointer(&message))
+func (m *LockFreeMailbox) DeliveryUserMessage(message Message) {
+	m.queue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.num, 1)
 	m.dispatch()
 }
 
-func (m *defaultMailbox) DeliverySystemMessage(message Message) {
-	m.systemQueue.Enqueue(unsafe.Pointer(&message))
+func (m *LockFreeMailbox) DeliverySystemMessage(message Message) {
+	m.systemQueue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.num, 1)
 	m.dispatch()
 }
 
-func (m *defaultMailbox) dispatch() {
+func (m *LockFreeMailbox) dispatch() {
 	if atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusIdle, defaultMailboxStatusRunning) {
 		m.dispatcher.Dispatch(m.process)
 	}
 }
 
-func (m *defaultMailbox) process() {
+func (m *LockFreeMailbox) process() {
 	m.processHandle()
 	for atomic.LoadInt32(&m.num) > 0 {
 		m.processHandle()
@@ -73,7 +81,7 @@ func (m *defaultMailbox) process() {
 	atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
 }
 
-func (m *defaultMailbox) processHandle() {
+func (m *LockFreeMailbox) processHandle() {
 	defer func() {
 		if reason := recover(); reason != nil {
 			m.processor.ProcessRecover(reason)
@@ -81,14 +89,15 @@ func (m *defaultMailbox) processHandle() {
 	}()
 
 	var msg Message
+	var messages []Message
 	for {
-		if ptr := m.systemQueue.Dequeue(); ptr != nil {
+		if ptr := m.systemQueue.Pop(); ptr != nil {
 			msg = *(*Message)(ptr)
 			atomic.AddInt32(&m.num, -1)
 			switch msg.(type) {
-			case _OnSuspendMailbox:
+			case OnSuspendMailbox:
 				atomic.StoreUint32(&m.suspended, 1)
-			case _OnResumeMailbox:
+			case OnResumeMailbox:
 				atomic.StoreUint32(&m.suspended, 0)
 			default:
 				m.processor.ProcessSystemMessage(msg)
@@ -100,7 +109,23 @@ func (m *defaultMailbox) processHandle() {
 			return
 		}
 
-		if ptr := m.queue.Dequeue(); ptr != nil {
+		if m.userMessageBatchLimit > 1 {
+			if ptrList := m.queue.BatchPop(m.userMessageBatchLimit); len(ptrList) != 0 {
+				if len(messages) < len(ptrList) {
+					messages = make([]Message, len(ptrList))
+				}
+				for i := 0; i < len(ptrList); i++ {
+					messages[i] = *(*Message)(ptrList[i])
+				}
+				atomic.AddInt32(&m.num, int32(-len(messages)))
+				m.processor.ProcessUserMessage(messages)
+				messages = messages[:0]
+				continue
+			}
+			break
+		}
+
+		if ptr := m.queue.Pop(); ptr != nil {
 			msg = *(*Message)(ptr)
 			atomic.AddInt32(&m.num, -1)
 			m.processor.ProcessUserMessage(msg)

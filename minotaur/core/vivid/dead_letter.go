@@ -7,6 +7,12 @@ import (
 
 var _ DeadLetter = &deadLetterProcess{}
 
+type DeadLetterEvent struct {
+	Sender   core.Address
+	Receiver core.Address
+	Message  core.Message
+}
+
 type DeadLetter interface {
 	core.Process
 }
@@ -24,11 +30,16 @@ func (d *deadLetterProcess) GetAddress() core.Address {
 }
 
 func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
-	log.Error("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
+	switch m := message.(type) {
+	case DeadLetterEvent:
+		log.Warn("DeadLetter", log.String("sender", m.Sender.String()), log.String("receiver", m.Receiver.String()), log.Any("message", m.Message))
+	default:
+		log.Warn("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
+	}
 }
 
 func (d *deadLetterProcess) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
-
+	d.SendUserMessage(sender, message)
 }
 
 func (d *deadLetterProcess) Terminate(ref *core.ProcessRef) {

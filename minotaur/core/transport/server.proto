@@ -12,7 +12,7 @@ message DistributedMessage {
     ConnectionOpen connection_open = 1;
     ConnectionOpened connection_opened = 2;
     ConnectionClosed connection_closed = 3;
-    ConnectionMessage connection_message = 4;
+    ConnectionMessageBatch connection_message_batch = 5;
   }
 }
 
@@ -27,18 +27,11 @@ message ConnectionClosed {
 
 }
 
-message ConnectionMessage {
-  bytes sender_address = 1;
-  bytes receiver_address = 2;
-  Message message = 3;
-}
-
-message Message {
-  string type_name = 1;
-  bytes message_data = 2;
-}
-
-message RegulatoryMessage {
-  bytes sender_address = 1;
-  Message message = 2;
+message ConnectionMessageBatch {
+  repeated bytes sender_address = 1;
+  repeated bytes receiver_address = 2;
+  repeated bytes regulatory_message_sender_address = 3;
+  repeated string type_name = 4;
+  repeated bytes message_data = 5;
+  repeated bool bad = 6;
 }

@@ -1,7 +1,7 @@
 package vivid
 
 const (
-	DirectiveStop     Directive = iota + 1 // 停止子 Actor。_OnTerminated 生命周期钩子方法会被调用，子 Actor 的状态会被清理
+	DirectiveStop     Directive = iota + 1 // 停止子 Actor。OnTerminated 生命周期钩子方法会被调用，子 Actor 的状态会被清理
 	DirectiveRestart                       // 停止并重新启动子 Actor。子 Actor 的状态会被重置
 	DirectiveResume                        // 忽略异常，让子 Actor 继续处理后续的消息。子 Actor 的状态保持不变
 	DirectiveEscalate                      // 升级 Actor（向上级 Actor 报告异常）

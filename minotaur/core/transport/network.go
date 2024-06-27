@@ -28,11 +28,13 @@ type Network struct {
 	address core.Address     // 指定 ActorSystem 地址
 	server  *server          // 处理流消息的服务器
 	em      *endpointManager // 远程端点管理器
+	codec   Codec            // 消息编解码器
 }
 
 func (n *Network) OnLoad(support *vivid.ModuleSupport) {
 	n.server = newServer(n)
 	n.em = newEndpointManager(n)
+	n.codec = new(protobufCodec)
 	n.support = support
 	n.support.RegAddressResolver(func(address core.Address) core.Process {
 		return newRemoteActor(n, address)
@@ -62,6 +64,16 @@ func (n *Network) launch() {
 }
 
 func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message core.Message) {
-	e := n.em.getEndpoint(receiver)
-	e.send(sender, receiver, message)
+	ref := n.em.getEndpoint(receiver)
+	n.support.System().Context().Tell(ref, messageWrapper{
+		sender:   sender,
+		receiver: receiver,
+		message:  message,
+	})
+}
+
+type messageWrapper struct {
+	sender   *core.ProcessRef
+	receiver core.Address
+	message  core.Message
 }

@@ -3,6 +3,7 @@ package vivid
 import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync/atomic"
 )
 
@@ -41,6 +42,10 @@ type actorContext struct {
 	mailbox     Mailbox
 	producer    ActorProducer
 	children    mappings.OrderInterface[core.Address, ActorRef]
+}
+
+func (ctx *actorContext) Sender() ActorRef {
+	return nil
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
@@ -82,9 +87,6 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 }
 
 func (ctx *actorContext) Parent() ActorRef {
-	if ctx.options.Parent == nil {
-		panic("root actor has no parent")
-	}
 	return ctx.options.Parent
 }
 
@@ -174,20 +176,22 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
 
 func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 	switch m := msg.(type) {
+	case OnLaunch:
+		ctx.ProcessUserMessage(m)
 	case OnTerminate:
 		ctx.onTerminate()
-	case _OnTerminated:
+	case OnTerminated:
 		switch atomic.LoadUint32(&ctx.status) {
 		case actorStatusTerminated:
 			ctx.onTerminated(m)
 		case actorStatusRestarting:
 			ctx.onRestarted(m)
 		default:
-			panic("unexpected status")
+			// 自身为其他状态时无需等待子 Actor 全部关闭或重启，忽略
 		}
 	case Accident:
 		ctx.onAccident(m)
-	case _OnRestart:
+	case OnRestart:
 		ctx.onRestart(m)
 	}
 }
@@ -207,9 +211,12 @@ func (ctx *actorContext) onTerminate() {
 		ctx.Terminate(ref)
 		return true
 	})
+
+	// 确保没有子级的情况下能完成计数归零的逻辑
+	ctx.onTerminated(OnTerminated{TerminatedActor: ctx.ref})
 }
 
-func (ctx *actorContext) onTerminated(m _OnTerminated) {
+func (ctx *actorContext) onTerminated(m OnTerminated) {
 	ctx.children.Del(m.TerminatedActor.Address())
 	if ctx.children.Len() > 0 {
 		return
@@ -220,9 +227,11 @@ func (ctx *actorContext) onTerminated(m _OnTerminated) {
 	}
 
 	ctx.actorSystem.processes.Unregister(ctx.ref)
-	if ctx.Parent() != nil {
-		ctx.System().sendSystemMessage(ctx.ref, ctx.Parent(), _OnTerminated{TerminatedActor: ctx.ref})
+	if parent := ctx.Parent(); parent != nil {
+		ctx.System().sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
 	}
+
+	log.Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
 }
 
 func (ctx *actorContext) Children() []ActorRef {
@@ -244,7 +253,7 @@ func (ctx *actorContext) Stop(children ...ActorRef) {
 	}
 
 	// 确保没有子级的情况下能完成计数归零的逻辑
-	ctx.onTerminated(_OnTerminated{TerminatedActor: ctx.ref})
+	ctx.onTerminated(OnTerminated{TerminatedActor: ctx.ref})
 }
 
 func (ctx *actorContext) Resume(children ...ActorRef) {
@@ -275,7 +284,7 @@ func (ctx *actorContext) Restart(children ...ActorRef) {
 	}
 }
 
-func (ctx *actorContext) onRestart(m _OnRestart) {
+func (ctx *actorContext) onRestart(m OnRestart) {
 	atomic.StoreUint32(&ctx.status, actorStatusRestarting)
 	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onRestarting)
 	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
@@ -284,10 +293,10 @@ func (ctx *actorContext) onRestart(m _OnRestart) {
 	})
 
 	// 确保没有子级的情况下能完成计数归零的逻辑
-	ctx.onRestarted(_OnTerminated{TerminatedActor: ctx.ref})
+	ctx.onRestarted(OnTerminated{TerminatedActor: ctx.ref})
 }
 
-func (ctx *actorContext) onRestarted(m _OnTerminated) {
+func (ctx *actorContext) onRestarted(m OnTerminated) {
 	ctx.children.Del(m.TerminatedActor.Address())
 	if ctx.children.Len() > 0 {
 		return
@@ -295,7 +304,7 @@ func (ctx *actorContext) onRestarted(m _OnTerminated) {
 
 	ctx.actor = ctx.producer()
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onResumeMailbox)
-	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onLaunch)
+	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 }
 
 func (ctx *actorContext) onAccident(m Accident) {

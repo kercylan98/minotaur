@@ -5,9 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"github.com/kercylan98/minotaur/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"sync"
 )
@@ -46,7 +45,7 @@ func (s *server) StreamHandler(stream ActorSystemCommunication_StreamHandlerServ
 			}
 		case *DistributedMessage_ConnectionClosed:
 			return nil
-		case *DistributedMessage_ConnectionMessage:
+		case *DistributedMessage_ConnectionMessageBatch:
 			s.onConnectionMessage(m)
 		}
 	}
@@ -88,53 +87,36 @@ func (s *server) onConnectionClosed(stream ActorSystemCommunication_StreamHandle
 		MessageType: &DistributedMessage_ConnectionClosed{
 			ConnectionClosed: &ConnectionClosed{},
 		},
-	}); err != nil {
+	}); err != nil && status.Code(err) != codes.Unavailable {
 		log.Debug("connectionClosed", log.String("address", conn.openedInfo.Address), log.Err(err))
 	} else {
 		log.Debug("connectionClosed", log.String("address", conn.openedInfo.Address))
 	}
 }
 
-func (s *server) onConnectionMessage(m *DistributedMessage_ConnectionMessage) {
-	var processMessage = func(message *Message) core.Message {
-		typ, findMessageErr := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(message.TypeName))
-		var userDefine any
-		if findMessageErr != nil {
-			switch message.TypeName {
-			case "string":
-				userDefine = string(message.MessageData)
-			default:
-				log.Error("find message error", log.Err(findMessageErr))
-				return nil
+func (s *server) onConnectionMessage(batch *DistributedMessage_ConnectionMessageBatch) {
+	var b = batch.ConnectionMessageBatch
+	for i := 0; i < len(b.MessageData); i++ {
+		if b.Bad[i] {
+			continue
+		}
+
+		message, err := s.network.codec.Decode(b.TypeName[i], b.MessageData[i])
+		if err != nil {
+			log.Error("Endpoint", log.String("type", "decode"), log.Err(err))
+			continue
+		}
+
+		sender := core.Address(b.SenderAddress[i])
+		receiver := core.Address(b.ReceiverAddress[i])
+		regulatoryMessageSender := core.Address(b.RegulatoryMessageSenderAddress[i])
+		if len(regulatoryMessageSender) > 0 {
+			message = vivid.RegulatoryMessage{
+				Sender:  core.NewProcessRef(regulatoryMessageSender),
+				Message: message,
 			}
 		}
 
-		var m any
-		if userDefine == nil {
-			protoMessage := typ.New().Interface()
-			if unmarshalErr := proto.Unmarshal(message.MessageData, protoMessage); unmarshalErr != nil {
-				log.Error("unmarshal message error", log.Err(unmarshalErr))
-				return nil
-			}
-			m = protoMessage
-		} else {
-			m = userDefine
-		}
-
-		return m
+		s.network.support.GetProcess(receiver).SendUserMessage(core.NewProcessRef(sender), message)
 	}
-
-	message := processMessage(m.ConnectionMessage.Message)
-
-	switch v := message.(type) {
-	case *RegulatoryMessage:
-		message = vivid.RegulatoryMessage{
-			Sender:  core.NewProcessRef(core.Address(v.SenderAddress)),
-			Message: processMessage(v.Message),
-		}
-	}
-
-	sender := core.NewProcessRef(core.Address(m.ConnectionMessage.SenderAddress))
-	receiver := s.network.support.GetProcess(core.Address(m.ConnectionMessage.ReceiverAddress))
-	receiver.SendUserMessage(sender, message)
 }

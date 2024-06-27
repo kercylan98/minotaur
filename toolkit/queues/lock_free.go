@@ -1,12 +1,12 @@
-package vivid
+package queues
 
 import (
 	"sync/atomic"
 	"unsafe"
 )
 
-// Lock-free queue implementation
-type lfQueue struct {
+// LFQueue 无锁（Lock-free）队列实现
+type LFQueue struct {
 	head, tail unsafe.Pointer
 }
 
@@ -15,12 +15,12 @@ type lfNode struct {
 	next  unsafe.Pointer
 }
 
-func newLfQueue() *lfQueue {
+func NewLFQueue() *LFQueue {
 	node := unsafe.Pointer(&lfNode{})
-	return &lfQueue{head: node, tail: node}
+	return &LFQueue{head: node, tail: node}
 }
 
-func (q *lfQueue) Enqueue(value unsafe.Pointer) {
+func (q *LFQueue) Push(value unsafe.Pointer) {
 	node := unsafe.Pointer(&lfNode{value: value})
 	for {
 		tail := atomic.LoadPointer(&q.tail)
@@ -38,7 +38,7 @@ func (q *lfQueue) Enqueue(value unsafe.Pointer) {
 	}
 }
 
-func (q *lfQueue) Dequeue() unsafe.Pointer {
+func (q *LFQueue) Pop() unsafe.Pointer {
 	for {
 		head := atomic.LoadPointer(&q.head)
 		tail := atomic.LoadPointer(&q.tail)
@@ -57,4 +57,36 @@ func (q *lfQueue) Dequeue() unsafe.Pointer {
 			}
 		}
 	}
+}
+
+func (q *LFQueue) BatchPop(n int) []unsafe.Pointer {
+	var (
+		head unsafe.Pointer
+		next unsafe.Pointer
+	)
+
+	values := make([]unsafe.Pointer, 0, n)
+
+	for i := 0; i < n; i++ {
+		head = atomic.LoadPointer(&q.head)
+		tail := atomic.LoadPointer(&q.tail)
+		next = atomic.LoadPointer(&(*lfNode)(head).next)
+		if head == atomic.LoadPointer(&q.head) {
+			if head == tail {
+				if next == nil {
+					break
+				}
+				atomic.CompareAndSwapPointer(&q.tail, tail, next)
+			} else {
+				value := (*lfNode)(next).value
+				if atomic.CompareAndSwapPointer(&q.head, head, next) {
+					values = append(values, value)
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	return values
 }
