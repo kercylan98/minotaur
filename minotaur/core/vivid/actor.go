@@ -1,5 +1,7 @@
 package vivid
 
+import "github.com/kercylan98/minotaur/minotaur/core"
+
 type ActorOptionDefiner func(options *ActorOptions)
 type ActorProducer func() Actor
 type FunctionalActor = OnReceiveFunc
@@ -13,3 +15,5 @@ func (f OnReceiveFunc) OnReceive(ctx ActorContext) {
 type Actor interface {
 	OnReceive(ctx ActorContext)
 }
+
+type ActorId = core.Address
