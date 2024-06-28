@@ -1,7 +1,7 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	core2 "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"sync"
 	"sync/atomic"
@@ -13,15 +13,15 @@ const (
 )
 
 var (
-	_ core.Process = &future{}
-	_ Future       = &future{}
+	_ core2.Process = &future{}
+	_ Future        = &future{}
 )
 
 func NewFuture(system *ActorSystem, timeout time.Duration) Future {
 	systemAddress := system.processes.Address()
 	f := &future{
 		actorSystem: system,
-		address:     core.NewAddress(systemAddress.Network(), system.name, systemAddress.Host(), systemAddress.Port(), futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1))),
+		address:     core2.NewAddress(systemAddress.Network(), system.name, systemAddress.Host(), systemAddress.Port(), futurePrefix+convert.Uint64ToString(system.nextFutureId.Add(1))),
 		done:        make(chan struct{}),
 	}
 	f.forwards = f.forwards[:0]
@@ -52,7 +52,7 @@ type FutureForwardMessage struct {
 
 type future struct {
 	actorSystem   *ActorSystem
-	address       core.Address
+	address       core2.Address
 	ref           ActorRef
 	ok            uint32
 	done          chan struct{}
@@ -102,16 +102,16 @@ func (f *future) Wait() error {
 	return err
 }
 
-func (f *future) GetAddress() core.Address {
+func (f *future) GetAddress() core2.Address {
 	return f.address
 }
 
-func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) {
+func (f *future) SendUserMessage(sender *core2.ProcessRef, message core2.Message) {
 	f.result = message
 	f.Terminate(nil)
 }
 
-func (f *future) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
+func (f *future) SendSystemMessage(sender *core2.ProcessRef, message core2.Message) {
 	f.result = message
 	f.Terminate(nil)
 }
@@ -121,7 +121,7 @@ func (f *future) onTimeout() {
 	f.Terminate(nil)
 }
 
-func (f *future) Terminate(_ *core.ProcessRef) {
+func (f *future) Terminate(_ *core2.ProcessRef) {
 	if !atomic.CompareAndSwapUint32(&f.ok, 0, 1) {
 		return
 	}

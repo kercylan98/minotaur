@@ -1,16 +1,16 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	core2 "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"sync/atomic"
 )
 
 var (
-	_ core.Process = &Process{}
+	_ core2.Process = &Process{}
 )
 
-func NewProcess(address core.Address, mailbox Mailbox) *Process {
+func NewProcess(address core2.Address, mailbox Mailbox) *Process {
 	return &Process{
 		address: address,
 		mailbox: mailbox,
@@ -18,12 +18,12 @@ func NewProcess(address core.Address, mailbox Mailbox) *Process {
 }
 
 type Process struct {
-	address core.Address
+	address core2.Address
 	mailbox Mailbox
 	status  uint32
 }
 
-func (p *Process) GetAddress() core.Address {
+func (p *Process) GetAddress() core2.Address {
 	return p.address
 }
 
@@ -35,14 +35,14 @@ func (p *Process) Dead() {
 	atomic.StoreUint32(&p.status, 1)
 }
 
-func (p *Process) SendUserMessage(sender *core.ProcessRef, message vivid.Message) {
+func (p *Process) SendUserMessage(sender *core2.ProcessRef, message vivid.Message) {
 	p.mailbox.DeliveryUserMessage(message)
 }
 
-func (p *Process) SendSystemMessage(sender *core.ProcessRef, message vivid.Message) {
+func (p *Process) SendSystemMessage(sender *core2.ProcessRef, message vivid.Message) {
 	p.mailbox.DeliverySystemMessage(message)
 }
 
-func (p *Process) Terminate(sender *core.ProcessRef) {
+func (p *Process) Terminate(sender *core2.ProcessRef) {
 	p.SendSystemMessage(sender, onTerminate)
 }

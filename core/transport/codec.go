@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/core"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"

@@ -1,7 +1,7 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/core"
 )
 
 type Message = core.Message

@@ -1,20 +1,20 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	core2 "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
 var _ DeadLetter = &deadLetterProcess{}
 
 type DeadLetterEvent struct {
-	Sender   core.Address
-	Receiver core.Address
-	Message  core.Message
+	Sender   core2.Address
+	Receiver core2.Address
+	Message  core2.Message
 }
 
 type DeadLetter interface {
-	core.Process
+	core2.Process
 }
 
 type deadLetterProcess struct {
@@ -25,11 +25,11 @@ func (d *deadLetterProcess) Ref() ActorRef {
 	return d.ref
 }
 
-func (d *deadLetterProcess) GetAddress() core.Address {
-	return core.NewAddress("", "system", "dead_letter", 0, "")
+func (d *deadLetterProcess) GetAddress() core2.Address {
+	return core2.NewAddress("", "system", "dead_letter", 0, "")
 }
 
-func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
+func (d *deadLetterProcess) SendUserMessage(sender *core2.ProcessRef, message core2.Message) {
 	switch m := message.(type) {
 	case DeadLetterEvent:
 		log.Warn("DeadLetter", log.String("sender", m.Sender.String()), log.String("receiver", m.Receiver.String()), log.Any("message", m.Message))
@@ -38,10 +38,10 @@ func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message cor
 	}
 }
 
-func (d *deadLetterProcess) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
+func (d *deadLetterProcess) SendSystemMessage(sender *core2.ProcessRef, message core2.Message) {
 	d.SendUserMessage(sender, message)
 }
 
-func (d *deadLetterProcess) Terminate(ref *core.ProcessRef) {
+func (d *deadLetterProcess) Terminate(ref *core2.ProcessRef) {
 
 }

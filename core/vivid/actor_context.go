@@ -1,7 +1,7 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	core2 "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync/atomic"
@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	_ core.MessageProcessor = &actorContext{}
-	_ ActorContext          = &actorContext{}
-	_ Supervisor            = &actorContext{}
+	_ core2.MessageProcessor = &actorContext{}
+	_ ActorContext           = &actorContext{}
+	_ Supervisor             = &actorContext{}
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 	actorStatusRestarting
 )
 
-func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
+func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core2.Address, ActorRef]) *actorContext {
 	ctx := &actorContext{
 		actorSystem: system,
 		options:     options,
@@ -43,7 +43,7 @@ type actorContext struct {
 	status      uint32 // atomic
 	mailbox     Mailbox
 	producer    ActorProducer
-	children    mappings.OrderInterface[core.Address, ActorRef]
+	children    mappings.OrderInterface[core2.Address, ActorRef]
 	as          *accidentState // 事故状态
 }
 
@@ -51,7 +51,7 @@ func (ctx *actorContext) Sender() ActorRef {
 	return nil
 }
 
-func (ctx *actorContext) ProcessRecover(reason core.Message) {
+func (ctx *actorContext) ProcessRecover(reason core2.Message) {
 	ctx.as.restartTimes = append(ctx.as.restartTimes, time.Now())
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSuspendMailbox)
 
@@ -177,7 +177,7 @@ func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message)
 	}()
 }
 
-func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
+func (ctx *actorContext) ProcessUserMessage(msg core2.Message) {
 	if atomic.LoadUint32(&ctx.status) == actorStatusTerminated {
 		return
 	}
@@ -191,7 +191,7 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
 	}
 }
 
-func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
+func (ctx *actorContext) ProcessSystemMessage(msg core2.Message) {
 	switch m := msg.(type) {
 	case OnLaunch:
 		ctx.ProcessUserMessage(m)
@@ -199,7 +199,7 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 		ctx.onTerminate()
 	case OnTerminated:
 		switch atomic.LoadUint32(&ctx.status) {
-		case actorStatusTerminated:
+		case actorStatusTerminating:
 			ctx.onTerminated(m)
 		case actorStatusRestarting:
 			ctx.onRestarted(m)
@@ -224,7 +224,7 @@ func (ctx *actorContext) onTerminate() {
 
 	ctx.ProcessUserMessage(onTerminate)
 
-	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
+	ctx.children.Range(func(address core2.Address, ref ActorRef) bool {
 		ctx.Terminate(ref)
 		return true
 	})
@@ -253,7 +253,7 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 
 func (ctx *actorContext) Children() []ActorRef {
 	var children = make([]ActorRef, 0, ctx.children.Len())
-	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
+	ctx.children.Range(func(address core2.Address, ref ActorRef) bool {
 		children = append(children, ref)
 		return true
 	})
@@ -304,7 +304,7 @@ func (ctx *actorContext) Restart(children ...ActorRef) {
 func (ctx *actorContext) onRestart(m OnRestart) {
 	atomic.StoreUint32(&ctx.status, actorStatusRestarting)
 	ctx.ProcessUserMessage(onRestarting)
-	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
+	ctx.children.Range(func(address core2.Address, ref ActorRef) bool {
 		ctx.Terminate(ref)
 		return true
 	})

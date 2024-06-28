@@ -1,6 +1,8 @@
 package vivid
 
-import "github.com/kercylan98/minotaur/minotaur/core"
+import (
+	"github.com/kercylan98/minotaur/core"
+)
 
 type ActorOptionDefiner func(options *ActorOptions)
 type ActorProducer func() Actor

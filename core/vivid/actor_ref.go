@@ -1,15 +1,15 @@
 package vivid
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
+	core2 "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"net"
 )
 
-type ActorRef = *core.ProcessRef
+type ActorRef = *core2.ProcessRef
 
 // NetworkRef 基于网络地址创建 ActorRef
 func NetworkRef(address string) ActorRef {
 	host, port, _ := net.SplitHostPort(address)
-	return core.NewProcessRef(core.NewAddress("", "", host, convert.StringToUint16(port), ""))
+	return core2.NewProcessRef(core2.NewAddress("", "", host, convert.StringToUint16(port), ""))
 }

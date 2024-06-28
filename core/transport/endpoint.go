@@ -2,8 +2,8 @@ package transport
 
 import (
 	"context"
-	"github.com/kercylan98/minotaur/minotaur/core"
-	"github.com/kercylan98/minotaur/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

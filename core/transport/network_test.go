@@ -1,9 +1,9 @@
 package transport_test
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
-	"github.com/kercylan98/minotaur/minotaur/core/transport"
-	"github.com/kercylan98/minotaur/minotaur/core/vivid"
+	core2 "github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core/transport"
+	"github.com/kercylan98/minotaur/core/vivid"
 	"testing"
 	"time"
 )
@@ -32,7 +32,7 @@ func TestNewNetwork2(t *testing.T) {
 		options.WithModule(transport.NewNetwork(":8899"))
 	})
 
-	eachActor := core.NewProcessRef(core.NewAddress("", "", "127.0.0.1", 8800, "/user/each"))
+	eachActor := core2.NewProcessRef(core2.NewAddress("", "", "127.0.0.1", 8800, "/user/each"))
 	v := &transport.ConnectionOpened{}
 	start := time.Now()
 	for i := 0; i < 10000; i++ {

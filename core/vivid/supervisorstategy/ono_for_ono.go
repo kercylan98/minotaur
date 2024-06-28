@@ -1,6 +1,6 @@
 package supervisorstategy
 
-import "github.com/kercylan98/minotaur/minotaur/core/vivid"
+import "github.com/kercylan98/minotaur/core/vivid"
 
 // OneForOne 创建一个 OneForOne 策略的监督者
 //   - 当一个 Actor 发生故障时，只有该 Actor 会被处理

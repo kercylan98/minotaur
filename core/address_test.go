@@ -2,7 +2,7 @@ package core_test
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/minotaur/core"
+	"github.com/kercylan98/minotaur/core"
 	"testing"
 )
 

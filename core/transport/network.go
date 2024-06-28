@@ -1,8 +1,8 @@
 package transport
 
 import (
-	"github.com/kercylan98/minotaur/minotaur/core"
-	"github.com/kercylan98/minotaur/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
@@ -11,6 +11,7 @@ import (
 
 var _ vivid.TransportModule = &Network{}
 
+// NewNetwork 创建一个网络模块，该模块用于给 ActorSystem 赋予网络通信的能力，支持跨网络的 Actor 通信
 func NewNetwork(address string) *Network {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {

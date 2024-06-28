@@ -1,6 +1,8 @@
 package vivid
 
-import "github.com/kercylan98/minotaur/minotaur/core"
+import (
+	"github.com/kercylan98/minotaur/core"
+)
 
 type Module interface {
 	OnLoad(support *ModuleSupport)
