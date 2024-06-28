@@ -1,5 +1,7 @@
 package vivid
 
+import "time"
+
 type SupervisorDecide func(reason, message Message) Directive
 
 type Supervisor interface {
@@ -35,8 +37,19 @@ type Accident interface {
 	// Message 导致事故的消息
 	Message() Message
 
+	// RestartCount 获取重启次数
+	RestartCount() int
+
+	// LastRestartTime 获取最后一次重启时间
+	LastRestartTime() time.Time
+
 	trySetResponsible(Supervisor)
 	trySupervisorStrategy(*ActorSystem) bool
+}
+
+// 事故状态
+type accidentState struct {
+	restartTimes []time.Time
 }
 
 type accident struct {
@@ -45,6 +58,18 @@ type accident struct {
 	supervisorStrategy SupervisorStrategy
 	reason             Message
 	message            Message
+	state              *accidentState
+}
+
+func (a *accident) RestartCount() int {
+	return len(a.state.restartTimes)
+}
+
+func (a *accident) LastRestartTime() time.Time {
+	if len(a.state.restartTimes) > 0 {
+		return a.state.restartTimes[len(a.state.restartTimes)-1]
+	}
+	return time.Time{}
 }
 
 func (a *accident) AccidentActor() ActorRef {

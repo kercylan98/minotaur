@@ -6,7 +6,7 @@ import (
 )
 
 func BenchmarkProcessRegisterTable_Register(b *testing.B) {
-	table := core.NewProcessManager("", "", 0, 100)
+	table := core.NewProcessManager("", 128)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		table.Register(&TestProcess{})

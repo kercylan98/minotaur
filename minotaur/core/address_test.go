@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/minotaur/core"
 	"testing"
 )
@@ -66,4 +67,18 @@ func TestAddress_String(t *testing.T) {
 	if address.String() != expected {
 		t.Fail()
 	}
+}
+
+func TestParseAddress(t *testing.T) {
+	addressStr := "minotaur://mySystem@localhost/path/to/resource"
+	addr, err := core.ParseAddress(addressStr)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if addr.String() != addressStr {
+		t.Error("Parsed address does not match original address")
+	}
+
+	fmt.Println("Parsed Address:", addr.String())
 }

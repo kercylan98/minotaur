@@ -10,13 +10,13 @@ import (
 
 func TestNewNetwork(t *testing.T) {
 	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithModule(transport.NewNetwork("127.0.0.1:8800"))
+		options.WithModule(transport.NewNetwork(":8800"))
 	})
 
 	system.ActorOf(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
-			case string:
+			case *transport.ConnectionOpened:
 				ctx.Reply(m)
 			}
 		})
@@ -29,16 +29,14 @@ func TestNewNetwork(t *testing.T) {
 
 func TestNewNetwork2(t *testing.T) {
 	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithModule(transport.NewNetwork("127.0.0.1:8899"))
+		options.WithModule(transport.NewNetwork(":8899"))
 	})
 
 	eachActor := core.NewProcessRef(core.NewAddress("", "", "127.0.0.1", 8800, "/user/each"))
-	v := "Hello, World!"
+	v := &transport.ConnectionOpened{}
 	start := time.Now()
 	for i := 0; i < 10000; i++ {
-		if _, err := system.Context().FutureAsk(eachActor, v, func(options *vivid.MessageOptions) {
-			options.WithFutureTimeout(0)
-		}).Result(); err != nil {
+		if _, err := system.Context().FutureAsk(eachActor, v).Result(); err != nil {
 			panic(err)
 		}
 	}

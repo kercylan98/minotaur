@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -28,6 +29,7 @@ func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorP
 		producer:    producer,
 		ref:         ref,
 		children:    container,
+		as:          &accidentState{},
 	}
 	return ctx
 }
@@ -42,6 +44,7 @@ type actorContext struct {
 	mailbox     Mailbox
 	producer    ActorProducer
 	children    mappings.OrderInterface[core.Address, ActorRef]
+	as          *accidentState // 事故状态
 }
 
 func (ctx *actorContext) Sender() ActorRef {
@@ -49,6 +52,7 @@ func (ctx *actorContext) Sender() ActorRef {
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
+	ctx.as.restartTimes = append(ctx.as.restartTimes, time.Now())
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSuspendMailbox)
 
 	ctx.Escalate(&accident{
@@ -56,6 +60,7 @@ func (ctx *actorContext) ProcessRecover(reason core.Message) {
 		reason:             reason,
 		message:            ctx.Message(),
 		supervisorStrategy: ctx.options.SupervisorStrategy,
+		state:              ctx.as,
 	})
 }
 
@@ -179,6 +184,11 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
 
 	ctx.message = msg
 	ctx.actor.OnReceive(ctx)
+
+	switch msg.(type) {
+	case OnLaunch:
+		ctx.as.restartTimes = ctx.as.restartTimes[:0]
+	}
 }
 
 func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
@@ -293,7 +303,7 @@ func (ctx *actorContext) Restart(children ...ActorRef) {
 
 func (ctx *actorContext) onRestart(m OnRestart) {
 	atomic.StoreUint32(&ctx.status, actorStatusRestarting)
-	ctx.System().sendUserMessage(ctx.ref, ctx.ref, onRestarting)
+	ctx.ProcessUserMessage(onRestarting)
 	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
 		ctx.Terminate(ref)
 		return true
