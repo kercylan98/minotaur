@@ -7,8 +7,9 @@ import (
 type Message = core.Message
 
 type RegulatoryMessage struct {
-	Sender  ActorRef
-	Message Message
+	Sender   ActorRef
+	Receiver ActorRef
+	Message  Message
 }
 
 type (

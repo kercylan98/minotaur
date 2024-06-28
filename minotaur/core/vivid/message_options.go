@@ -8,9 +8,8 @@ import (
 type MessageOption func(options *MessageOptions)
 
 type (
-	RegulatoryMessageHook    func(*RegulatoryMessage)
-	AskRegulatoryMessageHook func(*RegulatoryMessage)
-	MessageHook              func(message Message, cover func(Message))
+	RegulatoryMessageHook func(*RegulatoryMessage)
+	MessageHook           func(message Message, cover func(Message))
 )
 
 type MessageOptions struct {
@@ -18,9 +17,8 @@ type MessageOptions struct {
 	FutureTimeout time.Duration
 	AskReplyAgent ActorRef
 
-	RegulatoryMessageHooks    []RegulatoryMessageHook
-	AskRegulatoryMessageHooks []AskRegulatoryMessageHook
-	MessageHooks              []MessageHook
+	RegulatoryMessageHooks []RegulatoryMessageHook
+	MessageHooks           []MessageHook
 }
 
 // WithMessageHook 配置处理 Message 的钩子函数，这个钩子函数将在发送 Message 前调用
@@ -31,15 +29,7 @@ func (o *MessageOptions) WithMessageHook(hook MessageHook) *MessageOptions {
 	return o
 }
 
-// WithAskRegulatoryMessageHook 配置处理 RegulatoryMessage 的钩子函数，这个钩子函数将在 ActorContext.Ask 方法发送 RegulatoryMessage 前调用
-func (o *MessageOptions) WithAskRegulatoryMessageHook(hook AskRegulatoryMessageHook) *MessageOptions {
-	o.options = append(o.options, func(options *MessageOptions) {
-		options.AskRegulatoryMessageHooks = append(options.AskRegulatoryMessageHooks, hook)
-	})
-	return o
-}
-
-// WithRegulatoryMessageHook 配置处理 RegulatoryMessage 的钩子函数，这个钩子函数将在 ActorContext.Ask、ActorContext.FutureAsk 方法发送 RegulatoryMessage 前调用
+// WithRegulatoryMessageHook 配置处理 RegulatoryMessage 的钩子函数，这个钩子函数将在 ActorContext.Ask 方法发送 RegulatoryMessage 前调用
 func (o *MessageOptions) WithRegulatoryMessageHook(hook RegulatoryMessageHook) *MessageOptions {
 	o.options = append(o.options, func(options *MessageOptions) {
 		options.RegulatoryMessageHooks = append(options.RegulatoryMessageHooks, hook)
@@ -47,10 +37,10 @@ func (o *MessageOptions) WithRegulatoryMessageHook(hook RegulatoryMessageHook) *
 	return o
 }
 
-// WithAskReplyAgent 配置通过 ActorContext.Ask 方法响应消息的代理 Actor，这个代理 Actor 将接替原 Actor 处理响应
-func (o *MessageOptions) WithAskReplyAgent(agent ActorRef) *MessageOptions {
+// WithReplyAgent 配置通过 ActorContext.Ask 方法响应消息的代理 Actor，这个代理 Actor 将接替原 Actor 处理响应
+func (o *MessageOptions) WithReplyAgent(agent ActorRef) *MessageOptions {
 	o.options = append(o.options, func(options *MessageOptions) {
-		options.WithAskRegulatoryMessageHook(func(message *RegulatoryMessage) {
+		options.WithRegulatoryMessageHook(func(message *RegulatoryMessage) {
 			message.Sender = agent
 		})
 	})
@@ -80,8 +70,6 @@ var messageOptionsPool = pools.NewObjectPool[MessageOptions](func() *MessageOpti
 	data.options = data.options[:0]
 	data.FutureTimeout = time.Second
 	data.AskReplyAgent = nil
-	data.RegulatoryMessageHooks = data.RegulatoryMessageHooks[:0]
-	data.AskRegulatoryMessageHooks = data.AskRegulatoryMessageHooks[:0]
 	data.MessageHooks = data.MessageHooks[:0]
 })
 
@@ -99,12 +87,6 @@ func releaseMessageOptions(opts *MessageOptions) {
 
 func (o *MessageOptions) hookRegulatoryMessage(m *RegulatoryMessage) {
 	for _, hook := range o.RegulatoryMessageHooks {
-		hook(m)
-	}
-}
-
-func (o *MessageOptions) hookAskRegulatoryMessage(m *RegulatoryMessage) {
-	for _, hook := range o.AskRegulatoryMessageHooks {
 		hook(m)
 	}
 }

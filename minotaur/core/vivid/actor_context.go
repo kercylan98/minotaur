@@ -68,7 +68,7 @@ func (ctx *actorContext) Reply(message Message) {
 	if !ok || rm.Sender == nil {
 		rm.Sender = ctx.System().deadLetter.ref
 	}
-	ctx.System().sendUserMessage(ctx.ref, rm.Sender, message)
+	ctx.Ask(rm.Sender, message)
 }
 
 func (ctx *actorContext) System() *ActorSystem {
@@ -109,6 +109,12 @@ func (ctx *actorContext) Message() Message {
 func (ctx *actorContext) Tell(target ActorRef, message Message, options ...MessageOption) {
 	opts := generateMessageOptions(options...)
 	defer releaseMessageOptions(opts)
+	if len(opts.MessageHooks) > 0 {
+		cover := func(cover Message) {
+			message = cover
+		}
+		opts.hookMessage(message, cover)
+	}
 
 	ctx.System().sendUserMessage(ctx.ref, target, message)
 }
@@ -126,8 +132,9 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, options ...
 
 	f := NewFuture(ctx.System(), opts.FutureTimeout)
 	m := RegulatoryMessage{
-		Sender:  f.Ref(),
-		Message: message,
+		Sender:   f.Ref(),
+		Message:  message,
+		Receiver: target,
 	}
 
 	opts.hookRegulatoryMessage(&m)
@@ -147,11 +154,11 @@ func (ctx *actorContext) Ask(target ActorRef, message Message, options ...Messag
 	}
 
 	m := RegulatoryMessage{
-		Sender:  ctx.ref,
-		Message: message,
+		Sender:   ctx.ref,
+		Message:  message,
+		Receiver: target,
 	}
 
-	opts.hookAskRegulatoryMessage(&m)
 	opts.hookRegulatoryMessage(&m)
 	ctx.System().sendUserMessage(ctx.ref, target, m)
 }

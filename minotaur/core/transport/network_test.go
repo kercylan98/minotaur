@@ -40,8 +40,6 @@ func TestNewNetwork2(t *testing.T) {
 			options.WithFutureTimeout(0)
 		}).Result(); err != nil {
 			panic(err)
-		} else {
-
 		}
 	}
 	cost := time.Now().Sub(start)
