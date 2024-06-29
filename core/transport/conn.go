@@ -2,27 +2,44 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/panjf2000/gnet/v2"
+	"net"
 )
 
-type ConnWriter func(packet Packet) error
-
-type conn struct {
-	writer ConnWriter
-}
-
-func (c *conn) OnReceive(ctx vivid.ActorContext) {
-	switch m := ctx.Message().(type) {
-	case vivid.OnLaunch:
-
-	case Packet:
-		c.onWritePacket(ctx, m)
+func NewConn(c gnet.Conn, ctx vivid.ActorContext, writer vivid.ActorRef) *Conn {
+	return &Conn{
+		ActorContext: ctx,
+		conn:         c,
+		writer:       writer,
 	}
 }
 
-func (c *conn) onWritePacket(ctx vivid.ActorContext, m Packet) {
-	if err := c.writer(m); err != nil {
-		log.Error("WritePacket", log.Err(err))
-		ctx.Terminate(ctx.Ref())
-	}
+type Conn struct {
+	vivid.ActorContext
+	conn   gnet.Conn
+	writer vivid.ActorRef
+}
+
+func (c *Conn) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+func (c *Conn) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+func (c *Conn) Close() {
+	c.ActorContext.Terminate(c.ActorContext.Ref())
+}
+
+func (c *Conn) WritePacket(packet Packet) {
+	c.ActorContext.Tell(c.writer, packet)
+}
+
+func (c *Conn) Write(bytes []byte) {
+	c.WritePacket(NewPacket(bytes))
+}
+
+func (c *Conn) WriteString(str string) {
+	c.Write([]byte(str))
 }

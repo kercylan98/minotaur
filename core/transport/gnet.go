@@ -29,9 +29,9 @@ const (
 
 var _ gnet.EventHandler = &gnetEngine{}
 
-func newGnetEngine(support *vivid.ModuleSupport, schema, addr string, pattern ...string) *gnetEngine {
+func newGnetEngine(network *ExternalNetwork, schema, addr string, pattern ...string) *gnetEngine {
 	g := &gnetEngine{
-		support: support,
+		network: network,
 		addr:    addr,
 		schema:  schema,
 		pattern: collection.FindFirstOrDefaultInSlice(pattern, "/"),
@@ -40,7 +40,7 @@ func newGnetEngine(support *vivid.ModuleSupport, schema, addr string, pattern ..
 }
 
 type gnetEngine struct {
-	support  *vivid.ModuleSupport
+	network  *ExternalNetwork
 	addr     string
 	schema   string
 	pattern  string
@@ -93,11 +93,12 @@ func (g *gnetEngine) createWebsocketWriterActor(c gnet.Conn) vivid.Actor {
 }
 
 func (g *gnetEngine) createReaderActor(c gnet.Conn) vivid.Actor {
+	var conn *Conn
+	var err error
 	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-		var writerRef vivid.ActorRef
 		switch m := ctx.Message().(type) {
 		case vivid.OnLaunch:
-			writerRef = ctx.ActorOf(func() vivid.Actor {
+			writerRef := ctx.ActorOf(func() vivid.Actor {
 				if g.schema == schemaWebSocket {
 					return g.createWebsocketWriterActor(c)
 				}
@@ -108,8 +109,14 @@ func (g *gnetEngine) createReaderActor(c gnet.Conn) vivid.Actor {
 					return vivid.DirectiveStop
 				}, 0))
 			})
+			conn = NewConn(c, ctx, writerRef)
+			g.network.connOpenedHandler(conn)
 		case Packet:
-			ctx.Tell(writerRef, m)
+			g.network.packetHandler(conn, m)
+		case error:
+			err = m
+		case vivid.OnTerminate:
+			g.network.connClosedHandler(conn, err)
 		}
 	})
 }
@@ -118,7 +125,7 @@ func (g *gnetEngine) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	if g.schema == schemaWebSocket {
 		c.SetContext(newWebsocketWrapper(c))
 	} else {
-		ref := g.support.System().ActorOf(func() vivid.Actor {
+		ref := g.network.support.System().ActorOf(func() vivid.Actor {
 			return g.createReaderActor(c)
 		}, func(options *vivid.ActorOptions) {
 			options.WithName("conn-" + c.RemoteAddr().String())
@@ -168,7 +175,10 @@ func (g *gnetEngine) OnClose(c gnet.Conn, err error) (action gnet.Action) {
 	case vivid.ActorRef:
 		ref = ctx
 	}
-	g.support.System().Terminate(ref)
+	if ref != nil {
+		g.network.support.System().Context().Tell(ref, err)
+		g.network.support.System().Terminate(ref)
+	}
 	return
 }
 
@@ -181,7 +191,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		}
 
 		if err := wrapper.upgrade(g.upgrader, func() {
-			ref := g.support.System().ActorOf(func() vivid.Actor {
+			ref := g.network.support.System().ActorOf(func() vivid.Actor {
 				return g.createReaderActor(c)
 			}, func(options *vivid.ActorOptions) {
 				options.WithName("conn-" + c.RemoteAddr().String())
@@ -190,7 +200,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 				}, 0))
 			})
 
-			wrapper.process = g.support.GetProcess(ref.Address())
+			wrapper.process = g.network.support.GetProcess(ref.Address())
 			wrapper.ref = core.NewProcessRef(wrapper.process.GetAddress())
 			c.SetContext(wrapper)
 
@@ -208,7 +218,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		for _, message := range messages {
 			p := NewPacket(message.Payload)
 			p.SetContext(message.OpCode)
-			wrapper.process.SendUserMessage(g.support.System().Context().Ref(), p)
+			wrapper.process.SendUserMessage(g.network.support.System().Context().Ref(), p)
 		}
 	} else {
 		buf, err := c.Next(-1)
