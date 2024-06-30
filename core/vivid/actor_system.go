@@ -128,7 +128,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		options.Mailbox = NewDefaultMailbox(0)
 	}
 
-	process := NewProcess(address, options.Mailbox)
+	process := newProcess(address, options.Mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
 		panic("actor already exists")

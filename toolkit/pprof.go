@@ -15,7 +15,7 @@ var (
 
 // EnableHttpPProf 设置启用 HTTP PProf
 //   - 该函数支持运行时调用且支持重复调用，重复调用不会重复开启
-func EnableHttpPProf(addr, prefix string, errorHandler func(err error)) {
+func EnableHttpPProf(addr, prefix string, errorHandler ...func(err error)) {
 	httpPProfMutex.Lock()
 	defer httpPProfMutex.Unlock()
 
@@ -42,11 +42,13 @@ func EnableHttpPProf(addr, prefix string, errorHandler func(err error)) {
 	mux.HandleFunc(fmt.Sprintf("GET %s/mutex", prefix), pprof.Handler("mutex").ServeHTTP)
 	srv := &http.Server{Addr: addr, Handler: mux}
 	httpPProf[addr] = srv
-	go func(srv *http.Server, errHandler func(err error)) {
+	go func(srv *http.Server, errHandler ...func(err error)) {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errorHandler(err)
+			for _, f := range errorHandler {
+				f(err)
+			}
 		}
-	}(srv, errorHandler)
+	}(srv, errorHandler...)
 }
 
 // DisableHttpPProf 设置禁用 HTTP PProf

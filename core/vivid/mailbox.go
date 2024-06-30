@@ -31,7 +31,8 @@ type LockFreeMailbox struct {
 	processor             core.MessageProcessor
 	dispatcher            Dispatcher
 	status                uint32
-	num                   int32
+	sysNum                int32
+	userNum               int32
 	suspended             uint32
 	userMessageBatchLimit int
 }
@@ -56,13 +57,13 @@ func (m *LockFreeMailbox) OnInit(processor core.MessageProcessor, dispatcher Dis
 
 func (m *LockFreeMailbox) DeliveryUserMessage(message Message) {
 	m.queue.Push(unsafe.Pointer(&message))
-	atomic.AddInt32(&m.num, 1)
+	atomic.AddInt32(&m.userNum, 1)
 	m.dispatch()
 }
 
 func (m *LockFreeMailbox) DeliverySystemMessage(message Message) {
 	m.systemQueue.Push(unsafe.Pointer(&message))
-	atomic.AddInt32(&m.num, 1)
+	atomic.AddInt32(&m.sysNum, 1)
 	m.dispatch()
 }
 
@@ -73,12 +74,16 @@ func (m *LockFreeMailbox) dispatch() {
 }
 
 func (m *LockFreeMailbox) process() {
-	m.processHandle()
-	for atomic.LoadInt32(&m.num) > 0 {
+	for atomic.LoadInt32(&m.sysNum) > 0 || (atomic.LoadUint32(&m.suspended) == 0 && atomic.LoadInt32(&m.userNum) > 0) {
 		m.processHandle()
-	}
 
-	atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
+		// 处理完成后可能会有新的消息到达，所以需要再次尝试
+		for atomic.LoadInt32(&m.sysNum) > 0 || (atomic.LoadUint32(&m.suspended) == 0 && atomic.LoadInt32(&m.userNum) > 0) {
+			m.processHandle()
+		}
+
+		atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusRunning, defaultMailboxStatusIdle)
+	}
 }
 
 func (m *LockFreeMailbox) processHandle() {
@@ -93,7 +98,7 @@ func (m *LockFreeMailbox) processHandle() {
 	for {
 		if ptr := m.systemQueue.Pop(); ptr != nil {
 			msg = *(*Message)(ptr)
-			atomic.AddInt32(&m.num, -1)
+			atomic.AddInt32(&m.sysNum, -1)
 			switch msg.(type) {
 			case OnSuspendMailbox:
 				atomic.StoreUint32(&m.suspended, 1)
@@ -117,7 +122,7 @@ func (m *LockFreeMailbox) processHandle() {
 				for i := 0; i < len(ptrList); i++ {
 					messages[i] = *(*Message)(ptrList[i])
 				}
-				atomic.AddInt32(&m.num, int32(-len(messages)))
+				atomic.AddInt32(&m.userNum, int32(-len(messages)))
 				m.processor.ProcessUserMessage(messages)
 				messages = messages[:0]
 				continue
@@ -127,7 +132,7 @@ func (m *LockFreeMailbox) processHandle() {
 
 		if ptr := m.queue.Pop(); ptr != nil {
 			msg = *(*Message)(ptr)
-			atomic.AddInt32(&m.num, -1)
+			atomic.AddInt32(&m.userNum, -1)
 			m.processor.ProcessUserMessage(msg)
 			continue
 		}
