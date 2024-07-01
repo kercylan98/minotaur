@@ -16,6 +16,10 @@ type persistenceStatus struct {
 	events     []Message // 当前最新的事件
 	eventLimit int       // 事件数量限制，超过限制则需要生成快照
 	recovery   bool      // 是否正在恢复
+
+	persistenceName       string  // Actor 持久化名称
+	persistenceStorage    Storage // Actor 持久化存储器
+	persistenceEventLimit int     // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
 }
 
 func (m *persistenceStatus) GetSnapshot() Message {

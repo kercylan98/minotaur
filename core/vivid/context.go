@@ -68,6 +68,9 @@ type spawnerContextCompose interface {
 	// ActorOf 以该上下文为父级创建一个新的 Actor，返回新 Actor 的引用
 	ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef
 
+	// KindOf 以该上下文为父级创建一个新的 Actor，返回新 Actor 的引用，该 Actor 的类型由 kind 指定
+	KindOf(kind Kind) ActorRef
+
 	// Terminate 通知目标 Actor 立即终止
 	Terminate(target ActorRef)
 

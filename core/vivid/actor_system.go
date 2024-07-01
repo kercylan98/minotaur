@@ -69,6 +69,9 @@ func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...Actor
 	opts.apply()
 	sys.kindRw.Lock()
 	defer sys.kindRw.Unlock()
+	if sys.kinds == nil {
+		sys.kinds = make(map[Kind]*kind)
+	}
 	if _, exist := sys.kinds[k]; exist {
 		panic(fmt.Errorf("kind %s already exists", k))
 	}
@@ -113,6 +116,10 @@ func (sys *ActorSystem) ActorOf(producer ActorProducer, options ...ActorOptionDe
 	return sys.root.ActorOf(producer, options...)
 }
 
+func (sys *ActorSystem) KindOf(kind Kind) ActorRef {
+	return sys.root.KindOf(kind)
+}
+
 func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) ActorRef {
 	for _, prop := range props {
 		prop(options)
@@ -131,18 +138,17 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		system = v.actorSystem
 	}
 
-	if options.Parent == nil {
-		if parent := system.root; parent != nil {
-			options.Parent = parent.Ref()
-		}
+	var parent ActorRef
+	if options.Parent == nil && system.root != nil {
+		system.root.Ref()
 	}
 	if options.Name == "" {
 		options.Name = convert.Uint64ToString(guid.Add(1))
 	}
 
 	var actorPath = options.Name
-	if options.Parent != nil {
-		actorPath = options.Parent.Address().Path() + "/" + options.Name
+	if parent != nil {
+		actorPath = parent.Address().Path() + "/" + options.Name
 	} else {
 		actorPath = "/" + options.Name
 	}
@@ -163,7 +169,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	if exist {
 		panic("actor already exists")
 	}
-	ctx := newActorContext(system, options, producer, ref, childrenContainer)
+	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
 
 	if generatedHook != nil {
 		generatedHook(ctx)

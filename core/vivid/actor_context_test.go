@@ -7,6 +7,22 @@ import (
 	"time"
 )
 
+func TestActorContext_KindOf(t *testing.T) {
+	system := vivid.NewActorSystem()
+	system.RegKind("test", func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case vivid.OnLaunch:
+				t.Log("launch")
+			}
+		})
+	})
+
+	system.KindOf("test")
+
+	system.ShutdownGracefully()
+}
+
 type StateActor struct {
 	counter int
 }

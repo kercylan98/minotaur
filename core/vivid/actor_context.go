@@ -22,24 +22,29 @@ const (
 	actorStatusRestarting
 )
 
-func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
+func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
 	ctx := &actorContext{
-		actorSystem:       system,
-		childGuid:         new(atomic.Uint64),
-		options:           options,
-		actor:             producer(),
-		producer:          producer,
-		ref:               ref,
-		children:          container,
-		as:                &accidentState{},
-		persistenceStatus: &persistenceStatus{eventLimit: options.PersistenceEventLimit},
+		actorSystem: system,
+		childGuid:   new(atomic.Uint64),
+		parent:      parent,
+		actor:       producer(),
+		producer:    producer,
+		ref:         ref,
+		children:    container,
+		as:          &accidentState{},
+		persistenceStatus: &persistenceStatus{
+			persistenceStorage: options.PersistenceStorage,
+			persistenceName:    options.PersistenceName,
+			eventLimit:         options.PersistenceEventLimit,
+		},
+		supervisorStrategy: options.SupervisorStrategy,
 	}
 	ctx.persistenceStatus.ctx = ctx
-	if options.PersistenceStorage == nil {
-		options.PersistenceStorage = defaultStorage
+	if ctx.persistenceStatus.persistenceStorage == nil {
+		ctx.persistenceStatus.persistenceStorage = defaultStorage
 	}
-	if options.PersistenceName == "" {
-		options.PersistenceName = ref.Address().Path()
+	if ctx.persistenceStatus.persistenceName == "" {
+		ctx.persistenceStatus.persistenceName = ref.Address().Path()
 	}
 	if ctx.persistenceStatus.eventLimit <= 0 {
 		ctx.persistenceStatus.eventLimit = DefaultPersistenceEventLimit
@@ -48,29 +53,30 @@ func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorP
 }
 
 type actorContext struct {
-	actorSystem       *ActorSystem
-	options           *ActorOptions
-	childGuid         *atomic.Uint64
-	dispatcher        Dispatcher
-	ref               ActorRef
-	message           Message
-	actor             Actor
-	status            uint32                                          // 原子状态
-	mailbox           Mailbox                                         // 邮箱
-	producer          ActorProducer                                   // Actor 生产者
-	children          mappings.OrderInterface[core.Address, ActorRef] // 子 Actor
-	as                *accidentState                                  // 事故状态
-	persistenceStatus *persistenceStatus                              // 持久化状态
+	actorSystem        *ActorSystem
+	parent             ActorRef
+	childGuid          *atomic.Uint64
+	dispatcher         Dispatcher
+	ref                ActorRef
+	message            Message
+	actor              Actor
+	status             uint32                                          // 原子状态
+	mailbox            Mailbox                                         // 邮箱
+	producer           ActorProducer                                   // Actor 生产者
+	children           mappings.OrderInterface[core.Address, ActorRef] // 子 Actor
+	as                 *accidentState                                  // 事故状态
+	persistenceStatus  *persistenceStatus                              // 持久化状态
+	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
 }
 
 func (ctx *actorContext) PersistSnapshot(snapshot Message) {
 	ctx.persistenceStatus.PersistSnapshot(snapshot)
-	ctx.options.PersistenceStorage.Persist(ctx.options.PersistenceName, ctx.persistenceStatus)
+	ctx.persistenceStatus.persistenceStorage.Persist(ctx.persistenceStatus.persistenceName, ctx.persistenceStatus)
 }
 
 func (ctx *actorContext) StatusChanged(event Message) {
 	ctx.persistenceStatus.StatusChanged(event)
-	ctx.options.PersistenceStorage.Persist(ctx.options.PersistenceName, ctx.persistenceStatus)
+	ctx.persistenceStatus.persistenceStorage.Persist(ctx.persistenceStatus.persistenceName, ctx.persistenceStatus)
 }
 
 func (ctx *actorContext) Sender() ActorRef {
@@ -85,7 +91,7 @@ func (ctx *actorContext) ProcessRecover(reason core.Message) {
 		accidentActor:      ctx.ref,
 		reason:             reason,
 		message:            ctx.Message(),
-		supervisorStrategy: ctx.options.SupervisorStrategy,
+		supervisorStrategy: ctx.supervisorStrategy,
 		state:              ctx.as,
 	})
 }
@@ -121,8 +127,24 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 	}, ctx.childGuid)
 }
 
+func (ctx *actorContext) KindOf(kind Kind) ActorRef {
+	ctx.actorSystem.kindRw.RLock()
+	defer ctx.actorSystem.kindRw.RUnlock()
+	kindInfo, exist := ctx.actorSystem.kinds[kind]
+	if !exist {
+		return ctx.System().deadLetter.Ref()
+	}
+
+	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(ctx.ref), kindInfo.producer, []ActorOptionDefiner{func(options *ActorOptions) {
+		options.options = kindInfo.options.options
+	}}, func(child *actorContext) {
+		// 确保在第一个消息处理之前添加到父级的子级列表中
+		ctx.children.Set(child.ref.Address(), child.ref)
+	}, ctx.childGuid)
+}
+
 func (ctx *actorContext) Parent() ActorRef {
-	return ctx.options.Parent
+	return ctx.parent
 }
 
 func (ctx *actorContext) Ref() ActorRef {
@@ -227,7 +249,7 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 	switch m := msg.(type) {
 	case OnLaunch:
 		ctx.ProcessUserMessage(m)
-		if status := ctx.options.PersistenceStorage.Load(ctx.options.PersistenceName); status != nil {
+		if status := ctx.persistenceStatus.persistenceStorage.Load(ctx.persistenceStatus.persistenceName); status != nil {
 			ctx.persistenceStatus.recovery = true
 			defer func() {
 				ctx.persistenceStatus.recovery = false
