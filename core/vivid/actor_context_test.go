@@ -38,9 +38,11 @@ func TestActorContext_Persist(t *testing.T) {
 	})
 
 	// 发送消息
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 11; i++ {
 		system.Context().Tell(ref, i)
 	}
+
+	time.Sleep(time.Second)
 
 	// 创建 Actor
 	ref2 := system.ActorOf(func() vivid.Actor {
@@ -50,5 +52,5 @@ func TestActorContext_Persist(t *testing.T) {
 	})
 	system.Context().Tell(ref2, "print")
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second)
 }

@@ -285,7 +285,7 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 		ctx.System().sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
 	}
 
-	log.Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
+	ctx.System().opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
 }
 
 func (ctx *actorContext) Children() []ActorRef {

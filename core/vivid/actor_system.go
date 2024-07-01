@@ -16,10 +16,10 @@ var (
 func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	var opts = new(ActorSystemOptions).apply(options)
 	system := &ActorSystem{
-		name:       opts.Name,
-		closed:     make(chan struct{}),
-		deadLetter: new(deadLetterProcess),
+		opts:   opts,
+		closed: make(chan struct{}),
 	}
+	system.deadLetter = &deadLetterProcess{system: system}
 
 	var address core.Address
 	for _, plugin := range opts.modules {
@@ -48,10 +48,10 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 }
 
 type ActorSystem struct {
+	opts         *ActorSystemOptions
 	processes    *core.ProcessManager
 	deadLetter   *deadLetterProcess
 	root         ActorContext
-	name         string
 	closed       chan struct{}
 	futurePool   *pools.ObjectPool[*future]
 	nextFutureId atomic.Uint64
@@ -120,8 +120,8 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	}
 
 	var processAddr = system.processes.Address()
-	var address = core.NewAddress(processAddr.Network(), system.name, processAddr.Host(), processAddr.Port(), actorPath)
-	log.Debug("actorOf", log.String("addr", address.String()))
+	var address = core.NewAddress(processAddr.Network(), system.opts.Name, processAddr.Host(), processAddr.Port(), actorPath)
+	system.opts.LoggerProvider().Debug("actorOf", log.String("addr", address.String()))
 
 	if options.Mailbox == nil {
 		options.Mailbox = NewDefaultMailbox(0)

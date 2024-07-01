@@ -2,7 +2,6 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/core"
-	"github.com/kercylan98/minotaur/minotaur/vivid"
 	"sync/atomic"
 )
 
@@ -35,11 +34,11 @@ func (p *Process) Dead() {
 	atomic.StoreUint32(&p.status, 1)
 }
 
-func (p *Process) SendUserMessage(sender *core.ProcessRef, message vivid.Message) {
+func (p *Process) SendUserMessage(sender *core.ProcessRef, message Message) {
 	p.mailbox.DeliveryUserMessage(message)
 }
 
-func (p *Process) SendSystemMessage(sender *core.ProcessRef, message vivid.Message) {
+func (p *Process) SendSystemMessage(sender *core.ProcessRef, message Message) {
 	p.mailbox.DeliverySystemMessage(message)
 }
 

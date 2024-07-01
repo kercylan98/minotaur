@@ -18,7 +18,8 @@ type DeadLetter interface {
 }
 
 type deadLetterProcess struct {
-	ref ActorRef
+	system *ActorSystem
+	ref    ActorRef
 }
 
 func (d *deadLetterProcess) Ref() ActorRef {
@@ -32,9 +33,9 @@ func (d *deadLetterProcess) GetAddress() core.Address {
 func (d *deadLetterProcess) SendUserMessage(sender *core.ProcessRef, message core.Message) {
 	switch m := message.(type) {
 	case DeadLetterEvent:
-		log.Warn("DeadLetter", log.String("sender", m.Sender.String()), log.String("receiver", m.Receiver.String()), log.Any("message", m.Message))
+		d.system.opts.LoggerProvider().Warn("DeadLetter", log.String("sender", m.Sender.String()), log.String("receiver", m.Receiver.String()), log.Any("message", m.Message))
 	default:
-		log.Warn("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
+		d.system.opts.LoggerProvider().Warn("DeadLetter", log.String("sender", sender.Address().String()), log.Any("message", message))
 	}
 }
 

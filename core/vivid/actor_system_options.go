@@ -1,14 +1,27 @@
 package vivid
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/kercylan98/minotaur/toolkit/log"
+)
+
+type LoggerProvider func() *log.Logger
 
 type ActorSystemOption func(options *ActorSystemOptions)
 
 type ActorSystemOptions struct {
 	options []ActorSystemOption
-
-	Name    string   // 指定 ActorSystem 的名称
 	modules []Module // 指定 ActorSystem 的组件
+
+	Name           string // 指定 ActorSystem 的名称
+	LoggerProvider LoggerProvider
+}
+
+func (o *ActorSystemOptions) WithLoggerProvider(provider LoggerProvider) *ActorSystemOptions {
+	o.options = append(o.options, func(options *ActorSystemOptions) {
+		options.LoggerProvider = provider
+	})
+	return o
 }
 
 func (o *ActorSystemOptions) WithName(name string) *ActorSystemOptions {
@@ -32,6 +45,12 @@ func (o *ActorSystemOptions) apply(handlers []func(options *ActorSystemOptions))
 	}
 	for _, option := range o.options {
 		option(o)
+	}
+	if o.LoggerProvider == nil {
+		logger := log.NewSilentLogger()
+		o.LoggerProvider = func() *log.Logger {
+			return logger
+		}
 	}
 	return o
 }
