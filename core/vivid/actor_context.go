@@ -109,6 +109,10 @@ func (ctx *actorContext) Terminate(target ActorRef) {
 	ctx.System().getProcess(target).Terminate(ctx.ref)
 }
 
+func (ctx *actorContext) TerminateGracefully(target ActorRef) {
+	ctx.System().sendUserMessage(ctx.ref, target, onTerminateGracefully)
+}
+
 func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
 	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(ctx.ref), producer, options, func(child *actorContext) {
 		// 确保在第一个消息处理之前添加到父级的子级列表中
@@ -213,6 +217,8 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
 	switch msg.(type) {
 	case OnLaunch:
 		ctx.as.restartTimes = ctx.as.restartTimes[:0]
+	case _OnTerminateGracefully:
+		ctx.onTerminate(true)
 	}
 }
 
@@ -231,10 +237,10 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 			}
 		}
 	case OnTerminate:
-		ctx.onTerminate()
+		ctx.onTerminate(false)
 	case OnTerminated:
 		switch atomic.LoadUint32(&ctx.status) {
-		case actorStatusTerminating:
+		case actorStatusAlive, actorStatusTerminating:
 			ctx.onTerminated(m)
 		case actorStatusRestarting:
 			ctx.onRestarted(m)
@@ -254,7 +260,7 @@ func (ctx *actorContext) String() string {
 	return ctx.ref.Address().String()
 }
 
-func (ctx *actorContext) onTerminate() {
+func (ctx *actorContext) onTerminate(gracefully bool) {
 	if !atomic.CompareAndSwapUint32(&ctx.status, actorStatusAlive, actorStatusTerminating) {
 		return
 	}
@@ -262,7 +268,11 @@ func (ctx *actorContext) onTerminate() {
 	ctx.ProcessUserMessage(onTerminate)
 
 	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
-		ctx.Terminate(ref)
+		if gracefully {
+			ctx.TerminateGracefully(ref)
+		} else {
+			ctx.Terminate(ref)
+		}
 		return true
 	})
 
@@ -281,11 +291,14 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 	}
 
 	ctx.actorSystem.processes.Unregister(ctx.ref)
-	if parent := ctx.Parent(); parent != nil {
-		ctx.System().sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
-	}
 
 	ctx.System().opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
+	if parent := ctx.Parent(); parent != nil {
+		ctx.System().sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
+	} else {
+		close(ctx.System().closed)
+	}
+
 }
 
 func (ctx *actorContext) Children() []ActorRef {

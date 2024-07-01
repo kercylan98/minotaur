@@ -63,10 +63,20 @@ func (sys *ActorSystem) Context() ActorContext {
 
 func (sys *ActorSystem) Shutdown() {
 	sys.root.Terminate(sys.root.Ref())
+	<-sys.closed
+}
+
+func (sys *ActorSystem) ShutdownGracefully() {
+	sys.root.TerminateGracefully(sys.root.Ref())
+	<-sys.closed
 }
 
 func (sys *ActorSystem) Terminate(target ActorRef) {
-	sys.sendSystemMessage(sys.root.Ref(), target, onTerminate)
+	sys.root.Terminate(target)
+}
+
+func (sys *ActorSystem) TerminateGracefully(target ActorRef) {
+	sys.root.TerminateGracefully(target)
 }
 
 func (sys *ActorSystem) sendSystemMessage(sender, target ActorRef, message Message) {
