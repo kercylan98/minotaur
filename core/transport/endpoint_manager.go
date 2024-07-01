@@ -28,7 +28,9 @@ func (em *endpointManager) getEndpoint(address core.Address) vivid.ActorRef {
 			return newEndpoint(em.network, address)
 		}, func(options *vivid.ActorOptions) {
 			options.WithName("endpoint/" + address.Address())
-			options.WithMailbox(vivid.NewDefaultMailbox(128))
+			options.WithMailbox(func() vivid.Mailbox {
+				return vivid.NewDefaultMailbox(128)
+			})
 		})
 		em.endpoints[address.Address()] = ref
 	}

@@ -116,7 +116,11 @@ func (s *server) onConnectionMessage(batch *DistributedMessage_ConnectionMessage
 				Message: message,
 			}
 		}
-
-		s.network.support.GetProcess(receiver).SendUserMessage(core.NewProcessRef(sender), message)
+		system := b.System[i]
+		if system {
+			s.network.support.GetProcess(receiver).SendSystemMessage(core.NewProcessRef(sender), message)
+		} else {
+			s.network.support.GetProcess(receiver).SendUserMessage(core.NewProcessRef(sender), message)
+		}
 	}
 }

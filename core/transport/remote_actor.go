@@ -23,11 +23,11 @@ func (r *remoteActor) GetAddress() core.Address {
 }
 
 func (r *remoteActor) SendUserMessage(sender *core.ProcessRef, message core.Message) {
-	r.network.send(sender, r.address, message)
+	r.network.send(sender, r.address, message, false)
 }
 
 func (r *remoteActor) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
-	r.network.send(sender, r.address, message)
+	r.network.send(sender, r.address, message, true)
 }
 
 func (r *remoteActor) Terminate(ref *core.ProcessRef) {

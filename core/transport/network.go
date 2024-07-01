@@ -64,12 +64,13 @@ func (n *Network) launch() {
 	}()
 }
 
-func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message core.Message) {
+func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message core.Message, system bool) {
 	ref := n.em.getEndpoint(receiver)
 	n.support.System().Context().Tell(ref, messageWrapper{
 		sender:   sender,
 		receiver: receiver,
 		message:  message,
+		system:   system,
 	})
 }
 
@@ -77,4 +78,5 @@ type messageWrapper struct {
 	sender   *core.ProcessRef
 	receiver core.Address
 	message  core.Message
+	system   bool
 }

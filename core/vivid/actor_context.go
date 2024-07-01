@@ -80,7 +80,11 @@ func (ctx *actorContext) StatusChanged(event Message) {
 }
 
 func (ctx *actorContext) Sender() ActorRef {
-	return nil
+	rm, ok := ctx.message.(RegulatoryMessage)
+	if !ok || rm.Sender == nil {
+		return ctx.System().deadLetter.ref
+	}
+	return rm.Sender
 }
 
 func (ctx *actorContext) ProcessRecover(reason core.Message) {
@@ -127,7 +131,22 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 	}, ctx.childGuid)
 }
 
-func (ctx *actorContext) KindOf(kind Kind) ActorRef {
+func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
+	if len(parent) > 0 {
+		f := NewFuture(ctx.System(), time.Second)
+
+		ctx.System().sendSystemMessage(f.Ref(), parent[0], RegulatoryMessage{
+			Sender:   f.Ref(),
+			Message:  &KindOf{Kind: kind},
+			Receiver: parent[0],
+		})
+		result, err := f.Result()
+		if err != nil {
+			return ctx.System().deadLetter.Ref()
+		}
+		var addr = result.(RegulatoryMessage).Message.(*ActorRefAddress).Address
+		return core.NewProcessRef(core.Address(addr))
+	}
 	ctx.actorSystem.kindRw.RLock()
 	defer ctx.actorSystem.kindRw.RUnlock()
 	kindInfo, exist := ctx.actorSystem.kinds[kind]
@@ -229,10 +248,16 @@ func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message)
 	}()
 }
 
-func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
+func (ctx *actorContext) ProcessUserMessage(msg core.Message, recoveryMessage ...Message) {
 	if atomic.LoadUint32(&ctx.status) == actorStatusTerminated {
 		return
 	}
+
+	defer func() {
+		if len(recoveryMessage) > 0 {
+			ctx.message = recoveryMessage[0]
+		}
+	}()
 
 	ctx.message = msg
 	ctx.actor.OnReceive(ctx)
@@ -246,17 +271,18 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message) {
 }
 
 func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
+	ctx.message = msg
 	switch m := msg.(type) {
 	case OnLaunch:
-		ctx.ProcessUserMessage(m)
+		ctx.ProcessUserMessage(m, msg)
 		if status := ctx.persistenceStatus.persistenceStorage.Load(ctx.persistenceStatus.persistenceName); status != nil {
 			ctx.persistenceStatus.recovery = true
 			defer func() {
 				ctx.persistenceStatus.recovery = false
 			}()
-			ctx.ProcessUserMessage(status.GetSnapshot())
+			ctx.ProcessUserMessage(status.GetSnapshot(), msg)
 			for _, event := range status.GetEvents() {
-				ctx.ProcessUserMessage(event)
+				ctx.ProcessUserMessage(event, msg)
 			}
 		}
 	case OnTerminate:
@@ -275,7 +301,12 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 	case OnRestart:
 		ctx.onRestart(m)
 	case OnPersistenceSnapshot:
-		ctx.ProcessUserMessage(m)
+		ctx.ProcessUserMessage(m, msg)
+	default:
+		switch m := ctx.Message().(type) {
+		case *KindOf:
+			ctx.Reply(&ActorRefAddress{Address: []byte(ctx.KindOf(m.Kind).Address())})
+		}
 	}
 }
 

@@ -125,6 +125,7 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 		TypeName:                       make([]string, len(m)),
 		MessageData:                    make([][]byte, len(m)),
 		Bad:                            make([]bool, len(m)),
+		System:                         make([]bool, len(m)),
 	}
 
 	var bad = 0
@@ -150,7 +151,7 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 			log.Error("Endpoint", log.String("type", "encode"), log.Err(err))
 			continue
 		}
-		batch.SenderAddress[i], batch.ReceiverAddress[i] = []byte(v.sender.Address()), []byte(v.receiver)
+		batch.SenderAddress[i], batch.ReceiverAddress[i], batch.System[i] = []byte(v.sender.Address()), []byte(v.receiver), v.system
 	}
 
 	if bad == len(m) {

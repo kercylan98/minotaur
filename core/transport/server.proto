@@ -34,4 +34,5 @@ message ConnectionMessageBatch {
   repeated string type_name = 4;
   repeated bytes message_data = 5;
   repeated bool bad = 6;
+  repeated bool system = 7;
 }

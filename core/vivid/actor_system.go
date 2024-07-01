@@ -116,8 +116,8 @@ func (sys *ActorSystem) ActorOf(producer ActorProducer, options ...ActorOptionDe
 	return sys.root.ActorOf(producer, options...)
 }
 
-func (sys *ActorSystem) KindOf(kind Kind) ActorRef {
-	return sys.root.KindOf(kind)
+func (sys *ActorSystem) KindOf(kind Kind, parent ...ActorRef) ActorRef {
+	return sys.root.KindOf(kind, parent...)
 }
 
 func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) ActorRef {

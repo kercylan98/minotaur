@@ -9,7 +9,6 @@ import (
 	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
-	"github.com/kercylan98/minotaur/minotaur/transport"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/panjf2000/gnet/v2"
@@ -229,7 +228,7 @@ func (g *gnetEngine) OnTraffic(c gnet.Conn) (action gnet.Action) {
 		var clone = make([]byte, len(buf))
 		copy(clone, buf)
 
-		c.Context().(transport.ConnActorTyped).React(transport.NewPacket(clone))
+		g.network.support.System().Context().Tell(c.Context().(vivid.ActorRef), clone)
 	}
 	return
 }
