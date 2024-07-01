@@ -1,7 +1,7 @@
 package vivid
 
 import (
-	core2 "github.com/kercylan98/minotaur/core"
+	core "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
@@ -21,7 +21,7 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 		deadLetter: new(deadLetterProcess),
 	}
 
-	var address core2.Address
+	var address core.Address
 	for _, plugin := range opts.modules {
 		if transport, ok := plugin.(TransportModule); ok {
 			if !address.IsEmpty() {
@@ -29,18 +29,18 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 			}
 			address = transport.ActorSystemAddress().ParseToRoot()
 			if address.System() == "" {
-				address = core2.NewRootAddress(address.Network(), opts.Name, address.Host(), address.Port())
+				address = core.NewRootAddress(address.Network(), opts.Name, address.Host(), address.Port())
 			}
 		}
 	}
 	if address.IsEmpty() {
-		address = core2.NewRootAddress("", opts.Name, "", 0)
+		address = core.NewRootAddress("", opts.Name, "", 0)
 	}
 
-	system.processes = core2.NewProcessManager(address, 128, system.deadLetter)
+	system.processes = core.NewProcessManager(address, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 	support := newModuleSupport(system)
-	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core2.Address, ActorRef]())
+	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
 	for _, plugin := range opts.modules {
 		plugin.OnLoad(support)
 	}
@@ -48,14 +48,13 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 }
 
 type ActorSystem struct {
-	processes    *core2.ProcessManager
+	processes    *core.ProcessManager
 	deadLetter   *deadLetterProcess
 	root         ActorContext
 	name         string
 	closed       chan struct{}
 	futurePool   *pools.ObjectPool[*future]
 	nextFutureId atomic.Uint64
-	nextActorId  atomic.Uint64
 }
 
 func (sys *ActorSystem) Context() ActorContext {
@@ -78,7 +77,7 @@ func (sys *ActorSystem) sendUserMessage(sender, target ActorRef, message Message
 	sys.getProcess(target).SendUserMessage(sender, message)
 }
 
-func (sys *ActorSystem) getProcess(target ActorRef) core2.Process {
+func (sys *ActorSystem) getProcess(target ActorRef) core.Process {
 	return sys.processes.GetProcess(target)
 }
 
@@ -86,14 +85,14 @@ func (sys *ActorSystem) ActorOf(producer ActorProducer, options ...ActorOptionDe
 	return sys.root.ActorOf(producer, options...)
 }
 
-func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext)) ActorRef {
+func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) ActorRef {
 	for _, prop := range props {
 		prop(options)
 	}
-	return spawn(sys, producer, options, generatedHook, mappings.NewOrder[core2.Address, ActorRef]()).Ref()
+	return spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef](), guid).Ref()
 }
 
-func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions, generatedHook func(ctx *actorContext), childrenContainer mappings.OrderInterface[core2.Address, ActorRef]) ActorContext {
+func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions, generatedHook func(ctx *actorContext), childrenContainer mappings.OrderInterface[core.Address, ActorRef], guid *atomic.Uint64) ActorContext {
 	options.apply()
 
 	var system *ActorSystem
@@ -110,7 +109,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		}
 	}
 	if options.Name == "" {
-		options.Name = convert.Uint64ToString(system.nextActorId.Add(1))
+		options.Name = convert.Uint64ToString(guid.Add(1))
 	}
 
 	var actorPath = options.Name
@@ -121,7 +120,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	}
 
 	var processAddr = system.processes.Address()
-	var address = core2.NewAddress(processAddr.Network(), system.name, processAddr.Host(), processAddr.Port(), actorPath)
+	var address = core.NewAddress(processAddr.Network(), system.name, processAddr.Host(), processAddr.Port(), actorPath)
 	log.Debug("actorOf", log.String("addr", address.String()))
 
 	if options.Mailbox == nil {

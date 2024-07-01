@@ -1,12 +1,12 @@
 package transport
 
 import (
-	core2 "github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core"
 )
 
-var _ core2.Process = &remoteActor{}
+var _ core.Process = &remoteActor{}
 
-func newRemoteActor(network *Network, address core2.Address) *remoteActor {
+func newRemoteActor(network *Network, address core.Address) *remoteActor {
 	return &remoteActor{
 		network: network,
 		address: address,
@@ -15,22 +15,22 @@ func newRemoteActor(network *Network, address core2.Address) *remoteActor {
 
 type remoteActor struct {
 	network *Network
-	address core2.Address
+	address core.Address
 }
 
-func (r *remoteActor) GetAddress() core2.Address {
+func (r *remoteActor) GetAddress() core.Address {
 	return r.address
 }
 
-func (r *remoteActor) SendUserMessage(sender *core2.ProcessRef, message core2.Message) {
+func (r *remoteActor) SendUserMessage(sender *core.ProcessRef, message core.Message) {
 	r.network.send(sender, r.address, message)
 }
 
-func (r *remoteActor) SendSystemMessage(sender *core2.ProcessRef, message core2.Message) {
+func (r *remoteActor) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
 	r.network.send(sender, r.address, message)
 }
 
-func (r *remoteActor) Terminate(ref *core2.ProcessRef) {
+func (r *remoteActor) Terminate(ref *core.ProcessRef) {
 	if ref.Address() == r.address {
 		return // 远程解析不需要销毁
 	}

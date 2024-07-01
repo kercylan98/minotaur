@@ -25,6 +25,7 @@ const (
 func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
 	ctx := &actorContext{
 		actorSystem:       system,
+		childGuid:         new(atomic.Uint64),
 		options:           options,
 		actor:             producer(),
 		producer:          producer,
@@ -49,6 +50,7 @@ func newActorContext(system *ActorSystem, options *ActorOptions, producer ActorP
 type actorContext struct {
 	actorSystem       *ActorSystem
 	options           *ActorOptions
+	childGuid         *atomic.Uint64
 	ref               ActorRef
 	message           Message
 	actor             Actor
@@ -111,7 +113,7 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(ctx.ref), producer, options, func(child *actorContext) {
 		// 确保在第一个消息处理之前添加到父级的子级列表中
 		ctx.children.Set(child.ref.Address(), child.ref)
-	})
+	}, ctx.childGuid)
 }
 
 func (ctx *actorContext) Parent() ActorRef {
