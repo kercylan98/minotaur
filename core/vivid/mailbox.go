@@ -7,6 +7,8 @@ import (
 	"unsafe"
 )
 
+type MailboxProducer func() Mailbox
+
 type Mailbox interface {
 	// OnInit 在邮箱被初始化时将会被调用，processor 是邮箱的消息处理器，dispatcher 是邮箱的消息分发器
 	OnInit(processor core.MessageProcessor, dispatcher Dispatcher)

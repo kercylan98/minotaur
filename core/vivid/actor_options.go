@@ -10,8 +10,8 @@ type ActorOptions struct {
 	options               []ActorOption
 	Parent                ActorRef           // 父 Actor
 	Name                  string             // Actor 名称
-	Dispatcher            Dispatcher         // Actor 使用的调度器
-	Mailbox               Mailbox            // Actor 使用的邮箱
+	DispatcherProducer    DispatcherProducer // Actor 使用的调度器
+	MailboxProducer       MailboxProducer    // Actor 使用的邮箱
 	SupervisorStrategy    SupervisorStrategy // Actor 使用的监督者策略
 	PersistenceName       string             // Actor 持久化名称
 	PersistenceStorage    Storage            // Actor 持久化存储器
@@ -48,17 +48,17 @@ func (o *ActorOptions) WithSupervisorStrategy(strategy SupervisorStrategy) *Acto
 }
 
 // WithDispatcher 通过指定调度器创建一个 Actor
-func (o *ActorOptions) WithDispatcher(dispatcher Dispatcher) *ActorOptions {
+func (o *ActorOptions) WithDispatcher(producer DispatcherProducer) *ActorOptions {
 	o.options = append(o.options, func(options *ActorOptions) {
-		options.Dispatcher = dispatcher
+		options.DispatcherProducer = producer
 	})
 	return o
 }
 
 // WithMailbox 通过指定邮箱创建一个 Actor
-func (o *ActorOptions) WithMailbox(mailbox Mailbox) *ActorOptions {
+func (o *ActorOptions) WithMailbox(producer MailboxProducer) *ActorOptions {
 	o.options = append(o.options, func(options *ActorOptions) {
-		options.Mailbox = mailbox
+		options.MailboxProducer = producer
 	})
 	return o
 }

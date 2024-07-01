@@ -51,6 +51,7 @@ type actorContext struct {
 	actorSystem       *ActorSystem
 	options           *ActorOptions
 	childGuid         *atomic.Uint64
+	dispatcher        Dispatcher
 	ref               ActorRef
 	message           Message
 	actor             Actor

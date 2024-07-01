@@ -1,11 +1,13 @@
 package vivid
 
 import (
+	"fmt"
 	core "github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
+	"sync"
 	"sync/atomic"
 )
 
@@ -55,6 +57,22 @@ type ActorSystem struct {
 	closed       chan struct{}
 	futurePool   *pools.ObjectPool[*future]
 	nextFutureId atomic.Uint64
+	kinds        map[Kind]*kind
+	kindRw       sync.RWMutex
+}
+
+func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...ActorOptionDefiner) {
+	var opts = new(ActorOptions)
+	for _, option := range options {
+		option(opts)
+	}
+	opts.apply()
+	sys.kindRw.Lock()
+	defer sys.kindRw.Unlock()
+	if _, exist := sys.kinds[k]; exist {
+		panic(fmt.Errorf("kind %s already exists", k))
+	}
+	sys.kinds[k] = &kind{producer: producer, options: opts}
 }
 
 func (sys *ActorSystem) Context() ActorContext {
@@ -133,11 +151,14 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	var address = core.NewAddress(processAddr.Network(), system.opts.Name, processAddr.Host(), processAddr.Port(), actorPath)
 	system.opts.LoggerProvider().Debug("actorOf", log.String("addr", address.String()))
 
-	if options.Mailbox == nil {
-		options.Mailbox = NewDefaultMailbox(0)
+	var mailbox Mailbox
+	if options.MailboxProducer == nil {
+		mailbox = NewDefaultMailbox(0)
+	} else {
+		mailbox = options.MailboxProducer()
 	}
 
-	process := newProcess(address, options.Mailbox)
+	process := newProcess(address, mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
 		panic("actor already exists")
@@ -148,10 +169,12 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		generatedHook(ctx)
 	}
 
-	if options.Dispatcher == nil {
-		options.Dispatcher = defaultDispatcher
+	if options.DispatcherProducer == nil {
+		ctx.dispatcher = defaultDispatcher
+	} else {
+		ctx.dispatcher = options.DispatcherProducer()
 	}
-	options.Mailbox.OnInit(ctx, options.Dispatcher)
+	mailbox.OnInit(ctx, ctx.dispatcher)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 
 	return ctx

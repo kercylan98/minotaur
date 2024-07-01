@@ -14,6 +14,8 @@ func init() {
 
 var _ Dispatcher = (*goroutineDispatcher)(nil)
 
+type DispatcherProducer func() Dispatcher
+
 type Dispatcher interface {
 	Dispatch(f func())
 }
