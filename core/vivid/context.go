@@ -5,6 +5,7 @@ type ActorContext interface {
 	senderContextCompose
 	receiverContextCompose
 	spawnerContextCompose
+	persistentContextCompose
 }
 
 type SenderContext interface {
@@ -69,4 +70,12 @@ type spawnerContextCompose interface {
 
 	// Terminate 通知目标 Actor 终止
 	Terminate(target ActorRef)
+}
+
+type persistentContextCompose interface {
+	// PersistSnapshot 持久化快照
+	PersistSnapshot(snapshot Message)
+
+	// StatusChanged 状态变更
+	StatusChanged(event Message)
 }

@@ -1,4 +1,4 @@
-package transport
+package core
 
 import "errors"
 

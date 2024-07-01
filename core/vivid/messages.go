@@ -18,17 +18,19 @@ type (
 	OnTerminated struct {
 		TerminatedActor ActorRef
 	}
-	OnRestart        struct{}
-	OnRestarting     struct{}
-	OnResumeMailbox  struct{}
-	OnSuspendMailbox struct{}
+	OnRestart             struct{}
+	OnRestarting          struct{}
+	OnResumeMailbox       struct{}
+	OnSuspendMailbox      struct{}
+	OnPersistenceSnapshot struct{}
 )
 
 var (
-	onLaunch         OnLaunch
-	onTerminate      OnTerminate
-	onRestart        OnRestart
-	onRestarting     OnRestarting
-	onResumeMailbox  OnResumeMailbox
-	onSuspendMailbox OnSuspendMailbox
+	onLaunch              OnLaunch
+	onTerminate           OnTerminate
+	onRestart             OnRestart
+	onRestarting          OnRestarting
+	onResumeMailbox       OnResumeMailbox
+	onSuspendMailbox      OnSuspendMailbox
+	onPersistenceSnapshot OnPersistenceSnapshot
 )

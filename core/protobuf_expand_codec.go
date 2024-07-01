@@ -1,11 +1,12 @@
-package transport
+package core
 
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/convert"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -13,57 +14,63 @@ import (
 	"time"
 )
 
-type Codec interface {
-	Encode(message core.Message) (typeName string, raw []byte, err error)
-	Decode(typeName string, bytes []byte) (message core.Message, err error)
-}
-
 const (
-	builtTypeString       builtTypeName = "$1"
-	builtTypeUint8        builtTypeName = "$2"
-	builtTypeUint16       builtTypeName = "$3"
-	builtTypeUint32       builtTypeName = "$4"
-	builtTypeUint64       builtTypeName = "$5"
-	builtTypeInt8         builtTypeName = "$6"
-	builtTypeInt16        builtTypeName = "$7"
-	builtTypeInt32        builtTypeName = "$8"
-	builtTypeInt64        builtTypeName = "$9"
-	builtTypeFloat32      builtTypeName = "$10"
-	builtTypeFloat64      builtTypeName = "$11"
-	builtTypeBool         builtTypeName = "$12"
-	builtTypeTime         builtTypeName = "$13"
-	builtTypeTimeDuration builtTypeName = "$14"
-	builtTypeStringPtr    builtTypeName = "*$1"
-	builtTypeUint8Ptr     builtTypeName = "*$2"
-	builtTypeUint16Ptr    builtTypeName = "*$3"
-	builtTypeUint32Ptr    builtTypeName = "*$4"
-	builtTypeUint64Ptr    builtTypeName = "*$5"
-	builtTypeInt8Ptr      builtTypeName = "*$6"
-	builtTypeInt16Ptr     builtTypeName = "*$7"
-	builtTypeInt32Ptr     builtTypeName = "*$8"
-	builtTypeInt64Ptr     builtTypeName = "*$9"
-	builtTypeFloat32Ptr   builtTypeName = "*$10"
-	builtTypeFloat64Ptr   builtTypeName = "*$11"
-	builtTypeBoolPtr      builtTypeName = "*$12"
-	builtTypeStringSlice  builtTypeName = "[]1"
-	builtTypeUint8Slice   builtTypeName = "[]2"
-	builtTypeUint16Slice  builtTypeName = "[]3"
-	builtTypeUint32Slice  builtTypeName = "[]4"
-	builtTypeUint64Slice  builtTypeName = "[]5"
-	builtTypeInt8Slice    builtTypeName = "[]6"
-	builtTypeInt16Slice   builtTypeName = "[]7"
-	builtTypeInt32Slice   builtTypeName = "[]8"
-	builtTypeInt64Slice   builtTypeName = "[]9"
-	builtTypeFloat32Slice builtTypeName = "[]10"
-	builtTypeFloat64Slice builtTypeName = "[]11"
-	builtTypeBoolSlice    builtTypeName = "[]12"
+	builtTypeString builtTypeName = iota
+	builtTypeUint8
+	builtTypeUint16
+	builtTypeUint32
+	builtTypeUint64
+	builtTypeInt8
+	builtTypeInt16
+	builtTypeInt32
+	builtTypeInt64
+	builtTypeFloat32
+	builtTypeFloat64
+	builtTypeBool
+	builtTypeTime
+	builtTypeTimeDuration
+	builtTypeStringPtr
+	builtTypeUint8Ptr
+	builtTypeUint16Ptr
+	builtTypeUint32Ptr
+	builtTypeUint64Ptr
+	builtTypeInt8Ptr
+	builtTypeInt16Ptr
+	builtTypeInt32Ptr
+	builtTypeInt64Ptr
+	builtTypeFloat32Ptr
+	builtTypeFloat64Ptr
+	builtTypeBoolPtr
+	builtTypeStringSlice
+	builtTypeUint8Slice
+	builtTypeUint16Slice
+	builtTypeUint32Slice
+	builtTypeUint64Slice
+	builtTypeInt8Slice
+	builtTypeInt16Slice
+	builtTypeInt32Slice
+	builtTypeInt64Slice
+	builtTypeFloat32Slice
+	builtTypeFloat64Slice
+	builtTypeBoolSlice
+	builtTypeJsonRAW
 )
 
-type builtTypeName = string
+var _ Codec = (*ProtobufExpandCodec)(nil)
 
-type protobufCodec struct{}
+type builtTypeName uint8
 
-func (p *protobufCodec) builtInEncode(message core.Message) (typeName string, raw []byte, err error) {
+func (n builtTypeName) String() string {
+	return convert.Uint8ToString(uint8(n))
+}
+
+type ProtobufExpandCodec struct{}
+
+func NewProtobufExpandCodec() *ProtobufExpandCodec {
+	return &ProtobufExpandCodec{}
+}
+
+func (p *ProtobufExpandCodec) builtInEncode(message Message) (typeName builtTypeName, raw []byte, err error) {
 	err = fmt.Errorf("%w, but got %T", ErrorMessageMustIsProtoMessage, message)
 	switch v := message.(type) {
 	case string:
@@ -153,11 +160,13 @@ func (p *protobufCodec) builtInEncode(message core.Message) (typeName string, ra
 		return builtTypeTime, []byte(v.Format(time.RFC3339)), nil
 	case time.Duration:
 		return p.writeLittleEndian(builtTypeTimeDuration, int64(v))
+	case json.RawMessage:
+		return builtTypeJsonRAW, v, nil
 	}
 	return
 }
 
-func (p *protobufCodec) builtInDecode(typeName string, raw []byte) (message core.Message, err error) {
+func (p *ProtobufExpandCodec) builtInDecode(typeName builtTypeName, raw []byte) (message Message, err error) {
 	err = fmt.Errorf("%w, but got %s", ErrorMessageMustIsProtoMessage, typeName)
 	switch typeName {
 	case builtTypeString:
@@ -305,14 +314,20 @@ func (p *protobufCodec) builtInDecode(typeName string, raw []byte) (message core
 	case builtTypeTimeDuration:
 		var v int64
 		return time.Duration(v), p.readLittleEndian(raw, &v)
+	case builtTypeJsonRAW:
+		return json.RawMessage(raw), nil
 	}
 	return
 }
 
-func (p *protobufCodec) Encode(message core.Message) (typeName string, bytes []byte, err error) {
+func (p *ProtobufExpandCodec) Encode(message Message) (typeName string, bytes []byte, err error) {
 	pm, ok := message.(proto.Message)
 	if !ok {
-		return p.builtInEncode(message)
+		n, b, e := p.builtInEncode(message)
+		if e != nil {
+			return "", b, e
+		}
+		return n.String(), b, e
 	}
 
 	typeName = string(proto.MessageName(pm))
@@ -320,10 +335,10 @@ func (p *protobufCodec) Encode(message core.Message) (typeName string, bytes []b
 	return
 }
 
-func (p *protobufCodec) Decode(typeName string, bytes []byte) (message core.Message, err error) {
+func (p *ProtobufExpandCodec) Decode(typeName string, bytes []byte) (message Message, err error) {
 	messageType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typeName))
 	if err != nil {
-		return p.builtInDecode(typeName, bytes)
+		return p.builtInDecode(builtTypeName(convert.StringToUint8(typeName)), bytes)
 	}
 
 	protoMessage := messageType.New().Interface()
@@ -331,7 +346,7 @@ func (p *protobufCodec) Decode(typeName string, bytes []byte) (message core.Mess
 	return protoMessage, err
 }
 
-func (p *protobufCodec) writeLittleEndian(typeName builtTypeName, v any) (name builtTypeName, raw []byte, err error) {
+func (p *ProtobufExpandCodec) writeLittleEndian(typeName builtTypeName, v any) (name builtTypeName, raw []byte, err error) {
 	buf := new(bytes.Buffer)
 	if err = binary.Write(buf, binary.LittleEndian, v); err == nil {
 		raw = buf.Bytes()
@@ -346,14 +361,14 @@ func (p *protobufCodec) writeLittleEndian(typeName builtTypeName, v any) (name b
 	raw = append(buf.Bytes(), raw...)
 	return
 }
-func (p *protobufCodec) readLittleEndianLength(raw []byte) uint32 {
+func (p *ProtobufExpandCodec) readLittleEndianLength(raw []byte) uint32 {
 	var length uint32
 	buf := bytes.NewReader(raw)
 	_ = binary.Read(buf, binary.LittleEndian, &length)
 	return length
 }
 
-func (p *protobufCodec) readLittleEndian(raw []byte, receive any) (err error) {
+func (p *ProtobufExpandCodec) readLittleEndian(raw []byte, receive any) (err error) {
 	buf := bytes.NewReader(raw)
 	err = binary.Read(buf, binary.LittleEndian, receive)
 	return

@@ -1,14 +1,41 @@
 package vivid
 
+const (
+	DefaultPersistenceEventLimit = 200
+)
+
 type ActorOption func(options *ActorOptions)
 
 type ActorOptions struct {
-	options            []ActorOption
-	Parent             ActorRef           // 父 Actor
-	Name               string             // Actor 名称
-	Dispatcher         Dispatcher         // Actor 使用的调度器
-	Mailbox            Mailbox            // Actor 使用的邮箱
-	SupervisorStrategy SupervisorStrategy // Actor 使用的监督者策略
+	options               []ActorOption
+	Parent                ActorRef           // 父 Actor
+	Name                  string             // Actor 名称
+	Dispatcher            Dispatcher         // Actor 使用的调度器
+	Mailbox               Mailbox            // Actor 使用的邮箱
+	SupervisorStrategy    SupervisorStrategy // Actor 使用的监督者策略
+	PersistenceName       string             // Actor 持久化名称
+	PersistenceStorage    Storage            // Actor 持久化存储器
+	PersistenceEventLimit int                // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
+}
+
+// WithPersistenceEventLimit 通过指定持久化事件数量限制创建一个 Actor
+func (o *ActorOptions) WithPersistenceEventLimit(limit int) *ActorOptions {
+	if limit < 0 {
+		limit = DefaultPersistenceEventLimit
+	}
+	o.options = append(o.options, func(options *ActorOptions) {
+		options.PersistenceEventLimit = limit
+	})
+	return o
+}
+
+// WithPersistence 通过指定持久化存储器和名称创建一个 Actor
+func (o *ActorOptions) WithPersistence(storage Storage, name string) *ActorOptions {
+	o.options = append(o.options, func(options *ActorOptions) {
+		options.PersistenceStorage = storage
+		options.PersistenceName = name
+	})
+	return o
 }
 
 // WithSupervisorStrategy 通过指定监督者策略创建一个 Actor
