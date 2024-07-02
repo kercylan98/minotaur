@@ -133,11 +133,15 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 
 func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	if len(parent) > 0 {
+		if ctx.ref.Address().Address() == parent[0].Address().Address() {
+			return ctx.localKindOf(kind, parent...)
+		}
+
 		f := NewFuture(ctx.System(), time.Second)
 
 		ctx.System().sendSystemMessage(f.Ref(), parent[0], RegulatoryMessage{
 			Sender:   f.Ref(),
-			Message:  &KindOf{Kind: kind},
+			Message:  &KindOf{Kind: kind, ParentAddress: []byte(parent[0].Address())},
 			Receiver: parent[0],
 		})
 		result, err := f.Result()
@@ -147,6 +151,10 @@ func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 		var addr = result.(RegulatoryMessage).Message.(*ActorRefAddress).Address
 		return core.NewProcessRef(core.Address(addr))
 	}
+	return ctx.localKindOf(kind)
+}
+
+func (ctx *actorContext) localKindOf(kind Kind, parent ...ActorRef) ActorRef {
 	ctx.actorSystem.kindRw.RLock()
 	defer ctx.actorSystem.kindRw.RUnlock()
 	kindInfo, exist := ctx.actorSystem.kinds[kind]
@@ -154,8 +162,13 @@ func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 		return ctx.System().deadLetter.Ref()
 	}
 
-	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(ctx.ref), kindInfo.producer, []ActorOptionDefiner{func(options *ActorOptions) {
-		options.options = kindInfo.options.options
+	var parentRef = ctx.ref
+	if len(parent) > 0 {
+		parentRef = parent[0]
+	}
+
+	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(parentRef), kindInfo.producer, []ActorOptionDefiner{func(options *ActorOptions) {
+		options.options = append(options.options, kindInfo.options.options...)
 	}}, func(child *actorContext) {
 		// 确保在第一个消息处理之前添加到父级的子级列表中
 		ctx.children.Set(child.ref.Address(), child.ref)
@@ -305,7 +318,10 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 	default:
 		switch m := ctx.Message().(type) {
 		case *KindOf:
-			ctx.Reply(&ActorRefAddress{Address: []byte(ctx.KindOf(m.Kind).Address())})
+			parentRef := core.NewProcessRef(ActorId(m.ParentAddress))
+			ref := ctx.localKindOf(m.Kind, parentRef)
+
+			ctx.Reply(&ActorRefAddress{Address: []byte(ref.Address())})
 		}
 	}
 }

@@ -1,6 +1,29 @@
 package vivid
 
-import "sync"
+import (
+	"github.com/kercylan98/minotaur/toolkit/log"
+	"os"
+	"sync"
+)
+
+var testLogger = log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions()))
+var benchmarkLogger = log.NewSilentLogger()
+
+func NewTestActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
+	return NewActorSystem(append(options, func(options *ActorSystemOptions) {
+		options.WithLoggerProvider(func() *log.Logger {
+			return testLogger
+		})
+	})...)
+}
+
+func NewBenchmarkActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
+	return NewActorSystem(append(options, func(options *ActorSystemOptions) {
+		options.WithLoggerProvider(func() *log.Logger {
+			return benchmarkLogger
+		})
+	})...)
+}
 
 type WasteActor struct {
 }

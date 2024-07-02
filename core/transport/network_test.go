@@ -48,7 +48,7 @@ func TestNewNetwork2(t *testing.T) {
 }
 
 func TestNewNetworkKindOf(t *testing.T) {
-	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+	system := transport.NewTestActorSystem(func(options *vivid.ActorSystemOptions) {
 		options.WithModule(transport.NewNetwork(":8800"))
 	})
 
@@ -59,6 +59,7 @@ func TestNewNetworkKindOf(t *testing.T) {
 				fmt.Println("launch")
 			case string:
 				fmt.Println("receive", ctx.Message())
+				panic("test panic")
 			}
 		})
 	})

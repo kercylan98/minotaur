@@ -140,7 +140,9 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 
 	var parent ActorRef
 	if options.Parent == nil && system.root != nil {
-		system.root.Ref()
+		parent = system.root.Ref()
+	} else {
+		parent = options.Parent
 	}
 	if options.Name == "" {
 		options.Name = convert.Uint64ToString(guid.Add(1))
@@ -153,8 +155,11 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 		actorPath = "/" + options.Name
 	}
 
-	var processAddr = system.processes.Address()
-	var address = core.NewAddress(processAddr.Network(), system.opts.Name, processAddr.Host(), processAddr.Port(), actorPath)
+	var parentAddr = system.processes.Address()
+	if parent != nil {
+		parentAddr = parent.Address()
+	}
+	var address = core.NewAddress(parentAddr.Network(), system.opts.Name, parentAddr.Host(), parentAddr.Port(), actorPath)
 	system.opts.LoggerProvider().Debug("actorOf", log.String("addr", address.String()))
 
 	var mailbox Mailbox

@@ -4,6 +4,7 @@ option go_package = "/github.com/kercylan98/minotaur/core/vivid";
 
 message KindOf {
   string kind = 1;
+  bytes parent_address = 2;
 }
 
 message ActorRefAddress {
