@@ -185,7 +185,7 @@ func (m *DynamicMask) String() string {
 // StringIdentical 返回掩码的唯一字符串表示，该字符串不具备可读性，但是是可以用于唯一标识的高性能字符串
 func (m *DynamicMask) StringIdentical() string {
 	slice := (*[1 << 30]uint64)(m.data)[:m.length]
-	return ident.GenerateOrderedUniqueIdentStringWithUInt64(slice...)
+	return ident.GenerateOrderedUniqueIdentStringWithUint64(slice...)
 }
 
 func (m *DynamicMask) MarshalJSON() ([]byte, error) {

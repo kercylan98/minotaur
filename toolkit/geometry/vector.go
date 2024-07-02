@@ -206,7 +206,7 @@ func (v Vector) IsZero() bool {
 
 // Key 返回向量的键值
 func (v Vector) Key() string {
-	return ident.GenerateOrderedUniqueIdentStringWithUInt64()
+	return ident.GenerateOrderedUniqueIdentStringWithUint64()
 }
 
 // IsParallel 判断两个向量是否平行
