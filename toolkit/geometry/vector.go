@@ -1,8 +1,8 @@
 package geometry
 
 import (
+	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/constraints"
-	"github.com/kercylan98/minotaur/toolkit/ident"
 	"math"
 )
 
@@ -206,7 +206,7 @@ func (v Vector) IsZero() bool {
 
 // Key 返回向量的键值
 func (v Vector) Key() string {
-	return ident.GenerateOrderedUniqueIdentStringWithUint64()
+	return charproc.NumberJoin(v, ",")
 }
 
 // IsParallel 判断两个向量是否平行
