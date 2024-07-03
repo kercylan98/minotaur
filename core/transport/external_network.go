@@ -77,7 +77,7 @@ func (n *ExternalNetwork) SetPacketHandler(handler ExternalNetworkPacketHandler)
 	return n
 }
 
-func (n *ExternalNetwork) OnLoad(support *vivid.ModuleSupport) {
+func (n *ExternalNetwork) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 	n.support = support
 	n.support.System().ActorOf(n.producer, func(options *vivid.ActorOptions) {
 		options.WithName("un")

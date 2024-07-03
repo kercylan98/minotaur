@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
 func newModuleSupport(actorSystem *ActorSystem) *ModuleSupport {
@@ -17,6 +18,16 @@ type ModuleSupport struct {
 // System 返回 ActorSystem
 func (s *ModuleSupport) System() *ActorSystem {
 	return s.actorSystem
+}
+
+// Logger 返回日志记录器
+func (s *ModuleSupport) Logger() *log.Logger {
+	return s.System().opts.LoggerProvider()
+}
+
+// Address 返回 ActorSystem 地址
+func (s *ModuleSupport) Address() core.Address {
+	return s.actorSystem.processes.Address()
 }
 
 // RegAddressResolver 注册地址解析器

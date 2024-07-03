@@ -15,6 +15,8 @@ type DeadLetterEvent struct {
 
 type DeadLetter interface {
 	core.Process
+
+	Ref() ActorRef
 }
 
 type deadLetterProcess struct {

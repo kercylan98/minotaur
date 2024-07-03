@@ -103,6 +103,14 @@ func (a Address) IsEmpty() bool {
 	return a == ""
 }
 
+func (a Address) Join(path string) Address {
+	return NewAddress(a.Network(), a.System(), a.Host(), a.Port(), a.Path()+"/"+path)
+}
+
+func (a Address) Ref() *ProcessRef {
+	return NewProcessRef(a)
+}
+
 func (a Address) String() string {
 	if len(a) == 0 {
 		return ""

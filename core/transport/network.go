@@ -6,10 +6,12 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
+	"math"
 	"net"
 )
 
 var _ vivid.TransportModule = &Network{}
+var _ vivid.PriorityModule = &Network{}
 
 // NewNetwork 创建一个网络模块，该模块用于给 ActorSystem 赋予网络通信的能力，支持跨网络的 Actor 通信
 func NewNetwork(address string) *Network {
@@ -24,15 +26,27 @@ func NewNetwork(address string) *Network {
 	return n
 }
 
+type messageWrapper struct {
+	sender   *core.ProcessRef
+	receiver core.Address
+	message  core.Message
+	system   bool
+}
+
 type Network struct {
 	support *vivid.ModuleSupport
 	address core.Address     // 指定 ActorSystem 地址
 	server  *server          // 处理流消息的服务器
 	em      *endpointManager // 远程端点管理器
 	codec   core.Codec       // 消息编解码器
+	grpc    *grpc.Server     // grpc 服务
 }
 
-func (n *Network) OnLoad(support *vivid.ModuleSupport) {
+func (n *Network) Priority() int {
+	return math.MinInt
+}
+
+func (n *Network) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 	n.server = newServer(n)
 	n.em = newEndpointManager(n)
 	n.codec = core.NewProtobufExpandCodec()
@@ -54,11 +68,11 @@ func (n *Network) launch() {
 		panic(err)
 	}
 
-	grpcSrv := grpc.NewServer()
-	grpcSrv.RegisterService(&ActorSystemCommunication_ServiceDesc, n.server)
+	n.grpc = grpc.NewServer()
+	n.grpc.RegisterService(&ActorSystemCommunication_ServiceDesc, n.server)
 
 	go func() {
-		if err := grpcSrv.Serve(listener); err != nil {
+		if err := n.grpc.Serve(listener); err != nil {
 			log.Error("Network", "onLaunch", "failed to serve", err)
 		}
 	}()
@@ -74,9 +88,7 @@ func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message c
 	})
 }
 
-type messageWrapper struct {
-	sender   *core.ProcessRef
-	receiver core.Address
-	message  core.Message
-	system   bool
+func (n *Network) OnShutdown() {
+	n.em.close()
+	n.grpc.GracefulStop()
 }

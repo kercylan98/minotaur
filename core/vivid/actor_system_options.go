@@ -31,9 +31,9 @@ func (o *ActorSystemOptions) WithName(name string) *ActorSystemOptions {
 	return o
 }
 
-func (o *ActorSystemOptions) WithModule(module Module) *ActorSystemOptions {
+func (o *ActorSystemOptions) WithModule(module ...Module) *ActorSystemOptions {
 	o.options = append(o.options, func(options *ActorSystemOptions) {
-		options.modules = append(options.modules, module)
+		options.modules = append(options.modules, module...)
 	})
 	return o
 }

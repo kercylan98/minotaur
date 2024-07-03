@@ -3,6 +3,7 @@ package transport
 import (
 	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/toolkit/collection"
 	"sync"
 )
 
@@ -18,10 +19,15 @@ type endpointManager struct {
 	network    *Network
 	endpoints  map[string]vivid.ActorRef
 	endpointRw sync.RWMutex
+	closed     bool
 }
 
 func (em *endpointManager) getEndpoint(address core.Address) vivid.ActorRef {
 	em.endpointRw.Lock()
+	if em.closed {
+		em.endpointRw.Unlock()
+		return core.NewProcessRef(em.network.support.GetDeadLetter().GetAddress())
+	}
 	ref, exist := em.endpoints[address.Address()]
 	if !exist {
 		ref = em.network.support.System().ActorOf(func() vivid.Actor {
@@ -42,4 +48,15 @@ func (em *endpointManager) delEndpoint(address core.Address) {
 	em.endpointRw.Lock()
 	delete(em.endpoints, address.Address())
 	em.endpointRw.Unlock()
+}
+
+func (em *endpointManager) close() {
+	em.endpointRw.Lock()
+	em.closed = true
+	endpoints := collection.CloneMap(em.endpoints)
+	em.endpointRw.Unlock()
+
+	for _, ref := range endpoints {
+		em.network.support.System().Context().Terminate(ref)
+	}
 }

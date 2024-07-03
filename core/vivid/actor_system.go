@@ -7,8 +7,10 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
+	"sort"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -24,17 +26,39 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	system.deadLetter = &deadLetterProcess{system: system}
 
 	var address core.Address
-	for _, plugin := range opts.modules {
-		if transport, ok := plugin.(TransportModule); ok {
+	var transportModule bool
+	var priorityMap = make(map[Module]int)
+	for _, module := range opts.modules {
+		switch v := module.(type) {
+		case TransportModule:
 			if !address.IsEmpty() {
-				panic("only one transport plugin is allowed")
+				panic("only one transport module is allowed")
 			}
-			address = transport.ActorSystemAddress().ParseToRoot()
+			address = v.ActorSystemAddress().ParseToRoot()
 			if address.System() == "" {
 				address = core.NewRootAddress(address.Network(), opts.Name, address.Host(), address.Port())
 			}
+			transportModule = true
+			if p, ok := v.(PriorityModule); ok {
+				priorityMap[v] = p.Priority()
+			} else {
+				priorityMap[v] = 0
+			}
+		case PriorityModule:
+			priorityMap[v] = v.Priority()
+		default:
+			priorityMap[module] = 0
+		}
+
+		switch v := module.(type) {
+		case KindHookModule:
+			system.kindHookModules = append(system.kindHookModules, v)
 		}
 	}
+	sort.Slice(opts.modules, func(i, j int) bool {
+		return priorityMap[opts.modules[i]] < priorityMap[opts.modules[j]]
+	})
+
 	if address.IsEmpty() {
 		address = core.NewRootAddress("", opts.Name, "", 0)
 	}
@@ -44,21 +68,22 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	support := newModuleSupport(system)
 	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
 	for _, plugin := range opts.modules {
-		plugin.OnLoad(support)
+		plugin.OnLoad(support, transportModule)
 	}
 	return system
 }
 
 type ActorSystem struct {
-	opts         *ActorSystemOptions
-	processes    *core.ProcessManager
-	deadLetter   *deadLetterProcess
-	root         ActorContext
-	closed       chan struct{}
-	futurePool   *pools.ObjectPool[*future]
-	nextFutureId atomic.Uint64
-	kinds        map[Kind]*kind
-	kindRw       sync.RWMutex
+	opts            *ActorSystemOptions
+	processes       *core.ProcessManager
+	deadLetter      *deadLetterProcess
+	root            ActorContext
+	closed          chan struct{}
+	futurePool      *pools.ObjectPool[*future]
+	nextFutureId    atomic.Uint64
+	kinds           map[Kind]*kind
+	kindRw          sync.RWMutex
+	kindHookModules []KindHookModule
 }
 
 func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...ActorOptionDefiner) {
@@ -76,20 +101,40 @@ func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...Actor
 		panic(fmt.Errorf("kind %s already exists", k))
 	}
 	sys.kinds[k] = &kind{producer: producer, options: opts}
+
+	for _, module := range sys.kindHookModules {
+		module.OnRegKind(k)
+	}
 }
 
 func (sys *ActorSystem) Context() ActorContext {
 	return sys.root
 }
 
-func (sys *ActorSystem) Shutdown() {
+func (sys *ActorSystem) Shutdown(chanting ...time.Duration) {
+	sys.chanting(chanting...)
 	sys.root.Terminate(sys.root.Ref())
+	<-sys.closed
+	for _, module := range sys.opts.modules {
+		switch m := module.(type) {
+		case ShutdownModule:
+			m.OnShutdown()
+		}
+	}
+}
+
+func (sys *ActorSystem) ShutdownGracefully(chanting ...time.Duration) {
+	sys.chanting(chanting...)
+	sys.root.TerminateGracefully(sys.root.Ref())
 	<-sys.closed
 }
 
-func (sys *ActorSystem) ShutdownGracefully() {
-	sys.root.TerminateGracefully(sys.root.Ref())
-	<-sys.closed
+func (sys *ActorSystem) chanting(duration ...time.Duration) {
+	if len(duration) > 0 {
+		select {
+		case <-time.After(duration[0]):
+		}
+	}
 }
 
 func (sys *ActorSystem) Terminate(target ActorRef) {
@@ -144,15 +189,20 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	} else {
 		parent = options.Parent
 	}
-	if options.Name == "" {
-		options.Name = convert.Uint64ToString(guid.Add(1))
+
+	name := options.Name
+	if name == "" {
+		name = convert.Uint64ToString(guid.Add(1))
+	}
+	if options.NamePrefix != "" {
+		name = options.NamePrefix + "-" + name
 	}
 
-	var actorPath = options.Name
+	var actorPath = name
 	if parent != nil {
-		actorPath = parent.Address().Path() + "/" + options.Name
+		actorPath = parent.Address().Path() + "/" + name
 	} else {
-		actorPath = "/" + options.Name
+		actorPath = "/" + name
 	}
 
 	var parentAddr = system.processes.Address()

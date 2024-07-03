@@ -10,12 +10,21 @@ type ActorOptions struct {
 	options               []ActorOption
 	Parent                ActorRef           // 父 Actor
 	Name                  string             // Actor 名称
+	NamePrefix            string             // Actor 名称前缀
 	DispatcherProducer    DispatcherProducer // Actor 使用的调度器
 	MailboxProducer       MailboxProducer    // Actor 使用的邮箱
 	SupervisorStrategy    SupervisorStrategy // Actor 使用的监督者策略
 	PersistenceName       string             // Actor 持久化名称
 	PersistenceStorage    Storage            // Actor 持久化存储器
 	PersistenceEventLimit int                // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
+}
+
+// WithNamePrefix 通过指定名称前缀创建一个 Actor
+func (o *ActorOptions) WithNamePrefix(prefix string) *ActorOptions {
+	o.options = append(o.options, func(options *ActorOptions) {
+		options.NamePrefix = prefix
+	})
+	return o
 }
 
 // WithPersistenceEventLimit 通过指定持久化事件数量限制创建一个 Actor
