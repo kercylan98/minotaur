@@ -14,6 +14,7 @@ func newRemoteActor(network *Network, address core.Address) *remoteActor {
 	}
 }
 
+// 远程 Actor 的用途仅创建出来后转发消息，不会记录在进程表中，用完即丢
 type remoteActor struct {
 	network *Network
 	address core.Address

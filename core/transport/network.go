@@ -14,6 +14,7 @@ import (
 
 const (
 	typeOnTerminate core.BuiltTypeName = iota + 100
+	typeTerminateGracefully
 )
 
 var _ vivid.TransportModule = &Network{}
@@ -108,6 +109,9 @@ func (n *Network) encode(message core.Message) (typeName core.BuiltTypeName, raw
 	case vivid.OnTerminate:
 		raw, err = toolkit.MarshalJSONE(v)
 		return typeOnTerminate, raw, err
+	case vivid.TerminateGracefully:
+		raw, err = toolkit.MarshalJSONE(v)
+		return typeTerminateGracefully, raw, err
 	}
 	return
 }
@@ -117,8 +121,10 @@ func (n *Network) decode(name core.BuiltTypeName, raw []byte) (message core.Mess
 	switch name {
 	case typeOnTerminate:
 		var m vivid.OnTerminate
-		err = toolkit.UnmarshalJSONE(raw, &m)
-		return m, err
+		return m, toolkit.UnmarshalJSONE(raw, &m)
+	case typeTerminateGracefully:
+		var m vivid.TerminateGracefully
+		return m, toolkit.UnmarshalJSONE(raw, &m)
 	}
 	return
 }

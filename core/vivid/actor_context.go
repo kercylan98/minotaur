@@ -278,8 +278,13 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message, recoveryMessage ..
 	switch msg.(type) {
 	case OnLaunch:
 		ctx.as.restartTimes = ctx.as.restartTimes[:0]
-	case _OnTerminateGracefully:
+	case TerminateGracefully:
 		ctx.onTerminate(true)
+	default:
+		switch ctx.Message().(type) {
+		case TerminateGracefully:
+			ctx.onTerminate(true)
+		}
 	}
 }
 

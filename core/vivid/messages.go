@@ -18,12 +18,12 @@ type (
 	OnTerminated struct {
 		TerminatedActor ActorRef
 	}
-	OnRestart              struct{}
-	OnRestarting           struct{}
-	OnResumeMailbox        struct{}
-	OnSuspendMailbox       struct{}
-	OnPersistenceSnapshot  struct{}
-	_OnTerminateGracefully struct{}
+	OnRestart             struct{}
+	OnRestarting          struct{}
+	OnResumeMailbox       struct{}
+	OnSuspendMailbox      struct{}
+	OnPersistenceSnapshot struct{}
+	TerminateGracefully   struct{}
 )
 
 var (
@@ -34,5 +34,5 @@ var (
 	onResumeMailbox       OnResumeMailbox
 	onSuspendMailbox      OnSuspendMailbox
 	onPersistenceSnapshot OnPersistenceSnapshot
-	onTerminateGracefully _OnTerminateGracefully
+	onTerminateGracefully TerminateGracefully
 )

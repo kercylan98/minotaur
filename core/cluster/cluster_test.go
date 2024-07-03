@@ -31,6 +31,7 @@ func TestCluster_Node1(t *testing.T) {
 
 	system.Shutdown(time.Hour)
 }
+
 func TestCluster_Node2(t *testing.T) {
 	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
 		options.WithLoggerProvider(log.GetDefault)
@@ -55,7 +56,7 @@ func TestCluster_Node2(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ref := c.KindOf("test")
 		system.Context().Tell(ref, "hello world")
-		system.Context().Terminate(ref)
+		system.Context().TerminateGracefully(ref)
 	}
 
 	system.Shutdown(time.Hour)
