@@ -85,9 +85,21 @@ func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
 }
 
 // Unregister 注销一个进程
-func (prt *processRegisterTable) Unregister(ref *ProcessRef) {
+func (prt *processRegisterTable) Unregister(ref *ProcessRef, handler ...func()) {
 	bucket := prt.registerTable.GetBucket(ref.address.Path())
-	process, exist := bucket.GetAndDel(ref.address.Path())
+	bucket.Lock()
+	process, exist := bucket.NoneLockGetAndDel(ref.address.Path())
+	for _, f := range handler {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					// ignore
+				}
+			}()
+			f()
+		}()
+	}
+	bucket.Unlock()
 	if exist {
 		if status, ok := process.(ProcessStatus); ok {
 			status.Dead()

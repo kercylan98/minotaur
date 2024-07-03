@@ -1,13 +1,19 @@
 package transport
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
 	"math"
 	"net"
+)
+
+const (
+	typeOnTerminate core.BuiltTypeName = iota + 100
 )
 
 var _ vivid.TransportModule = &Network{}
@@ -47,9 +53,12 @@ func (n *Network) Priority() int {
 }
 
 func (n *Network) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
+	codec := core.NewProtobufExpandCodec()
+	codec.RegisterEncode(n.encode)
+	codec.RegisterDecode(n.decode)
 	n.server = newServer(n)
 	n.em = newEndpointManager(n)
-	n.codec = core.NewProtobufExpandCodec()
+	n.codec = codec
 	n.support = support
 	n.support.RegAddressResolver(func(address core.Address) core.Process {
 		return newRemoteActor(n, address)
@@ -91,4 +100,25 @@ func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message c
 func (n *Network) OnShutdown() {
 	n.em.close()
 	n.grpc.GracefulStop()
+}
+
+func (n *Network) encode(message core.Message) (typeName core.BuiltTypeName, raw []byte, err error) {
+	err = fmt.Errorf("%w, but got %T", core.ErrorMessageMustIsProtoMessage, message)
+	switch v := message.(type) {
+	case vivid.OnTerminate:
+		raw, err = toolkit.MarshalJSONE(v)
+		return typeOnTerminate, raw, err
+	}
+	return
+}
+
+func (n *Network) decode(name core.BuiltTypeName, raw []byte) (message core.Message, err error) {
+	err = fmt.Errorf("%w, but got %T", core.ErrorMessageMustIsProtoMessage, message)
+	switch name {
+	case typeOnTerminate:
+		var m vivid.OnTerminate
+		err = toolkit.UnmarshalJSONE(raw, &m)
+		return m, err
+	}
+	return
 }

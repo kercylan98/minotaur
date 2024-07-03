@@ -13,8 +13,8 @@ type ActorSystemOptions struct {
 	options []ActorSystemOption
 	modules []Module // 指定 ActorSystem 的组件
 
-	Name           string // 指定 ActorSystem 的名称
-	LoggerProvider LoggerProvider
+	Name           string         // 指定 ActorSystem 的名称
+	LoggerProvider LoggerProvider // 指定 ActorSystem 的日志提供器
 }
 
 func (o *ActorSystemOptions) WithLoggerProvider(provider LoggerProvider) *ActorSystemOptions {

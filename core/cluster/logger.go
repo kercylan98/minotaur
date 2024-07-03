@@ -25,7 +25,7 @@ func (w *loggerWriter) Write(p []byte) (n int, err error) {
 	case strings.Contains(str, "WARN"):
 		w.provider().Warn("cluster", mlog.String("status", "memberlist"), mlog.String("info", info))
 	case strings.Contains(str, "DEBUG"):
-		w.provider().Debug("cluster", mlog.String("status", "memberlist"), mlog.String("info", info))
+		//w.provider().Debug("cluster", mlog.String("status", "memberlist"), mlog.String("info", info))
 	case strings.Contains(str, "INFO"):
 		w.provider().Info("cluster", mlog.String("status", "memberlist"), mlog.String("info", info))
 	default:

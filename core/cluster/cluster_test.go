@@ -1,6 +1,7 @@
 package cluster_test
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/core/cluster"
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
@@ -19,9 +20,9 @@ func TestCluster_Node1(t *testing.T) {
 	})
 	system.RegKind("test", func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch ctx.Message().(type) {
-			case vivid.OnLaunch:
-				t.Log("launch")
+			switch m := ctx.Message().(type) {
+			case string:
+				fmt.Println(m)
 			}
 		})
 	}, func(options *vivid.ActorOptions) {
@@ -40,9 +41,9 @@ func TestCluster_Node2(t *testing.T) {
 	})
 	system.RegKind("test", func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch ctx.Message().(type) {
-			case vivid.OnLaunch:
-				t.Log("launch")
+			switch m := ctx.Message().(type) {
+			case string:
+				fmt.Println(m)
 			}
 		})
 	}, func(options *vivid.ActorOptions) {
@@ -51,8 +52,10 @@ func TestCluster_Node2(t *testing.T) {
 
 	c := cluster.Invoke(system)
 
-	for i := 0; i < 1000; i++ {
-		c.KindOf("test")
+	for i := 0; i < 10; i++ {
+		ref := c.KindOf("test")
+		system.Context().Tell(ref, "hello world")
+		system.Context().Terminate(ref)
 	}
 
 	system.Shutdown(time.Hour)

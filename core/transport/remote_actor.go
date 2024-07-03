@@ -2,6 +2,7 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core/vivid"
 )
 
 var _ core.Process = &remoteActor{}
@@ -31,9 +32,5 @@ func (r *remoteActor) SendSystemMessage(sender *core.ProcessRef, message core.Me
 }
 
 func (r *remoteActor) Terminate(ref *core.ProcessRef) {
-	if ref.Address() == r.address {
-		return // 远程解析不需要销毁
-	}
-
-	r.network.support.System().Terminate(ref)
+	r.SendSystemMessage(ref, vivid.OnTerminate{})
 }

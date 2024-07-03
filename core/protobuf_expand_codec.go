@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	builtTypeString builtTypeName = iota
+	builtTypeString BuiltTypeName = iota
 	builtTypeUint8
 	builtTypeUint16
 	builtTypeUint32
@@ -58,19 +58,30 @@ const (
 
 var _ Codec = (*ProtobufExpandCodec)(nil)
 
-type builtTypeName uint8
+type BuiltTypeName uint8
 
-func (n builtTypeName) String() string {
+func (n BuiltTypeName) String() string {
 	return convert.Uint8ToString(uint8(n))
 }
 
-type ProtobufExpandCodec struct{}
+type ProtobufExpandCodec struct {
+	customizeEncoder func(message Message) (typeName BuiltTypeName, raw []byte, err error)
+	customizeDecoder func(typeName BuiltTypeName, raw []byte) (message Message, err error)
+}
 
 func NewProtobufExpandCodec() *ProtobufExpandCodec {
 	return &ProtobufExpandCodec{}
 }
 
-func (p *ProtobufExpandCodec) builtInEncode(message Message) (typeName builtTypeName, raw []byte, err error) {
+func (p *ProtobufExpandCodec) RegisterEncode(encoder func(message Message) (typeName BuiltTypeName, raw []byte, err error)) {
+	p.customizeEncoder = encoder
+}
+
+func (p *ProtobufExpandCodec) RegisterDecode(decode func(name BuiltTypeName, raw []byte) (message Message, err error)) {
+	p.customizeDecoder = decode
+}
+
+func (p *ProtobufExpandCodec) builtInEncode(message Message) (typeName BuiltTypeName, raw []byte, err error) {
 	err = fmt.Errorf("%w, but got %T", ErrorMessageMustIsProtoMessage, message)
 	switch v := message.(type) {
 	case string:
@@ -162,11 +173,15 @@ func (p *ProtobufExpandCodec) builtInEncode(message Message) (typeName builtType
 		return p.writeLittleEndian(builtTypeTimeDuration, int64(v))
 	case json.RawMessage:
 		return builtTypeJsonRAW, v, nil
+	default:
+		if p.customizeEncoder != nil {
+			return p.customizeEncoder(message)
+		}
 	}
 	return
 }
 
-func (p *ProtobufExpandCodec) builtInDecode(typeName builtTypeName, raw []byte) (message Message, err error) {
+func (p *ProtobufExpandCodec) builtInDecode(typeName BuiltTypeName, raw []byte) (message Message, err error) {
 	err = fmt.Errorf("%w, but got %s", ErrorMessageMustIsProtoMessage, typeName)
 	switch typeName {
 	case builtTypeString:
@@ -316,6 +331,10 @@ func (p *ProtobufExpandCodec) builtInDecode(typeName builtTypeName, raw []byte) 
 		return time.Duration(v), p.readLittleEndian(raw, &v)
 	case builtTypeJsonRAW:
 		return json.RawMessage(raw), nil
+	default:
+		if p.customizeDecoder != nil {
+			return p.customizeDecoder(typeName, raw)
+		}
 	}
 	return
 }
@@ -338,7 +357,7 @@ func (p *ProtobufExpandCodec) Encode(message Message) (typeName string, bytes []
 func (p *ProtobufExpandCodec) Decode(typeName string, bytes []byte) (message Message, err error) {
 	messageType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typeName))
 	if err != nil {
-		return p.builtInDecode(builtTypeName(convert.StringToUint8(typeName)), bytes)
+		return p.builtInDecode(BuiltTypeName(convert.StringToUint8(typeName)), bytes)
 	}
 
 	protoMessage := messageType.New().Interface()
@@ -346,7 +365,7 @@ func (p *ProtobufExpandCodec) Decode(typeName string, bytes []byte) (message Mes
 	return protoMessage, err
 }
 
-func (p *ProtobufExpandCodec) writeLittleEndian(typeName builtTypeName, v any) (name builtTypeName, raw []byte, err error) {
+func (p *ProtobufExpandCodec) writeLittleEndian(typeName BuiltTypeName, v any) (name BuiltTypeName, raw []byte, err error) {
 	buf := new(bytes.Buffer)
 	if err = binary.Write(buf, binary.LittleEndian, v); err == nil {
 		raw = buf.Bytes()

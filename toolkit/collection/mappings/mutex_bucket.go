@@ -108,3 +108,11 @@ func (i *MutexBucketItem[K, V]) GetAndDel(key K) (value V, exists bool) {
 	}
 	return v, exist
 }
+
+func (i *MutexBucketItem[K, V]) NoneLockGetAndDel(key K) (value V, exists bool) {
+	v, exist := i.kv[key]
+	if exist {
+		delete(i.kv, key)
+	}
+	return v, exist
+}

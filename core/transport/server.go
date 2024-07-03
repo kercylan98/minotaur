@@ -33,17 +33,21 @@ func (s *server) StreamHandler(stream ActorSystemCommunication_StreamHandlerServ
 		msg, err := stream.Recv()
 		switch {
 		case errors.Is(err, io.EOF):
+			s.network.support.Logger().Debug("Endpoint", log.String("type", "eof"))
 			return nil
 		case err != nil:
+			s.network.support.Logger().Error("Endpoint", log.String("type", "receive"), log.Err(err))
 			return err
 		}
 
 		switch m := msg.MessageType.(type) {
 		case *DistributedMessage_ConnectionOpen:
 			if err = s.onConnectionOpened(stream, m.ConnectionOpen); err != nil {
+				s.network.support.Logger().Error("Endpoint", log.String("type", "opened"), log.Err(err))
 				return err
 			}
 		case *DistributedMessage_ConnectionClosed:
+			s.network.support.Logger().Debug("Endpoint", log.String("type", "normal closed"))
 			return nil
 		case *DistributedMessage_ConnectionMessageBatch:
 			s.onConnectionMessage(m)
@@ -95,6 +99,11 @@ func (s *server) onConnectionClosed(stream ActorSystemCommunication_StreamHandle
 }
 
 func (s *server) onConnectionMessage(batch *DistributedMessage_ConnectionMessageBatch) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Endpoint", log.String("type", "panic"), log.Any("recover", r))
+		}
+	}()
 	var b = batch.ConnectionMessageBatch
 	for i := 0; i < len(b.MessageData); i++ {
 		if b.Bad[i] {

@@ -117,7 +117,7 @@ func (ctx *actorContext) System() *ActorSystem {
 }
 
 func (ctx *actorContext) Terminate(target ActorRef) {
-	ctx.System().getProcess(target).Terminate(ctx.ref)
+	ctx.System().getProcess(target).Terminate(target)
 }
 
 func (ctx *actorContext) TerminateGracefully(target ActorRef) {
@@ -322,6 +322,8 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 			ref := ctx.localKindOf(m.Kind, parentRef)
 
 			ctx.Reply(&ActorRefAddress{Address: []byte(ref.Address())})
+		case OnTerminate:
+			ctx.ProcessSystemMessage(m)
 		}
 	}
 }
@@ -360,7 +362,9 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 		return
 	}
 
-	ctx.actorSystem.processes.Unregister(ctx.ref)
+	ctx.actorSystem.processes.Unregister(ctx.ref, func() {
+		ctx.ProcessUserMessage(m, OnTerminated{TerminatedActor: ctx.ref})
+	})
 
 	ctx.System().opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
 	if parent := ctx.Parent(); parent != nil {

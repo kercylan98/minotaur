@@ -222,7 +222,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	process := newProcess(address, mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
-		panic("actor already exists")
+		panic(fmt.Errorf("actor already exists, address: %s", address.String()))
 	}
 	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
 

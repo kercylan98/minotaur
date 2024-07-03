@@ -30,6 +30,8 @@ func (e *endpoint) OnReceive(ctx vivid.ActorContext) {
 		e.onLaunch(ctx, m)
 	case vivid.OnTerminate:
 		e.onTerminate(ctx, m)
+	case vivid.OnTerminated:
+		e.network.em.delEndpoint(e.address)
 	case []any:
 		e.onSend(ctx, m)
 	}
@@ -39,17 +41,17 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 	addr := e.address.Address()
 	cc, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Error("Endpoint", log.String("type", "connect"), log.Err(err))
+		e.network.support.Logger().Error("Endpoint", log.String("type", "connect"), log.Err(err))
 		ctx.Terminate(ctx.Ref())
 		return
 	}
 	e.conn = cc
-	log.Debug("Endpoint", log.String("type", "connected"), log.String("addr", addr))
+	e.network.support.Logger().Debug("Endpoint", log.String("type", "connected"), log.String("addr", addr))
 
 	client := NewActorSystemCommunicationClient(cc)
 	stream, err := client.StreamHandler(context.Background())
 	if err != nil {
-		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		e.network.support.Logger().Error("Endpoint", log.String("type", "handshake"), log.Err(err))
 		ctx.Terminate(ctx.Ref())
 		return
 	}
@@ -62,14 +64,14 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 		},
 	})
 	if err != nil {
-		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		e.network.support.Logger().Error("Endpoint", log.String("type", "handshake"), log.Err(err))
 		ctx.Terminate(ctx.Ref())
 		return
 	}
 
 	in, err := stream.Recv()
 	if err != nil {
-		log.Error("Endpoint", log.String("type", "handshake"), log.Err(err))
+		e.network.support.Logger().Error("Endpoint", log.String("type", "handshake"), log.Err(err))
 		ctx.Terminate(ctx.Ref())
 		return
 	}
@@ -83,12 +85,13 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 	go func() {
 		defer func() {
 			ctx.Terminate(ctx.Ref())
-			log.Debug("Endpoint", log.String("type", "closed"))
+			e.network.support.Logger().Debug("Endpoint", log.String("type", "closed"))
 		}()
 
 		for {
 			in, err := stream.Recv()
 			if err != nil {
+				log.Error("Endpoint", log.String("type", "receive"), log.Err(err))
 				return
 			}
 
@@ -104,17 +107,17 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 }
 
 func (e *endpoint) onTerminate(ctx vivid.ActorContext, m vivid.OnTerminate) {
-	e.network.em.delEndpoint(e.address)
 	if e.stream != nil {
 		if err := e.stream.CloseSend(); err != nil {
-			log.Error("Endpoint", log.String("type", "close"), log.String("instance", "stream"), log.Err(err))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "close"), log.String("instance", "stream"), log.Err(err))
 		}
 	}
 	if e.conn != nil {
 		if err := e.conn.Close(); err != nil {
-			log.Error("Endpoint", log.String("type", "close"), log.String("instance", "conn"), log.Err(err))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "close"), log.String("instance", "conn"), log.Err(err))
 		}
 	}
+	e.network.support.Logger().Debug("Endpoint", log.String("type", "terminate"))
 }
 
 func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
@@ -135,7 +138,7 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 		if v, ok = source.(messageWrapper); !ok {
 			batch.Bad[i] = true
 			bad++
-			log.Error("Endpoint", log.String("type", "convert"))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "convert"))
 			continue
 		}
 		rm, ok := v.message.(vivid.RegulatoryMessage)
@@ -148,7 +151,7 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 		if err != nil {
 			batch.Bad[i] = true
 			bad++
-			log.Error("Endpoint", log.String("type", "encode"), log.Err(err))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "encode"), log.Err(err))
 			continue
 		}
 		batch.SenderAddress[i], batch.ReceiverAddress[i], batch.System[i] = []byte(v.sender.Address()), []byte(v.receiver), v.system
@@ -163,7 +166,7 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 	})
 
 	if err != nil {
-		log.Error("Endpoint", log.String("type", "send"), log.Err(err))
+		e.network.support.Logger().Error("Endpoint", log.String("type", "send"), log.Err(err))
 		ctx.Terminate(ctx.Ref())
 	}
 }
