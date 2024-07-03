@@ -17,6 +17,7 @@ var (
 	_ SpawnerContext = &ActorSystem{}
 )
 
+// NewActorSystem 使用给定的选项和模块初始化一个新的 ActorSystem
 func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	var opts = new(ActorSystemOptions).apply(options)
 	system := &ActorSystem{
@@ -73,6 +74,7 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	return system
 }
 
+// ActorSystem 在 Actor 模型设计中的核心重量级结构，负责管理 Actor、模块和系统进程信息，并提供 Actor 创建、销毁、消息传递等功能。
 type ActorSystem struct {
 	opts            *ActorSystemOptions
 	processes       *core.ProcessManager
@@ -86,6 +88,8 @@ type ActorSystem struct {
 	kindHookModules []KindHookModule
 }
 
+// RegKind 注册一个 Kind，Kind 是 Actor 的类型，在通过 KindOf 创建 Actor 时将会根据预设的 Kind 创建 Actor
+//   - 当 Kind 重复注册时将会发生 panic
 func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...ActorOptionDefiner) {
 	var opts = new(ActorOptions)
 	for _, option := range options {
@@ -107,10 +111,15 @@ func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...Actor
 	}
 }
 
+// Context 返回 ActorSystem 的根 ActorContext
 func (sys *ActorSystem) Context() ActorContext {
 	return sys.root
 }
 
+// Shutdown 关闭 ActorSystem，关闭时会优先强行终止所有 Actor，之后对模块进行卸载
+//   - chanting 为可选参数，表示在执行关闭操作前等待的时间
+//
+// 在关闭过程中，会从根 Actor 开始向下逐级终止 Actor，当子 Actor 全部终止后，父 Actor 才会终止。由于终止是系统消息，未被处理的用户消息将会被丢弃
 func (sys *ActorSystem) Shutdown(chanting ...time.Duration) {
 	sys.chanting(chanting...)
 	sys.root.Terminate(sys.root.Ref())
@@ -123,6 +132,8 @@ func (sys *ActorSystem) Shutdown(chanting ...time.Duration) {
 	}
 }
 
+// ShutdownGracefully 优雅地关闭 ActorSystem，与 Shutdown 不同的是， Shutdown 会致使 Actor 立即终止，而 ShutdownGracefully 则是发送一条用户消息，当
+// Actor 接收到该消息并处理完毕后再终止
 func (sys *ActorSystem) ShutdownGracefully(chanting ...time.Duration) {
 	sys.chanting(chanting...)
 	sys.root.TerminateGracefully(sys.root.Ref())
@@ -137,10 +148,12 @@ func (sys *ActorSystem) chanting(duration ...time.Duration) {
 	}
 }
 
+// Terminate 通知目标 Actor 立即终止，当 Actor 邮箱中还有未处理完的消息时，这些消息将会被丢弃
 func (sys *ActorSystem) Terminate(target ActorRef) {
 	sys.root.Terminate(target)
 }
 
+// TerminateGracefully 通知目标 Actor 立即终止，但是不会立即终止，而是在之前的用户消息处理完毕后终止
 func (sys *ActorSystem) TerminateGracefully(target ActorRef) {
 	sys.root.TerminateGracefully(target)
 }
@@ -157,10 +170,16 @@ func (sys *ActorSystem) getProcess(target ActorRef) core.Process {
 	return sys.processes.GetProcess(target)
 }
 
+// ActorOf 以根 Actor 为父级创建一个新的 Actor，返回新 Actor 的引用
 func (sys *ActorSystem) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
 	return sys.root.ActorOf(producer, options...)
 }
 
+// KindOf 以根 Actor 为父级创建一个新的 Actor，返回新 Actor 的引用，该 Actor 的类型由 kind 指定
+//   - kind 为 Actor 的类型，需要在注册时指定
+//   - parent 为可选参数，指定父级 Actor
+//
+// 该函数通常与 parent 参数结合后用于远程 Actor 的创建
 func (sys *ActorSystem) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	return sys.root.KindOf(kind, parent...)
 }

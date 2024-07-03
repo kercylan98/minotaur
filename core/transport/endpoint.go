@@ -91,7 +91,7 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 		for {
 			in, err := stream.Recv()
 			if err != nil {
-				log.Error("Endpoint", log.String("type", "receive"), log.Err(err))
+				log.Debug("Endpoint", log.String("type", "receive"), log.Err(err))
 				return
 			}
 

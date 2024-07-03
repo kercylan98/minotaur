@@ -1,5 +1,6 @@
 package vivid
 
+// ActorContext 是 Actor 的上下文，包含了 Actor 的基本信息以及 Actor 的操作方法
 type ActorContext interface {
 	basicContextCompose
 	senderContextCompose
