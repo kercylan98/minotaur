@@ -52,9 +52,9 @@ func (c *cluster) KindOf(kind vivid.Kind, parentPath ...string) vivid.ActorRef {
 	})
 
 	for _, node := range members {
-		if node.Name == c.name {
-			continue
-		}
+		//if node.Name == c.name {
+		//	continue
+		//}
 
 		c.state.local.mu.RLock()
 		if _, ok := c.state.local.Kinds[node.Name][kind]; !ok {
