@@ -76,6 +76,7 @@ func (ctx *actorContext) DeadLetter() DeadLetter {
 func (ctx *actorContext) PersistSnapshot(snapshot Message) {
 	ctx.persistenceStatus.PersistSnapshot(snapshot)
 	ctx.persistenceStatus.persistenceStorage.Persist(ctx.persistenceStatus.persistenceName, ctx.persistenceStatus)
+	ctx.persistenceStatus.persistentDone = true
 }
 
 func (ctx *actorContext) StatusChanged(event Message) {
@@ -319,7 +320,6 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 	ctx.message = msg
 	switch m := msg.(type) {
 	case OnLaunch:
-		ctx.ProcessUserMessage(m, msg)
 		if status := ctx.persistenceStatus.persistenceStorage.Load(ctx.persistenceStatus.persistenceName); status != nil {
 			ctx.persistenceStatus.recovery = true
 			defer func() {
@@ -329,6 +329,9 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 			for _, event := range status.GetEvents() {
 				ctx.ProcessUserMessage(event, msg)
 			}
+			ctx.ProcessUserMessage(m, msg)
+		} else {
+			ctx.ProcessUserMessage(m, msg)
 		}
 	case OnTerminate:
 		ctx.onTerminate(false)
