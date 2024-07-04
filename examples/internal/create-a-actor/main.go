@@ -5,22 +5,22 @@ import (
 	"github.com/kercylan98/minotaur/core/vivid"
 )
 
-type MyActor struct {
-}
+type HelloActor struct{}
 
-func (m *MyActor) OnReceive(ctx vivid.ActorContext) {
+func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case string:
-		fmt.Println(m)
+		fmt.Println("Hello world!")
+		ctx.Reply(m)
 	}
 }
 
 func main() {
 	system := vivid.NewActorSystem()
 	ref := system.ActorOf(func() vivid.Actor {
-		return &MyActor{}
+		return &HelloActor{}
 	})
 
-	system.Context().Tell(ref, "Hi, minotaur")
-	system.ShutdownGracefully()
+	reply := system.Context().FutureAsk(ref, "Hey, sao ju~").AssertResult()
+	fmt.Println(reply)
 }
