@@ -64,6 +64,9 @@ type receiverContextCompose interface {
 	// Reply 回复消息
 	Reply(message Message)
 
+	// TryReply 尝试回复消息，当没有发送方时将会返回 false，而不是发送到死信队列中
+	TryReply(message Message) bool
+
 	// BehaviorOf 生成一个行为
 	BehaviorOf() Behavior
 }

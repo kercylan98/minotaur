@@ -117,6 +117,15 @@ func (ctx *actorContext) Reply(message Message) {
 	ctx.Ask(rm.Sender, message)
 }
 
+func (ctx *actorContext) TryReply(message Message) bool {
+	rm, ok := ctx.message.(RegulatoryMessage)
+	if !ok || rm.Sender == nil {
+		return false
+	}
+	ctx.Ask(rm.Sender, message)
+	return true
+}
+
 func (ctx *actorContext) System() *ActorSystem {
 	return ctx.actorSystem
 }
