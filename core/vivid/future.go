@@ -134,11 +134,19 @@ func (f *future) GetAddress() core.Address {
 }
 
 func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) {
+	switch rm := message.(type) {
+	case RegulatoryMessage:
+		message = rm.Message
+	}
 	f.result = message
 	f.Terminate(nil)
 }
 
 func (f *future) SendSystemMessage(sender *core.ProcessRef, message core.Message) {
+	switch rm := message.(type) {
+	case RegulatoryMessage:
+		message = rm.Message
+	}
 	f.result = message
 	f.Terminate(nil)
 }
