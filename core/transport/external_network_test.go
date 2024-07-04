@@ -4,7 +4,6 @@ import (
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
 	"testing"
-	"time"
 )
 
 func TestNewWebSocket(t *testing.T) {
@@ -22,6 +21,4 @@ func TestNewWebSocket(t *testing.T) {
 			}),
 		)
 	}).Shutdown()
-
-	time.Sleep(time.Second * 1000)
 }
