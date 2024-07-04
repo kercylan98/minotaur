@@ -9,6 +9,7 @@ import (
 
 func TestNewWebSocket(t *testing.T) {
 	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithModule(transport.NewWebSocket(":8811"))
 		options.WithModule(transport.NewWebSocket(":8080", "/ws").
 			SetPacketHandler(func(conn *transport.Conn, packet transport.Packet) {
 				conn.WritePacket(packet)

@@ -14,6 +14,9 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"github.com/panjf2000/gnet/v2"
 	gnetErrors "github.com/panjf2000/gnet/v2/pkg/errors"
+	"net"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,6 +32,9 @@ const (
 )
 
 var _ gnet.EventHandler = &gnetEngine{}
+var gnetEngineNum atomic.Int32
+var gnetEngineLaunchedNum atomic.Int32
+var gnetOnceLaunchInfo sync.Once
 
 func newGnetEngine(network *ExternalNetwork, schema, addr string, pattern ...string) *gnetEngine {
 	g := &gnetEngine{
@@ -48,6 +54,7 @@ type gnetEngine struct {
 	eng      gnet.Engine
 	upgrader ws.Upgrader
 	ref      vivid.ActorRef
+	showAddr string
 }
 
 func (g *gnetEngine) OnShutdown(eng gnet.Engine) {
@@ -164,18 +171,34 @@ func (g *gnetEngine) onLaunch(ctx vivid.ActorContext) {
 		ctx.Tell(ctx.Ref(), fmt.Errorf("unsupported schema: %s", g.schema))
 		return
 	}
-	ip, err := network.IP()
+
+	host, port, err := net.SplitHostPort(g.addr)
 	if err != nil {
 		ctx.Tell(ctx.Ref(), err)
+		return
 	}
-	showAddr := fmt.Sprintf("%s%s", ip, addr)
-	if g.schema == schemaWebSocket {
-		showAddr = fmt.Sprintf("ws://%s%s", fmt.Sprintf("%s%s", ip, g.addr), g.pattern)
+	if host == "" {
+		ip, err := network.IP()
+		if err != nil {
+			ctx.Tell(ctx.Ref(), err)
+			return
+		}
+		host = ip.String()
 	}
 
-	g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
-	g.network.support.Logger().Info("", log.String("Minotaur", "Starting network"), log.String("schema", g.schema), log.String("listen", showAddr))
-	g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+	g.showAddr = fmt.Sprintf("%s://%s:%s", g.schema, host, port)
+	if g.schema == schemaWebSocket {
+		g.showAddr = fmt.Sprintf("%s://%s:%s%s", g.schema, host, port, g.pattern)
+	}
+
+	gnetEngineNum.Add(1)
+	gnetOnceLaunchInfo.Do(func() {
+		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+	})
+	g.network.support.Logger().Info("", log.String("Minotaur", "Start network"), log.String("schema", g.schema), log.String("listen", g.showAddr))
+	if gnetEngineLaunchedNum.Add(1) == gnetEngineNum.Load() {
+		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+	}
 
 	ctx.AwaitForward(ctx.Ref(), func() vivid.Message {
 		return gnet.Run(g, addr, gnet.WithLogger(log.NewGNetLogger(log.GetDefault())))
@@ -272,8 +295,8 @@ func (g *gnetEngine) onFutureForward(ctx vivid.ActorContext, m vivid.FutureForwa
 
 func (g *gnetEngine) onTerminate() {
 	if err := g.eng.Stop(context.Background()); err != nil && !errors.Is(err, gnetErrors.ErrEmptyEngine) {
-		g.network.support.Logger().Error("network", log.String("status", "shutdown"), log.Err(err))
+		g.network.support.Logger().Error("network", log.String("status", "shutdown"), log.String("listen", g.showAddr), log.Err(err))
 	} else {
-		g.network.support.Logger().Info("network", log.String("status", "shutdown"))
+		g.network.support.Logger().Info("network", log.String("status", "shutdown"), log.String("listen", g.showAddr))
 	}
 }

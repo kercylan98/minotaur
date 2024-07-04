@@ -2,6 +2,7 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/core/vivid"
+	"reflect"
 )
 
 func NewWebSocket(addr string, pattern ...string) *ExternalNetwork {
@@ -79,8 +80,9 @@ func (n *ExternalNetwork) SetPacketHandler(handler ExternalNetworkPacketHandler)
 
 func (n *ExternalNetwork) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 	n.support = support
+	actorType := reflect.TypeOf(n.producer()).Elem().Name()
 	n.support.System().ActorOf(n.producer, func(options *vivid.ActorOptions) {
-		options.WithName("un")
+		options.WithNamePrefix(actorType)
 	})
 }
 
