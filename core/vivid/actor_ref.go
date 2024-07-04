@@ -2,14 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/core"
-	"github.com/kercylan98/minotaur/toolkit/convert"
-	"net"
 )
 
+// ActorRef 是 Actor 的引用，同时也是进程引用的别名，进程是 Actor 的载体，因此 ActorRef 也是进程引用
 type ActorRef = *core.ProcessRef
-
-// NetworkRef 基于网络地址创建 ActorRef
-func NetworkRef(address string) ActorRef {
-	host, port, _ := net.SplitHostPort(address)
-	return core.NewProcessRef(core.NewAddress("", "", host, convert.StringToUint16(port), ""))
-}

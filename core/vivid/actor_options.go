@@ -1,11 +1,36 @@
 package vivid
 
+import "github.com/kercylan98/minotaur/toolkit/pools"
+
 const (
-	DefaultPersistenceEventLimit = 200
+	DefaultPersistenceEventLimit = 200 // 默认触发快照持久化的事件数量
 )
 
+var actorOptionsPool = pools.NewObjectPool[ActorOptions](func() *ActorOptions {
+	return newActorOptions()
+}, func(data *ActorOptions) {
+	data.options = data.options[:0]
+	data.Parent = nil
+	data.Name = ""
+	data.NamePrefix = ""
+	data.DispatcherProducer = nil
+	data.MailboxProducer = nil
+	data.SupervisorStrategy = nil
+	data.PersistenceName = ""
+	data.PersistenceStorage = nil
+	data.PersistenceEventLimit = 0
+	data.ConflictReuse = false
+})
+
+func newActorOptions() *ActorOptions {
+	return &ActorOptions{}
+}
+
+// ActorOption 对 ActorOptions 进行编辑的操作函数
 type ActorOption func(options *ActorOptions)
 
+// ActorOptions 是 Actor 的可选项，用于在创建之初对 Actor 进行配置
+//   - 可选项在创建完成 Actor 之后便不会继续保留
 type ActorOptions struct {
 	options               []ActorOption
 	Parent                ActorRef           // 父 Actor

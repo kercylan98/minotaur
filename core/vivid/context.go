@@ -81,9 +81,9 @@ type spawnerContextCompose interface {
 }
 
 type persistentContextCompose interface {
-	// PersistSnapshot 持久化快照
+	// PersistSnapshot 持久化当前快照
 	PersistSnapshot(snapshot Message)
 
-	// StatusChanged 状态变更
+	// StatusChanged 记录导致状态变更的事件
 	StatusChanged(event Message)
 }

@@ -16,10 +16,10 @@ var (
 )
 
 const (
-	actorStatusAlive uint32 = iota
-	actorStatusTerminating
-	actorStatusTerminated
-	actorStatusRestarting
+	actorStatusAlive       uint32 = iota // Actor 存活状态
+	actorStatusTerminating               // Actor 正在终止
+	actorStatusTerminated                // Actor 已终止
+	actorStatusRestarting                // Actor 正在重启
 )
 
 func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
@@ -53,20 +53,20 @@ func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions
 }
 
 type actorContext struct {
-	actorSystem        *ActorSystem
-	parent             ActorRef
-	childGuid          *atomic.Uint64
-	dispatcher         Dispatcher
-	ref                ActorRef
-	message            Message
-	actor              Actor
-	status             uint32                                          // 原子状态
-	mailbox            Mailbox                                         // 邮箱
+	actorSystem        *ActorSystem                                    // Actor 系统
+	parent             ActorRef                                        // 父 Actor 引用
+	childGuid          *atomic.Uint64                                  // 子 Actor 的 guid 当前值
+	dispatcher         Dispatcher                                      // Actor 使用的调度器
+	ref                ActorRef                                        // 该 Actor 引用
+	message            Message                                         // 当前正在处理的消息（可能为包装）
+	actor              Actor                                           // Actor 实例
+	mailbox            Mailbox                                         // Actor 使用的邮箱
 	producer           ActorProducer                                   // Actor 生产者
 	children           mappings.OrderInterface[core.Address, ActorRef] // 子 Actor
-	as                 *accidentState                                  // 事故状态
-	persistenceStatus  *persistenceStatus                              // 持久化状态
+	as                 *accidentState                                  // 该 Actor 的事故状态
+	persistenceStatus  *persistenceStatus                              // 该 Actor 的持久化状态
 	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
+	status             uint32                                          // 原子状态
 }
 
 func (ctx *actorContext) PersistSnapshot(snapshot Message) {
@@ -160,7 +160,8 @@ func (ctx *actorContext) localKindOf(kind Kind, parent ...ActorRef) ActorRef {
 		parentRef = parent[0]
 	}
 
-	opts := new(ActorOptions).WithParent(parentRef)
+	opts := actorOptionsPool.Get().WithParent(parentRef)
+	defer actorOptionsPool.Put(opts)
 	ref, err := ctx.actorSystem.internalActorOf(
 		opts,
 		kindInfo.producer,
@@ -180,7 +181,8 @@ func (ctx *actorContext) localKindOf(kind Kind, parent ...ActorRef) ActorRef {
 }
 
 func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
-	opts := new(ActorOptions).WithParent(ctx.ref)
+	opts := actorOptionsPool.Get().WithParent(ctx.ref)
+	defer actorOptionsPool.Put(opts)
 	ref, err := ctx.actorSystem.internalActorOf(
 		opts,
 		producer,
@@ -392,11 +394,12 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 		ctx.ProcessUserMessage(m, OnTerminated{TerminatedActor: ctx.ref})
 	})
 
-	ctx.System().opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
+	system := ctx.System()
+	system.opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
 	if parent := ctx.Parent(); parent != nil {
-		ctx.System().sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
+		system.sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
 	} else {
-		close(ctx.System().closed)
+		close(system.closed)
 	}
 
 }

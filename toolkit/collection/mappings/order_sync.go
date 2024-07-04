@@ -18,6 +18,7 @@ type OrderSync[K constraints.Hash, V any] struct {
 	rw    sync.RWMutex
 }
 
+// Get 获取指定 key 的元素
 func (o *OrderSync[K, V]) Get(key K) (value V, exists bool) {
 	o.rw.RLock()
 	defer o.rw.RUnlock()
@@ -28,6 +29,7 @@ func (o *OrderSync[K, V]) Get(key K) (value V, exists bool) {
 	return o.value[idx].V, true
 }
 
+// Add 添加元素
 func (o *OrderSync[K, V]) Add(key K, value V) {
 	o.rw.Lock()
 	defer o.rw.Unlock()
@@ -42,6 +44,7 @@ func (o *OrderSync[K, V]) Add(key K, value V) {
 	o.value = append(o.value, &orderEntry[K, V]{K: key, V: value})
 }
 
+// Set 设置指定 key 的元素
 func (o *OrderSync[K, V]) Set(key K, value V) {
 	o.rw.Lock()
 	defer o.rw.Unlock()
@@ -57,12 +60,14 @@ func (o *OrderSync[K, V]) Set(key K, value V) {
 	}
 }
 
+// Len 返回元素数量
 func (o *OrderSync[K, V]) Len() int {
 	o.rw.RLock()
 	defer o.rw.RUnlock()
 	return len(o.value)
 }
 
+// Del 删除指定 key 的元素
 func (o *OrderSync[K, V]) Del(key K) {
 	o.rw.Lock()
 	defer o.rw.Unlock()
@@ -81,11 +86,12 @@ func (o *OrderSync[K, V]) Del(key K) {
 	delete(o.idx, key)
 }
 
+// Range 遍历所有元素，如果 handle 返回 false，则停止遍历
 func (o *OrderSync[K, V]) Range(handle func(key K, value V) bool) {
 	o.rw.RLock()
 	defer o.rw.RUnlock()
 	for _, entry := range o.value {
-		if handle(entry.K, entry.V) {
+		if !handle(entry.K, entry.V) {
 			break
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func BenchmarkActorContext_RootActorOf(b *testing.B) {
+func BenchmarkActorContext_ActorOf(b *testing.B) {
 	system := vivid.NewActorSystem()
 	b.ResetTimer()
 

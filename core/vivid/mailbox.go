@@ -76,16 +76,17 @@ func (m *LockFreeMailbox) dispatch() {
 }
 
 func (m *LockFreeMailbox) process() {
-	for atomic.LoadInt32(&m.sysNum) > 0 || (atomic.LoadUint32(&m.suspended) == 0 && atomic.LoadInt32(&m.userNum) > 0) {
+	for {
 		m.processHandle()
-
-		// 处理完成后可能会有新的消息到达，所以需要再次尝试
-		for atomic.LoadInt32(&m.sysNum) > 0 || (atomic.LoadUint32(&m.suspended) == 0 && atomic.LoadInt32(&m.userNum) > 0) {
-			m.processHandle()
+		atomic.StoreUint32(&m.status, defaultMailboxStatusIdle)
+		notEmpty := atomic.LoadInt32(&m.sysNum) > 0 || (atomic.LoadUint32(&m.suspended) == 0 && atomic.LoadInt32(&m.userNum) > 0)
+		if !notEmpty {
+			break
+		} else if !atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusIdle, defaultMailboxStatusRunning) {
+			break
 		}
-
-		atomic.CompareAndSwapUint32(&m.status, defaultMailboxStatusRunning, defaultMailboxStatusIdle)
 	}
+
 }
 
 func (m *LockFreeMailbox) processHandle() {

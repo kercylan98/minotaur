@@ -8,6 +8,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -67,7 +68,10 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	system.processes = core.NewProcessManager(address, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 	support := newModuleSupport(system)
-	system.root, _ = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
+
+	actorOpts := actorOptionsPool.Get().WithName("user")
+	defer actorOptionsPool.Put(actorOpts)
+	system.root, _, _ = spawn(system, func() Actor { return &root{} }, actorOpts, nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
 	for _, plugin := range opts.modules {
 		plugin.OnLoad(support, transportModule)
 	}
@@ -91,7 +95,7 @@ type ActorSystem struct {
 // RegKind 注册一个 Kind，Kind 是 Actor 的类型，在通过 KindOf 创建 Actor 时将会根据预设的 Kind 创建 Actor
 //   - 当 Kind 重复注册时将会发生 panic
 func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...ActorOptionDefiner) {
-	var opts = new(ActorOptions)
+	var opts = newActorOptions() // 长期占用，不从池获取
 	for _, option := range options {
 		option(opts)
 	}
@@ -198,10 +202,12 @@ func spawn(
 	producer ActorProducer,
 	options *ActorOptions,
 	generatedHook func(ctx *actorContext),
-	childrenContainer mappings.OrderInterface[core.Address, ActorRef], guid *atomic.Uint64,
+	childrenContainer mappings.OrderInterface[core.Address, ActorRef],
+	guid *atomic.Uint64,
 ) (ActorContext, ActorRef, error) {
 	options.apply()
 
+	// 获取 system
 	var system *ActorSystem
 	switch v := spawner.(type) {
 	case *ActorSystem:
@@ -210,6 +216,7 @@ func spawn(
 		system = v.actorSystem
 	}
 
+	// 获取或初始化父级 Actor
 	var parent ActorRef
 	if options.Parent == nil && system.root != nil {
 		parent = system.root.Ref()
@@ -217,6 +224,8 @@ func spawn(
 		parent = options.Parent
 	}
 
+	// 初始化 Actor 名称，如果未指定名称则使用 guid 生成
+	// Guid 来源于其父级 Actor
 	name := options.Name
 	if name == "" {
 		name = convert.Uint64ToString(guid.Add(1))
@@ -225,13 +234,19 @@ func spawn(
 		name = options.NamePrefix + "-" + name
 	}
 
+	// 初始化 Actor 路径
 	var actorPath = name
 	if parent != nil {
-		actorPath = parent.Address().Path() + "/" + name
+		if strings.HasPrefix(name, "/") {
+			actorPath = parent.Address().Path() + name
+		} else {
+			actorPath = parent.Address().Path() + "/" + name
+		}
 	} else {
-		actorPath = "/" + name
+		actorPath = "/" + name // 根 Actor
 	}
 
+	// 初始化 Actor 地址
 	var parentAddr = system.processes.Address()
 	if parent != nil {
 		parentAddr = parent.Address()
@@ -239,6 +254,7 @@ func spawn(
 	var address = core.NewAddress(parentAddr.Network(), system.opts.Name, parentAddr.Host(), parentAddr.Port(), actorPath)
 	system.opts.LoggerProvider().Debug("actorOf", log.String("addr", address.String()))
 
+	// 初始化 Actor 邮箱
 	var mailbox Mailbox
 	if options.MailboxProducer == nil {
 		mailbox = NewDefaultMailbox(0)
@@ -246,23 +262,27 @@ func spawn(
 		mailbox = options.MailboxProducer()
 	}
 
+	// 初始化 Actor 进程
 	process := newProcess(address, mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
 		return nil, ref, fmt.Errorf("%w: %s", ErrActorAlreadyExist, address.String())
 	}
-	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
 
+	// 初始化 Actor 上下文
+	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
 	if generatedHook != nil {
 		generatedHook(ctx)
 	}
 
+	// 初始化调度器并绑定邮箱和 Actor 上下文
 	if options.DispatcherProducer == nil {
 		ctx.dispatcher = defaultDispatcher
 	} else {
 		ctx.dispatcher = options.DispatcherProducer()
 	}
 	mailbox.OnInit(ctx, ctx.dispatcher)
+
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 
 	return ctx, ctx.ref, nil
