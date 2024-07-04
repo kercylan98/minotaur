@@ -20,7 +20,7 @@ func TestNewWebSocket(t *testing.T) {
 				t.Log("conn closed", conn.RemoteAddr().String(), err)
 			}),
 		)
-	})
+	}).Shutdown()
 
 	time.Sleep(time.Second * 1000)
 }

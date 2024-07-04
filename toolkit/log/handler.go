@@ -151,6 +151,9 @@ func (h *Handler) formatCaller(ctx context.Context, record slog.Record, builder 
 }
 
 func (h *Handler) formatMessage(ctx context.Context, record slog.Record, builder *charproc.Builder) {
+	if record.Message == "" {
+		return
+	}
 	var msg = record.Message
 	if h.opts.MessageFormatter != nil {
 		msg = h.opts.MessageFormatter(msg)

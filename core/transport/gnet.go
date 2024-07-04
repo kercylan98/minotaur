@@ -11,7 +11,9 @@ import (
 	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/network"
 	"github.com/panjf2000/gnet/v2"
+	gnetErrors "github.com/panjf2000/gnet/v2/pkg/errors"
 	"time"
 )
 
@@ -139,29 +141,43 @@ func (g *gnetEngine) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 }
 
 func (g *gnetEngine) onLaunch(ctx vivid.ActorContext) {
-	ctx.AwaitForward(ctx.Ref(), func() vivid.Message {
-		var addr string
-		switch g.schema {
-		case schemaTcp, schemaWebSocket:
-			addr = fmt.Sprintf("tcp://%s", g.addr)
-			if g.schema == schemaWebSocket {
-				g.initWebSocketUpgrader()
-			}
-		case schemaTcp4:
-			addr = fmt.Sprintf("tcp4://%s", g.addr)
-		case schemaTcp6:
-			addr = fmt.Sprintf("tcp6://%s", g.addr)
-		case schemaUdp:
-			addr = fmt.Sprintf("udp://%s", g.addr)
-		case schemaUdp4:
-			addr = fmt.Sprintf("udp4://%s", g.addr)
-		case schemaUdp6:
-			addr = fmt.Sprintf("udp6://%s", g.addr)
-		case schemaUnix:
-			addr = fmt.Sprintf("unix://%s", g.addr)
-		default:
-			return fmt.Errorf("unsupported schema: %s", g.schema)
+	var addr string
+	switch g.schema {
+	case schemaTcp, schemaWebSocket:
+		addr = fmt.Sprintf("tcp://%s", g.addr)
+		if g.schema == schemaWebSocket {
+			g.initWebSocketUpgrader()
 		}
+	case schemaTcp4:
+		addr = fmt.Sprintf("tcp4://%s", g.addr)
+	case schemaTcp6:
+		addr = fmt.Sprintf("tcp6://%s", g.addr)
+	case schemaUdp:
+		addr = fmt.Sprintf("udp://%s", g.addr)
+	case schemaUdp4:
+		addr = fmt.Sprintf("udp4://%s", g.addr)
+	case schemaUdp6:
+		addr = fmt.Sprintf("udp6://%s", g.addr)
+	case schemaUnix:
+		addr = fmt.Sprintf("unix://%s", g.addr)
+	default:
+		ctx.Tell(ctx.Ref(), fmt.Errorf("unsupported schema: %s", g.schema))
+		return
+	}
+	ip, err := network.IP()
+	if err != nil {
+		ctx.Tell(ctx.Ref(), err)
+	}
+	showAddr := fmt.Sprintf("%s%s", ip, addr)
+	if g.schema == schemaWebSocket {
+		showAddr = fmt.Sprintf("ws://%s%s", fmt.Sprintf("%s%s", ip, g.addr), g.pattern)
+	}
+
+	g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+	g.network.support.Logger().Info("", log.String("Minotaur", "Starting network"), log.String("schema", g.schema), log.String("listen", showAddr))
+	g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+
+	ctx.AwaitForward(ctx.Ref(), func() vivid.Message {
 		return gnet.Run(g, addr, gnet.WithLogger(log.NewGNetLogger(log.GetDefault())))
 	})
 }
@@ -255,7 +271,9 @@ func (g *gnetEngine) onFutureForward(ctx vivid.ActorContext, m vivid.FutureForwa
 }
 
 func (g *gnetEngine) onTerminate() {
-	if err := g.eng.Stop(context.Background()); err != nil {
-		log.Error("gnetEngine", log.String("type", "stop"), log.Err(err))
+	if err := g.eng.Stop(context.Background()); err != nil && !errors.Is(err, gnetErrors.ErrEmptyEngine) {
+		g.network.support.Logger().Error("network", log.String("status", "shutdown"), log.Err(err))
+	} else {
+		g.network.support.Logger().Info("network", log.String("status", "shutdown"))
 	}
 }

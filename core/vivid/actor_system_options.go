@@ -3,6 +3,7 @@ package vivid
 import (
 	"github.com/google/uuid"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"os"
 )
 
 type LoggerProvider func() *log.Logger
@@ -47,7 +48,10 @@ func (o *ActorSystemOptions) apply(handlers []func(options *ActorSystemOptions))
 		option(o)
 	}
 	if o.LoggerProvider == nil {
-		logger := log.NewSilentLogger()
+		logger := log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().
+			WithLevel(log.LevelInfo).
+			WithCallerSkip(5),
+		))
 		o.LoggerProvider = func() *log.Logger {
 			return logger
 		}
