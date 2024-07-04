@@ -11,11 +11,12 @@ type PersistenceStatus interface {
 var _ PersistenceStatus = &persistenceStatus{}
 
 type persistenceStatus struct {
-	ctx        *actorContext
-	snapshot   Message   // 当前最新的快照
-	events     []Message // 当前最新的事件
-	eventLimit int       // 事件数量限制，超过限制则需要生成快照
-	recovery   bool      // 是否正在恢复
+	ctx            *actorContext
+	snapshot       Message   // 当前最新的快照
+	events         []Message // 当前最新的事件
+	eventLimit     int       // 事件数量限制，超过限制则需要生成快照
+	recovery       bool      // 是否正在恢复
+	persistentDone bool      // 持久化完成（需要确保发送持久化快照消息被处理，否则可能导致事件丢失）
 
 	persistenceName       string  // Actor 持久化名称
 	persistenceStorage    Storage // Actor 持久化存储器
@@ -43,7 +44,11 @@ func (m *persistenceStatus) StatusChanged(event Message) {
 		return
 	}
 	if len(m.events) >= m.eventLimit {
+		m.persistentDone = false
 		m.ctx.ProcessSystemMessage(onPersistenceSnapshot)
+		if !m.persistentDone {
+			m.events = append(m.events, event)
+		}
 	} else {
 		m.events = append(m.events, event)
 	}

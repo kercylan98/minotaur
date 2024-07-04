@@ -92,6 +92,11 @@ type ActorSystem struct {
 	kindHookModules []KindHookModule
 }
 
+// DeadLetter 获取当前 Actor 系统的死信队列
+func (sys *ActorSystem) DeadLetter() DeadLetter {
+	return sys.deadLetter
+}
+
 // RegKind 注册一个 Kind，Kind 是 Actor 的类型，在通过 KindOf 创建 Actor 时将会根据预设的 Kind 创建 Actor
 //   - 当 Kind 重复注册时将会发生 panic
 func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...ActorOptionDefiner) {

@@ -35,6 +35,9 @@ type basicContextCompose interface {
 
 	// System 获取当前 Actor 所在的 Actor 系统
 	System() *ActorSystem
+
+	// DeadLetter 获取当前 Actor 系统的死信队列
+	DeadLetter() DeadLetter
 }
 
 type senderContextCompose interface {

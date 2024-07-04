@@ -39,9 +39,22 @@ func NewFuture(system *ActorSystem, timeout time.Duration) Future {
 }
 
 type Future interface {
+	// Ref 返回该 Future 的 ActorRef
 	Ref() ActorRef
+
+	// Result 阻塞地等待结果
 	Result() (Message, error)
+
+	// AssertResult 阻塞地等待结果，当发生错误时将会引发 panic
+	AssertResult() Message
+
+	// Wait 阻塞的等待结果，该方式不关心结果，仅关心是否成功
 	Wait() error
+
+	// AssertWait 阻塞的等待结果，该方式不关心结果，仅关心是否成功，当发生错误时将会引发 panic
+	AssertWait()
+
+	// Forward 将结果转发给其他的 ActorRef
 	Forward(refs ...ActorRef)
 }
 
@@ -61,6 +74,20 @@ type future struct {
 	timer         *time.Timer
 	forwards      []ActorRef
 	forwardsMutex sync.Mutex
+}
+
+func (f *future) AssertResult() Message {
+	result, err := f.Result()
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func (f *future) AssertWait() {
+	if err := f.Wait(); err != nil {
+		panic(err)
+	}
 }
 
 func (f *future) Ref() ActorRef {

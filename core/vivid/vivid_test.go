@@ -55,18 +55,27 @@ func (e *StringEchoCounterActor) OnReceive(ctx ActorContext) {
 }
 
 var testActorSystemCounter = make(map[*ActorSystem]*sync.WaitGroup)
+var testActorSystemCounterRW sync.RWMutex
 
-func (sys *ActorSystem) Add(delta int) {
+func (sys *ActorSystem) Add(delta int) *ActorSystem {
+	testActorSystemCounterRW.Lock()
+	defer testActorSystemCounterRW.Unlock()
 	if _, ok := testActorSystemCounter[sys]; !ok {
 		testActorSystemCounter[sys] = new(sync.WaitGroup)
 	}
 	testActorSystemCounter[sys].Add(delta)
+	return sys
 }
-func (sys *ActorSystem) Done() {
+func (sys *ActorSystem) Done() *ActorSystem {
+	testActorSystemCounterRW.RLock()
+	defer testActorSystemCounterRW.RUnlock()
 	testActorSystemCounter[sys].Done()
+	return sys
 }
 
-func (sys *ActorSystem) Wait() {
+func (sys *ActorSystem) Wait() *ActorSystem {
+	testActorSystemCounterRW.RLock()
+	defer testActorSystemCounterRW.RUnlock()
 	testActorSystemCounter[sys].Wait()
-	sys.Shutdown()
+	return sys
 }
