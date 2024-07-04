@@ -69,6 +69,10 @@ type actorContext struct {
 	status             uint32                                          // 原子状态
 }
 
+func (ctx *actorContext) DeadLetter() DeadLetter {
+	return ctx.System().deadLetter
+}
+
 func (ctx *actorContext) PersistSnapshot(snapshot Message) {
 	ctx.persistenceStatus.PersistSnapshot(snapshot)
 	ctx.persistenceStatus.persistenceStorage.Persist(ctx.persistenceStatus.persistenceName, ctx.persistenceStatus)
@@ -473,6 +477,7 @@ func (ctx *actorContext) onRestarted(m OnTerminated) {
 	}
 
 	ctx.actor = ctx.producer()
+	atomic.StoreUint32(&ctx.status, actorStatusAlive)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onResumeMailbox)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 }
