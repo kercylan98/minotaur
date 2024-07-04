@@ -17,6 +17,17 @@ type ActorOptions struct {
 	PersistenceName       string             // Actor 持久化名称
 	PersistenceStorage    Storage            // Actor 持久化存储器
 	PersistenceEventLimit int                // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
+	ConflictReuse         bool               // Actor 冲突重用，当 Actor 已存在时将会重用已存在的 Actor
+}
+
+// WithConflictReuse 通过指定冲突重用的方式创建一个 Actor
+//   - 当 Actor 已存在时将会重用已存在的 Actor
+//   - 需要注意的是，冲突是由于 Actor 地址相同，即同一路径下的 Actor 地址相同。如果复用的 Actor 与使用的期望不同，可能会导致不可预知的问题
+func (o *ActorOptions) WithConflictReuse(enable bool) *ActorOptions {
+	o.options = append(o.options, func(options *ActorOptions) {
+		options.ConflictReuse = enable
+	})
+	return o
 }
 
 // WithNamePrefix 通过指定名称前缀创建一个 Actor

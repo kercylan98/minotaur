@@ -67,7 +67,7 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	system.processes = core.NewProcessManager(address, 128, system.deadLetter)
 	system.deadLetter.ref, _ = system.processes.Register(system.deadLetter)
 	support := newModuleSupport(system)
-	system.root = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
+	system.root, _ = spawn(system, func() Actor { return &root{} }, new(ActorOptions).WithName("user"), nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
 	for _, plugin := range opts.modules {
 		plugin.OnLoad(support, transportModule)
 	}
@@ -184,14 +184,22 @@ func (sys *ActorSystem) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	return sys.root.KindOf(kind, parent...)
 }
 
-func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) ActorRef {
+func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) (ActorRef, error) {
 	for _, prop := range props {
 		prop(options)
 	}
-	return spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef](), guid).Ref()
+	_, ref, err := spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef](), guid)
+	return ref, err
 }
 
-func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions, generatedHook func(ctx *actorContext), childrenContainer mappings.OrderInterface[core.Address, ActorRef], guid *atomic.Uint64) ActorContext {
+// spawn 在创建时可能会存在冲突的情况，即 Actor 已存在，该情况会返回已存在的 ActorRef 及错误信息，可根据情况自行抉择
+func spawn(
+	spawner SpawnerContext,
+	producer ActorProducer,
+	options *ActorOptions,
+	generatedHook func(ctx *actorContext),
+	childrenContainer mappings.OrderInterface[core.Address, ActorRef], guid *atomic.Uint64,
+) (ActorContext, ActorRef, error) {
 	options.apply()
 
 	var system *ActorSystem
@@ -241,7 +249,7 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	process := newProcess(address, mailbox)
 	ref, exist := system.processes.Register(process)
 	if exist {
-		panic(fmt.Errorf("actor already exists, address: %s", address.String()))
+		return nil, ref, fmt.Errorf("%w: %s", ErrActorAlreadyExist, address.String())
 	}
 	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
 
@@ -257,5 +265,5 @@ func spawn(spawner SpawnerContext, producer ActorProducer, options *ActorOptions
 	mailbox.OnInit(ctx, ctx.dispatcher)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 
-	return ctx
+	return ctx, ctx.ref, nil
 }

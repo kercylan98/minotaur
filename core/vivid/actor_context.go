@@ -124,13 +124,6 @@ func (ctx *actorContext) TerminateGracefully(target ActorRef) {
 	ctx.System().sendUserMessage(ctx.ref, target, onTerminateGracefully)
 }
 
-func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
-	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(ctx.ref), producer, options, func(child *actorContext) {
-		// 确保在第一个消息处理之前添加到父级的子级列表中
-		ctx.children.Set(child.ref.Address(), child.ref)
-	}, ctx.childGuid)
-}
-
 func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	if len(parent) > 0 {
 		if ctx.ref.Address().Address() == parent[0].Address().Address() {
@@ -167,12 +160,40 @@ func (ctx *actorContext) localKindOf(kind Kind, parent ...ActorRef) ActorRef {
 		parentRef = parent[0]
 	}
 
-	return ctx.actorSystem.internalActorOf(new(ActorOptions).WithParent(parentRef), kindInfo.producer, []ActorOptionDefiner{func(options *ActorOptions) {
-		options.options = append(options.options, kindInfo.options.options...)
-	}}, func(child *actorContext) {
-		// 确保在第一个消息处理之前添加到父级的子级列表中
-		ctx.children.Set(child.ref.Address(), child.ref)
-	}, ctx.childGuid)
+	opts := new(ActorOptions).WithParent(parentRef)
+	ref, err := ctx.actorSystem.internalActorOf(
+		opts,
+		kindInfo.producer,
+		[]ActorOptionDefiner{func(options *ActorOptions) {
+			options.options = append(options.options, kindInfo.options.options...)
+		}},
+		func(child *actorContext) {
+			// 确保在第一个消息处理之前添加到父级的子级列表中
+			ctx.children.Set(child.ref.Address(), child.ref)
+		},
+		ctx.childGuid,
+	)
+	if err != nil && !opts.ConflictReuse {
+		panic(err)
+	}
+	return ref
+}
+
+func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionDefiner) ActorRef {
+	opts := new(ActorOptions).WithParent(ctx.ref)
+	ref, err := ctx.actorSystem.internalActorOf(
+		opts,
+		producer,
+		options,
+		func(child *actorContext) { // 确保在第一个消息处理之前添加到父级的子级列表中
+			ctx.children.Set(child.ref.Address(), child.ref)
+		},
+		ctx.childGuid,
+	)
+	if err != nil && !opts.ConflictReuse {
+		panic(err)
+	}
+	return ref
 }
 
 func (ctx *actorContext) Parent() ActorRef {
