@@ -15,8 +15,6 @@ import (
 	"github.com/panjf2000/gnet/v2"
 	gnetErrors "github.com/panjf2000/gnet/v2/pkg/errors"
 	"net"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -32,9 +30,6 @@ const (
 )
 
 var _ gnet.EventHandler = &gnetEngine{}
-var gnetEngineNum atomic.Int32
-var gnetEngineLaunchedNum atomic.Int32
-var gnetOnceLaunchInfo sync.Once
 
 func newGnetEngine(network *ExternalNetwork, schema, addr string, pattern ...string) *gnetEngine {
 	g := &gnetEngine{
@@ -57,10 +52,6 @@ type gnetEngine struct {
 	showAddr string
 }
 
-func (g *gnetEngine) OnShutdown(eng gnet.Engine) {
-	_ = eng.Stop(context.Background())
-}
-
 func (g *gnetEngine) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case vivid.OnLaunch:
@@ -70,6 +61,10 @@ func (g *gnetEngine) OnReceive(ctx vivid.ActorContext) {
 	case vivid.OnTerminate:
 		g.onTerminate()
 	}
+}
+
+func (g *gnetEngine) OnShutdown(eng gnet.Engine) {
+	_ = eng.Stop(context.Background())
 }
 
 func (g *gnetEngine) Shutdown() error {
@@ -191,12 +186,12 @@ func (g *gnetEngine) onLaunch(ctx vivid.ActorContext) {
 		g.showAddr = fmt.Sprintf("%s://%s:%s%s", g.schema, host, port, g.pattern)
 	}
 
-	gnetEngineNum.Add(1)
-	gnetOnceLaunchInfo.Do(func() {
+	externalNetworkNum.Add(1)
+	externalNetworkOnceLaunchInfo.Do(func() {
 		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	})
 	g.network.support.Logger().Info("", log.String("Minotaur", "enable network"), log.String("schema", g.schema), log.String("listen", g.showAddr))
-	if gnetEngineLaunchedNum.Add(1) == gnetEngineNum.Load() {
+	if externalNetworkLaunchedNum.Add(1) == externalNetworkNum.Load() {
 		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	}
 

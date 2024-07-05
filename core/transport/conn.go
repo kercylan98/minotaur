@@ -2,11 +2,10 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/panjf2000/gnet/v2"
 	"net"
 )
 
-func NewConn(c gnet.Conn, ctx vivid.ActorContext, writer vivid.ActorRef) *Conn {
+func NewConn(c net.Conn, ctx vivid.ActorContext, writer vivid.ActorRef) *Conn {
 	return &Conn{
 		ActorContext: ctx,
 		conn:         c,
@@ -16,7 +15,7 @@ func NewConn(c gnet.Conn, ctx vivid.ActorContext, writer vivid.ActorRef) *Conn {
 
 type Conn struct {
 	vivid.ActorContext
-	conn   gnet.Conn
+	conn   net.Conn
 	writer vivid.ActorRef
 }
 

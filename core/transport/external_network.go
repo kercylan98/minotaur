@@ -3,7 +3,13 @@ package transport
 import (
 	"github.com/kercylan98/minotaur/core/vivid"
 	"reflect"
+	"sync"
+	"sync/atomic"
 )
+
+var externalNetworkNum atomic.Int32
+var externalNetworkLaunchedNum atomic.Int32
+var externalNetworkOnceLaunchInfo sync.Once
 
 func NewWebSocket(addr string, pattern ...string) *ExternalNetwork {
 	return newExternalNetwork(schemaWebSocket, addr, pattern...)
@@ -84,8 +90,4 @@ func (n *ExternalNetwork) OnLoad(support *vivid.ModuleSupport, hasTransportModul
 	n.support.System().ActorOf(n.producer, func(options *vivid.ActorOptions) {
 		options.WithNamePrefix(actorType)
 	})
-}
-
-func (n *ExternalNetwork) OnStart() {
-
 }
