@@ -195,7 +195,7 @@ func (g *gnetEngine) onLaunch(ctx vivid.ActorContext) {
 	gnetOnceLaunchInfo.Do(func() {
 		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	})
-	g.network.support.Logger().Info("", log.String("Minotaur", "Start network"), log.String("schema", g.schema), log.String("listen", g.showAddr))
+	g.network.support.Logger().Info("", log.String("Minotaur", "enable network"), log.String("schema", g.schema), log.String("listen", g.showAddr))
 	if gnetEngineLaunchedNum.Add(1) == gnetEngineNum.Load() {
 		g.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	}
