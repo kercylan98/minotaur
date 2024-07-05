@@ -134,7 +134,7 @@ type ConnectionOpen struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string `protobuf:"bytes,1,opt,name=Address,proto3" json:"Address,omitempty"`
+	Address string `protobuf:"bytes,1,opt,name=PhysicalAddress,proto3" json:"PhysicalAddress,omitempty"`
 }
 
 func (x *ConnectionOpen) Reset() {

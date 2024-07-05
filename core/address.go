@@ -42,12 +42,14 @@ func NewAddress(network string, system, host string, port uint16, path Path) Add
 	return Address(unsafe.String(unsafe.SliceData(buf), len(buf)))
 }
 
+// Network 返回该地址的网络名称
 func (a Address) Network() string {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
 	return readString(data, LengthTotalLen, networkLen)
 }
 
+// System 返回该地址的系统名称
 func (a Address) System() string {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
@@ -56,6 +58,7 @@ func (a Address) System() string {
 
 }
 
+// Host 返回该地址的主机地址
 func (a Address) Host() string {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
@@ -68,6 +71,7 @@ func (a Address) Host() string {
 	return readString(data, LengthTotalLen+networkLen+systemLen, hostLen)
 }
 
+// Port 返回该地址的端口
 func (a Address) Port() uint16 {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
@@ -76,7 +80,8 @@ func (a Address) Port() uint16 {
 	return readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
 }
 
-func (a Address) Path() string {
+// LogicPath 返回该地址的逻辑路径，即除去网络、系统、主机、端口的部分
+func (a Address) LogicPath() string {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
 	systemLen := readUint16(data, LengthLen)
@@ -85,7 +90,8 @@ func (a Address) Path() string {
 	return readString(data, LengthTotalLen+networkLen+systemLen+hostLen+portLen, pathLen)
 }
 
-func (a Address) Address() string {
+// PhysicalAddress 返回该地址的物理地址，即主机地址和端口
+func (a Address) PhysicalAddress() string {
 	data := []byte(a)
 	networkLen := readUint16(data, 0)
 	systemLen := readUint16(data, LengthLen)
@@ -93,6 +99,11 @@ func (a Address) Address() string {
 	host := readString(data, LengthTotalLen+networkLen+systemLen, hostLen)
 	port := readUint16(data, LengthTotalLen+networkLen+systemLen+hostLen)
 	return net.JoinHostPort(host, convert.Uint16ToString(port))
+}
+
+// IsLocal 检查两个地址是否构成相同的本地地址
+func (a Address) IsLocal(b Address) bool {
+	return a.Network() == b.Network() && a.System() == b.System() && a.PhysicalAddress() == b.PhysicalAddress()
 }
 
 func (a Address) ParseToRoot() Address {
@@ -104,7 +115,7 @@ func (a Address) IsEmpty() bool {
 }
 
 func (a Address) Join(path string) Address {
-	return NewAddress(a.Network(), a.System(), a.Host(), a.Port(), a.Path()+"/"+path)
+	return NewAddress(a.Network(), a.System(), a.Host(), a.Port(), a.LogicPath()+"/"+path)
 }
 
 func (a Address) Ref() *ProcessRef {

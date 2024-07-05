@@ -38,7 +38,7 @@ func (e *endpoint) OnReceive(ctx vivid.ActorContext) {
 }
 
 func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
-	addr := e.address.Address()
+	addr := e.address.PhysicalAddress()
 	cc, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		e.network.support.Logger().Error("Endpoint", log.String("type", "connect"), log.Err(err))
@@ -59,7 +59,7 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 	err = stream.Send(&DistributedMessage{
 		MessageType: &DistributedMessage_ConnectionOpen{
 			ConnectionOpen: &ConnectionOpen{
-				Address: e.network.address.Address(),
+				Address: e.network.address.PhysicalAddress(),
 			},
 		},
 	})

@@ -3,10 +3,12 @@ package vivid
 import (
 	"fmt"
 	core "github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
+	"github.com/pkg/errors"
 	"sort"
 	"strings"
 	"sync"
@@ -71,7 +73,7 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 
 	actorOpts := actorOptionsPool.Get().WithName("user")
 	defer actorOptionsPool.Put(actorOpts)
-	system.root, _, _ = spawn(system, func() Actor { return &root{} }, actorOpts, nil, mappings.NewOrderSync[core.Address, ActorRef](), nil)
+	system.root, _, _ = spawn(system, func() Actor { return &root{} }, actorOpts, nil, mappings.NewOrderSync[core.Address, ActorRef](), nil, charproc.None)
 	for _, plugin := range opts.modules {
 		plugin.OnLoad(support, transportModule)
 	}
@@ -109,6 +111,9 @@ func (sys *ActorSystem) RegKind(k Kind, producer ActorProducer, options ...Actor
 	defer sys.kindRw.Unlock()
 	if sys.kinds == nil {
 		sys.kinds = make(map[Kind]*kind)
+	}
+	if k == charproc.None {
+		panic(errors.New("kind cannot be none"))
 	}
 	if _, exist := sys.kinds[k]; exist {
 		panic(fmt.Errorf("kind %s already exists", k))
@@ -193,11 +198,18 @@ func (sys *ActorSystem) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	return sys.root.KindOf(kind, parent...)
 }
 
-func (sys *ActorSystem) internalActorOf(options *ActorOptions, producer ActorProducer, props []ActorOptionDefiner, generatedHook func(ctx *actorContext), guid *atomic.Uint64) (ActorRef, error) {
+func (sys *ActorSystem) internalActorOf(
+	options *ActorOptions,
+	producer ActorProducer,
+	props []ActorOptionDefiner,
+	generatedHook func(ctx *actorContext),
+	guid *atomic.Uint64,
+	kind Kind,
+) (ActorRef, error) {
 	for _, prop := range props {
 		prop(options)
 	}
-	_, ref, err := spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef](), guid)
+	_, ref, err := spawn(sys, producer, options, generatedHook, mappings.NewOrder[core.Address, ActorRef](), guid, kind)
 	return ref, err
 }
 
@@ -209,6 +221,7 @@ func spawn(
 	generatedHook func(ctx *actorContext),
 	childrenContainer mappings.OrderInterface[core.Address, ActorRef],
 	guid *atomic.Uint64,
+	kind Kind,
 ) (ActorContext, ActorRef, error) {
 	options.apply()
 
@@ -243,9 +256,9 @@ func spawn(
 	var actorPath = name
 	if parent != nil {
 		if strings.HasPrefix(name, "/") {
-			actorPath = parent.Address().Path() + name
+			actorPath = parent.Address().LogicPath() + name
 		} else {
-			actorPath = parent.Address().Path() + "/" + name
+			actorPath = parent.Address().LogicPath() + "/" + name
 		}
 	} else {
 		actorPath = "/" + name // 根 Actor
@@ -275,7 +288,7 @@ func spawn(
 	}
 
 	// 初始化 Actor 上下文
-	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer)
+	ctx := newActorContext(system, parent, options, producer, ref, childrenContainer, kind)
 	if generatedHook != nil {
 		generatedHook(ctx)
 	}

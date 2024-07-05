@@ -69,6 +69,12 @@ type receiverContextCompose interface {
 
 	// BehaviorOf 生成一个行为
 	BehaviorOf() Behavior
+
+	// IsKind 返回该 Actor 是否是通过 KindOf 创建的
+	IsKind() bool
+
+	// Kind 返回该 Actor 的 Kind
+	Kind() Kind
 }
 
 type spawnerContextCompose interface {

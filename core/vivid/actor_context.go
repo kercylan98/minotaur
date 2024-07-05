@@ -3,6 +3,7 @@ package vivid
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync/atomic"
@@ -22,7 +23,7 @@ const (
 	actorStatusRestarting                // Actor 正在重启
 )
 
-func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef]) *actorContext {
+func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions, producer ActorProducer, ref ActorRef, container mappings.OrderInterface[core.Address, ActorRef], kind Kind) *actorContext {
 	ctx := &actorContext{
 		actorSystem: system,
 		childGuid:   new(atomic.Uint64),
@@ -38,13 +39,14 @@ func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions
 			eventLimit:         options.PersistenceEventLimit,
 		},
 		supervisorStrategy: options.SupervisorStrategy,
+		kind:               kind,
 	}
 	ctx.persistenceStatus.ctx = ctx
 	if ctx.persistenceStatus.persistenceStorage == nil {
 		ctx.persistenceStatus.persistenceStorage = defaultStorage
 	}
 	if ctx.persistenceStatus.persistenceName == "" {
-		ctx.persistenceStatus.persistenceName = ref.Address().Path()
+		ctx.persistenceStatus.persistenceName = ref.Address().LogicPath()
 	}
 	if ctx.persistenceStatus.eventLimit <= 0 {
 		ctx.persistenceStatus.eventLimit = DefaultPersistenceEventLimit
@@ -66,7 +68,16 @@ type actorContext struct {
 	as                 *accidentState                                  // 该 Actor 的事故状态
 	persistenceStatus  *persistenceStatus                              // 该 Actor 的持久化状态
 	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
+	kind               Kind                                            // Actor Kind 类型
 	status             uint32                                          // 原子状态
+}
+
+func (ctx *actorContext) IsKind() bool {
+	return ctx.kind != charproc.None
+}
+
+func (ctx *actorContext) Kind() Kind {
+	return ctx.kind
 }
 
 func (ctx *actorContext) DeadLetter() DeadLetter {
@@ -140,7 +151,7 @@ func (ctx *actorContext) TerminateGracefully(target ActorRef) {
 
 func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 	if len(parent) > 0 {
-		if ctx.ref.Address().Address() == parent[0].Address().Address() {
+		if ctx.ref.Address().PhysicalAddress() == parent[0].Address().PhysicalAddress() {
 			return ctx.localKindOf(kind, parent...)
 		}
 
@@ -155,7 +166,7 @@ func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 		if err != nil {
 			return ctx.System().deadLetter.Ref()
 		}
-		var addr = result.(RegulatoryMessage).Message.(*ActorRefAddress).Address
+		var addr = result.(*ActorRefAddress).Address
 		return core.NewProcessRef(core.Address(addr))
 	}
 	return ctx.localKindOf(kind)
@@ -187,6 +198,7 @@ func (ctx *actorContext) localKindOf(kind Kind, parent ...ActorRef) ActorRef {
 			ctx.children.Set(child.ref.Address(), child.ref)
 		},
 		ctx.childGuid,
+		kind,
 	)
 	if err != nil && !opts.ConflictReuse {
 		panic(err)
@@ -205,6 +217,7 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 			ctx.children.Set(child.ref.Address(), child.ref)
 		},
 		ctx.childGuid,
+		charproc.None,
 	)
 	if err != nil && !opts.ConflictReuse {
 		panic(err)

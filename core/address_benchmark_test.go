@@ -36,15 +36,15 @@ func BenchmarkAddress(b *testing.B) {
 		}
 	})
 
-	b.Run("Path", func(b *testing.B) {
+	b.Run("LogicPath", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = address.Path()
+			_ = address.LogicPath()
 		}
 	})
 
-	b.Run("Address", func(b *testing.B) {
+	b.Run("PhysicalAddress", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = address.Address()
+			_ = address.PhysicalAddress()
 		}
 	})
 

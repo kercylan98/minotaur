@@ -27,7 +27,7 @@ func NewNetwork(address string) *Network {
 		panic(err)
 	}
 	n := &Network{
-		address: core.NewRootAddress("", "", host, convert.StringToUint16(port)),
+		address: core.NewRootAddress("grpc", "", host, convert.StringToUint16(port)),
 	}
 
 	return n
@@ -73,7 +73,7 @@ func (n *Network) ActorSystemAddress() core.Address {
 }
 
 func (n *Network) launch() {
-	listener, err := net.Listen("tcp", n.address.Address())
+	listener, err := net.Listen("tcp", n.address.PhysicalAddress())
 	if err != nil {
 		panic(err)
 	}

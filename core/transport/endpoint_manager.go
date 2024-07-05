@@ -28,17 +28,17 @@ func (em *endpointManager) getEndpoint(address core.Address) vivid.ActorRef {
 		em.endpointRw.Unlock()
 		return core.NewProcessRef(em.network.support.GetDeadLetter().GetAddress())
 	}
-	ref, exist := em.endpoints[address.Address()]
+	ref, exist := em.endpoints[address.PhysicalAddress()]
 	if !exist {
 		ref = em.network.support.System().ActorOf(func() vivid.Actor {
 			return newEndpoint(em.network, address)
 		}, func(options *vivid.ActorOptions) {
-			options.WithName("endpoint/" + address.Address())
+			options.WithName("endpoint/" + address.PhysicalAddress())
 			options.WithMailbox(func() vivid.Mailbox {
 				return vivid.NewDefaultMailbox(128)
 			})
 		})
-		em.endpoints[address.Address()] = ref
+		em.endpoints[address.PhysicalAddress()] = ref
 	}
 	em.endpointRw.Unlock()
 	return ref
@@ -46,7 +46,7 @@ func (em *endpointManager) getEndpoint(address core.Address) vivid.ActorRef {
 
 func (em *endpointManager) delEndpoint(address core.Address) {
 	em.endpointRw.Lock()
-	delete(em.endpoints, address.Address())
+	delete(em.endpoints, address.PhysicalAddress())
 	em.endpointRw.Unlock()
 }
 

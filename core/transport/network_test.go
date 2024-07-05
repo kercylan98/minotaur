@@ -5,12 +5,14 @@ import (
 	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"testing"
 	"time"
 )
 
 func TestNewNetwork(t *testing.T) {
 	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithLoggerProvider(log.GetDefault)
 		options.WithModule(transport.NewNetwork(":8800"))
 	})
 
@@ -30,6 +32,7 @@ func TestNewNetwork(t *testing.T) {
 
 func TestNewNetwork2(t *testing.T) {
 	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithLoggerProvider(log.GetDefault)
 		options.WithModule(transport.NewNetwork(":8899"))
 	})
 

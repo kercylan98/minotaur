@@ -26,7 +26,7 @@ func newProcessRegisterTable(address Address, bucketSize int, defaultProcess ...
 // processRegisterTable 进程注册表
 type processRegisterTable struct {
 	address        Address
-	registerTable  *mappings.MutexBucket[string, Process] // key = core.Address.Path()
+	registerTable  *mappings.MutexBucket[string, Process] // key = core.PhysicalAddress.LogicPath()
 	resolver       []AddressResolver
 	defaultProcess Process
 	onlyAddress    bool
@@ -50,8 +50,8 @@ func (prt *processRegisterTable) RegisterAddressResolver(resolver AddressResolve
 // Register 注册一个进程
 func (prt *processRegisterTable) Register(process Process) (ref *ProcessRef, exists bool) {
 	address := process.GetAddress()
-	bucket := prt.registerTable.GetBucket(address.Path())
-	_, exists = bucket.GetOrSet(address.Path(), process)
+	bucket := prt.registerTable.GetBucket(address.LogicPath())
+	_, exists = bucket.GetOrSet(address.LogicPath(), process)
 	return &ProcessRef{
 		address: address,
 	}, exists
@@ -59,8 +59,8 @@ func (prt *processRegisterTable) Register(process Process) (ref *ProcessRef, exi
 
 // GetProcess 获取一个进程
 func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
-	var currAddress, targetAddress = prt.Address().Address(), address.Address()
-	if currAddress != targetAddress {
+	// 如果两个地址不为本地，那么尝试使用注册的解析器进行解析
+	if !prt.Address().IsLocal(address) {
 		for _, resolver := range prt.resolver {
 			var process Process
 			if prt.onlyAddress {
@@ -75,8 +75,8 @@ func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
 		return prt.defaultProcess, false
 	}
 
-	bucket := prt.registerTable.GetBucket(address.Path())
-	process, exists := bucket.Get(address.Path())
+	bucket := prt.registerTable.GetBucket(address.LogicPath())
+	process, exists := bucket.Get(address.LogicPath())
 	if exists {
 		return process, exists
 	}
@@ -86,9 +86,9 @@ func (prt *processRegisterTable) GetProcess(address Address) (Process, bool) {
 
 // Unregister 注销一个进程
 func (prt *processRegisterTable) Unregister(ref *ProcessRef, handler ...func()) {
-	bucket := prt.registerTable.GetBucket(ref.address.Path())
+	bucket := prt.registerTable.GetBucket(ref.address.LogicPath())
 	bucket.Lock()
-	process, exist := bucket.NoneLockGetAndDel(ref.address.Path())
+	process, exist := bucket.NoneLockGetAndDel(ref.address.LogicPath())
 	for _, f := range handler {
 		func() {
 			defer func() {

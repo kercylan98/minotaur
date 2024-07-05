@@ -4,7 +4,7 @@ import "github.com/kercylan98/minotaur/core"
 
 type (
 	// ActorId 是一个类型别名，它表示一个 Actor 的唯一标识符。
-	// 这个类型别名将 Address 类型重命名为 ActorId，以提高代码的可读性和可维护性。
+	// 这个类型别名将 PhysicalAddress 类型重命名为 ActorId，以提高代码的可读性和可维护性。
 	ActorId = core.Address
 
 	// ActorOptionDefiner 是一个函数类型，用于定义 Actor 的选项。

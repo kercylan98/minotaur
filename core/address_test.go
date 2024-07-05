@@ -14,9 +14,9 @@ func TestNewAddress(t *testing.T) {
 }
 
 func TestAddress_Address(t *testing.T) {
-	t.Log(address.Address())
+	t.Log(address.PhysicalAddress())
 
-	if address.Address() != "localhost:8080" {
+	if address.PhysicalAddress() != "localhost:8080" {
 		t.Fail()
 	}
 }
@@ -54,9 +54,9 @@ func TestAddress_Port(t *testing.T) {
 }
 
 func TestAddress_Path(t *testing.T) {
-	t.Log(address.Path())
+	t.Log(address.LogicPath())
 
-	if address.Path() != "/path" {
+	if address.LogicPath() != "/path" {
 		t.Fail()
 	}
 }
@@ -80,5 +80,5 @@ func TestParseAddress(t *testing.T) {
 		t.Error("Parsed address does not match original address")
 	}
 
-	fmt.Println("Parsed Address:", addr.String())
+	fmt.Println("Parsed PhysicalAddress:", addr.String())
 }
