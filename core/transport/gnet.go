@@ -112,7 +112,7 @@ func (g *gnetEngine) createReaderActor(c gnet.Conn) vivid.Actor {
 					return vivid.DirectiveStop
 				}, 0))
 			})
-			conn = NewConn(c, ctx, writerRef)
+			conn = NewConn(c, ctx.System(), ctx.Ref(), writerRef)
 			g.network.connOpenedHandler(conn)
 		case Packet:
 			g.network.packetHandler(conn, m)

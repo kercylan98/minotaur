@@ -109,12 +109,12 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 func (e *endpoint) onTerminate(ctx vivid.ActorContext, m vivid.OnTerminate) {
 	if e.stream != nil {
 		if err := e.stream.CloseSend(); err != nil {
-			e.network.support.Logger().Error("Endpoint", log.String("type", "close"), log.String("instance", "stream"), log.Err(err))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "passiveClose"), log.String("instance", "stream"), log.Err(err))
 		}
 	}
 	if e.conn != nil {
 		if err := e.conn.Close(); err != nil {
-			e.network.support.Logger().Error("Endpoint", log.String("type", "close"), log.String("instance", "conn"), log.Err(err))
+			e.network.support.Logger().Error("Endpoint", log.String("type", "passiveClose"), log.String("instance", "conn"), log.Err(err))
 		}
 	}
 	e.network.support.Logger().Debug("Endpoint", log.String("type", "terminate"))

@@ -5,18 +5,20 @@ import (
 	"net"
 )
 
-func NewConn(c net.Conn, ctx vivid.ActorContext, writer vivid.ActorRef) *Conn {
+func NewConn(c net.Conn, system *vivid.ActorSystem, reader, writer vivid.ActorRef) *Conn {
 	return &Conn{
-		ActorContext: ctx,
-		conn:         c,
-		writer:       writer,
+		actorSystem: system,
+		conn:        c,
+		reader:      reader,
+		writer:      writer,
 	}
 }
 
 type Conn struct {
-	vivid.ActorContext
-	conn   net.Conn
-	writer vivid.ActorRef
+	actorSystem *vivid.ActorSystem
+	conn        net.Conn
+	reader      vivid.ActorRef
+	writer      vivid.ActorRef
 }
 
 func (c *Conn) RemoteAddr() net.Addr {
@@ -28,11 +30,11 @@ func (c *Conn) LocalAddr() net.Addr {
 }
 
 func (c *Conn) Close() {
-	c.ActorContext.Terminate(c.ActorContext.Ref())
+	c.actorSystem.TerminateGracefully(c.reader)
 }
 
 func (c *Conn) WritePacket(packet Packet) {
-	c.ActorContext.Tell(c.writer, packet)
+	c.actorSystem.Context().Tell(c.writer, packet)
 }
 
 func (c *Conn) Write(bytes []byte) {

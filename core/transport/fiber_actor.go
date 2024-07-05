@@ -3,12 +3,13 @@ package transport
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"net"
 )
 
-func newFiber(network *Fiber, kit *FiberKit, addr string) *fiberActor {
+func newFiberActor(network *Fiber, kit *FiberKit, addr string) *fiberActor {
 	fa := &fiberActor{
 		network: network,
 		kit:     kit,
@@ -17,10 +18,10 @@ func newFiber(network *Fiber, kit *FiberKit, addr string) *fiberActor {
 	return fa
 }
 
-type actorOfMessage struct {
-	vivid.ActorProducer
-	vivid.ActorOptionDefiner
-}
+type (
+	connectionOpenedMessage fiberConnActor
+	connectionClosedMessage fiberConnActor
+)
 
 type fiberActor struct {
 	network  *Fiber
@@ -35,10 +36,12 @@ func (f *fiberActor) OnReceive(ctx vivid.ActorContext) {
 		f.onLaunch(ctx)
 	case vivid.FutureForwardMessage:
 		f.onFutureForward(ctx, m)
-	case actorOfMessage:
-		ctx.Reply(ctx.ActorOf(m.ActorProducer, m.ActorOptionDefiner))
 	case vivid.OnTerminate:
 		f.onTerminate()
+	case *connectionOpenedMessage:
+		f.onConnectionOpened(ctx, (*fiberConnActor)(m))
+	case *connectionClosedMessage:
+		f.onConnectionClosed(ctx, (*fiberConnActor)(m))
 	}
 }
 
@@ -84,5 +87,28 @@ func (f *fiberActor) onTerminate() {
 		f.network.support.Logger().Error("network", log.String("status", "shutdown"), log.String("listen", f.showAddr), log.Err(err))
 	} else {
 		f.network.support.Logger().Info("network", log.String("status", "shutdown"), log.String("listen", f.showAddr))
+	}
+}
+
+func (f *fiberActor) onConnectionOpened(ctx vivid.ActorContext, m *fiberConnActor) {
+	ref := ctx.ActorOf(func() vivid.Actor {
+		return m
+	}, func(options *vivid.ActorOptions) {
+		options.WithName("conn-" + m.fiberConn.RemoteAddr().String())
+		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
+			return vivid.DirectiveStop
+		}, 0))
+	})
+	conn := NewConn(m.fiberConn, ctx.System(), ref, ref)
+	if err := f.kit.fws.connectionOpenedHook(f.kit, m.ctx, conn); err != nil {
+		ctx.Tell(ref, err)
+	}
+	ctx.Reply(ref)
+}
+
+func (f *fiberActor) onConnectionClosed(ctx vivid.ActorContext, m *fiberConnActor) {
+	f.kit.fws.connectionClosedHook(f.kit, m.ctx, NewConn(m.fiberConn, ctx.System(), m.ref, m.ref), m.err)
+	if m.status.Load() == fiberConnStatusOnline {
+		ctx.TerminateGracefully(m.ref)
 	}
 }
