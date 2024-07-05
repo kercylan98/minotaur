@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"testing"
 	"time"
 )
@@ -34,6 +35,7 @@ func (e *EchoFiberService) OnInit(kit *transport.FiberKit) {
 
 func TestNewFiber(t *testing.T) {
 	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithLoggerProvider(log.GetDefault)
 		options.WithModule(transport.NewFiber(":8080").BindService(new(EchoFiberService)))
 	})
 

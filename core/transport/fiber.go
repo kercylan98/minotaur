@@ -42,8 +42,8 @@ func (n *Fiber) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 
 	// init actor
 	actorType := reflect.TypeOf((*fiberActor)(nil)).Elem().Name()
-	n.support.System().ActorOf(func() vivid.Actor {
-		return newFiber(n, n.addr)
+	kit.fiberActorRef = n.support.System().ActorOf(func() vivid.Actor {
+		return newFiber(n, kit, n.addr)
 	}, func(options *vivid.ActorOptions) {
 		options.WithNamePrefix(actorType)
 	})

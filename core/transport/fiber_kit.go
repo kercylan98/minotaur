@@ -7,8 +7,9 @@ import (
 )
 
 type FiberKit struct {
-	fiberApp    *fiber.App
-	actorSystem *vivid.ActorSystem
+	fiberActorRef vivid.ActorRef
+	fiberApp      *fiber.App
+	actorSystem   *vivid.ActorSystem
 }
 
 func (k *FiberKit) Fiber() *fiber.App {
@@ -42,25 +43,36 @@ func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 		var fiberCtx = &FiberContext{conn: c}
 		var conn *Conn
 		var rootActor = k.System().Context()
+		var result vivid.Message
 
-		ref := k.System().ActorOf(func() vivid.Actor {
-			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-				switch m := ctx.Message().(type) {
-				case vivid.OnLaunch:
-					conn = NewConn(&fiberConnWrapper{c}, ctx, ctx.Ref())
-					if err = fws.connectionOpenedHook(k, fiberCtx, conn); err != nil {
-						ctx.Terminate(ctx.Ref())
+		result, err = rootActor.FutureAsk(k.fiberActorRef, actorOfMessage{
+			ActorProducer: func() vivid.Actor {
+				return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+					switch m := ctx.Message().(type) {
+					case vivid.OnLaunch:
+						conn = NewConn(&fiberConnWrapper{c}, ctx, ctx.Ref())
+						if err = fws.connectionOpenedHook(k, fiberCtx, conn); err != nil {
+							ctx.Terminate(ctx.Ref())
+						}
+					case Packet:
+						if err = c.WriteMessage(m.GetContext().(int), m.GetBytes()); err != nil {
+							ctx.Terminate(ctx.Ref())
+						}
+					case vivid.OnTerminate:
+						_ = c.Close()
+						fws.connectionClosedHook(k, fiberCtx, conn, err)
 					}
-				case Packet:
-					if err = c.WriteMessage(m.GetContext().(int), m.GetBytes()); err != nil {
-						ctx.Terminate(ctx.Ref())
-					}
-				case vivid.OnTerminate:
-					_ = c.Close()
-					fws.connectionClosedHook(k, fiberCtx, conn, err)
-				}
-			})
-		})
+				})
+			},
+			ActorOptionDefiner: func(options *vivid.ActorOptions) {
+				options.WithName("conn-" + c.RemoteAddr().String())
+			},
+		}).Result()
+		if err != nil {
+			return
+		}
+		ref := result.(vivid.ActorRef)
+
 		defer func() {
 			rootActor.Terminate(ref)
 		}()

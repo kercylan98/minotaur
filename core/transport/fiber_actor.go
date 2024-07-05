@@ -8,16 +8,23 @@ import (
 	"net"
 )
 
-func newFiber(network *Fiber, addr string) *fiberActor {
+func newFiber(network *Fiber, kit *FiberKit, addr string) *fiberActor {
 	fa := &fiberActor{
 		network: network,
+		kit:     kit,
 		addr:    addr,
 	}
 	return fa
 }
 
+type actorOfMessage struct {
+	vivid.ActorProducer
+	vivid.ActorOptionDefiner
+}
+
 type fiberActor struct {
 	network  *Fiber
+	kit      *FiberKit
 	addr     string
 	showAddr string
 }
@@ -28,6 +35,8 @@ func (f *fiberActor) OnReceive(ctx vivid.ActorContext) {
 		f.onLaunch(ctx)
 	case vivid.FutureForwardMessage:
 		f.onFutureForward(ctx, m)
+	case actorOfMessage:
+		ctx.Reply(ctx.ActorOf(m.ActorProducer, m.ActorOptionDefiner))
 	case vivid.OnTerminate:
 		f.onTerminate()
 	}
