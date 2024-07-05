@@ -21,6 +21,7 @@ func (e *EchoFiberService) OnInit(kit *transport.FiberKit) {
 		ConnectionOpenedHook(func(kit *transport.FiberKit, ctx *transport.FiberContext, conn *transport.Conn) error {
 			fmt.Println("connection opened")
 			conn.WritePacket(transport.NewPacket([]byte("hello")).SetContext(websocket.TextMessage))
+			conn.Close()
 			return nil
 		}).
 		ConnectionClosedHook(func(kit *transport.FiberKit, ctx *transport.FiberContext, conn *transport.Conn, err error) {

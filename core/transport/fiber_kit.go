@@ -59,8 +59,9 @@ func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 							ctx.Terminate(ctx.Ref())
 						}
 					case vivid.OnTerminate:
-						_ = c.Close()
 						fws.connectionClosedHook(k, fiberCtx, conn, err)
+						_ = c.WriteMessage(websocket.CloseMessage, nil)
+						_ = c.Close()
 					}
 				})
 			},
@@ -89,7 +90,6 @@ func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 				break
 			}
 		}
-
 	}))
 
 	return fws
