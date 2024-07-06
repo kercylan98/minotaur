@@ -23,7 +23,7 @@ func newFiberConnActor(fiberActorRef vivid.ActorRef, status *atomic.Uint32, kit 
 	return a
 }
 
-type receivePacketMessage struct {
+type fiberReceivePacketMessage struct {
 	packet Packet
 }
 
@@ -43,21 +43,21 @@ func (f *fiberConnActor) OnReceive(ctx vivid.ActorContext) {
 	case vivid.OnLaunch:
 		f.ref = ctx.Ref()
 		f.conn = NewConn(f.fiberConn, ctx.System(), ctx.Ref(), ctx.Ref())
-	case receivePacketMessage:
+	case fiberReceivePacketMessage:
 		if f.err = f.kit.fws.connectionPacketHook(f.kit, f.ctx, f.conn, m.packet); f.err != nil {
-			ctx.Tell(f.fiberActorRef, (*connectionClosedMessage)(f))
+			ctx.Tell(f.fiberActorRef, (*fiberConnectionClosedMessage)(f))
 			return
 		}
 	case Packet:
 		if f.err = f.fiberConn.WriteMessage(m.GetContext().(int), m.GetBytes()); f.err != nil {
-			ctx.Tell(f.fiberActorRef, (*connectionClosedMessage)(f))
+			ctx.Tell(f.fiberActorRef, (*fiberConnectionClosedMessage)(f))
 		}
 	case error:
 		f.err = m
-		ctx.Tell(f.fiberActorRef, (*connectionClosedMessage)(f))
+		ctx.Tell(f.fiberActorRef, (*fiberConnectionClosedMessage)(f))
 	case vivid.OnTerminate:
 		if f.status.CompareAndSwap(fiberConnStatusOnline, fiberConnStatusClosed) {
-			ctx.Tell(f.fiberActorRef, (*connectionClosedMessage)(f))
+			ctx.Tell(f.fiberActorRef, (*fiberConnectionClosedMessage)(f))
 		}
 		if f.err == nil {
 			_ = f.fiberConn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, charproc.None))

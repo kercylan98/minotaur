@@ -10,21 +10,23 @@ import (
 	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/panjf2000/gnet/v2"
 	"io"
+	"sync/atomic"
 	"time"
 )
 
-// newWebsocketWrapper 创建 websocket 包装器
-func newWebsocketWrapper(conn gnet.Conn) *websocketWrapper {
-	wrapper := &websocketWrapper{
+// newGNETConnWebsocketContext 创建 websocket 包装器
+func newGNETConnWebsocketContext(conn gnet.Conn) *gnetWebSocketConnContext {
+	wrapper := &gnetWebSocketConnContext{
 		conn:     conn,
 		upgraded: false,
 		active:   time.Now(),
+		status:   new(atomic.Uint32),
 	}
 	return wrapper
 }
 
-// websocketWrapper websocket 包装器
-type websocketWrapper struct {
+// gnetWebSocketConnContext websocket 包装器
+type gnetWebSocketConnContext struct {
 	process  core.Process
 	ref      vivid.ActorRef // 引用
 	conn     gnet.Conn      // 连接
@@ -32,13 +34,15 @@ type websocketWrapper struct {
 	hs       ws.Handshake   // 握手信息
 	active   time.Time      // 活跃时间
 	buf      bytes.Buffer   // 缓冲区
+	status   *atomic.Uint32
 
 	header *ws.Header   // 当前头部
 	cache  bytes.Buffer // 缓存的数据
+	actor  *gnetConnActor
 }
 
 // readToBuffer 将数据读取到缓冲区
-func (w *websocketWrapper) readToBuffer() error {
+func (w *gnetWebSocketConnContext) readToBuffer() error {
 	size := w.conn.InboundBuffered()
 	buf := make([]byte, size)
 	n, err := w.conn.Read(buf)
@@ -53,7 +57,7 @@ func (w *websocketWrapper) readToBuffer() error {
 }
 
 // upgrade 升级
-func (w *websocketWrapper) upgrade(upgrader ws.Upgrader, upgradedHandler func()) (err error) {
+func (w *gnetWebSocketConnContext) upgrade(upgrader ws.Upgrader, upgradedHandler func()) (err error) {
 	if w.upgraded {
 		return
 	}
@@ -81,7 +85,7 @@ func (w *websocketWrapper) upgrade(upgrader ws.Upgrader, upgradedHandler func())
 }
 
 // decode 解码
-func (w *websocketWrapper) decode() (messages []wsutil.Message, err error) {
+func (w *gnetWebSocketConnContext) decode() (messages []wsutil.Message, err error) {
 	if messages, err = w.read(); err != nil {
 		return
 	}
@@ -102,7 +106,7 @@ func (w *websocketWrapper) decode() (messages []wsutil.Message, err error) {
 }
 
 // decode 解码
-func (w *websocketWrapper) read() (messages []wsutil.Message, err error) {
+func (w *gnetWebSocketConnContext) read() (messages []wsutil.Message, err error) {
 	var buf = &w.buf
 	for {
 		// 从缓冲区中读取 header 信息并写入到缓存中

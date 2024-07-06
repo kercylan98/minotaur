@@ -8,14 +8,14 @@ import (
 )
 
 type FiberKit struct {
-	fiberActorRef vivid.ActorRef
-	fiberApp      *fiber.App
-	actorSystem   *vivid.ActorSystem
-	fws           *FiberWebSocket
+	ownerRef    vivid.ActorRef
+	app         *fiber.App
+	actorSystem *vivid.ActorSystem
+	fws         *FiberWebSocket
 }
 
-func (k *FiberKit) Fiber() *fiber.App {
-	return k.fiberApp
+func (k *FiberKit) App() *fiber.App {
+	return k.app
 }
 
 func (k *FiberKit) System() *vivid.ActorSystem {
@@ -25,7 +25,7 @@ func (k *FiberKit) System() *vivid.ActorSystem {
 func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 	k.fws = &FiberWebSocket{kit: k}
 	k.fws.init()
-	k.fiberApp.Use(path, func(c *fiber.Ctx) (err error) {
+	k.app.Use(path, func(c *fiber.Ctx) (err error) {
 		if !websocket.IsWebSocketUpgrade(c) {
 			return fiber.ErrUpgradeRequired
 		}
@@ -40,14 +40,14 @@ func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 		rp = rulePath[0]
 	}
 
-	k.fiberApp.Get(rp, websocket.New(func(c *websocket.Conn) {
+	k.app.Get(rp, websocket.New(func(c *websocket.Conn) {
 		var err error
 		var fiberCtx = &FiberContext{conn: c}
 		var rootActor = k.System().Context()
 		var result vivid.Message
 		var status = new(atomic.Uint32)
 
-		if result, err = rootActor.FutureAsk(k.fiberActorRef, (*connectionOpenedMessage)(newFiberConnActor(k.fiberActorRef, status, k, fiberCtx, c))).Result(); err != nil {
+		if result, err = rootActor.FutureAsk(k.ownerRef, (*fiberConnectionOpenedMessage)(newFiberConnActor(k.ownerRef, status, k, fiberCtx, c))).Result(); err != nil {
 			return
 		}
 
@@ -64,7 +64,7 @@ func (k *FiberKit) WebSocket(path string, rulePath ...string) *FiberWebSocket {
 				}
 				break
 			}
-			rootActor.Tell(ref, receivePacketMessage{packet: NewPacket(msg).SetContext(mt)})
+			rootActor.Tell(ref, fiberReceivePacketMessage{packet: NewPacket(msg).SetContext(mt)})
 		}
 	}))
 

@@ -9,22 +9,22 @@ import (
 	"net"
 )
 
-func newFiberActor(network *Fiber, kit *FiberKit, addr string) *fiberActor {
+func newFiberActor(fiber *Fiber, kit *FiberKit, addr string) *fiberActor {
 	fa := &fiberActor{
-		network: network,
-		kit:     kit,
-		addr:    addr,
+		fiber: fiber,
+		kit:   kit,
+		addr:  addr,
 	}
 	return fa
 }
 
 type (
-	connectionOpenedMessage fiberConnActor
-	connectionClosedMessage fiberConnActor
+	fiberConnectionOpenedMessage fiberConnActor
+	fiberConnectionClosedMessage fiberConnActor
 )
 
 type fiberActor struct {
-	network  *Fiber
+	fiber    *Fiber
 	kit      *FiberKit
 	addr     string
 	showAddr string
@@ -38,9 +38,9 @@ func (f *fiberActor) OnReceive(ctx vivid.ActorContext) {
 		f.onFutureForward(ctx, m)
 	case vivid.OnTerminate:
 		f.onTerminate()
-	case *connectionOpenedMessage:
+	case *fiberConnectionOpenedMessage:
 		f.onConnectionOpened(ctx, (*fiberConnActor)(m))
-	case *connectionClosedMessage:
+	case *fiberConnectionClosedMessage:
 		f.onConnectionClosed(ctx, (*fiberConnActor)(m))
 	}
 }
@@ -64,15 +64,15 @@ func (f *fiberActor) onLaunch(ctx vivid.ActorContext) {
 
 	externalNetworkNum.Add(1)
 	externalNetworkOnceLaunchInfo.Do(func() {
-		f.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+		f.fiber.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	})
-	f.network.support.Logger().Info("", log.String("Minotaur", "enable network"), log.String("schema", "http(s)"), log.String("listen", f.showAddr))
+	f.fiber.support.Logger().Info("", log.String("Minotaur", "enable network"), log.String("schema", "http(s)"), log.String("listen", f.showAddr))
 	if externalNetworkLaunchedNum.Add(1) == externalNetworkNum.Load() {
-		f.network.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
+		f.fiber.support.Logger().Info("", log.String("Minotaur", "======================================================================="))
 	}
 
 	ctx.AwaitForward(ctx.Ref(), func() vivid.Message {
-		return f.network.app.Listen(f.addr)
+		return f.fiber.app.Listen(f.addr)
 	})
 }
 
@@ -83,10 +83,10 @@ func (f *fiberActor) onFutureForward(ctx vivid.ActorContext, m vivid.FutureForwa
 }
 
 func (f *fiberActor) onTerminate() {
-	if err := f.network.app.Shutdown(); err != nil {
-		f.network.support.Logger().Error("network", log.String("status", "shutdown"), log.String("listen", f.showAddr), log.Err(err))
+	if err := f.fiber.app.Shutdown(); err != nil {
+		f.fiber.support.Logger().Error("network", log.String("status", "shutdown"), log.String("listen", f.showAddr), log.Err(err))
 	} else {
-		f.network.support.Logger().Info("network", log.String("status", "shutdown"), log.String("listen", f.showAddr))
+		f.fiber.support.Logger().Info("network", log.String("status", "shutdown"), log.String("listen", f.showAddr))
 	}
 }
 

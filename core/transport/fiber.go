@@ -32,7 +32,7 @@ func (n *Fiber) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 
 	// init kit
 	kit := &FiberKit{
-		fiberApp:    n.app,
+		app:         n.app,
 		actorSystem: support.System(),
 	}
 
@@ -43,7 +43,7 @@ func (n *Fiber) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 
 	// init actor
 	actorType := reflect.TypeOf((*fiberActor)(nil)).Elem().Name()
-	kit.fiberActorRef = n.support.System().ActorOf(func() vivid.Actor {
+	kit.ownerRef = n.support.System().ActorOf(func() vivid.Actor {
 		return newFiberActor(n, kit, n.addr)
 	}, func(options *vivid.ActorOptions) {
 		options.WithNamePrefix(actorType)
