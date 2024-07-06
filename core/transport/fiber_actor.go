@@ -96,10 +96,11 @@ func (f *fiberActor) onConnectionOpened(ctx vivid.ActorContext, m *fiberConnActo
 	}, func(options *vivid.ActorOptions) {
 		options.WithName("conn-" + m.fiberConn.RemoteAddr().String())
 		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
+			f.fiber.support.Logger().Error("network", log.String("status", "connection panic"), log.String("listen", f.showAddr), log.Err(reason.(error)))
 			return vivid.DirectiveStop
 		}, 0))
 	})
-	conn := NewConn(m.fiberConn, ctx.System(), ref, ref)
+	conn := NewConn(m.fiberConn, ctx.System(), ref)
 	defer func() {
 		if err := recover(); err != nil {
 			switch err.(type) {
@@ -128,7 +129,7 @@ func (f *fiberActor) onConnectionClosed(ctx vivid.ActorContext, m *fiberConnActo
 		}
 	}()
 
-	f.kit.fws.connectionClosedHook(f.kit, m.ctx, NewConn(m.fiberConn, ctx.System(), m.ref, m.ref), m.err)
+	f.kit.fws.connectionClosedHook(f.kit, m.ctx, NewConn(m.fiberConn, ctx.System(), m.ref), m.err)
 	if m.status.Load() == fiberConnStatusOnline {
 		ctx.TerminateGracefully(m.ref)
 	}

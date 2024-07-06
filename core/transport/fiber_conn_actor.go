@@ -42,7 +42,7 @@ func (f *fiberConnActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case vivid.OnLaunch:
 		f.ref = ctx.Ref()
-		f.conn = NewConn(f.fiberConn, ctx.System(), ctx.Ref(), ctx.Ref())
+		f.conn = NewConn(f.fiberConn, ctx.System(), ctx.Ref())
 	case fiberReceivePacketMessage:
 		if f.err = f.kit.fws.connectionPacketHook(f.kit, f.ctx, f.conn, m.packet); f.err != nil {
 			ctx.Tell(f.fiberActorRef, (*fiberConnectionClosedMessage)(f))

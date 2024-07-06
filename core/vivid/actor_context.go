@@ -214,7 +214,7 @@ func (ctx *actorContext) ActorOf(producer ActorProducer, options ...ActorOptionD
 		producer,
 		options,
 		func(child *actorContext) { // 确保在第一个消息处理之前添加到父级的子级列表中
-			ctx.children.Set(child.ref.Address(), child.ref)
+			ctx.System().sendSystemMessage(ctx.ref, opts.Parent, onBindChildren{child.ref})
 		},
 		ctx.childGuid,
 		charproc.None,
@@ -355,6 +355,8 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 		} else {
 			ctx.ProcessUserMessage(m, msg)
 		}
+	case onBindChildren:
+		ctx.children.Set(m.ChildrenRef.Address(), m.ChildrenRef)
 	case OnTerminate:
 		ctx.onTerminate(false)
 	case OnTerminated:

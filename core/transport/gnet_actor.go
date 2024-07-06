@@ -284,7 +284,7 @@ func (g *gnetActor) onConnectionOpened(ctx vivid.ActorContext, m *gnetConnActor)
 			return vivid.DirectiveStop
 		}, 0))
 	})
-	conn := NewConn(m.gnetConn, ctx.System(), ref, ref)
+	conn := NewConn(m.gnetConn, ctx.System(), ref)
 	defer func() {
 		if err := recover(); err != nil {
 			switch err.(type) {
@@ -314,7 +314,7 @@ func (g *gnetActor) onConnectionClosed(ctx vivid.ActorContext, m *gnetConnActor)
 	}()
 
 	if m.status.CompareAndSwap(gnetConnStatusOnline, gnetConnStatusClosed) {
-		g.kit.connectionClosedHook(g.kit, NewConn(m.gnetConn, ctx.System(), m.ref, m.ref), m.err)
+		g.kit.connectionClosedHook(g.kit, NewConn(m.gnetConn, ctx.System(), m.ref), m.err)
 		ctx.TerminateGracefully(m.ref)
 	}
 }

@@ -43,7 +43,7 @@ func (f *gnetConnActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case vivid.OnLaunch:
 		f.ref = ctx.Ref()
-		f.conn = NewConn(f.gnetConn, ctx.System(), ctx.Ref(), ctx.Ref())
+		f.conn = NewConn(f.gnetConn, ctx.System(), ctx.Ref())
 	case gnetReceivePacketMessage:
 		if f.err = f.kit.connectionPacketHook(f.kit, f.conn, m.packet); f.err != nil {
 			ctx.Tell(f.gnetActorRef, (*gnetConnectionClosedMessage)(f))

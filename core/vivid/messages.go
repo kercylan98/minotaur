@@ -13,6 +13,9 @@ type RegulatoryMessage struct {
 }
 
 type (
+	onBindChildren struct {
+		ChildrenRef ActorRef
+	}
 	OnLaunch     struct{}
 	OnTerminate  struct{}
 	OnTerminated struct {
