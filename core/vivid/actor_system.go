@@ -94,6 +94,26 @@ type ActorSystem struct {
 	kindHookModules []KindHookModule
 }
 
+// Tell 向目标 Actor 发送消息
+func (sys *ActorSystem) Tell(target ActorRef, message Message, options ...MessageOption) {
+	sys.Context().Tell(target, message, options...)
+}
+
+// Ask 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是无限期的
+func (sys *ActorSystem) Ask(target ActorRef, message Message, options ...MessageOption) {
+	sys.Context().Ask(target, message, options...)
+}
+
+// FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 Future 对象，可被用于获取响应消息
+func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, options ...MessageOption) Future {
+	return sys.Context().FutureAsk(target, message, options...)
+}
+
+// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息，收到的消息类型将是 FutureForwardMessage
+func (sys *ActorSystem) AwaitForward(target ActorRef, blockFunc func() Message) {
+	sys.Context().AwaitForward(target, blockFunc)
+}
+
 // DeadLetter 获取当前 Actor 系统的死信队列
 func (sys *ActorSystem) DeadLetter() DeadLetter {
 	return sys.deadLetter

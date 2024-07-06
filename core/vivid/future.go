@@ -138,7 +138,12 @@ func (f *future) SendUserMessage(sender *core.ProcessRef, message core.Message) 
 	case RegulatoryMessage:
 		message = rm.Message
 	}
-	f.result = message
+	switch m := message.(type) {
+	case error:
+		f.err = m
+	default:
+		f.result = message
+	}
 	f.Terminate(nil)
 }
 
@@ -147,7 +152,12 @@ func (f *future) SendSystemMessage(sender *core.ProcessRef, message core.Message
 	case RegulatoryMessage:
 		message = rm.Message
 	}
-	f.result = message
+	switch m := message.(type) {
+	case error:
+		f.err = m
+	default:
+		f.result = message
+	}
 	f.Terminate(nil)
 }
 

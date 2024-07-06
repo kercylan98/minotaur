@@ -7,6 +7,7 @@ require (
 	github.com/alphadose/haxmap v1.4.0
 	github.com/fatih/color v1.16.0
 	github.com/gobwas/ws v1.4.0
+	github.com/gofiber/contrib/websocket v1.3.2
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/google/uuid v1.6.0
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
@@ -29,7 +30,6 @@ require (
 	github.com/fasthttp/websocket v1.5.10 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gofiber/contrib/websocket v1.3.2 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
