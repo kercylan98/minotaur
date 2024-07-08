@@ -12,7 +12,7 @@ import (
 func NewWorld() *World {
 	w := &World{
 		entities:        newEntities(256),
-		archetypes:      map[dynamicBitSetKey]*archetype{},
+		archetypes:      map[DynamicBitSetKey]*archetype{},
 		entityArchetype: make(map[EntityId]*archetype),
 		componentIds:    make(map[ComponentId]*componentInfo),
 		componentTypes:  make(map[ComponentType]*componentInfo),
@@ -26,12 +26,29 @@ func NewWorld() *World {
 
 type World struct {
 	root            *archetype
-	archetypes      map[dynamicBitSetKey]*archetype
+	archetypes      map[DynamicBitSetKey]*archetype
 	entities        *entities
 	entityArchetype map[EntityId]*archetype
 	componentIds    map[ComponentId]*componentInfo
 	componentTypes  map[ComponentType]*componentInfo
 	logger          vivid.LoggerProvider
+}
+
+func (w *World) Query(query QueryCondition) *Result {
+	var result = &Result{
+		archetypes: make(map[DynamicBitSetKey]*archetype),
+	}
+
+	for _, arch := range w.archetypes {
+		if !query.Evaluate(arch.mask) {
+			continue
+		}
+
+		result.archetypes[arch.mask.Key()] = arch
+	}
+
+	result.expansion()
+	return result
 }
 
 func (w *World) RegisterComponent(componentType ComponentType) ComponentId {
@@ -83,7 +100,7 @@ func (w *World) DelComponent(entityId EntityId, componentIds ...ComponentId) {
 	curr.migrate(art, entityId)
 }
 
-func (w *World) GetEntityComponentData(id EntityId, cid ComponentId) any {
+func (w *World) getEntityComponentData(id EntityId, cid ComponentId) any {
 	if !w.entities.alive(id) {
 		return nil
 	}

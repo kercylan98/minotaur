@@ -47,8 +47,12 @@ func (s *PagedSlice[T]) Del(index int) {
 }
 
 // Get 获取 PagedSlice 中给定索引的元素。
-func (s *PagedSlice[T]) Get(index int) *T {
-	return &s.pages[index/s.pageSize][index%s.pageSize]
+func (s *PagedSlice[T]) Get(index int) (v *T) {
+	if s == nil {
+		return
+	}
+	res := s.pages[index/s.pageSize][index%s.pageSize]
+	return &res
 }
 
 // Set 设置 PagedSlice 中给定索引的元素。

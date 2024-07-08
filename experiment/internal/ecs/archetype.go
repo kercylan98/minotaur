@@ -6,12 +6,12 @@ func newRootArchetype(world *World) *archetype {
 	return newArchetype(world, newDynamicBitSet(), nil)
 }
 
-func newArchetype(world *World, mask *dynamicBitSet, prev *archetype) *archetype {
+func newArchetype(world *World, mask *DynamicBitSet, prev *archetype) *archetype {
 	art := &archetype{
 		world:    world,
 		mask:     mask,
-		delEdges: make(map[dynamicBitSetKey]*archetype),
-		addEdges: make(map[dynamicBitSetKey]*archetype),
+		delEdges: make(map[DynamicBitSetKey]*archetype),
+		addEdges: make(map[DynamicBitSetKey]*archetype),
 
 		entities:      make(map[uint32]EntityId),
 		entityData:    make(map[EntityId]int),
@@ -32,11 +32,12 @@ func newArchetype(world *World, mask *dynamicBitSet, prev *archetype) *archetype
 
 type archetype struct {
 	world    *World                          // 世界
-	mask     *dynamicBitSet                  // 原型掩码
-	delEdges map[dynamicBitSetKey]*archetype // 删除边
-	addEdges map[dynamicBitSetKey]*archetype // 添加边
+	mask     *DynamicBitSet                  // 原型掩码
+	delEdges map[DynamicBitSetKey]*archetype // 删除边
+	addEdges map[DynamicBitSetKey]*archetype // 添加边
 
 	entities      map[uint32]EntityId                       // 所有实体
+	entityList    []EntityId                                // 实体列表
 	entityData    map[EntityId]int                          // 实体到数据索引的映射
 	componentData map[ComponentId]*listings.PagedSlice[any] // 组件数据
 }
@@ -53,15 +54,13 @@ func (a *archetype) mutation(add, del []ComponentId) *archetype {
 			next, exists = a.world.archetypes[mask.Key()]
 			if !exists {
 				next = newArchetype(a.world, mask.Copy(), curr)
-				curr = next
 			} else {
 				// 建立边
 				curr.delEdges[mask.Key()] = next
 				next.addEdges[a.mask.Key()] = a
 			}
-		} else {
-			curr = next
 		}
+		curr = next
 	}
 
 	for _, id := range add {
@@ -71,15 +70,13 @@ func (a *archetype) mutation(add, del []ComponentId) *archetype {
 			next, exists = a.world.archetypes[mask.Key()]
 			if !exists {
 				next = newArchetype(a.world, mask.Copy(), curr)
-				curr = next
 			} else {
 				// 建立边
 				curr.addEdges[mask.Key()] = next
 				next.delEdges[a.mask.Key()] = a
 			}
-		} else {
-			curr = next
 		}
+		curr = next
 	}
 
 	return curr
@@ -93,6 +90,7 @@ func (a *archetype) addEntity(entityId EntityId, specificationInstantiate func(c
 		idx := len(a.entities)
 		a.entityData[entityId] = idx
 		a.entities[entityId.Id()] = entityId
+		a.entityList = append(a.entityList, entityId)
 
 		for id, data := range a.componentData {
 			cmp := a.world.getComponentInfoById(id)
@@ -112,6 +110,7 @@ func (a *archetype) addEntity(entityId EntityId, specificationInstantiate func(c
 		a.entityData[entityId] = idx
 		delete(a.entityData, curr)
 		a.entities[entityId.Id()] = entityId
+		a.entityList[idx] = entityId
 
 		for id, data := range a.componentData {
 			cmp := a.world.getComponentInfoById(id)
@@ -133,8 +132,11 @@ func (a *archetype) getEntityComponentData(entityId EntityId, componentId Compon
 		return nil
 	}
 
-	data := a.componentData[componentId]
-	return *data.Get(idx)
+	data := a.componentData[componentId].Get(idx)
+	if data == nil {
+		return nil
+	}
+	return *data
 }
 
 func (a *archetype) migrate(target *archetype, entityIds ...EntityId) {
@@ -152,6 +154,7 @@ func (a *archetype) migrate(target *archetype, entityIds ...EntityId) {
 		// 迁移需要删除，避免数据重复
 		delete(a.entities, entityId.Id())
 		delete(a.entityData, entityId)
+		a.entityList = a.entityList[:idx+copy(a.entityList[idx:], a.entityList[idx+1:])]
 
 		a.world.entityArchetype[entityId] = target
 

@@ -2,6 +2,7 @@ package ecs_test
 
 import (
 	"github.com/kercylan98/minotaur/experiment/internal/ecs"
+	"github.com/kercylan98/minotaur/experiment/internal/ecs/query"
 	"reflect"
 	"testing"
 )
@@ -27,15 +28,27 @@ func TestNewWorld(t *testing.T) {
 	c2 := world.RegisterComponent(reflect.TypeOf((*Velocity)(nil)).Elem())
 	c3 := world.RegisterComponent(reflect.TypeOf((*Name)(nil)).Elem())
 
-	world.Spawn(c1)
-	world.Spawn(c1, c3)
-	world.Spawn(c3)
-	world.Spawn(c1, c2)
-	world.Spawn(c2)
-	e := world.Spawn(c1, c2, c3)
-	world.Spawn(c2, c3)
+	world.Spawn(c1)         // 1
+	world.Spawn(c2)         // 2
+	world.Spawn(c3)         // 3
+	world.Spawn(c1, c2)     // 4
+	world.Spawn(c1, c3)     // 5
+	world.Spawn(c2, c3)     // 6
+	world.Spawn(c1, c2, c3) // 7
 
-	world.DelComponent(e, c2)
+	q := query.And(
+		query.In(c1, c2),
+		query.Or(
+			query.Equal(c1),
+			query.NotIn(c3),
+		),
+	)
+	t.Log(q.String())
+
+	iterator := world.Query(q).Iterator()
+	for iterator.Next() {
+		t.Log(iterator.Entity())
+	}
 
 	world.GenerateDotFile("./dot.dot")
 }
