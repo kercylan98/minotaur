@@ -1,8 +1,8 @@
 package ecs_test
 
 import (
-	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/experiment/internal/ecs"
+	"reflect"
 	"testing"
 )
 
@@ -11,23 +11,31 @@ type Position struct {
 	Y float64
 }
 
-func TestSendRegisterComponentMessage(t *testing.T) {
-	system := vivid.NewActorSystem()
-	world := system.ActorOf(func() vivid.Actor {
-		return ecs.NewWorld()
-	})
+type Name struct {
+	name string
+}
 
-	posId := ecs.SendRegisterComponentMessage[*Position](system, world)
+type Velocity struct {
+	X float64
+	Y float64
+}
 
-	eid := ecs.SendCreateEntityMessage(system, world, posId)
+func TestNewWorld(t *testing.T) {
+	world := ecs.NewWorld()
 
-	pos := ecs.SendLoadComponentMessage[*Position](system, world, eid)
+	c1 := world.RegisterComponent(reflect.TypeOf((*Position)(nil)).Elem())
+	c2 := world.RegisterComponent(reflect.TypeOf((*Velocity)(nil)).Elem())
+	c3 := world.RegisterComponent(reflect.TypeOf((*Name)(nil)).Elem())
 
-	pos.X = 1
+	world.Spawn(c1)
+	world.Spawn(c1, c3)
+	world.Spawn(c3)
+	world.Spawn(c1, c2)
+	world.Spawn(c2)
+	e := world.Spawn(c1, c2, c3)
+	world.Spawn(c2, c3)
 
-	pos = ecs.SendLoadComponentMessage[*Position](system, world, eid)
+	world.DelComponent(e, c2)
 
-	t.Log(pos.X, pos.Y)
-
-	system.Shutdown()
+	world.GenerateDotFile("./dot.dot")
 }

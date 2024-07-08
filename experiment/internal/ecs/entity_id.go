@@ -17,6 +17,15 @@ func (id EntityId) Id() uint32 {
 	return uint32(id)
 }
 
+func (id EntityId) addGeneration() EntityId {
+	return newEntityId(id.Id(), id.Generation()+1)
+}
+
+func (id EntityId) changeId(newId uint32) EntityId {
+	return newEntityId(newId, id.Generation())
+
+}
+
 func (id EntityId) String() string {
 	return "EntityId(generation=" + convert.Uint32ToString(id.Generation()) + ", id=" + convert.Uint32ToString(id.Id()) + ")"
 }
