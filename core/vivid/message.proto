@@ -1,5 +1,5 @@
 syntax = "proto3";
-package remote;
+package vivid;
 option go_package = "/github.com/kercylan98/minotaur/core/vivid";
 
 message KindOf {
