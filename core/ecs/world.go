@@ -13,6 +13,8 @@ func NewWorld() World {
 type World interface {
 	Query(query Query) *Result
 
+	QueryF(query Query, handler func(result *Result))
+
 	RegComponent(component any) ComponentId
 
 	Spawn(componentIds ...ComponentId) Entity
@@ -59,6 +61,22 @@ func (w *world) Query(query Query) *Result {
 	result.expansion()
 
 	return result
+}
+
+func (w *world) QueryF(query Query, handler func(result *Result)) {
+	var result = &Result{world: w}
+
+	for _, arch := range w.archetypes.arts {
+		if !query.Evaluate(arch.mask) {
+			continue
+		}
+
+		result.archetypes = append(result.archetypes, arch)
+	}
+
+	result.expansion()
+
+	handler(result)
 }
 
 func (w *world) Update() {
