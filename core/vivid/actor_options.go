@@ -1,6 +1,8 @@
 package vivid
 
-import "github.com/kercylan98/minotaur/toolkit/pools"
+import (
+	"github.com/kercylan98/minotaur/toolkit/pools"
+)
 
 const (
 	DefaultPersistenceEventLimit = 200 // 默认触发快照持久化的事件数量
@@ -43,6 +45,15 @@ type ActorOptions struct {
 	PersistenceStorage    Storage            // Actor 持久化存储器
 	PersistenceEventLimit int                // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
 	ConflictReuse         bool               // Actor 冲突重用，当 Actor 已存在时将会重用已存在的 Actor
+	Scheduler             bool               // 是否使用定时器
+}
+
+// WithScheduler 通过指定是否使用定时器创建一个 Actor，定时器的执行将会通过系统消息进行执行
+func (o *ActorOptions) WithScheduler(enable bool) *ActorOptions {
+	o.options = append(o.options, func(options *ActorOptions) {
+		options.Scheduler = enable
+	})
+	return o
 }
 
 // WithConflictReuse 通过指定冲突重用的方式创建一个 Actor

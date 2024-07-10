@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync/atomic"
@@ -41,6 +42,12 @@ func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions
 		supervisorStrategy: options.SupervisorStrategy,
 		kind:               kind,
 	}
+	if options.Scheduler {
+		ctx.scheduler = chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize)
+		ctx.scheduler.SetExecutor(func(name string, caller func()) {
+			system.sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(caller))
+		})
+	}
 	ctx.persistenceStatus.ctx = ctx
 	if ctx.persistenceStatus.persistenceStorage == nil {
 		ctx.persistenceStatus.persistenceStorage = defaultStorage
@@ -67,9 +74,42 @@ type actorContext struct {
 	children           mappings.OrderInterface[core.Address, ActorRef] // 子 Actor
 	as                 *accidentState                                  // 该 Actor 的事故状态
 	persistenceStatus  *persistenceStatus                              // 该 Actor 的持久化状态
+	scheduler          *chrono.Scheduler                               // Actor 使用的定时器
 	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
 	kind               Kind                                            // Actor Kind 类型
 	status             uint32                                          // 原子状态
+}
+
+func (ctx *actorContext) CronTask(name, expression string, function func(ctx *ActorContext)) error {
+	if ctx.scheduler != nil {
+		return ctx.scheduler.RegisterCronTask(name, expression, function, ctx)
+	}
+	return nil
+}
+
+func (ctx *actorContext) ImmediateCronTask(name, expression string, function func(ctx *ActorContext)) error {
+	if ctx.scheduler != nil {
+		return ctx.scheduler.RegisterImmediateCronTask(name, expression, function, ctx)
+	}
+	return nil
+}
+
+func (ctx *actorContext) AfterTask(name string, after time.Duration, function func(ctx *ActorContext)) {
+	if ctx.scheduler != nil {
+		ctx.scheduler.RegisterAfterTask(name, after, function, ctx)
+	}
+}
+
+func (ctx *actorContext) RepeatedTask(name string, after, interval time.Duration, times int, function func(ctx *ActorContext)) {
+	if ctx.scheduler != nil {
+		ctx.scheduler.RegisterRepeatedTask(name, after, interval, times, function, ctx)
+	}
+}
+
+func (ctx *actorContext) DayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function func(ctx *ActorContext)) {
+	if ctx.scheduler != nil {
+		ctx.scheduler.RegisterDayMomentTask(name, lastExecuted, offset, hour, min, sec, function, ctx)
+	}
 }
 
 func (ctx *actorContext) IsKind() bool {
@@ -374,6 +414,8 @@ func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
 		ctx.onRestart(m)
 	case OnPersistenceSnapshot:
 		ctx.ProcessUserMessage(m, msg)
+	case onSchedulerFunc:
+		m()
 	default:
 		switch m := ctx.Message().(type) {
 		case *KindOf:
@@ -427,6 +469,7 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 
 	system := ctx.System()
 	system.opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
+	ctx.scheduler.Close()
 	if parent := ctx.Parent(); parent != nil {
 		system.sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
 	} else {

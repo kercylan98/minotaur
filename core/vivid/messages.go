@@ -27,6 +27,7 @@ type (
 	OnSuspendMailbox      struct{}
 	OnPersistenceSnapshot struct{}
 	TerminateGracefully   struct{}
+	onSchedulerFunc       func()
 )
 
 var (
