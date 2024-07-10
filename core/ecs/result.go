@@ -31,6 +31,14 @@ func (r *Result) Get(entity Entity, componentId ComponentId) any {
 	return art.storage.Get(entity.id(), componentId)
 }
 
+func (r *Result) Each(handler func(entity Entity) bool) {
+	for _, entity := range r.entities {
+		if !handler(entity) {
+			break
+		}
+	}
+}
+
 type ResultIterator struct {
 	result *Result
 	index  int

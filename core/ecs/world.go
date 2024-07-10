@@ -11,6 +11,10 @@ func NewWorld() World {
 }
 
 type World interface {
+	Alive(entity Entity) bool
+
+	Get(entity Entity, componentId ComponentId) any
+
 	Query(query Query) *Result
 
 	QueryF(query Query, handler func(result *Result))
@@ -45,6 +49,17 @@ type world struct {
 	archetypes *archetypes
 	entities   *entities
 	components *components
+}
+
+func (w *world) Get(entity Entity, componentId ComponentId) any {
+	if !w.Alive(entity) {
+		return nil
+	}
+	return w.archetypes.get(componentId).storage.Get(entity.id(), componentId)
+}
+
+func (w *world) Alive(entity Entity) bool {
+	return w.entities.alive(entity)
 }
 
 func (w *world) Query(query Query) *Result {
