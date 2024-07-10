@@ -1,8 +1,8 @@
 package random
 
 import (
-	"github.com/kercylan98/minotaur/toolkit/convert"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -36,7 +36,8 @@ func IPv4Host() string {
 
 // IPv4Address 返回一个随机产生的IPv4地址和端口
 func IPv4Address() string {
-	return strings.Join([]string{IPv4Host(), convert.IntToString(Port())}, ":")
+
+	return strings.Join([]string{IPv4Host(), strconv.Itoa(Port())}, ":")
 }
 
 // IPv6Host 返回一个随机产生的IPv6地址
@@ -50,7 +51,7 @@ func IPv6Host() string {
 
 // IPv6Address 返回一个随机产生的IPv6地址和端口
 func IPv6Address() string {
-	return strings.Join([]string{IPv6Host(), convert.IntToString(Port())}, ":")
+	return strings.Join([]string{IPv6Host(), strconv.Itoa(Port())}, ":")
 }
 
 // MAC 返回一个随机产生的MAC地址

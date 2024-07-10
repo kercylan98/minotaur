@@ -1,4 +1,4 @@
-package ecs
+package toolkit
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/charproc"
@@ -8,7 +8,7 @@ import (
 
 type DynamicBitSetKey = string
 
-func newDynamicBitSet() *DynamicBitSet {
+func NewDynamicBitSet() *DynamicBitSet {
 	return &DynamicBitSet{bits: make([]uint64, 1)}
 }
 
@@ -41,11 +41,11 @@ func (db *DynamicBitSet) Key() DynamicBitSetKey {
 func (db *DynamicBitSet) Copy() *DynamicBitSet {
 	bits := make([]uint64, len(db.bits))
 	copy(bits, db.bits)
-	return &DynamicBitSet{bits: bits}
+	return &DynamicBitSet{bits: bits, key: db.key}
 }
 
 // Set 设置给定位置的位为 1
-func (db *DynamicBitSet) Set(pos ComponentId) {
+func (db *DynamicBitSet) Set(pos uint32) {
 	index, offset := pos/64, pos%64
 	for len(db.bits) <= int(index) {
 		db.bits = append(db.bits, 0)
@@ -55,12 +55,12 @@ func (db *DynamicBitSet) Set(pos ComponentId) {
 }
 
 // Bits 返回位集
-func (db *DynamicBitSet) Bits() []ComponentId {
-	var bits = make([]ComponentId, 0, len(db.bits)*64)
+func (db *DynamicBitSet) Bits() []uint32 {
+	var bits = make([]uint32, 0, len(db.bits)*64)
 	for i, v := range db.bits {
 		for j := 0; j < 64; j++ {
 			if v&(1<<j) != 0 {
-				bits = append(bits, ComponentId(i*64+j))
+				bits = append(bits, uint32(i*64+j))
 			}
 		}
 	}
@@ -68,7 +68,7 @@ func (db *DynamicBitSet) Bits() []ComponentId {
 }
 
 // Clear 清除给定位置的位
-func (db *DynamicBitSet) Clear(pos ComponentId) {
+func (db *DynamicBitSet) Clear(pos uint32) {
 	index, offset := pos/64, pos%64
 	if len(db.bits) > int(index) {
 		db.bits[index] &^= 1 << offset
@@ -77,7 +77,7 @@ func (db *DynamicBitSet) Clear(pos ComponentId) {
 }
 
 // IsSet 检查给定位置的位是否被设置
-func (db *DynamicBitSet) IsSet(pos ComponentId) bool {
+func (db *DynamicBitSet) IsSet(pos uint32) bool {
 	index, offset := pos/64, pos%64
 	if len(db.bits) <= int(index) {
 		return false

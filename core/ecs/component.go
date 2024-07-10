@@ -2,11 +2,13 @@ package ecs
 
 import "reflect"
 
-// ComponentId 组件 ID
-type ComponentId = uint32
+type (
+	// ComponentId 组件 ID
+	ComponentId = uint32
 
-// ComponentType 组件类型
-type ComponentType = reflect.Type
+	// ComponentType 组件类型
+	ComponentType = reflect.Type
+)
 
 func newComponentInfo(id ComponentId, t ComponentType) *componentInfo {
 	return &componentInfo{
