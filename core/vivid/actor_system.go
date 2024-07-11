@@ -94,6 +94,11 @@ type ActorSystem struct {
 	kindHookModules []KindHookModule
 }
 
+// Name 返回 ActorSystem 的名称
+func (sys *ActorSystem) Name() string {
+	return sys.opts.Name
+}
+
 // Tell 向目标 Actor 发送消息
 func (sys *ActorSystem) Tell(target ActorRef, message Message, options ...MessageOption) {
 	sys.Context().Tell(target, message, options...)
@@ -178,6 +183,12 @@ func (sys *ActorSystem) ShutdownGracefully(chanting ...time.Duration) {
 	sys.chanting(chanting...)
 	sys.root.TerminateGracefully(sys.root.Ref())
 	<-sys.closed
+	for _, module := range sys.opts.modules {
+		switch m := module.(type) {
+		case ShutdownModule:
+			m.OnShutdown()
+		}
+	}
 }
 
 func (sys *ActorSystem) chanting(duration ...time.Duration) {
