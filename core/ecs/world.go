@@ -1,12 +1,18 @@
 package ecs
 
-func NewWorld() World {
+import "time"
+
+func NewWorld(systems ...System) World {
 	w := &world{
 		worldTime:  newWorldTime(),
 		entities:   newEntities(32),
 		components: newComponents(),
 	}
 	w.archetypes = newArchetypes(w)
+	w.systems = newSystems(w)
+
+	w.systems.setSystems(systems...)
+	w.systems.onLifecycle(OnInit)
 	return w
 }
 
@@ -29,19 +35,19 @@ type World interface {
 
 	Annihilates(entities []Entity)
 
-	//Update()
-	//
-	//SetSleep(d time.Duration)
-	//
-	//SetTimeScale(scale float64)
-	//
-	//TimeScale() float64
-	//
-	//DeltaTime() time.Duration
-	//
-	//Pause()
-	//
-	//Resume()
+	Update()
+
+	SetSleep(d time.Duration)
+
+	SetTimeScale(scale float64)
+
+	TimeScale() float64
+
+	DeltaTime() time.Duration
+
+	Pause()
+
+	Resume()
 }
 
 type world struct {
@@ -49,6 +55,7 @@ type world struct {
 	archetypes *archetypes
 	entities   *entities
 	components *components
+	systems    *systems
 }
 
 func (w *world) Get(entity Entity, componentId ComponentId) any {
@@ -95,7 +102,7 @@ func (w *world) QueryF(query Query, handler func(result *Result)) {
 }
 
 func (w *world) Update() {
-	w.worldTime.update()
+	w.systems.update()
 }
 
 func (w *world) RegComponent(component any) ComponentId {
