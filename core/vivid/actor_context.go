@@ -342,6 +342,29 @@ func (ctx *actorContext) Ask(target ActorRef, message Message, options ...Messag
 	ctx.System().sendUserMessage(ctx.ref, target, m)
 }
 
+func (ctx *actorContext) Broadcast(message Message, options ...MessageOption) {
+	opts := generateMessageOptions(options...)
+	defer releaseMessageOptions(opts)
+
+	if len(opts.MessageHooks) > 0 {
+		cover := func(cover Message) {
+			message = cover
+		}
+		opts.hookMessage(message, cover)
+	}
+
+	m := RegulatoryMessage{
+		Sender:  ctx.ref,
+		Message: message,
+	}
+
+	for _, ref := range ctx.Children() {
+		m.Receiver = ref
+		opts.hookRegulatoryMessage(&m)
+		ctx.System().sendUserMessage(ctx.ref, ref, m)
+	}
+}
+
 func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message) {
 	f := NewFuture(ctx.System(), 0)
 	f.Forward(target)

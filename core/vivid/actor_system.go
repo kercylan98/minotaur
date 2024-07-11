@@ -109,6 +109,12 @@ func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, options ...M
 	return sys.Context().FutureAsk(target, message, options...)
 }
 
+// Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
+//   - 子级的子级不会收到广播消息
+func (sys *ActorSystem) Broadcast(message Message, options ...MessageOption) {
+	sys.Context().Broadcast(message, options...)
+}
+
 // AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息，收到的消息类型将是 FutureForwardMessage
 func (sys *ActorSystem) AwaitForward(target ActorRef, blockFunc func() Message) {
 	sys.Context().AwaitForward(target, blockFunc)

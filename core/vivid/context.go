@@ -72,6 +72,10 @@ type senderContextCompose interface {
 
 	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息，收到的消息类型将是 FutureForwardMessage
 	AwaitForward(target ActorRef, blockFunc func() Message)
+
+	// Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
+	//  - 子级的子级不会收到广播消息
+	Broadcast(message Message, options ...MessageOption)
 }
 
 type receiverContextCompose interface {
