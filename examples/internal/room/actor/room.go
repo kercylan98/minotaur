@@ -31,19 +31,19 @@ func (r *Room) OnReceive(ctx vivid.ActorContext) {
 }
 
 func (r *Room) onLaunch(ctx vivid.ActorContext) {
-	r.roomEntity = r.world.RegComponent(new(components.RoomEntity))
+	r.roomEntity = r.world.RegComponent(new(components.Room))
 }
 
 func (r *Room) onJoinRoom(ctx vivid.ActorContext, m *messages.JoinRoomAsk) {
 	eid := r.world.Spawn(r.roomEntity)
-	roomEntity := r.world.Get(eid, r.roomEntity).(*components.RoomEntity)
+	roomEntity := r.world.Get(eid, r.roomEntity).(*components.Room)
 	roomEntity.Id = m.EntityId
 	ctx.Reply(&messages.JoinRoomReply{Eid: uint64(eid)})
 
 	log.Info("joinRoom", log.String("entityId", m.EntityId), log.String("ecsId", eid.String()))
 
 	r.world.Query(ecs.Equal(r.roomEntity)).Each(func(entity ecs.Entity) bool {
-		roomEntity := r.world.Get(entity, r.roomEntity).(*components.RoomEntity)
+		roomEntity := r.world.Get(entity, r.roomEntity).(*components.Room)
 		log.Info("roomEntity", log.String("entityId", roomEntity.Id), log.String("ecsId", entity.String()))
 		return true
 	})

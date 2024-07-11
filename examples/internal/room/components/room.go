@@ -1,6 +1,6 @@
 package components
 
-type RoomEntity struct {
+type Room struct {
 	Id   string // 对象 ID
 	Seat int    // 座位号
 }
