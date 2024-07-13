@@ -55,6 +55,10 @@ func (r *ResultIterator) Get(componentId ComponentId) any {
 	return art.storage.Get(entity.id(), componentId)
 }
 
+func (r *ResultIterator) Reset() {
+	r.index = -1
+}
+
 func (r *ResultIterator) Entity() Entity {
 	return r.result.entities[r.index]
 }
