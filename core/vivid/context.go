@@ -43,21 +43,24 @@ type basicContextCompose interface {
 
 	// CronTask 通过 cron 表达式注册一个任务。
 	//   - 当 cron 表达式错误时，将会返回错误信息
-	CronTask(name, expression string, function func(ctx *ActorContext)) error
+	CronTask(name, expression string, function func(ctx ActorContext)) error
 
 	// ImmediateCronTask 与 CronTask 相同，但是会立即执行一次
-	ImmediateCronTask(name, expression string, function func(ctx *ActorContext)) error
+	ImmediateCronTask(name, expression string, function func(ctx ActorContext)) error
 
 	// AfterTask 注册一个在特定时间后执行一次的任务
-	AfterTask(name string, after time.Duration, function func(ctx *ActorContext))
+	AfterTask(name string, after time.Duration, function func(ctx ActorContext))
 
 	// RepeatedTask 注册一个在特定时间后反复执行的任务
-	RepeatedTask(name string, after, interval time.Duration, times int, function func(ctx *ActorContext))
+	RepeatedTask(name string, after, interval time.Duration, times int, function func(ctx ActorContext))
 
 	// DayMomentTask 注册一个在每天特定时刻执行的任务
 	//   - 其中 lastExecuted 为上次执行时间，adjust 为时间偏移量，hour、min、sec 为时、分、秒
 	//   - 当上次执行时间被错过时，将会立即执行一次
-	DayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function func(ctx *ActorContext))
+	DayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function func(ctx ActorContext))
+
+	// StopTask 停止一个还未执行的任务
+	StopTask(name string)
 }
 
 type senderContextCompose interface {

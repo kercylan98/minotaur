@@ -20,9 +20,10 @@ type schedulerTask struct {
 	args      []reflect.Value      // 任务执行参数
 	expr      *cronexpr.Expression // 任务执行时间表达式
 
-	total   int  // 任务执行次数
-	trigger int  // 任务已执行次数
-	kill    bool // 任务是否已关闭
+	total    int  // 任务执行次数
+	trigger  int  // 任务已执行次数
+	kill     bool // 任务是否已关闭
+	separate bool // 分离任务，被分离的任务无论是否已关闭均会执行
 }
 
 // Name 获取任务名称
@@ -55,7 +56,7 @@ func (t *schedulerTask) Next(prev time.Time) time.Time {
 func (t *schedulerTask) caller() {
 	t.lock.RLock()
 
-	if t.kill {
+	if t.kill && !t.separate {
 		t.lock.RUnlock()
 		return
 	}

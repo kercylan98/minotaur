@@ -20,7 +20,7 @@ const (
 	SchedulerInstantly = 0  // 立刻
 )
 
-type SchedulerExecutor func(name string, caller func())
+type SchedulerExecutor func(name string, caller func(), separate func())
 
 // NewDefaultScheduler 创建一个默认的时间调度器
 //   - tick: DefaultSchedulerTick
@@ -182,7 +182,9 @@ func (s *Scheduler) task(name string, after, interval time.Duration, expr *crone
 	var caller = task.caller
 	if s.executor != nil {
 		caller = func() {
-			s.executor(task.Name(), task.caller)
+			s.executor(task.Name(), task.caller, func() {
+				task.separate = true
+			})
 		}
 	}
 	s.wheel.ScheduleFunc(task, caller)
@@ -200,7 +202,7 @@ func (s *Scheduler) call(name string, function any, args ...any) {
 	if s.executor != nil {
 		s.executor(name, func() {
 			f.Call(values)
-		})
+		}, func() {})
 	} else {
 		f.Call(values)
 	}

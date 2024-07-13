@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/random"
 	"sync/atomic"
 	"time"
 )
@@ -42,11 +43,21 @@ func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions
 		supervisorStrategy: options.SupervisorStrategy,
 		kind:               kind,
 	}
-	if options.Scheduler {
+	if options.Scheduler || options.Deadline+options.MessageDeadline > 0 {
 		ctx.scheduler = chrono.NewScheduler(chrono.DefaultSchedulerTick, chrono.DefaultSchedulerWheelSize)
-		ctx.scheduler.SetExecutor(func(name string, caller func()) {
-			system.sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(caller))
+		ctx.scheduler.SetExecutor(func(name string, caller func(), separate func()) {
+			caller()
 		})
+	}
+	if options.Deadline > 0 {
+		ctx.AfterTask("deadline"+random.HostName(), options.Deadline, func(ctx ActorContext) {
+			system.opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.Ref().Address().String()), log.String("status", "deadline"))
+			ctx.TerminateGracefully(ctx.Ref())
+		})
+	}
+	if options.MessageDeadline > 0 {
+		ctx.messageDeadlineKey = "message_deadline" + random.HostName()
+		ctx.messageDeadline = options.MessageDeadline
 	}
 	ctx.persistenceStatus.ctx = ctx
 	if ctx.persistenceStatus.persistenceStorage == nil {
@@ -78,37 +89,65 @@ type actorContext struct {
 	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
 	kind               Kind                                            // Actor Kind 类型
 	status             uint32                                          // 原子状态
+	messageDeadlineKey string                                          // 消息处理超时任务的名称
+	messageDeadline    time.Duration                                   // 消息处理空闲超时时间
 }
 
-func (ctx *actorContext) CronTask(name, expression string, function func(ctx *ActorContext)) error {
+func (ctx *actorContext) CronTask(name, expression string, function func(ctx ActorContext)) error {
 	if ctx.scheduler != nil {
-		return ctx.scheduler.RegisterCronTask(name, expression, function, ctx)
+		return ctx.scheduler.RegisterCronTask(name, expression, func() {
+			ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(func() {
+				function(ctx)
+			}))
+		})
 	}
 	return nil
 }
 
-func (ctx *actorContext) ImmediateCronTask(name, expression string, function func(ctx *ActorContext)) error {
+func (ctx *actorContext) ImmediateCronTask(name, expression string, function func(ctx ActorContext)) error {
 	if ctx.scheduler != nil {
-		return ctx.scheduler.RegisterImmediateCronTask(name, expression, function, ctx)
+		return ctx.scheduler.RegisterImmediateCronTask(name, expression, func() {
+			ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(func() {
+				function(ctx)
+			}))
+		})
 	}
 	return nil
 }
 
-func (ctx *actorContext) AfterTask(name string, after time.Duration, function func(ctx *ActorContext)) {
+func (ctx *actorContext) AfterTask(name string, after time.Duration, function func(ctx ActorContext)) {
 	if ctx.scheduler != nil {
-		ctx.scheduler.RegisterAfterTask(name, after, function, ctx)
+		ctx.scheduler.RegisterAfterTask(name, after, func() {
+			ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(func() {
+				function(ctx)
+			}))
+		})
 	}
 }
 
-func (ctx *actorContext) RepeatedTask(name string, after, interval time.Duration, times int, function func(ctx *ActorContext)) {
+func (ctx *actorContext) RepeatedTask(name string, after, interval time.Duration, times int, function func(ctx ActorContext)) {
 	if ctx.scheduler != nil {
-		ctx.scheduler.RegisterRepeatedTask(name, after, interval, times, function, ctx)
+		ctx.scheduler.RegisterRepeatedTask(name, after, interval, times, func() {
+			ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(func() {
+				function(ctx)
+			}))
+		})
 	}
 }
 
-func (ctx *actorContext) DayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function func(ctx *ActorContext)) {
+func (ctx *actorContext) DayMomentTask(name string, lastExecuted time.Time, offset time.Duration, hour, min, sec int, function func(ctx ActorContext)) {
 	if ctx.scheduler != nil {
-		ctx.scheduler.RegisterDayMomentTask(name, lastExecuted, offset, hour, min, sec, function, ctx)
+		ctx.scheduler.RegisterDayMomentTask(name, lastExecuted, offset, hour, min, sec, func() {
+			ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSchedulerFunc(func() {
+				function(ctx)
+			}))
+		})
+	}
+}
+
+func (ctx *actorContext) StopTask(name string) {
+	if ctx.scheduler != nil {
+		ctx.scheduler.UnregisterTask(name)
 	}
 }
 
@@ -374,7 +413,30 @@ func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message)
 	}()
 }
 
+func (ctx *actorContext) clearMessageDeadline() {
+	if ctx.messageDeadline > 0 {
+		if _, ok := ctx.message.(onSchedulerFunc); ok {
+			return
+		}
+		ctx.StopTask(ctx.messageDeadlineKey)
+	}
+}
+
+func (ctx *actorContext) setMessageDeadline() {
+	if ctx.messageDeadline > 0 {
+		if _, ok := ctx.message.(onSchedulerFunc); ok {
+			return
+		}
+		ctx.AfterTask(ctx.messageDeadlineKey, ctx.messageDeadline, func(ctx ActorContext) {
+			ctx.TerminateGracefully(ctx.Ref())
+			ctx.System().opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.Ref().Address().String()), log.String("status", "message_deadline"))
+		})
+	}
+}
+
 func (ctx *actorContext) ProcessUserMessage(msg core.Message, recoveryMessage ...Message) {
+	ctx.clearMessageDeadline()
+	defer ctx.setMessageDeadline()
 	if atomic.LoadUint32(&ctx.status) == actorStatusTerminated {
 		return
 	}
@@ -402,6 +464,8 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message, recoveryMessage ..
 }
 
 func (ctx *actorContext) ProcessSystemMessage(msg core.Message) {
+	ctx.clearMessageDeadline()
+	defer ctx.setMessageDeadline()
 	ctx.message = msg
 	switch m := msg.(type) {
 	case OnLaunch:
@@ -482,17 +546,19 @@ func (ctx *actorContext) onTerminated(m OnTerminated) {
 		return
 	}
 
-	if !atomic.CompareAndSwapUint32(&ctx.status, actorStatusTerminating, actorStatusTerminated) {
-		return
-	}
-
 	ctx.actorSystem.processes.Unregister(ctx.ref, func() {
 		ctx.ProcessUserMessage(m, OnTerminated{TerminatedActor: ctx.ref})
 	})
 
+	if !atomic.CompareAndSwapUint32(&ctx.status, actorStatusTerminating, actorStatusTerminated) {
+		return
+	}
+
 	system := ctx.System()
 	system.opts.LoggerProvider().Debug("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "terminated"))
-	ctx.scheduler.Close()
+	if ctx.scheduler != nil {
+		ctx.scheduler.Close()
+	}
 	if parent := ctx.Parent(); parent != nil {
 		system.sendSystemMessage(ctx.ref, parent, OnTerminated{TerminatedActor: ctx.ref})
 	} else {
