@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/toolkit/eventstream"
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
@@ -35,6 +36,11 @@ func (s *ModuleSupport) RegAddressResolver(resolver core.AddressResolver) {
 	s.actorSystem.processes.RegisterAddressResolver(resolver)
 }
 
+// EventStream 返回事件流，vivid 中 ActorSystem 采用的事件流为 eventstream.UnreliableSortStream，它的执行是在生产者 goroutine 中执行的，在处理函数中更改订阅者自身状态将会是危险的
+func (s *ModuleSupport) EventStream() eventstream.Stream {
+	return s.actorSystem.eventStream
+}
+
 // SetAddressResolverOnlyAddress 设置地址解析器不包含额外的 path 信息
 func (s *ModuleSupport) SetAddressResolverOnlyAddress() {
 	s.actorSystem.processes.SetAddressResolverOnlyAddress()
@@ -48,4 +54,22 @@ func (s *ModuleSupport) GetProcess(address core.Address) core.Process {
 // GetDeadLetter 获取死信队列
 func (s *ModuleSupport) GetDeadLetter() DeadLetter {
 	return s.actorSystem.deadLetter
+}
+
+// WrapRegulatoryMessage 包装监管消息
+func (s *ModuleSupport) WrapRegulatoryMessage(sender, receiver ActorRef, message Message) RegulatoryMessage {
+	return wrapRegulatoryMessage(sender, receiver, message)
+}
+
+// UnwrapRegulatoryMessage 解包监管消息
+func (s *ModuleSupport) UnwrapRegulatoryMessage(message Message) (sender, receiver ActorRef, msg Message) {
+	return unwrapRegulatoryMessage(message)
+}
+
+func (s *ModuleSupport) SendUserMessage(sender, receiver ActorRef, msg Message) {
+	s.actorSystem.sendUserMessage(sender, receiver, msg)
+}
+
+func (s *ModuleSupport) SendSystemMessage(sender, receiver ActorRef, msg Message) {
+	s.actorSystem.sendSystemMessage(sender, receiver, msg)
 }

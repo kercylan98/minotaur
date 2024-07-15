@@ -6,6 +6,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
+	"github.com/kercylan98/minotaur/toolkit/eventstream"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
 	"github.com/pkg/errors"
@@ -24,8 +25,9 @@ var (
 func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 	var opts = new(ActorSystemOptions).apply(options)
 	system := &ActorSystem{
-		opts:   opts,
-		closed: make(chan struct{}),
+		opts:        opts,
+		closed:      make(chan struct{}),
+		eventStream: eventstream.NewUnreliableSortStream(),
 	}
 	system.deadLetter = &deadLetterProcess{system: system}
 
@@ -92,6 +94,7 @@ type ActorSystem struct {
 	kinds           map[Kind]*kind
 	kindRw          sync.RWMutex
 	kindHookModules []KindHookModule
+	eventStream     eventstream.Stream
 }
 
 // Name 返回 ActorSystem 的名称

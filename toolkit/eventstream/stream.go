@@ -4,7 +4,7 @@ type Event = any
 
 type Handler func(event Event)
 
-type EventStream interface {
+type Stream interface {
 	// Subscribe 订阅事件流
 	Subscribe(handler Handler) Subscription
 

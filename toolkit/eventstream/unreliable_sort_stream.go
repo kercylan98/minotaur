@@ -5,11 +5,16 @@ import (
 	"sync/atomic"
 )
 
-var _ EventStream = &UnreliableSortStream{}
+func NewUnreliableSortStream() *UnreliableSortStream {
+	return &UnreliableSortStream{}
+}
+
+var _ Stream = &UnreliableSortStream{}
 var _ Subscription = &UnreliableSortStreamSubscription{}
 
 // UnreliableSortStream 这是一个并发安全的事件流，在订阅事件流后将会收到所有传入该流的事件，事件的执行是在发布者的 goroutine 中执行的
 //   - 正常情况下，订阅的执行是按照订阅的顺序执行的，当发生取消订阅的时候，顺序可能会发生变化
+//   - 事件流的订阅会在生产者的 goroutine 中执行，订阅方在订阅中更改自身的状态是不安全的
 type UnreliableSortStream struct {
 	rw            sync.RWMutex
 	subscriptions []*UnreliableSortStreamSubscription // 当前所有的订阅信息

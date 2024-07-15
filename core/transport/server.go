@@ -3,7 +3,6 @@ package transport
 import (
 	"errors"
 	"github.com/kercylan98/minotaur/core"
-	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -120,10 +119,7 @@ func (s *server) onConnectionMessage(batch *DistributedMessage_ConnectionMessage
 		receiver := core.Address(b.ReceiverAddress[i])
 		regulatoryMessageSender := core.Address(b.RegulatoryMessageSenderAddress[i])
 		if len(regulatoryMessageSender) > 0 {
-			message = vivid.RegulatoryMessage{
-				Sender:  core.NewProcessRef(regulatoryMessageSender),
-				Message: message,
-			}
+			message = s.network.support.WrapRegulatoryMessage(core.NewProcessRef(regulatoryMessageSender), nil, message)
 		}
 		system := b.System[i]
 		if system {

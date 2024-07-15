@@ -40,3 +40,25 @@ var (
 	onPersistenceSnapshot OnPersistenceSnapshot
 	onTerminateGracefully TerminateGracefully
 )
+
+func wrapRegulatoryMessage(sender, receiver ActorRef, message Message) RegulatoryMessage {
+	switch m := message.(type) {
+	case RegulatoryMessage:
+		return m
+	default:
+		return RegulatoryMessage{
+			Sender:   sender,
+			Receiver: receiver,
+			Message:  message,
+		}
+	}
+}
+
+func unwrapRegulatoryMessage(message Message) (sender, receiver ActorRef, msg Message) {
+	switch m := message.(type) {
+	case RegulatoryMessage:
+		return m.Sender, m.Receiver, m.Message
+	default:
+		return nil, nil, message
+	}
+}

@@ -236,11 +236,7 @@ func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 
 		f := NewFuture(ctx.System(), time.Second)
 
-		ctx.System().sendSystemMessage(f.Ref(), parent[0], RegulatoryMessage{
-			Sender:   f.Ref(),
-			Message:  &KindOf{Kind: kind, ParentAddress: []byte(parent[0].Address())},
-			Receiver: parent[0],
-		})
+		ctx.System().sendSystemMessage(f.Ref(), parent[0], wrapRegulatoryMessage(ctx.ref, parent[0], &KindOf{Kind: kind, ParentAddress: []byte(parent[0].Address())}))
 		result, err := f.Result()
 		if err != nil {
 			return ctx.System().deadLetter.Ref()
@@ -316,17 +312,14 @@ func (ctx *actorContext) Ref() ActorRef {
 }
 
 func (ctx *actorContext) Message() Message {
-	switch m := ctx.message.(type) {
-	case RegulatoryMessage:
-		return m.Message
-	default:
-		return ctx.message
-	}
+	_, _, m := unwrapRegulatoryMessage(ctx.message)
+	return m
 }
 
 func (ctx *actorContext) Tell(target ActorRef, message Message, options ...MessageOption) {
 	opts := generateMessageOptions(options...)
 	defer releaseMessageOptions(opts)
+
 	if len(opts.MessageHooks) > 0 {
 		cover := func(cover Message) {
 			message = cover
@@ -334,7 +327,10 @@ func (ctx *actorContext) Tell(target ActorRef, message Message, options ...Messa
 		opts.hookMessage(message, cover)
 	}
 
-	ctx.System().sendUserMessage(ctx.ref, target, message)
+	m := wrapRegulatoryMessage(ctx.ref, target, message)
+
+	opts.hookRegulatoryMessage(&m)
+	ctx.System().sendUserMessage(ctx.ref, target, m)
 }
 
 func (ctx *actorContext) FutureAsk(target ActorRef, message Message, options ...MessageOption) Future {
@@ -349,11 +345,8 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, options ...
 	}
 
 	f := NewFuture(ctx.System(), opts.FutureTimeout)
-	m := RegulatoryMessage{
-		Sender:   f.Ref(),
-		Message:  message,
-		Receiver: target,
-	}
+
+	m := wrapRegulatoryMessage(f.Ref(), target, message)
 
 	opts.hookRegulatoryMessage(&m)
 	ctx.System().sendUserMessage(ctx.ref, target, m)
@@ -371,11 +364,7 @@ func (ctx *actorContext) Ask(target ActorRef, message Message, options ...Messag
 		opts.hookMessage(message, cover)
 	}
 
-	m := RegulatoryMessage{
-		Sender:   ctx.ref,
-		Message:  message,
-		Receiver: target,
-	}
+	m := wrapRegulatoryMessage(ctx.ref, target, message)
 
 	opts.hookRegulatoryMessage(&m)
 	ctx.System().sendUserMessage(ctx.ref, target, m)
@@ -392,10 +381,7 @@ func (ctx *actorContext) Broadcast(message Message, options ...MessageOption) {
 		opts.hookMessage(message, cover)
 	}
 
-	m := RegulatoryMessage{
-		Sender:  ctx.ref,
-		Message: message,
-	}
+	m := wrapRegulatoryMessage(ctx.ref, nil, message)
 
 	for _, ref := range ctx.Children() {
 		m.Receiver = ref

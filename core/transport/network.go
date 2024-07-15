@@ -90,7 +90,7 @@ func (n *Network) launch() {
 
 func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message core.Message, system bool) {
 	ref := n.em.getEndpoint(receiver)
-	n.support.System().Context().Tell(ref, messageWrapper{
+	n.support.SendUserMessage(sender, ref, messageWrapper{
 		sender:   sender,
 		receiver: receiver,
 		message:  message,
