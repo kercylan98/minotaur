@@ -7,6 +7,10 @@ func NewPacket(data []byte) Packet {
 	return new(packet).init(data)
 }
 
+type ReactPacket struct {
+	Packet
+}
+
 // Packet 写入连接的数据包接口
 type Packet interface {
 
