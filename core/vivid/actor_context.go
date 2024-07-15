@@ -225,7 +225,7 @@ func (ctx *actorContext) Terminate(target ActorRef) {
 }
 
 func (ctx *actorContext) TerminateGracefully(target ActorRef) {
-	ctx.System().sendUserMessage(ctx.ref, target, onTerminateGracefully)
+	ctx.System().Tell(target, onTerminateGracefully)
 }
 
 func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
@@ -236,7 +236,7 @@ func (ctx *actorContext) KindOf(kind Kind, parent ...ActorRef) ActorRef {
 
 		f := NewFuture(ctx.System(), time.Second)
 
-		ctx.System().sendSystemMessage(f.Ref(), parent[0], wrapRegulatoryMessage(ctx.ref, parent[0], &KindOf{Kind: kind, ParentAddress: []byte(parent[0].Address())}))
+		ctx.System().sendSystemMessage(f.Ref(), parent[0], wrapRegulatoryMessage(f.Ref(), parent[0], &KindOf{Kind: kind, ParentAddress: []byte(parent[0].Address())}))
 		result, err := f.Result()
 		if err != nil {
 			return ctx.System().deadLetter.Ref()

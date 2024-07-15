@@ -6,7 +6,10 @@ import (
 	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"reflect"
 )
 
 func newEndpoint(network *Network, address core.Address) *endpoint {
@@ -91,13 +94,17 @@ func (e *endpoint) onLaunch(ctx vivid.ActorContext, m vivid.OnLaunch) {
 		for {
 			in, err := stream.Recv()
 			if err != nil {
-				log.Debug("Endpoint", log.String("type", "receive"), log.Err(err))
+				if status.Code(err) != codes.Canceled {
+					log.Debug("Endpoint", log.String("type", "receive"), log.Err(err))
+				}
 				return
 			}
 
 			switch m := in.MessageType.(type) {
 			case *DistributedMessage_ConnectionMessageBatch:
 				e.network.server.onConnectionMessage(m)
+			case *DistributedMessage_ConnectionClosed:
+				return
 			default:
 				log.Warn("Endpoint", log.String("type", "unknown message"))
 			}
@@ -138,12 +145,23 @@ func (e *endpoint) onSend(ctx vivid.ActorContext, m []any) {
 		if v, ok = source.(messageWrapper); !ok {
 			batch.Bad[i] = true
 			bad++
-			e.network.support.Logger().Error("Endpoint", log.String("type", "convert"))
+
+			rm, ok := source.(vivid.RegulatoryMessage)
+			if ok {
+				switch rm.Message.(type) {
+				case vivid.TerminateGracefully: // 特殊类型
+					ctx.Terminate(ctx.Ref())
+					continue
+				}
+			}
+			e.network.support.Logger().Error("Endpoint", log.String("type", "convert"), log.String("message", reflect.TypeOf(source).String()))
 			continue
 		}
 		rm, ok := v.message.(vivid.RegulatoryMessage)
 		if ok {
-			batch.RegulatoryMessageSenderAddress[i] = []byte(rm.Sender.Address())
+			if rm.Sender != nil {
+				batch.RegulatoryMessageSenderAddress[i] = []byte(rm.Sender.Address())
+			}
 			v.message = rm.Message
 		}
 		var err error

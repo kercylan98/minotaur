@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"math"
 	"net"
@@ -29,6 +30,7 @@ func NewNetwork(address string) *Network {
 	n := &Network{
 		address: core.NewRootAddress("grpc", "", host, convert.StringToUint16(port)),
 	}
+	n.ctx, n.cancel = context.WithCancel(context.Background())
 
 	return n
 }
@@ -42,11 +44,13 @@ type messageWrapper struct {
 
 type Network struct {
 	support *vivid.ModuleSupport
-	address core.Address     // 指定 ActorSystem 地址
-	server  *server          // 处理流消息的服务器
-	em      *endpointManager // 远程端点管理器
-	codec   core.Codec       // 消息编解码器
-	grpc    *grpc.Server     // grpc 服务
+	address core.Address       // 指定 ActorSystem 地址
+	server  *server            // 处理流消息的服务器
+	em      *endpointManager   // 远程端点管理器
+	codec   core.Codec         // 消息编解码器
+	grpc    *grpc.Server       // grpc 服务
+	ctx     context.Context    // 上下文
+	cancel  context.CancelFunc // 取消函数
 }
 
 func (n *Network) Priority() int {
@@ -100,6 +104,7 @@ func (n *Network) send(sender *core.ProcessRef, receiver core.Address, message c
 
 func (n *Network) OnShutdown() {
 	n.em.close()
+	n.cancel()
 	n.grpc.GracefulStop()
 }
 

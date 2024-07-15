@@ -33,7 +33,8 @@ func (em *endpointManager) getEndpoint(address core.Address) vivid.ActorRef {
 		ref = em.network.support.System().ActorOf(func() vivid.Actor {
 			return newEndpoint(em.network, address)
 		}, func(options *vivid.ActorOptions) {
-			options.WithName("endpoint/" + address.PhysicalAddress())
+			options.WithNamePrefix("endpoint")
+			options.WithName(address.PhysicalAddress())
 			options.WithMailbox(func() vivid.Mailbox {
 				return vivid.NewDefaultMailbox(128)
 			})

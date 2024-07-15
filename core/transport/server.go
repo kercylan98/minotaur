@@ -28,11 +28,18 @@ type server struct {
 func (s *server) StreamHandler(stream ActorSystemCommunication_StreamHandlerServer) error {
 	defer s.onConnectionClosed(stream)
 
+	go func() {
+		select {
+		case <-s.network.ctx.Done():
+			s.onConnectionClosed(stream)
+		}
+	}()
+
 	for {
 		msg, err := stream.Recv()
 		switch {
 		case errors.Is(err, io.EOF):
-			s.network.support.Logger().Debug("Endpoint", log.String("type", "eof"))
+			s.network.support.Logger().Debug("Endpoint", log.String("type", "EOF"))
 			return nil
 		case err != nil:
 			s.network.support.Logger().Error("Endpoint", log.String("type", "receive"), log.Err(err))
@@ -119,7 +126,9 @@ func (s *server) onConnectionMessage(batch *DistributedMessage_ConnectionMessage
 		receiver := core.Address(b.ReceiverAddress[i])
 		regulatoryMessageSender := core.Address(b.RegulatoryMessageSenderAddress[i])
 		if len(regulatoryMessageSender) > 0 {
-			message = s.network.support.WrapRegulatoryMessage(core.NewProcessRef(regulatoryMessageSender), nil, message)
+			message = s.network.support.WrapRegulatoryMessage(core.NewProcessRef(regulatoryMessageSender), core.NewProcessRef(receiver), message)
+		} else {
+			message = s.network.support.WrapRegulatoryMessage(nil, core.NewProcessRef(receiver), message)
 		}
 		system := b.System[i]
 		if system {

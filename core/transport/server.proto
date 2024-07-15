@@ -12,7 +12,7 @@ message DistributedMessage {
     ConnectionOpen connection_open = 1;
     ConnectionOpened connection_opened = 2;
     ConnectionClosed connection_closed = 3;
-    ConnectionMessageBatch connection_message_batch = 5;
+    ConnectionMessageBatch connection_message_batch = 4;
   }
 }
 

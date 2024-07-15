@@ -10,10 +10,13 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/pools"
 	"github.com/pkg/errors"
+	"os"
+	"os/signal"
 	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -164,6 +167,26 @@ func (sys *ActorSystem) Context() ActorContext {
 	return sys.root
 }
 
+// Signal 监听系统信号，当系统接收到指定信号时执行 handler
+func (sys *ActorSystem) Signal(handler func(system *ActorSystem, signal os.Signal)) {
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+	select {
+	case sig := <-s:
+		handler(sys, sig)
+	}
+}
+
+func (sys *ActorSystem) shutdownModules() {
+	for _, module := range sys.opts.modules {
+		switch m := module.(type) {
+		case ShutdownModule:
+			sys.opts.LoggerProvider().Info("shutdown", log.String("module", fmt.Sprintf("%T", module)))
+			m.OnShutdown()
+		}
+	}
+}
+
 // Shutdown 关闭 ActorSystem，关闭时会优先强行终止所有 Actor，之后对模块进行卸载
 //   - chanting 为可选参数，表示在执行关闭操作前等待的时间
 //
@@ -172,12 +195,7 @@ func (sys *ActorSystem) Shutdown(chanting ...time.Duration) {
 	sys.chanting(chanting...)
 	sys.root.Terminate(sys.root.Ref())
 	<-sys.closed
-	for _, module := range sys.opts.modules {
-		switch m := module.(type) {
-		case ShutdownModule:
-			m.OnShutdown()
-		}
-	}
+	sys.shutdownModules()
 }
 
 // ShutdownGracefully 优雅地关闭 ActorSystem，与 Shutdown 不同的是， Shutdown 会致使 Actor 立即终止，而 ShutdownGracefully 则是发送一条用户消息，当
@@ -186,12 +204,7 @@ func (sys *ActorSystem) ShutdownGracefully(chanting ...time.Duration) {
 	sys.chanting(chanting...)
 	sys.root.TerminateGracefully(sys.root.Ref())
 	<-sys.closed
-	for _, module := range sys.opts.modules {
-		switch m := module.(type) {
-		case ShutdownModule:
-			m.OnShutdown()
-		}
-	}
+	sys.shutdownModules()
 }
 
 func (sys *ActorSystem) chanting(duration ...time.Duration) {

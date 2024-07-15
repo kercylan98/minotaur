@@ -6,6 +6,7 @@ import (
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"os"
 	"testing"
 	"time"
 )
@@ -29,7 +30,9 @@ func TestCluster_Node1(t *testing.T) {
 		options.WithNamePrefix("cluster")
 	})
 
-	system.Shutdown(time.Hour)
+	system.Signal(func(system *vivid.ActorSystem, signal os.Signal) {
+		system.ShutdownGracefully()
+	})
 }
 
 func TestCluster_Node2(t *testing.T) {
@@ -59,5 +62,5 @@ func TestCluster_Node2(t *testing.T) {
 		system.Context().TerminateGracefully(ref)
 	}
 
-	system.Shutdown(time.Hour)
+	system.ShutdownGracefully(time.Second * 3)
 }
