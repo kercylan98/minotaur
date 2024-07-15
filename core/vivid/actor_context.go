@@ -327,7 +327,7 @@ func (ctx *actorContext) Tell(target ActorRef, message Message, options ...Messa
 		opts.hookMessage(message, cover)
 	}
 
-	m := wrapRegulatoryMessage(ctx.ref, target, message)
+	m := wrapRegulatoryMessage(nil, target, message)
 
 	opts.hookRegulatoryMessage(&m)
 	ctx.System().sendUserMessage(ctx.ref, target, m)
