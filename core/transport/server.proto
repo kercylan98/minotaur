@@ -1,5 +1,5 @@
 syntax = "proto3";
-package remote;
+package transport;
 option go_package = "/github.com/kercylan98/minotaur/core/transport";
 
 // ActorSystem 通讯服务

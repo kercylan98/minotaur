@@ -30,7 +30,7 @@ func NewActorSystemCommunicationClient(cc grpc.ClientConnInterface) ActorSystemC
 }
 
 func (c *actorSystemCommunicationClient) StreamHandler(ctx context.Context, opts ...grpc.CallOption) (ActorSystemCommunication_StreamHandlerClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ActorSystemCommunication_ServiceDesc.Streams[0], "/remote.ActorSystemCommunication/StreamHandler", opts...)
+	stream, err := c.cc.NewStream(ctx, &ActorSystemCommunication_ServiceDesc.Streams[0], "/transport.ActorSystemCommunication/StreamHandler", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (x *actorSystemCommunicationStreamHandlerServer) Recv() (*DistributedMessag
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ActorSystemCommunication_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "remote.ActorSystemCommunication",
+	ServiceName: "transport.ActorSystemCommunication",
 	HandlerType: (*ActorSystemCommunicationServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{

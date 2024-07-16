@@ -8,6 +8,7 @@ import (
 
 // OneForOne 创建一个 OneForOne 策略的监督者
 //   - 当一个 Actor 发生故障时，只有该 Actor 会被处理
+//   - 当 restartCount 为负数时，将会无限重启
 func OneForOne(restartCount int, baseDelay, maxDelay time.Duration, decide Decide) vivid.SupervisorStrategy {
 	return &oneForOne{
 		decide:       decide,

@@ -294,9 +294,12 @@ func (g *gnetActor) onConnectionOpened(ctx vivid.ActorContext, m *gnetConnActor)
 			}
 		}
 	}()
-	if err := g.kit.connectionOpenedHook(g.kit, conn); err != nil {
-		ctx.Tell(ref, err)
+	if g.kit.connectionOpenedHook != nil {
+		if err := g.kit.connectionOpenedHook(g.kit, conn); err != nil {
+			ctx.Tell(ref, err)
+		}
 	}
+
 	ctx.Reply(ref)
 }
 

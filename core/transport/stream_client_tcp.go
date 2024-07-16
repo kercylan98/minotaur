@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"bytes"
 	"net"
 )
 
@@ -10,7 +9,7 @@ var _ StreamClientCore = (*StreamClientTCPCore)(nil)
 type StreamClientTCPCore struct {
 	Addr   string
 	conn   net.Conn
-	buffer bytes.Buffer
+	buffer []byte
 }
 
 func (c *StreamClientTCPCore) OnConnect() error {
@@ -24,13 +23,9 @@ func (c *StreamClientTCPCore) OnConnect() error {
 }
 
 func (c *StreamClientTCPCore) OnRead() (Packet, error) {
-	c.buffer.Reset()
-	_, err := c.buffer.ReadFrom(c.conn)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewPacket(c.buffer.Bytes()), nil
+	c.buffer = make([]byte, 1024)
+	_, err := c.conn.Read(c.buffer)
+	return NewPacket(c.buffer), err
 }
 
 func (c *StreamClientTCPCore) OnWrite(p Packet) error {
