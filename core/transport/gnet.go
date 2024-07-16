@@ -2,7 +2,7 @@ package transport
 
 import (
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
+	"github.com/kercylan98/minotaur/core/vivid/supervisor"
 	"reflect"
 )
 
@@ -79,8 +79,6 @@ func (n *GNET) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 		return newGNETActor(n, kit, n.schema, n.addr, n.pattern...)
 	}, func(options *vivid.ActorOptions) {
 		options.WithNamePrefix(actorType)
-		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
-			return vivid.DirectiveStop
-		}, 0))
+		options.WithSupervisorStrategy(supervisor.Stop())
 	})
 }

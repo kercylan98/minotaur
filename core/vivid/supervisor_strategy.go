@@ -1,16 +1,17 @@
 package vivid
 
-const (
-	DirectiveStop     Directive = iota + 1 // 停止子 Actor。OnTerminated 生命周期钩子方法会被调用，子 Actor 的状态会被清理
-	DirectiveRestart                       // 停止并重新启动子 Actor。子 Actor 的状态会被重置
-	DirectiveResume                        // 忽略异常，让子 Actor 继续处理后续的消息。子 Actor 的状态保持不变
-	DirectiveEscalate                      // 升级 Actor（向上级 Actor 报告异常）
-)
-
-// Directive 监管指令
-type Directive uint8
+// SupervisorLogger 监管日志记录器
+type SupervisorLogger func(reason, message Message)
 
 // SupervisorStrategy 监管策略
 type SupervisorStrategy interface {
 	OnAccident(system *ActorSystem, accident Accident)
+}
+
+// FunctionalSupervisorStrategy 函数式监管策略
+type FunctionalSupervisorStrategy func(system *ActorSystem, accident Accident)
+
+// OnAccident 当发生意外时
+func (f FunctionalSupervisorStrategy) OnAccident(system *ActorSystem, accident Accident) {
+	f(system, accident)
 }

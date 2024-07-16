@@ -14,8 +14,16 @@ type ActorSystemOptions struct {
 	options []ActorSystemOption
 	modules []Module // 指定 ActorSystem 的组件
 
-	Name           string         // 指定 ActorSystem 的名称
-	LoggerProvider LoggerProvider // 指定 ActorSystem 的日志提供器
+	Name                      string             // 指定 ActorSystem 的名称
+	LoggerProvider            LoggerProvider     // 指定 ActorSystem 的日志提供器
+	DefaultSupervisorStrategy SupervisorStrategy // 指定 ActorSystem 的默认监管策略
+}
+
+func (o *ActorSystemOptions) WithDefaultSupervisorStrategy(strategy SupervisorStrategy) *ActorSystemOptions {
+	o.options = append(o.options, func(options *ActorSystemOptions) {
+		options.DefaultSupervisorStrategy = strategy
+	})
+	return o
 }
 
 func (o *ActorSystemOptions) WithLoggerProvider(provider LoggerProvider) *ActorSystemOptions {

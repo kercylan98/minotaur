@@ -2,8 +2,6 @@ package vivid
 
 import "time"
 
-type SupervisorDecide func(reason, message Message) Directive
-
 type Supervisor interface {
 	// Children 获取该监管者下的所有子 Actor
 	Children() []ActorRef

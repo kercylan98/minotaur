@@ -102,6 +102,9 @@ type receiverContextCompose interface {
 
 	// Kind 返回该 Actor 的 Kind
 	Kind() Kind
+
+	// ReportAbnormal 报告异常，该函数将触发事故向监管者传递
+	ReportAbnormal(reason Message)
 }
 
 type spawnerContextCompose interface {

@@ -19,10 +19,14 @@ var actorOptionsPool = pools.NewObjectPool[ActorOptions](func() *ActorOptions {
 	data.DispatcherProducer = nil
 	data.MailboxProducer = nil
 	data.SupervisorStrategy = nil
+	data.SupervisorLogger = nil
 	data.PersistenceName = ""
 	data.PersistenceStorage = nil
 	data.PersistenceEventLimit = 0
 	data.ConflictReuse = false
+	data.Scheduler = false
+	data.Deadline = 0
+	data.MessageDeadline = 0
 })
 
 func newActorOptions() *ActorOptions {
@@ -42,6 +46,7 @@ type ActorOptions struct {
 	DispatcherProducer    DispatcherProducer // Actor 使用的调度器
 	MailboxProducer       MailboxProducer    // Actor 使用的邮箱
 	SupervisorStrategy    SupervisorStrategy // Actor 使用的监督者策略
+	SupervisorLogger      []SupervisorLogger // Actor 使用的监督者日志
 	PersistenceName       string             // Actor 持久化名称
 	PersistenceStorage    Storage            // Actor 持久化存储器
 	PersistenceEventLimit int                // Actor 持久化事件数量限制，达到限制时将会触发快照的生成
@@ -115,9 +120,10 @@ func (o *ActorOptions) WithPersistence(storage Storage, name string) *ActorOptio
 
 // WithSupervisorStrategy 通过指定监督者策略创建一个 Actor
 //   - 当 Actor 被通过该可选项创建时，假如其父 Actor 实现了 SupervisorStrategy，那么其父 Actor 的监管策略将被取代
-func (o *ActorOptions) WithSupervisorStrategy(strategy SupervisorStrategy) *ActorOptions {
+func (o *ActorOptions) WithSupervisorStrategy(strategy SupervisorStrategy, logger ...SupervisorLogger) *ActorOptions {
 	o.options = append(o.options, func(options *ActorOptions) {
 		options.SupervisorStrategy = strategy
+		options.SupervisorLogger = logger
 	})
 	return o
 }

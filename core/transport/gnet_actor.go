@@ -7,7 +7,7 @@ import (
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
+	"github.com/kercylan98/minotaur/core/vivid/supervisor"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"github.com/panjf2000/gnet/v2"
@@ -279,10 +279,9 @@ func (g *gnetActor) onConnectionOpened(ctx vivid.ActorContext, m *gnetConnActor)
 		return m
 	}, func(options *vivid.ActorOptions) {
 		options.WithName("conn-" + m.gnetConn.RemoteAddr().String())
-		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
+		options.WithSupervisorStrategy(supervisor.Stop(), func(reason, message vivid.Message) {
 			g.gnet.support.Logger().Error("network", log.String("status", "connection panic"), log.String("listen", g.showAddr), log.Err(reason.(error)))
-			return vivid.DirectiveStop
-		}, 0))
+		})
 	})
 	conn := NewConn(m.gnetConn, ctx.System(), ref)
 	defer func() {

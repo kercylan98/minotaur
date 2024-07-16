@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
+	"github.com/kercylan98/minotaur/core/vivid/supervisor"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
 	"net"
@@ -95,10 +95,9 @@ func (f *fiberActor) onConnectionOpened(ctx vivid.ActorContext, m *fiberConnActo
 		return m
 	}, func(options *vivid.ActorOptions) {
 		options.WithName("conn-" + m.fiberConn.RemoteAddr().String())
-		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
+		options.WithSupervisorStrategy(supervisor.Stop(), func(reason, message vivid.Message) {
 			f.fiber.support.Logger().Error("network", log.String("status", "connection panic"), log.String("listen", f.showAddr), log.Err(reason.(error)))
-			return vivid.DirectiveStop
-		}, 0))
+		})
 	})
 	conn := NewConn(m.fiberConn, ctx.System(), ref)
 	defer func() {

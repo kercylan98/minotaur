@@ -2,7 +2,7 @@ package vivid
 
 import (
 	"fmt"
-	core "github.com/kercylan98/minotaur/core"
+	"github.com/kercylan98/minotaur/core"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/collection/mappings"
 	"github.com/kercylan98/minotaur/toolkit/convert"
@@ -78,7 +78,7 @@ func NewActorSystem(options ...func(options *ActorSystemOptions)) *ActorSystem {
 
 	actorOpts := actorOptionsPool.Get().WithName("user")
 	defer actorOptionsPool.Put(actorOpts)
-	system.root, _, _ = spawn(system, func() Actor { return &root{} }, actorOpts, nil, mappings.NewOrderSync[core.Address, ActorRef](), nil, charproc.None)
+	system.root, _, _ = spawn(system, func() Actor { return &root{system.opts.DefaultSupervisorStrategy} }, actorOpts, nil, mappings.NewOrderSync[core.Address, ActorRef](), nil, charproc.None)
 	for _, plugin := range opts.modules {
 		plugin.OnLoad(support, transportModule)
 	}

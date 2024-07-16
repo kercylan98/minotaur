@@ -3,7 +3,7 @@ package transport
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/core/vivid"
-	"github.com/kercylan98/minotaur/core/vivid/supervisorstategy"
+	"github.com/kercylan98/minotaur/core/vivid/supervisor"
 	"reflect"
 )
 
@@ -47,8 +47,6 @@ func (n *Fiber) OnLoad(support *vivid.ModuleSupport, hasTransportModule bool) {
 		return newFiberActor(n, kit, n.addr)
 	}, func(options *vivid.ActorOptions) {
 		options.WithNamePrefix(actorType)
-		options.WithSupervisorStrategy(supervisorstategy.OneForOne(func(reason, message vivid.Message) vivid.Directive {
-			return vivid.DirectiveStop
-		}, 0))
+		options.WithSupervisorStrategy(supervisor.Stop())
 	})
 }

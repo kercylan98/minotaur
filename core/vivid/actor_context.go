@@ -41,6 +41,7 @@ func newActorContext(system *ActorSystem, parent ActorRef, options *ActorOptions
 			eventLimit:         options.PersistenceEventLimit,
 		},
 		supervisorStrategy: options.SupervisorStrategy,
+		supervisorLogger:   options.SupervisorLogger,
 		kind:               kind,
 	}
 	if options.Scheduler || options.Deadline+options.MessageDeadline > 0 {
@@ -79,6 +80,7 @@ type actorContext struct {
 	dispatcher         Dispatcher                                      // Actor 使用的调度器
 	ref                ActorRef                                        // 该 Actor 引用
 	message            Message                                         // 当前正在处理的消息（可能为包装）
+	messageFail        bool                                            // 当前处理的消息是否失败
 	actor              Actor                                           // Actor 实例
 	mailbox            Mailbox                                         // Actor 使用的邮箱
 	producer           ActorProducer                                   // Actor 生产者
@@ -87,6 +89,7 @@ type actorContext struct {
 	persistenceStatus  *persistenceStatus                              // 该 Actor 的持久化状态
 	scheduler          *chrono.Scheduler                               // Actor 使用的定时器
 	supervisorStrategy SupervisorStrategy                              // Actor 使用的监督者策略
+	supervisorLogger   []SupervisorLogger                              // Actor 使用的监督者日志
 	kind               Kind                                            // Actor Kind 类型
 	status             uint32                                          // 原子状态
 	messageDeadlineKey string                                          // 消息处理超时任务的名称
@@ -182,17 +185,30 @@ func (ctx *actorContext) Sender() ActorRef {
 	return rm.Sender
 }
 
-func (ctx *actorContext) ProcessRecover(reason core.Message) {
+func (ctx *actorContext) ReportAbnormal(reason Message) {
+	if atomic.LoadUint32(&ctx.status) != actorStatusAlive {
+		return
+	}
+	ctx.messageFail = true
 	ctx.as.restartTimes = append(ctx.as.restartTimes, time.Now())
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onSuspendMailbox)
+
+	message := ctx.Message()
+	for _, logger := range ctx.supervisorLogger {
+		logger(reason, message)
+	}
 
 	ctx.Escalate(&accident{
 		accidentActor:      ctx.ref,
 		reason:             reason,
-		message:            ctx.Message(),
+		message:            message,
 		supervisorStrategy: ctx.supervisorStrategy,
 		state:              ctx.as,
 	})
+}
+
+func (ctx *actorContext) ProcessRecover(reason core.Message) {
+	ctx.ReportAbnormal(reason)
 }
 
 func (ctx *actorContext) BehaviorOf() Behavior {
@@ -394,6 +410,11 @@ func (ctx *actorContext) AwaitForward(target ActorRef, blockFunc func() Message)
 	f := NewFuture(ctx.System(), 0)
 	f.Forward(target)
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				ctx.System().sendUserMessage(f.Ref(), f.Ref(), err)
+			}
+		}()
 		message := blockFunc()
 		ctx.System().sendUserMessage(f.Ref(), f.Ref(), message)
 	}()
@@ -434,11 +455,14 @@ func (ctx *actorContext) ProcessUserMessage(msg core.Message, recoveryMessage ..
 	}()
 
 	ctx.message = msg
+	ctx.messageFail = false
 	ctx.actor.OnReceive(ctx)
 
 	switch msg.(type) {
 	case OnLaunch:
-		ctx.as.restartTimes = ctx.as.restartTimes[:0]
+		if !ctx.messageFail {
+			ctx.as.restartTimes = ctx.as.restartTimes[:0]
+		}
 	case TerminateGracefully:
 		ctx.onTerminate(true)
 	default:
@@ -605,6 +629,7 @@ func (ctx *actorContext) Restart(children ...ActorRef) {
 
 func (ctx *actorContext) onRestart(m OnRestart) {
 	atomic.StoreUint32(&ctx.status, actorStatusRestarting)
+	ctx.ProcessUserMessage(onTerminate)
 	ctx.ProcessUserMessage(onRestarting)
 	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
 		ctx.Terminate(ref)
