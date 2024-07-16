@@ -5,6 +5,7 @@ import (
 	"encoding"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"io"
@@ -278,7 +279,8 @@ func (h *Handler) formatAttrValue(ctx context.Context, level slog.Level, fullKey
 		case []byte:
 			builder.WriteString(strconv.Quote(*(*string)(unsafe.Pointer(&v))))
 		default:
-			builder.WriteString(strconv.Quote(fmt.Sprintf("%+v", attr.Value.Any())))
+			//builder.WriteString(strconv.Quote(fmt.Sprintf("%+v", attr.Value.Any())))
+			builder.WriteString(string(toolkit.MarshalJSON(attr.Value.Any())))
 		}
 	}
 
