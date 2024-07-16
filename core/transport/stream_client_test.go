@@ -4,19 +4,38 @@ import (
 	"github.com/fasthttp/websocket"
 	"github.com/kercylan98/minotaur/core/transport"
 	"github.com/kercylan98/minotaur/core/vivid"
-	"net/url"
 	"os"
 	"testing"
 )
 
+type WebSocketService struct {
+}
+
+func (f *WebSocketService) OnInit(kit *transport.FiberKit) {
+	kit.WebSocket("/ws").ConnectionPacketHook(f.onConnectionPacket)
+}
+
+func (f *WebSocketService) onConnectionPacket(kit *transport.FiberKit, ctx *transport.FiberContext, conn *transport.Conn, packet transport.Packet) error {
+	conn.WritePacket(packet) // echo
+	return nil
+}
+
+func TestWebSocketServer(t *testing.T) {
+	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+		options.WithModule(transport.NewFiber(":8877").BindService(new(WebSocketService)))
+	})
+
+	system.Signal(func(system *vivid.ActorSystem, signal os.Signal) {
+		system.ShutdownGracefully()
+	})
+}
+
 func TestWebSocketClient(t *testing.T) {
 	actorSystem := vivid.NewActorSystem()
 	ref := actorSystem.ActorOf(func() vivid.Actor {
-		return transport.NewWebSocketClient(url.URL{
-			Scheme: "ws",
-			Host:   "localhost:8877",
-			Path:   "/ws",
-		}, transport.WebSocketClientConfig{
+		return transport.NewStreamClient(&transport.StreamClientWebsocketCore{
+			Url: "ws://localhost:8877/ws",
+		}, transport.StreamClientConfig{
 			ConnectionOpenedHandler: func(ctx vivid.ActorContext) {
 				t.Log("connection opened")
 			},
