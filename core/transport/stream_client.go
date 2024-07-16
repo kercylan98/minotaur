@@ -6,12 +6,16 @@ import (
 )
 
 type StreamClientCore interface {
+	// OnConnect 打开连接
 	OnConnect() error
 
+	// OnRead 读取数据包
 	OnRead() (Packet, error)
 
+	// OnWrite 写入数据包
 	OnWrite(Packet) error
 
+	// OnClose 关闭连接
 	OnClose() error
 }
 

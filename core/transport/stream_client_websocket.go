@@ -9,7 +9,7 @@ var _ StreamClientCore = (*StreamClientWebsocketCore)(nil)
 
 type StreamClientWebsocketCore struct {
 	Url    string
-	Dialer *websocket.Dialer
+	Dialer *websocket.Dialer // 默认将使用 websocket.DefaultDialer
 	Header http.Header
 	conn   *websocket.Conn
 }
