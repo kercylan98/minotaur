@@ -11,7 +11,7 @@ import (
 func main() {
 	system := vivid.NewActorSystem()
 	system.ActorOf(func() vivid.Actor {
-		return transport.NewStreamClient(&transport.StreamClientWebsocketCore{
+		return transport.NewStreamClient(&transport.StreamClientWebSocketCore{
 			Url: "ws://localhost:8877/ws",
 		}, transport.StreamClientConfig{
 			ConnectionOpenedHandler: func(ctx vivid.ActorContext) {

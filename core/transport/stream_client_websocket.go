@@ -5,16 +5,16 @@ import (
 	"net/http"
 )
 
-var _ StreamClientCore = (*StreamClientWebsocketCore)(nil)
+var _ StreamClientCore = (*StreamClientWebSocketCore)(nil)
 
-type StreamClientWebsocketCore struct {
+type StreamClientWebSocketCore struct {
 	Url    string
 	Dialer *websocket.Dialer // 默认将使用 websocket.DefaultDialer
 	Header http.Header
 	conn   *websocket.Conn
 }
 
-func (c *StreamClientWebsocketCore) OnConnect() error {
+func (c *StreamClientWebSocketCore) OnConnect() error {
 	if c.Dialer == nil {
 		c.Dialer = websocket.DefaultDialer
 	}
@@ -26,7 +26,7 @@ func (c *StreamClientWebsocketCore) OnConnect() error {
 	return nil
 }
 
-func (c *StreamClientWebsocketCore) OnRead() (Packet, error) {
+func (c *StreamClientWebSocketCore) OnRead() (Packet, error) {
 	messageType, data, err := c.conn.ReadMessage()
 	if err != nil {
 		return nil, err
@@ -34,10 +34,10 @@ func (c *StreamClientWebsocketCore) OnRead() (Packet, error) {
 	return NewPacket(data).SetContext(messageType), nil
 }
 
-func (c *StreamClientWebsocketCore) OnWrite(p Packet) error {
+func (c *StreamClientWebSocketCore) OnWrite(p Packet) error {
 	return c.conn.WriteMessage(p.GetContext().(int), p.GetBytes())
 }
 
-func (c *StreamClientWebsocketCore) OnClose() error {
+func (c *StreamClientWebSocketCore) OnClose() error {
 	return c.conn.Close()
 }

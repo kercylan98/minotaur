@@ -33,7 +33,7 @@ func TestWebSocketServer(t *testing.T) {
 func TestWebSocketClient(t *testing.T) {
 	actorSystem := vivid.NewActorSystem()
 	ref := actorSystem.ActorOf(func() vivid.Actor {
-		return transport.NewStreamClient(&transport.StreamClientWebsocketCore{
+		return transport.NewStreamClient(&transport.StreamClientTCPCore{
 			Url: "ws://localhost:8877/ws",
 		}, transport.StreamClientConfig{
 			ConnectionOpenedHandler: func(ctx vivid.ActorContext) {
