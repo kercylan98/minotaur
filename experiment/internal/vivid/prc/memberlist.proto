@@ -1,0 +1,7 @@
+syntax = "proto3";
+package prc;
+option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/prc";
+
+message MemberListState {
+
+}

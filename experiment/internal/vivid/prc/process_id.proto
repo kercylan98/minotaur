@@ -3,10 +3,9 @@ package prc;
 option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/prc";
 
 message ProcessId {
-  string logical_address = 1;
-  string network_protocol = 2;
-  string actor_system_name = 3;
-  string cluster_name = 4;
-  string physical_address = 5;
-  uint32 physical_pid = 6; // 操作系统进程号
+  uint32 physical_pid = 1; // 操作系统进程号
+  string logical_address = 2; // 本地内部的逻辑地址
+  string physical_address = 3; // 跨网络物理地址
+  string network_protocol = 4; // 采用的网络协议
+  string cluster_name = 5; // 集群名称
 }
