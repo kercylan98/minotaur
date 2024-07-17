@@ -1,0 +1,12 @@
+syntax = "proto3";
+package prc;
+option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/prc";
+
+message ProcessId {
+  string logical_address = 1;
+  string network_protocol = 2;
+  string actor_system_name = 3;
+  string cluster_name = 4;
+  string physical_address = 5;
+  uint32 physical_pid = 6; // 操作系统进程号
+}
