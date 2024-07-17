@@ -185,6 +185,14 @@ func (ctx *actorContext) Sender() ActorRef {
 	return rm.Sender
 }
 
+func (ctx *actorContext) HasSender() bool {
+	rm, ok := ctx.message.(RegulatoryMessage)
+	if !ok || rm.Sender == nil {
+		return false
+	}
+	return true
+}
+
 func (ctx *actorContext) ReportAbnormal(reason Message) {
 	if atomic.LoadUint32(&ctx.status) != actorStatusAlive {
 		return

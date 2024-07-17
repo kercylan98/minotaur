@@ -85,6 +85,9 @@ type receiverContextCompose interface {
 	// Sender 获取当前消息的发送人
 	Sender() ActorRef
 
+	// HasSender 判断当前消息是否有发送人
+	HasSender() bool
+
 	// Message 获取当前 Actor 接收到的消息
 	Message() Message
 
