@@ -629,6 +629,13 @@ func (ctx *actorContext) Restart(children ...ActorRef) {
 
 func (ctx *actorContext) onRestart(m OnRestart) {
 	atomic.StoreUint32(&ctx.status, actorStatusRestarting)
+	defer func() {
+		if atomic.LoadUint32(&ctx.status) == actorStatusRestarting {
+			if err := recover(); err != nil {
+				ctx.System().opts.LoggerProvider().Error("ActorContext", log.String("actor", ctx.ref.Address().String()), log.String("status", "restart panic"), log.Any("err", err))
+			}
+		}
+	}()
 	ctx.ProcessUserMessage(onTerminate)
 	ctx.ProcessUserMessage(onRestarting)
 	ctx.children.Range(func(address core.Address, ref ActorRef) bool {
@@ -647,10 +654,10 @@ func (ctx *actorContext) onRestarted(m OnTerminated) {
 	}
 
 	ctx.actor = ctx.producer()
-	atomic.StoreUint32(&ctx.status, actorStatusAlive)
 	if ctx.scheduler != nil {
 		ctx.scheduler.Clear()
 	}
+	atomic.StoreUint32(&ctx.status, actorStatusAlive)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onResumeMailbox)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 }

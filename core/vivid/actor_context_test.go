@@ -56,7 +56,7 @@ func TestActorContext_PersistSnapshot(t *testing.T) {
 }
 
 func TestActorContext_StatusChanged(t *testing.T) {
-	system := vivid.NewActorSystem().Add(1)
+	system := vivid.NewTestActorSystem().Add(1)
 
 	var once sync.Once
 	var stateLimit = 2000
