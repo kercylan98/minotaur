@@ -648,7 +648,9 @@ func (ctx *actorContext) onRestarted(m OnTerminated) {
 
 	ctx.actor = ctx.producer()
 	atomic.StoreUint32(&ctx.status, actorStatusAlive)
-	ctx.scheduler.Clear()
+	if ctx.scheduler != nil {
+		ctx.scheduler.Clear()
+	}
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onResumeMailbox)
 	ctx.System().sendSystemMessage(ctx.ref, ctx.ref, onLaunch)
 }
