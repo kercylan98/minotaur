@@ -24,7 +24,7 @@ func StandardExponentialBackoff(count, maxRetries int, baseDelay, maxDelay time.
 //   - randomization：延迟时间的随机化因子，通常为 0.5
 func ExponentialBackoff(count, maxRetries int, baseDelay, maxDelay time.Duration, multiplier, randomization float64) time.Duration {
 	for {
-		if count >= maxRetries && maxRetries > -1 {
+		if count > maxRetries && maxRetries > -1 {
 			return -1
 		}
 

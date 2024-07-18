@@ -22,16 +22,18 @@ type ResourceController struct {
 	processes *xsync.MapOf[LogicalAddress, Process] // 用于存储所有进程的映射表
 }
 
+// GetPhysicalAddress 获取资源控制器的物理地址
+func (rc *ResourceController) GetPhysicalAddress() PhysicalAddress {
+	return rc.pa
+}
+
 // Register 向资源控制器注册一个进程，如果进程已存在，将会返回已有的 ProcessRef 和一个标识是否已存在的状态信息，这对于进程的重复注册检测是非常有用的
 func (rc *ResourceController) Register(id *ProcessId, process Process) (ref *ProcessRef, exist bool) {
 	process, exist = rc.processes.LoadOrStore(id.LogicalAddress, process)
 	if !exist {
 		process.Initialize(rc, id)
 	}
-	ref = &ProcessRef{
-		id: id,
-		// cache: 获取后不一定会需要立即发送消息，所以这里不需要初始化
-	}
+	ref = NewProcessRef(id)
 	return
 }
 

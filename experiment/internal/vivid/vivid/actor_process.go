@@ -16,31 +16,37 @@ func newActorProcess(mailbox mailbox.Mailbox) *actorProcess {
 }
 
 type actorProcess struct {
+	ref        ActorRef
 	mailbox    mailbox.Mailbox
 	terminated atomic.Bool
 }
 
 func (a *actorProcess) Initialize(rc *prc.ResourceController, id *prc.ProcessId) {
-	// 不重要
+	a.ref = prc.NewProcessRef(id)
 }
 
 func (a *actorProcess) DeliveryUserMessage(sender, forward *prc.ProcessRef, message prc.Message) {
-	a.delivery(message, a.mailbox.DeliveryUserMessage)
+	a.delivery(sender, forward, message, a.mailbox.DeliveryUserMessage)
 
 }
 
 func (a *actorProcess) DeliverySystemMessage(sender, forward *prc.ProcessRef, message prc.Message) {
-	a.delivery(message, a.mailbox.DeliverySystemMessage)
+	a.delivery(sender, forward, message, a.mailbox.DeliverySystemMessage)
 }
 
-func (a *actorProcess) delivery(message prc.Message, delivery func(message prc.Message)) {
+func (a *actorProcess) delivery(sender, forward *prc.ProcessRef, message prc.Message, delivery func(message prc.Message)) {
+	if forward != nil {
+		// 在使用 future.Future 的情况下，forward 将会是 Future 的引用，此刻将 Future 作为发送方进行包装，以便回复消息时能正确发送到 Future 对象进程
+		sender = forward
+	}
+
 	switch message.(type) {
 	case onSuspendMailboxMessage:
 		a.mailbox.Suspend()
 	case onResumeMailboxMessage:
 		a.mailbox.Resume()
 	default:
-		delivery(message)
+		delivery(wrapMessage(sender, a.ref, message))
 	}
 }
 

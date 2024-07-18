@@ -2,11 +2,11 @@ package dispatcher
 
 var _ Dispatcher = (*Goroutine)(nil)
 
-func NewGoroutineDispatcher() Dispatcher {
+func NewGoroutine() Dispatcher {
 	return new(Goroutine)
 }
 
-type Goroutine int
+type Goroutine int64
 
 func (g *Goroutine) Dispatch(f func()) {
 	go f()
