@@ -90,6 +90,10 @@ func (sys *ActorSystem) ActorOf(provider ActorProvider, configurator ...ActorDes
 	return sys.guard.ActorOf(provider, configurator...)
 }
 
+// ActorOfF 该函数是 ActorOf 的快捷方式，它提供了更为简便的使用方式，但是会额外创建一个切片并拷贝，用于 FunctionalActorDescriptorConfigurator 到 ActorDescriptorConfigurator 的转换。
+func (sys *ActorSystem) ActorOfF(provider FunctionalActorProvider, configurator ...FunctionalActorDescriptorConfigurator) ActorRef {
+	return sys.guard.ActorOfF(provider, configurator...)
+}
 func (sys *ActorSystem) logger() *log.Logger {
 	return sys.config.loggerProvider.Provide()
 }

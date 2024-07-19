@@ -285,6 +285,14 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	return ref
 }
 
+func (ctx *actorContext) ActorOfF(provider FunctionalActorProvider, configurator ...FunctionalActorDescriptorConfigurator) ActorRef {
+	var c = make([]ActorDescriptorConfigurator, len(configurator))
+	for i, f := range configurator {
+		c[i] = f
+	}
+	return ctx.ActorOf(provider, c...)
+}
+
 func (ctx *actorContext) Children() []ActorRef {
 	return collection.ConvertMapValuesToSlice(ctx.children)
 }

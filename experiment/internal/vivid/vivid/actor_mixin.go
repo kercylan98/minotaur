@@ -13,6 +13,9 @@ type mixinSpawner interface {
 	// 该函数不是并发安全的，你不应该在多个 goroutine 中同时调用 ActorOf 函数。
 	ActorOf(provider ActorProvider, configurator ...ActorDescriptorConfigurator) ActorRef
 
+	// ActorOfF 该函数是 ActorOf 的快捷方式，它提供了更为简便的使用方式，但是会额外创建一个切片并拷贝，用于 FunctionalActorDescriptorConfigurator 到 ActorDescriptorConfigurator 的转换。
+	ActorOfF(provider FunctionalActorProvider, configurator ...FunctionalActorDescriptorConfigurator) ActorRef
+
 	// Children 返回当前 Actor 的所有子 Actor 引用(ActorRef)。
 	Children() []ActorRef
 }
