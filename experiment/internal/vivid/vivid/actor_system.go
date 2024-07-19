@@ -13,7 +13,7 @@ import (
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	system := &ActorSystem{
 		config: newActorSystemConfiguration(),
-		rc:     prc.NewResourceController("todo"),
+		rc:     prc.NewResourceController(""),
 		closed: make(chan struct{}),
 	}
 

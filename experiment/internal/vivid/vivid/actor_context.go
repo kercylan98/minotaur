@@ -78,7 +78,7 @@ func (ctx *actorContext) ReportAbnormal(reason Message) {
 	}
 
 	ctx.accidentState.Record()
-	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, nil, onSuspendMailbox)
+	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onSuspendMailbox)
 
 	// 产生事故记录
 	record := supervision.NewAccidentRecord(ctx.sender, ctx.ref, nil, ctx.message, reason, ctx.supervisorStrategy, ctx.accidentState)
@@ -99,7 +99,7 @@ func (ctx *actorContext) Escalate(record *supervision.AccidentRecord) {
 		panic(fmt.Errorf("the root actor should not continue to upgrade!, err: %v", record.Reason))
 	}
 
-	ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.ref, nil, record)
+	ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, record)
 }
 
 func (ctx *actorContext) onAccidentRecordProcess(m *supervision.AccidentRecord) {
@@ -118,7 +118,7 @@ func (ctx *actorContext) onAccidentRecordProcess(m *supervision.AccidentRecord) 
 
 func (ctx *actorContext) Restart(refs ...*prc.ProcessRef) {
 	for _, ref := range refs {
-		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ctx.ref, nil, onRestart)
+		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onRestart)
 	}
 }
 
@@ -131,7 +131,7 @@ func (ctx *actorContext) Stop(refs ...*prc.ProcessRef) {
 
 func (ctx *actorContext) Resume(refs ...*prc.ProcessRef) {
 	for _, ref := range refs {
-		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ctx.ref, nil, onResumeMailbox)
+		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onResumeMailbox)
 	}
 }
 
@@ -147,7 +147,7 @@ func (ctx *actorContext) Terminate(target ActorRef, gracefully bool) {
 	if gracefully {
 		ctx.Tell(target, onGracefullyTerminate)
 	} else {
-		ctx.system.rc.GetProcess(target).DeliverySystemMessage(ctx.ref, nil, onTerminate)
+		ctx.system.rc.GetProcess(target).DeliverySystemMessage(target, ctx.ref, nil, onTerminate)
 	}
 }
 
@@ -202,11 +202,11 @@ func (ctx *actorContext) ProcessAccident(reason prc.Message) {
 }
 
 func (ctx *actorContext) Tell(target ActorRef, message Message) {
-	ctx.system.rc.GetProcess(target).DeliveryUserMessage(nil, nil, message)
+	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, nil, nil, message)
 }
 
 func (ctx *actorContext) Ask(target ActorRef, message Message) {
-	ctx.system.rc.GetProcess(target).DeliveryUserMessage(ctx.ref, nil, message)
+	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, ctx.ref, nil, message)
 }
 
 func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future {
@@ -215,7 +215,7 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 		t = timeout[0]
 	}
 	f := future.New(ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.childGuid)), t)
-	ctx.system.rc.GetProcess(target).DeliveryUserMessage(ctx.ref, f.Ref(), message)
+	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }
 
@@ -280,7 +280,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	ctx.system.logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.LogicalAddress), log.Int("child", len(ctx.children)))
 
 	// 第一条消息
-	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ctx.ref, nil, onLaunch)
+	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onLaunch)
 
 	return ref
 }
@@ -312,9 +312,9 @@ func (ctx *actorContext) tryRestarted() {
 	ctx.actor = ctx.provider.Provide()
 	ctx.status.Store(actorStatusAlive)
 
-	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, nil, onResumeMailbox)
-	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, nil, onRestarted)
-	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, nil, onLaunch)
+	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
+	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)
+	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onLaunch)
 }
 
 func (ctx *actorContext) onTerminate(gracefully bool) {
@@ -359,7 +359,7 @@ func (ctx *actorContext) tryTerminated() {
 	ctx.system.logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
 	if ctx.parentRef != nil {
-		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.ref, nil, terminatedMessage)
+		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, terminatedMessage)
 	} else {
 		close(ctx.system.closed)
 	}

@@ -10,8 +10,8 @@ func NewProcessId(address LogicalAddress, physicalAddress PhysicalAddress) *Proc
 		PhysicalPid:     uint32(os.Getpid()),
 		LogicalAddress:  address,
 		PhysicalAddress: physicalAddress,
-		NetworkProtocol: "todo",
-		ClusterName:     "todo",
+		NetworkProtocol: "",
+		ClusterName:     "",
 	}
 }
 

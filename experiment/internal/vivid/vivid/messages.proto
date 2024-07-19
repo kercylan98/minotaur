@@ -1,0 +1,4 @@
+syntax = "proto3";
+package vivid;
+option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/vivid";
+

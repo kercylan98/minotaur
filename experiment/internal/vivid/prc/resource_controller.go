@@ -2,16 +2,15 @@ package prc
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/network"
-	"github.com/puzpuzpuz/xsync"
+	"github.com/puzpuzpuz/xsync/v3"
 )
 
 // NewResourceController 创建一个新的资源控制器
 func NewResourceController(pa PhysicalAddress) *ResourceController {
 	return &ResourceController{
 		pa:        pa,
-		processes: xsync.NewMapOf[Process](),
+		processes: xsync.NewMapOf[LogicalAddress, Process](),
 	}
-
 }
 
 // ResourceController 是一个支持分布式、集群架构的资源控制器，它将所有资源视为进程(Process)，进程之间通过 ProcessRef 进行通信。
@@ -20,6 +19,12 @@ type ResourceController struct {
 	pa        PhysicalAddress                       // 资源控制器的物理地址，如：:8080
 	par       []PhysicalAddressResolver             // 线程不安全的物理地址解析器列表，将遍历找到首个有效解析器（应在初始化期间便注册完毕）
 	processes *xsync.MapOf[LogicalAddress, Process] // 用于存储所有进程的映射表
+}
+
+// RegisterResolver 注册用于物理地址解析的解析器，解析器应返回一个可用进程。
+//   - 解析器需要依赖于外部的进程管理，本身不会涉及进程的注册与反注册
+func (rc *ResourceController) RegisterResolver(resolver ...PhysicalAddressResolver) {
+	rc.par = append(rc.par, resolver...)
 }
 
 // GetPhysicalAddress 获取资源控制器的物理地址

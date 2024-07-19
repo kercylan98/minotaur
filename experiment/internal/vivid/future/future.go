@@ -103,7 +103,7 @@ func (f *futureProcess) Initialize(rc *prc.ResourceController, id *prc.ProcessId
 	}
 }
 
-func (f *futureProcess) DeliveryUserMessage(sender, forward *prc.ProcessRef, message prc.Message) {
+func (f *futureProcess) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
 	if f.closed.Load() {
 		return
 	}
@@ -111,13 +111,13 @@ func (f *futureProcess) DeliveryUserMessage(sender, forward *prc.ProcessRef, mes
 	case error:
 		f.Close(m)
 	default:
-		f.message = message
+		f.message = forward
 		f.Close(nil)
 	}
 }
 
-func (f *futureProcess) DeliverySystemMessage(sender, forward *prc.ProcessRef, message prc.Message) {
-	f.DeliveryUserMessage(sender, forward, message)
+func (f *futureProcess) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+	f.DeliveryUserMessage(receiver, sender, forward, message)
 }
 
 func (f *futureProcess) IsTerminated() bool {
@@ -151,7 +151,7 @@ func (f *futureProcess) execForward() {
 	}
 
 	for _, ref := range f.forwards {
-		f.rc.GetProcess(ref).DeliveryUserMessage(f.ref, ref, m)
+		f.rc.GetProcess(ref).DeliveryUserMessage(ref, f.ref, ref, m)
 	}
 	f.forwards = nil
 }

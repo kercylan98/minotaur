@@ -1,6 +1,6 @@
 syntax = "proto3";
 package prc;
-option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/prc";
+option go_package = "github.com/kercylan98/minotaur/experiment/internal/vivid/prc";
 
 message ProcessId {
   uint32 physical_pid = 1; // 操作系统进程号

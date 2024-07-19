@@ -25,12 +25,12 @@ func (a *actorProcess) Initialize(rc *prc.ResourceController, id *prc.ProcessId)
 	a.ref = prc.NewProcessRef(id)
 }
 
-func (a *actorProcess) DeliveryUserMessage(sender, forward *prc.ProcessRef, message prc.Message) {
+func (a *actorProcess) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
 	a.delivery(sender, forward, message, a.mailbox.DeliveryUserMessage)
 
 }
 
-func (a *actorProcess) DeliverySystemMessage(sender, forward *prc.ProcessRef, message prc.Message) {
+func (a *actorProcess) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
 	a.delivery(sender, forward, message, a.mailbox.DeliverySystemMessage)
 }
 

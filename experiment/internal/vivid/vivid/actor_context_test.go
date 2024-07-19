@@ -172,7 +172,7 @@ func TestActorContext_Restart(t *testing.T) {
 	system.Shutdown(true)
 }
 
-func TestActorContext_ForeverRestart(t *testing.T) {
+func TestActorContext_RestartN(t *testing.T) {
 	wait := new(sync.WaitGroup)
 	system := vivid.NewActorSystem()
 	restartCount := 3
