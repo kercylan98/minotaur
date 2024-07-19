@@ -10,10 +10,14 @@ func TestShared(t *testing.T) {
 	process := &TestSharedProcess{}
 	process.Add(1)
 
-	rc1 := prc.NewResourceController(":8080")
-	rc2 := prc.NewResourceController(":8081")
+	rc1 := prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
+		config.WithPhysicalAddress("127.0.0.1:8080")
+	}))
+	rc2 := prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
+		config.WithPhysicalAddress("127.0.0.1:8081")
+	}))
 
-	pid := prc.NewProcessId("/test", "127.0.0.1:8080")
+	pid := prc.NewProcessId("127.0.0.1:8080", "/test")
 	ref, _ := rc1.Register(pid, process)
 
 	shared1 := prc.NewShared(rc1)

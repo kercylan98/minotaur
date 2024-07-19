@@ -13,16 +13,28 @@ import (
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	system := &ActorSystem{
 		config: newActorSystemConfiguration(),
-		rc:     prc.NewResourceController(""),
 		closed: make(chan struct{}),
 	}
 
 	for _, systemConfigurator := range configurator {
 		systemConfigurator.Configure(system.config)
 	}
+
+	system.rc = prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
+		config.WithClusterName(system.config.actorSystemName)
+		config.WithPhysicalAddress(system.config.physicalAddress)
+		config.WithLoggerProvider(system.config.loggerProvider)
+	}))
+
+	if system.config.shared {
+		if err := prc.NewShared(system.rc).Share(); err != nil {
+			panic(err)
+		}
+	}
+
 	system.logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
 
-	system.processId = prc.NewProcessId("/", system.rc.GetPhysicalAddress())
+	system.processId = prc.NewClusterProcessId(system.config.actorSystemName, system.rc.GetPhysicalAddress(), "/")
 	system.guard = system.spawnTopActor("user", new(guard))
 
 	return system

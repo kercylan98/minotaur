@@ -10,15 +10,17 @@ func TestNewActorSystem(t *testing.T) {
 	t.Run("functional_config", func(t *testing.T) {
 		vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
 			config.WithName("test-sys")
-		}))
+		})).Shutdown(true)
 	})
 }
 
 func TestActorSystem_ActorOf(t *testing.T) {
 	t.Run("functional", func(t *testing.T) {
-		vivid.NewActorSystem().ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
+		system := vivid.NewActorSystem()
+		system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {})
 		}))
+		system.Shutdown(true)
 	})
 }
 

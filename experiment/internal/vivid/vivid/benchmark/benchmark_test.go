@@ -8,7 +8,7 @@ import (
 func NewBenchmarkActorSystem() *vivid.ActorSystem {
 	logger := log.NewSilentLogger()
 	return vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithLoggerProvider(vivid.FunctionalLoggerProvider(func() *log.Logger {
+		config.WithLoggerProvider(log.FunctionalLoggerProvider(func() *log.Logger {
 			return logger
 		}))
 	}))

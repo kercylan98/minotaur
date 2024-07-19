@@ -1,17 +1,23 @@
 package prc
 
 import (
+	"github.com/kercylan98/minotaur/toolkit/charproc"
+	"net/url"
 	"os"
 	"strings"
 )
 
-func NewProcessId(address LogicalAddress, physicalAddress PhysicalAddress) *ProcessId {
+func NewProcessId(physicalAddress PhysicalAddress, logicalAddress LogicalAddress) *ProcessId {
+	return NewClusterProcessId(charproc.None, physicalAddress, logicalAddress)
+}
+
+func NewClusterProcessId(clusterName ClusterName, physicalAddress PhysicalAddress, logicalAddress LogicalAddress) *ProcessId {
 	return &ProcessId{
 		PhysicalPid:     uint32(os.Getpid()),
-		LogicalAddress:  address,
+		LogicalAddress:  logicalAddress,
 		PhysicalAddress: physicalAddress,
 		NetworkProtocol: "",
-		ClusterName:     "",
+		ClusterName:     clusterName,
 	}
 }
 
@@ -27,4 +33,17 @@ func (pid *ProcessId) Derivation(name string) *ProcessId {
 		NetworkProtocol: pid.NetworkProtocol,
 		ClusterName:     pid.ClusterName,
 	}
+}
+
+// URL 获取进程 Id 的 URL
+func (pid *ProcessId) URL() *url.URL {
+	u := &url.URL{
+		Scheme: "minotaur",
+		Host:   pid.PhysicalAddress,
+		Path:   pid.LogicalAddress,
+	}
+	if pid.ClusterName != charproc.None {
+		u.User = url.User(pid.ClusterName)
+	}
+	return u
 }

@@ -3,7 +3,9 @@ package prc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc/codec"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/puzpuzpuz/xsync/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -24,12 +26,45 @@ func NewShared(rc *ResourceController) *Shared {
 
 // Shared 资源控制器的共享
 type Shared struct {
-	*UnimplementedSharedServer
 	codec        codec.Codec
 	streamServer *sharedServer
 	rc           *ResourceController // 共享的资源控制器
 	grpc         *grpc.Server
 	streams      *xsync.MapOf[PhysicalAddress, sharedStream]
+}
+
+// Share 共享资源控制器
+func (s *Shared) Share() error {
+	listener, err := net.Listen("tcp", s.rc.GetPhysicalAddress())
+	if err != nil {
+		return fmt.Errorf("%w, local ResourceController not support shared! plese use ResourceControllerConfiguration.WithPhysicalAddress to set a valid address", err)
+	}
+
+	s.grpc = grpc.NewServer()
+	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
+
+	go func() {
+		if err := s.grpc.Serve(listener); err != nil {
+			panic(err)
+		}
+	}()
+
+	s.rc.RegisterResolver(FunctionalPhysicalAddressResolver(func(id *ProcessId) Process {
+		process, exist := s.streams.Load(id.PhysicalAddress)
+		if exist {
+			return process.(sharedStream)
+		}
+
+		var err error
+		process, err = s.open(id.PhysicalAddress)
+		if err != nil {
+			panic(err)
+		}
+		return process
+	}))
+
+	s.rc.logger().Debug("ResourceController", log.String("feature", "shared"), log.String("listen", s.rc.GetPhysicalAddress()))
+	return nil
 }
 
 // open 打开一个资源控制器
@@ -60,6 +95,17 @@ func (s *Shared) open(address PhysicalAddress) (sharedStream, error) {
 	return stream, nil
 }
 
+func (s *Shared) attachStream(address PhysicalAddress, stream sharedStream) {
+	s.streams.Store(address, stream)
+}
+
+func (s *Shared) detachStream(address PhysicalAddress) {
+	stream, loaded := s.streams.LoadAndDelete(address)
+	if loaded {
+		stream.Close()
+	}
+}
+
 func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err error) {
 	s.attachStream(address, stream)
 	defer func() {
@@ -80,50 +126,6 @@ func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err er
 		case *SharedMessage_DeliveryMessage:
 			s.onDeliveryMessage(stream, address, m.DeliveryMessage)
 		}
-	}
-}
-
-// Share 共享资源控制器
-func (s *Shared) Share() error {
-	listener, err := net.Listen("tcp", s.rc.GetPhysicalAddress())
-	if err != nil {
-		return err
-	}
-
-	s.grpc = grpc.NewServer()
-	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
-
-	go func() {
-		if err := s.grpc.Serve(listener); err != nil {
-			panic(err)
-		}
-	}()
-
-	s.rc.RegisterResolver(FunctionalPhysicalAddressResolver(func(id *ProcessId) Process {
-		process, exist := s.streams.Load(id.PhysicalAddress)
-		if exist {
-			return process.(sharedStream)
-		}
-
-		var err error
-		process, err = s.open(id.PhysicalAddress)
-		if err != nil {
-			panic(err)
-		}
-		return process
-	}))
-
-	return nil
-}
-
-func (s *Shared) attachStream(address PhysicalAddress, stream sharedStream) {
-	s.streams.Store(address, stream)
-}
-
-func (s *Shared) detachStream(address PhysicalAddress) {
-	stream, loaded := s.streams.LoadAndDelete(address)
-	if loaded {
-		stream.Close()
 	}
 }
 

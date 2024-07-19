@@ -10,3 +10,7 @@ type (
 	// Message 消息是用于传递的数据
 	Message = any
 )
+
+const (
+	LocalhostPhysicalAddress = "localhost"
+)

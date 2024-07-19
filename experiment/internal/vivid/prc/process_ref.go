@@ -1,6 +1,7 @@
 package prc
 
 import (
+	"net/url"
 	"sync/atomic"
 )
 
@@ -29,4 +30,9 @@ func (ref *ProcessRef) LogicalAddress() LogicalAddress {
 // DerivationProcessId 衍生一个新的进程 Id
 func (ref *ProcessRef) DerivationProcessId(name string) *ProcessId {
 	return ref.id.Derivation(name)
+}
+
+// URL 获取进程引用的 URL
+func (ref *ProcessRef) URL() *url.URL {
+	return ref.id.URL()
 }
