@@ -144,21 +144,46 @@ func TestActorSystemConfiguration_WithSharedActorOf(t *testing.T) {
 }
 
 func TestActorDescriptor_WithExpireDuration(t *testing.T) {
-	wait := new(sync.WaitGroup)
-	wait.Add(1)
-	system := vivid.NewActorSystem()
-	system.ActorOfF(func() vivid.Actor {
-		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch ctx.Message().(type) {
-			case *vivid.OnTerminated:
-				wait.Done()
-			}
+	t.Run("except", func(t *testing.T) {
+		wait := new(sync.WaitGroup)
+		wait.Add(1)
+		system := vivid.NewActorSystem()
+		system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch ctx.Message().(type) {
+				case *vivid.OnTerminated:
+					wait.Done()
+				}
+			})
+		}, func(descriptor *vivid.ActorDescriptor) {
+			descriptor.WithExpireDuration(time.Second)
 		})
-	}, func(descriptor *vivid.ActorDescriptor) {
-		descriptor.WithExpireDuration(time.Second)
+		wait.Wait()
+		system.Shutdown(true)
 	})
-	wait.Wait()
-	system.Shutdown(true)
+
+	t.Run("panic restart", func(t *testing.T) {
+		wait := new(sync.WaitGroup)
+		wait.Add(2)
+		system := vivid.NewActorSystem()
+		ref := system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch ctx.Message().(type) {
+				case *vivid.OnTerminate:
+					t.Log("terminate")
+				case *vivid.OnTerminated:
+					wait.Done()
+				case string:
+					panic("gg")
+				}
+			})
+		}, func(descriptor *vivid.ActorDescriptor) {
+			descriptor.WithExpireDuration(time.Second)
+		})
+		system.Tell(ref, "gg")
+		wait.Wait()
+		system.Shutdown(true)
+	})
 }
 
 func TestActorDescriptor_WithIdleDeadline(t *testing.T) {

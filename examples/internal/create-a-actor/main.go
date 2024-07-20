@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
 type HelloActor struct{}
@@ -17,10 +17,10 @@ func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
 
 func main() {
 	system := vivid.NewActorSystem()
-	ref := system.ActorOf(func() vivid.Actor {
+	ref := system.ActorOfF(func() vivid.Actor {
 		return &HelloActor{}
 	})
 
-	reply := system.Context().FutureAsk(ref, "Hey, sao ju~").AssertResult()
+	reply := system.FutureAsk(ref, "Hey, sao ju~").AssertResult()
 	fmt.Println(reply)
 }

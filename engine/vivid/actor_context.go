@@ -104,6 +104,15 @@ func (ctx *actorContext) initScheduler() {
 	})
 }
 
+func (ctx *actorContext) Future(timeout ...time.Duration) future.Future {
+	var t time.Duration
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+	ctx.childGuid++
+	return future.New(ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.childGuid)), t)
+}
+
 func (ctx *actorContext) CronTask(name, expression string, function func(ctx ActorContext)) error {
 	ctx.initScheduler()
 	return ctx.scheduler.RegisterCronTask(name, expression, func() {
@@ -352,7 +361,7 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 		t = timeout[0]
 	}
 	ctx.childGuid++
-	f := future.New(ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.childGuid)), t)
+	f := ctx.Future(t)
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }
@@ -453,7 +462,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 
 		remoteRef := prc.NewProcessRef(prc.NewClusterProcessId(node.Metadata().UserMetadata[actorSystemClusterName], node.Metadata().RcPhysicalAddress, "/"))
 
-		f := future.New(ctx.system.rc, ctx.ref.DerivationProcessId("future-"+convert.Uint64ToString(ctx.childGuid)), -1)
+		f := ctx.Future()
 		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
 
 		ref, err := f.Result()
@@ -549,6 +558,8 @@ func (ctx *actorContext) tryRestarted() {
 		ctx.scheduler.Clear()
 	}
 	ctx.status.Store(actorStatusAlive)
+
+	ctx.system.logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)

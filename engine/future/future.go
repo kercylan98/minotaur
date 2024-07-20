@@ -28,6 +28,9 @@ type Future interface {
 
 	// Close 提前关闭
 	Close(reason error)
+
+	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
+	AwaitForward(ref *prc.ProcessRef, f func() prc.Message)
 }
 
 func New(rc *prc.ResourceController, id *prc.ProcessId, timeout time.Duration) Future {
