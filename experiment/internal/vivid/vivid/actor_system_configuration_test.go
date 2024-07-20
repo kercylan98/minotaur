@@ -28,7 +28,7 @@ func TestActorSystemConfiguration_WithShared(t *testing.T) {
 	})
 }
 
-func TestActorSystemConfiguration_WithSharedTell(t *testing.T) {
+func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
 	var messageNum = 1000
 	var receiverOnce, senderOnce sync.Once
 
@@ -66,6 +66,36 @@ func TestActorSystemConfiguration_WithSharedTell(t *testing.T) {
 		})
 	}
 
-	system2.Shutdown(true)
 	system1.Shutdown(true)
+	system2.Shutdown(true)
+}
+
+func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithPhysicalAddress(":8080")
+		config.WithShared(true)
+	}))
+
+	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithPhysicalAddress(":8081")
+		config.WithShared(true)
+	}))
+
+	ref1 := system1.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnTerminate:
+				t.Log("terminated", ctx.Ref().URL().String(), "killer", ctx.Sender().URL().String())
+				wg.Done()
+			}
+		})
+	})
+
+	ref2 := ref1.Clone() // 同一进程内，隔离开，避免通过缓存直接调用
+	system2.Terminate(ref2, true)
+	wg.Wait()
+	system1.Shutdown(true)
+	system2.Shutdown(true)
 }

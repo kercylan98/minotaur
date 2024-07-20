@@ -2,15 +2,15 @@ package vivid
 
 import "github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
 
-const (
-	onSuspendMailbox      onSuspendMailboxMessage = 0
-	onResumeMailbox       onResumeMailboxMessage  = 0
-	onLaunch              OnLaunch                = 0
-	onTerminate           OnTerminate             = 0
-	onGracefullyTerminate OnTerminate             = 1
-	onRestart             onRestartMessage        = 0
-	onRestarting          OnRestarting            = 0
-	onRestarted           OnRestarted             = 0
+var (
+	onTerminate           = &OnTerminate{}
+	onGracefullyTerminate = &OnTerminate{Gracefully: true}
+	onLaunch              = new(OnLaunch)
+	onRestart             = new(onRestartMessage)
+	onRestarting          = new(OnRestarting)
+	onRestarted           = new(OnRestarted)
+	onSuspendMailbox      = new(onSuspendMailboxMessage)
+	onResumeMailbox       = new(onResumeMailboxMessage)
 )
 
 type (
@@ -22,9 +22,6 @@ type (
 type (
 	// OnLaunch 在 Actor 启动时，将会作为第一条消息被处理，适用于初始化 Actor 状态等场景。
 	OnLaunch int8
-
-	// OnTerminate 在 Actor 处理完该消息后，将会被终止，适用于释放 Actor 资源等场景。
-	OnTerminate int8
 
 	// OnTerminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
 	OnTerminated struct {

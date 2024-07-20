@@ -22,6 +22,7 @@ func TestActorContext_Sender(t *testing.T) {
 						t.Error("tell sender should be nil")
 					}
 				default:
+					ctx.Reply(m)
 					if ctx.Sender() == nil {
 						t.Error("ask sender should not be nil")
 					}
@@ -32,7 +33,7 @@ func TestActorContext_Sender(t *testing.T) {
 
 	system.Tell(ref, "tell")
 	system.Ask(ref, "ask")
-	system.FutureAsk(ref, "future-ask")
+	system.FutureAsk(ref, "future-ask").AssertWait()
 	system.Broadcast("broadcast")
 	system.Shutdown(true)
 }
@@ -91,7 +92,7 @@ func TestActorContext_Ask(t *testing.T) {
 	system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch ctx.Message().(type) {
-			case vivid.OnLaunch:
+			case *vivid.OnLaunch:
 				ctx.Ask(refA, "hello")
 			case string:
 				wait.Done()
@@ -150,15 +151,15 @@ func TestActorContext_Restart(t *testing.T) {
 	ref := system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
-			case vivid.OnLaunch:
+			case *vivid.OnLaunch:
 				t.Log("launch")
-			case vivid.OnTerminate:
+			case *vivid.OnTerminate:
 				t.Log("terminate")
-			case vivid.OnTerminated:
+			case *vivid.OnTerminated:
 				t.Log("terminated")
-			case vivid.OnRestarting:
+			case *vivid.OnRestarting:
 				t.Log("restarting")
-			case vivid.OnRestarted:
+			case *vivid.OnRestarted:
 				t.Log("restarted")
 				wait.Done()
 			case error:
@@ -180,15 +181,15 @@ func TestActorContext_RestartN(t *testing.T) {
 	system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
-			case vivid.OnLaunch:
+			case *vivid.OnLaunch:
 				panic(m)
-			case vivid.OnTerminate:
+			case *vivid.OnTerminate:
 				t.Log("terminate")
-			case vivid.OnTerminated:
+			case *vivid.OnTerminated:
 				t.Log("terminated")
-			case vivid.OnRestarting:
+			case *vivid.OnRestarting:
 				t.Log("restarting")
-			case vivid.OnRestarted:
+			case *vivid.OnRestarted:
 				t.Log("restarted")
 				wait.Done()
 			}

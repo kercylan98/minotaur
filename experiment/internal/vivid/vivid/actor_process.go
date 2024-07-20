@@ -41,9 +41,9 @@ func (a *actorProcess) delivery(sender, forward *prc.ProcessRef, message prc.Mes
 	}
 
 	switch message.(type) {
-	case onSuspendMailboxMessage:
+	case *onSuspendMailboxMessage:
 		a.mailbox.Suspend()
-	case onResumeMailboxMessage:
+	case *onResumeMailboxMessage:
 		a.mailbox.Resume()
 	default:
 		delivery(wrapMessage(sender, a.ref, message))

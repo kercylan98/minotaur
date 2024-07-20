@@ -43,3 +43,13 @@ func (ref *ProcessRef) Clone() *ProcessRef {
 		id: ref.id,
 	}
 }
+
+func (ref *ProcessRef) GetId() *ProcessId {
+	return &ProcessId{
+		PhysicalPid:     ref.id.PhysicalPid,
+		LogicalAddress:  ref.id.LogicalAddress,
+		PhysicalAddress: ref.id.PhysicalAddress,
+		NetworkProtocol: ref.id.NetworkProtocol,
+		ClusterName:     ref.id.ClusterName,
+	}
+}

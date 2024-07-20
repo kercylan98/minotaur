@@ -11,7 +11,7 @@ type guard struct {
 
 func (g *guard) OnReceive(ctx ActorContext) {
 	switch ctx.Message().(type) {
-	case OnLaunch:
+	case *OnLaunch:
 		g.Strategy = supervision.OneForOne(10, time.Millisecond*200, time.Second*3, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
 			return supervision.DirectiveRestart
 		}))

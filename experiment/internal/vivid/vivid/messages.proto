@@ -2,3 +2,14 @@ syntax = "proto3";
 package vivid;
 option go_package = "/github.com/kercylan98/minotaur/experiment/internal/vivid/vivid";
 
+import "process_id.proto";
+
+// OnTerminate 在 Actor 处理完该消息后，将会被终止，适用于释放 Actor 资源等场景。
+message OnTerminate {
+  bool gracefully = 1;
+}
+
+// OnTerminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
+message Terminated {
+  prc.ProcessId terminated_process = 1;
+}

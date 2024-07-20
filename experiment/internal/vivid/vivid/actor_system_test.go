@@ -32,11 +32,11 @@ func TestActorSystem_Terminate(t *testing.T) {
 		ref := system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 				switch ctx.Message().(type) {
-				case vivid.OnLaunch:
+				case *vivid.OnLaunch:
 					t.Log("launch")
-				case vivid.OnTerminate:
+				case *vivid.OnTerminate:
 					t.Log("terminate")
-				case vivid.OnTerminated:
+				case *vivid.OnTerminated:
 					t.Log("terminated")
 					wait.Done()
 				}
@@ -56,9 +56,9 @@ func TestActorSystem_Terminate(t *testing.T) {
 				switch ctx.Message().(type) {
 				case vivid.OnLaunch:
 					t.Log("launch")
-				case vivid.OnTerminate:
+				case *vivid.OnTerminate:
 					t.Log("terminate")
-				case vivid.OnTerminated:
+				case *vivid.OnTerminated:
 					t.Log("terminated")
 					wait.Done()
 				}

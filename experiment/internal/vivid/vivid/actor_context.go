@@ -156,8 +156,8 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	ctx.sender = sender
 	if !system {
 		switch m := message.(type) {
-		case OnTerminate:
-			if m == onGracefullyTerminate {
+		case *OnTerminate:
+			if m.Gracefully {
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
@@ -165,22 +165,22 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.actor.OnReceive(ctx)
 
 		switch message.(type) {
-		case OnLaunch:
+		case *OnLaunch:
 			ctx.accidentState.Solved()
 		}
 		return
 	}
 
 	switch m := message.(type) {
-	case OnLaunch:
+	case *OnLaunch:
 		ctx.processMessage(sender, receiver, m, false)
-	case OnRestarted:
+	case *OnRestarted:
 		ctx.processMessage(sender, receiver, m, false)
-	case OnTerminate:
-		ctx.onTerminate(m == onGracefullyTerminate)
-	case OnTerminated:
-		ctx.onTerminated(m)
-	case onRestartMessage:
+	case *OnTerminate:
+		ctx.onTerminate(m.Gracefully)
+	case *Terminated: // 转换为 OnTerminated
+		ctx.onTerminated(&OnTerminated{TerminatedActor: prc.NewProcessRef(m.TerminatedProcess)})
+	case *onRestartMessage:
 		ctx.onRestart()
 	case *supervision.AccidentRecord:
 		ctx.onAccidentRecordProcess(m)
@@ -316,7 +316,7 @@ func (ctx *actorContext) tryRestarted() {
 	}
 
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
-	ctx.processMessage(ctx.sender, ctx.ref, OnTerminated{ctx.ref}, false)
+	ctx.processMessage(ctx.sender, ctx.ref, &OnTerminated{ctx.ref}, false)
 
 	ctx.actor = ctx.provider.Provide()
 	ctx.status.Store(actorStatusAlive)
@@ -339,7 +339,7 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 	ctx.tryTerminated()
 }
 
-func (ctx *actorContext) onTerminated(terminated OnTerminated) {
+func (ctx *actorContext) onTerminated(terminated *OnTerminated) {
 	delete(ctx.children, terminated.TerminatedActor.LogicalAddress())
 
 	ctx.processMessage(ctx.sender, ctx.ref, terminated, false)
@@ -361,14 +361,14 @@ func (ctx *actorContext) tryTerminated() {
 		return
 	}
 
-	terminatedMessage := OnTerminated{TerminatedActor: ctx.ref}
+	terminatedMessage := &OnTerminated{TerminatedActor: ctx.ref}
 	ctx.processMessage(ctx.sender, ctx.ref, terminatedMessage, false)
 	ctx.system.rc.Unregister(ctx.sender, ctx.ref)
 
 	ctx.system.logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
 	if ctx.parentRef != nil {
-		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, terminatedMessage)
+		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, &Terminated{TerminatedProcess: ctx.ref.GetId()})
 	} else {
 		close(ctx.system.closed)
 	}
