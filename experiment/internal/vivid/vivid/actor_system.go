@@ -3,7 +3,9 @@ package vivid
 import (
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/future"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
+	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/network"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,8 +35,26 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 			}))
 			config.WithConsecutiveRestartLimit(-1)
 			config.WithRestartInterval(time.Millisecond*100, 3*time.Second)
+			config.WithUnknownReceiverRedirect(func(message prc.Message) *prc.ProcessRef {
+				return system.guard.ref
+			})
 		}))
 		if err := system.shared.Share(); err != nil {
+			panic(err)
+		}
+	}
+
+	if system.config.clusterBindAddress != charproc.None {
+		host, port, err := network.NormalizeAddress(system.config.clusterBindAddress)
+		if err != nil {
+			panic(err)
+		}
+		system.discoverer = prc.NewDiscoverer(system.rc, host, port, prc.FunctionalDiscovererConfigurator(func(configuration *prc.DiscovererConfiguration) {
+			configuration.WithJoinNodes(system.config.clusterJoinNodes...)
+			configuration.WithName(system.config.actorSystemName)
+			configuration.WithUserMetadata(packActorSystemMetadata(system))
+		}))
+		if err = system.discoverer.Discover(); err != nil {
 			panic(err)
 		}
 	}
@@ -48,12 +68,13 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 }
 
 type ActorSystem struct {
-	config    *ActorSystemConfiguration
-	rc        *prc.ResourceController
-	processId *prc.ProcessId
-	guard     *actorContext
-	closed    chan struct{}
-	shared    *prc.Shared
+	config     *ActorSystemConfiguration
+	rc         *prc.ResourceController
+	processId  *prc.ProcessId
+	guard      *actorContext
+	shared     *prc.Shared
+	discoverer *prc.Discoverer
+	closed     chan struct{}
 }
 
 // Name 获取 Actor 系统的名称
@@ -127,7 +148,8 @@ func (sys *ActorSystem) logger() *log.Logger {
 func (sys *ActorSystem) spawnTopActor(name string, actor Actor, configurator ...ActorDescriptorConfigurator) *actorContext {
 	var ac *actorContext
 	configurator = append(configurator, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
-		descriptor.withInternalDescriptor(name, &actorInternalDescriptor{
+		descriptor.WithName(name)
+		descriptor.withInternalDescriptor(&actorInternalDescriptor{
 			actorContextHook: func(ctx *actorContext) {
 				ac = ctx
 				ctx.parentRef = nil

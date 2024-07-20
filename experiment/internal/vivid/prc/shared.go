@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc/codec"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/network"
@@ -40,7 +41,7 @@ func NewShared(rc *ResourceController, configurator ...SharedConfigurator) *Shar
 	return s
 }
 
-// Shared 资源控制器的共享
+// Shared 是用于对资源控制器进行网络共享的数据结构，它任需要主动的向特定已知的资源管理器发起交互。
 type Shared struct {
 	config       *SharedConfiguration
 	streamServer *sharedServer
@@ -63,6 +64,11 @@ func (s *Shared) Dead() {
 		timer.Stop()
 	}
 	s.state.Store(sharedStateDead)
+}
+
+// GetCodec 获取网络共享数据的编解码器
+func (s *Shared) GetCodec() codec.Codec {
+	return s.config.codec
 }
 
 // Share 共享资源控制器，开始监听网络活动
@@ -258,6 +264,12 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 
 	sender, receiver := NewProcessRef(m.Sender), NewProcessRef(m.Receiver)
 	receiverProcess := s.rc.GetProcess(receiver)
+	if receiverProcess == nil && s.config.unknownReceiverRedirect != nil {
+		receiver = s.config.unknownReceiverRedirect(message)
+		if receiver != nil {
+			receiverProcess = s.rc.GetProcess(receiver)
+		}
+	}
 
 	if m.System {
 		receiverProcess.DeliverySystemMessage(receiver, sender, nil, message)

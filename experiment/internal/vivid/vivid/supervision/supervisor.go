@@ -3,6 +3,9 @@ package supervision
 import "github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
 
 type Supervisor interface {
+	// Ref 获取监管者的进程引用
+	Ref() *prc.ProcessRef
+
 	// Children 获取该监管者下的所有子进程引用
 	Children() []*prc.ProcessRef
 

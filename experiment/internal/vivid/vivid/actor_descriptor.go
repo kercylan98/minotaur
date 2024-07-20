@@ -2,7 +2,6 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid/supervision"
-	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"regexp"
 )
 
@@ -21,18 +20,18 @@ func newActorDescriptor() *ActorDescriptor {
 
 // ActorDescriptor 用于定义 Actor 个性化行为的描述符，它仅在 Actor 创建时使用并释放
 type ActorDescriptor struct {
-	internal            *actorInternalDescriptor // 内部用于描述 Actor 的描述符
-	name                string                   // Actor 名称
-	namePrefix          string                   // Actor 名称前缀
-	mailboxProvider     MailboxProvider          // 邮箱提供者
-	dispatcherProvider  DispatcherProvider       // 调度器提供者
-	supervisionStrategy supervision.Strategy     // 监督策略
-	supervisionLoggers  []supervision.Logger     // 监督日志
+	internal                    *actorInternalDescriptor     // 内部用于描述 Actor 的描述符
+	name                        string                       // Actor 名称
+	namePrefix                  string                       // Actor 名称前缀
+	mailboxProvider             MailboxProvider              // 邮箱提供者
+	dispatcherProvider          DispatcherProvider           // 调度器提供者
+	supervisionStrategyProvider supervision.StrategyProvider // 监督策略提供者
+	supervisionLoggers          []supervision.Logger         // 监督日志
 }
 
-// WithSupervisionStrategy 设置监督策略
-func (d *ActorDescriptor) WithSupervisionStrategy(strategy supervision.Strategy, loggers ...supervision.Logger) *ActorDescriptor {
-	d.supervisionStrategy = strategy
+// WithSupervisionStrategyProvider 设置监督策略提供者
+func (d *ActorDescriptor) WithSupervisionStrategyProvider(provider supervision.StrategyProvider, loggers ...supervision.Logger) *ActorDescriptor {
+	d.supervisionStrategyProvider = provider
 	d.supervisionLoggers = append(d.supervisionLoggers, loggers...)
 	return d
 }
@@ -71,11 +70,7 @@ func (d *ActorDescriptor) WithDispatcherProvider(provider DispatcherProvider) *A
 }
 
 // withInternalDescriptor 设置内部描述符
-func (d *ActorDescriptor) withInternalDescriptor(name string, internal *actorInternalDescriptor) *ActorDescriptor {
-	if name == charproc.None {
-		panic("internal actor name should not be empty")
-	}
-	d.name = name
+func (d *ActorDescriptor) withInternalDescriptor(internal *actorInternalDescriptor) *ActorDescriptor {
 	d.internal = internal
 	return d
 }

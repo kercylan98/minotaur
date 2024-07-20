@@ -99,3 +99,45 @@ func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
 	system1.Shutdown(true)
 	system2.Shutdown(true)
 }
+
+func TestActorSystemConfiguration_WithSharedActorOf(t *testing.T) {
+	wait := sync.WaitGroup{}
+	wait.Add(1)
+	provider := vivid.NewShortcutActorProvider("test", func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				t.Log("launch", ctx.Ref().URL().String(), "parent", ctx.Parent().URL().String())
+			case *vivid.OnTerminated:
+				t.Log("terminated", ctx.Ref().URL().String(), "killer", ctx.Sender().URL().String())
+				wait.Done()
+			case *prc.ProcessId:
+				t.Log("hello!")
+
+			}
+		})
+	})
+
+	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithName("system1")
+		config.WithPhysicalAddress(":8080")
+		config.WithShared(true)
+		config.WithCluster("127.0.0.1:18080", "127.0.0.1:18080")
+		config.WithActorProvider(provider)
+	}))
+
+	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithName("system2")
+		config.WithPhysicalAddress(":8081")
+		config.WithShared(true)
+		config.WithCluster("127.0.0.1:18081", "127.0.0.1:18080")
+	}))
+
+	ref := system2.ActorOf(provider)
+	system2.Tell(ref, ref.GetId())
+	system2.Terminate(ref, true)
+
+	wait.Wait()
+	system1.Shutdown(true)
+	system2.Shutdown(true)
+}

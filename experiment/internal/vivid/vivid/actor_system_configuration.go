@@ -1,7 +1,9 @@
 package vivid
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
+	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid/supervision"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/random"
 	"os"
@@ -15,15 +17,98 @@ func newActorSystemConfiguration() *ActorSystemConfiguration {
 		loggerProvider: log.FunctionalLoggerProvider(func() *log.Logger {
 			return log.New(log.NewHandler(os.Stdout, log.NewDevHandlerOptions().WithLevel(log.LevelDebug).WithCallerSkip(5)))
 		}),
+		mailboxProviderTable: map[MailboxProviderName]MailboxProvider{
+			GetDefaultMailboxProvider().GetMailboxProviderName(): GetDefaultMailboxProvider(),
+		},
+		dispatcherProviderTable: map[DispatcherProviderName]DispatcherProvider{
+			GetDefaultDispatcherProvider().GetDispatcherProviderName(): GetDefaultDispatcherProvider(),
+		},
 	}
 }
 
 // ActorSystemConfiguration 是 ActorSystem 的配置
 type ActorSystemConfiguration struct {
-	actorSystemName string              // ActorSystem 名称
-	physicalAddress prc.PhysicalAddress // 物理地址
-	loggerProvider  log.LoggerProvider  // 日志提供者
-	shared          bool                // 开启网络共享
+	actorSystemName                  string                                                    // ActorSystem 名称
+	physicalAddress                  prc.PhysicalAddress                                       // 物理地址
+	loggerProvider                   log.LoggerProvider                                        // 日志提供者
+	shared                           bool                                                      // 开启网络共享
+	supervisionStrategyProviderTable map[supervision.StrategyName]supervision.StrategyProvider // 监督策略表
+	mailboxProviderTable             map[MailboxProviderName]MailboxProvider                   // 邮箱提供者表
+	dispatcherProviderTable          map[DispatcherProviderName]DispatcherProvider             // 调度器提供者表
+	actorProviderTable               map[ActorProviderName]ActorProvider                       // Actor 提供者表
+	clusterJoinNodes                 []prc.PhysicalAddress                                     // 服务发现默认加入的节点
+	clusterBindAddress               prc.PhysicalAddress                                       // 服务发现绑定的地址
+}
+
+// WithActorProvider 设置 Actor 提供者
+func (c *ActorSystemConfiguration) WithActorProvider(providers ...ActorProvider) *ActorSystemConfiguration {
+	if c.actorProviderTable == nil {
+		c.actorProviderTable = make(map[ActorProviderName]ActorProvider)
+	}
+	for _, provider := range providers {
+		name := provider.GetActorProviderName()
+		_, exist := c.actorProviderTable[name]
+		if exist {
+			panic(fmt.Errorf("actor provider name %s already exist", name))
+		}
+		c.actorProviderTable[name] = provider
+	}
+	return c
+}
+
+// WithMailboxProvider 设置邮箱提供者
+func (c *ActorSystemConfiguration) WithMailboxProvider(providers ...MailboxProvider) *ActorSystemConfiguration {
+	if c.mailboxProviderTable == nil {
+		c.mailboxProviderTable = make(map[MailboxProviderName]MailboxProvider)
+	}
+	for _, provider := range providers {
+		name := provider.GetMailboxProviderName()
+		_, exist := c.mailboxProviderTable[name]
+		if exist {
+			panic(fmt.Errorf("mailbox provider name %s already exist", name))
+		}
+		c.mailboxProviderTable[name] = provider
+	}
+	return c
+}
+
+// WithDispatcherProvider 设置调度器提供者
+func (c *ActorSystemConfiguration) WithDispatcherProvider(providers ...DispatcherProvider) *ActorSystemConfiguration {
+	if c.dispatcherProviderTable == nil {
+		c.dispatcherProviderTable = make(map[DispatcherProviderName]DispatcherProvider)
+	}
+	for _, provider := range providers {
+		name := provider.GetDispatcherProviderName()
+		_, exist := c.dispatcherProviderTable[name]
+		if exist {
+			panic(fmt.Errorf("dispatcher provider name %s already exist", name))
+		}
+		c.dispatcherProviderTable[name] = provider
+	}
+	return c
+}
+
+// WithCluster 通过集群模式创建
+func (c *ActorSystemConfiguration) WithCluster(bindAddr prc.PhysicalAddress, defaultJoinNodes ...prc.PhysicalAddress) *ActorSystemConfiguration {
+	c.clusterBindAddress = bindAddr
+	c.clusterJoinNodes = defaultJoinNodes
+	return c
+}
+
+// WithSupervisionStrategyProvider 设置监督策略提供者，将允许根据名称指定监管策略
+func (c *ActorSystemConfiguration) WithSupervisionStrategyProvider(providers ...supervision.StrategyProvider) *ActorSystemConfiguration {
+	if c.supervisionStrategyProviderTable == nil {
+		c.supervisionStrategyProviderTable = make(map[supervision.StrategyName]supervision.StrategyProvider)
+	}
+	for _, provider := range providers {
+		name := provider.GetStrategyProviderName()
+		_, exist := c.supervisionStrategyProviderTable[name]
+		if exist {
+			panic(fmt.Errorf("strategy name %s already exist", name))
+		}
+		c.supervisionStrategyProviderTable[name] = provider
+	}
+	return c
 }
 
 // WithShared 设置是否开启网络共享，开启后 ActorSystem 将允许通过网络与其他 ActorSystem 交互。

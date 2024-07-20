@@ -1,5 +1,8 @@
 package supervision
 
+// StrategyName 监管策略名称
+type StrategyName = string
+
 // Strategy 是用于对事故记录进行决策处理的监督策略
 type Strategy interface {
 	// OnPolicyDecision 当发生事故时

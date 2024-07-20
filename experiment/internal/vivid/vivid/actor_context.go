@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/future"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
+	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid/internal/messages"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid/mailbox"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid/supervision"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
@@ -41,35 +42,51 @@ var _ supervision.Supervisor = (*actorContext)(nil)
 
 func newActorContext(parent *actorContext, provider ActorProvider, descriptor *ActorDescriptor) (*actorContext, func(ref ActorRef)) {
 	ctx := &actorContext{
-		system:             parent.system,
-		actor:              provider.Provide(),
-		provider:           provider,
-		parentRef:          parent.ref,
-		children:           make(map[prc.LogicalAddress]ActorRef),
-		accidentState:      supervision.NewAccidentState(),
-		supervisorStrategy: descriptor.supervisionStrategy,
-		supervisorLoggers:  descriptor.supervisionLoggers,
+		system:            parent.system,
+		actor:             provider.Provide(),
+		provider:          provider,
+		parentRef:         parent.ref,
+		children:          make(map[prc.LogicalAddress]ActorRef),
+		accidentState:     supervision.NewAccidentState(),
+		supervisorLoggers: descriptor.supervisionLoggers,
 	}
+	if descriptor.internal != nil && descriptor.internal.parent != nil {
+		ctx.parentRef = descriptor.internal.parent
+	}
+
+	if descriptor.supervisionStrategyProvider != nil {
+		ctx.supervisorStrategy = descriptor.supervisionStrategyProvider.Provide()
+		ctx.supervisorStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
+	}
+
 	return ctx, func(ref ActorRef) {
-		parent.children[ref.LogicalAddress()] = ref
+		if descriptor.internal == nil || descriptor.internal.parent == nil {
+			parent.children[ref.LogicalAddress()] = ref
+		}
 		ctx.ref = ref
 	}
 }
 
 type actorContext struct {
-	system             *ActorSystem                    // 所属 Actor 系统
-	actor              Actor                           // Actor 实例
-	provider           ActorProvider                   // Actor 提供者
-	ref                ActorRef                        // 自身 Actor 引用
-	parentRef          ActorRef                        // 父 Actor 引用
-	children           map[prc.LogicalAddress]ActorRef // 子 Actor 引用表
-	accidentState      *supervision.AccidentState      // Actor 事故状态
-	status             atomic.Uint32                   // Actor 状态
-	childGuid          uint64                          // 子 Actor 自增 GUID 计数
-	message            Message                         // 当前处理的消息
-	sender             ActorRef                        // 当前消息的发送者
-	supervisorStrategy supervision.Strategy            // 监管策略
-	supervisorLoggers  []supervision.Logger            // 监管记录器
+	system                 *ActorSystem                    // 所属 Actor 系统
+	actor                  Actor                           // Actor 实例
+	provider               ActorProvider                   // Actor 提供者
+	ref                    ActorRef                        // 自身 Actor 引用
+	parentRef              ActorRef                        // 父 Actor 引用
+	children               map[prc.LogicalAddress]ActorRef // 子 Actor 引用表
+	accidentState          *supervision.AccidentState      // Actor 事故状态
+	status                 atomic.Uint32                   // Actor 状态
+	childGuid              uint64                          // 子 Actor 自增 GUID 计数
+	message                Message                         // 当前处理的消息
+	sender                 ActorRef                        // 当前消息的发送者
+	supervisorStrategy     supervision.Strategy            // 监管策略
+	supervisorStrategyName supervision.StrategyName        // 监管策略名称
+	supervisorLoggers      []supervision.Logger            // 监管记录器
+	gracefullyTerminated   bool                            // 是否已优雅终止
+}
+
+func (ctx *actorContext) Parent() ActorRef {
+	return ctx.parentRef
 }
 
 func (ctx *actorContext) ReportAbnormal(reason Message) {
@@ -99,6 +116,16 @@ func (ctx *actorContext) Escalate(record *supervision.AccidentRecord) {
 		panic(fmt.Errorf("the root actor should not continue to upgrade!, err: %v", record.Reason))
 	}
 
+	if !ctx.system.rc.Belong(ctx.parentRef) {
+		// 远程的父级 Actor，需要通过网络传输
+		car, err := record.CrossAccidentRecord(ctx.supervisorStrategyName, ctx.system.shared)
+		if err != nil {
+			panic(fmt.Errorf("cross accident record failed, err: %v", err))
+		}
+		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, car)
+		return
+	}
+
 	ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, record)
 }
 
@@ -114,6 +141,22 @@ func (ctx *actorContext) onAccidentRecordProcess(m *supervision.AccidentRecord) 
 	} else {
 		ctx.Escalate(m) // 继续升级
 	}
+}
+
+func (ctx *actorContext) onCrossAccidentRecordProcess(m *supervision.CrossAccidentRecord) {
+	var strategy supervision.Strategy
+	if m.Strategy != charproc.None {
+		provider, exist := ctx.system.config.supervisionStrategyProviderTable[m.Strategy]
+		if !exist {
+			panic(fmt.Errorf("supervisor strategy %s not found", m.Strategy))
+		}
+		strategy = provider.Provide()
+	}
+	ar, err := m.AccidentRecord(ctx, ctx.system.shared, strategy)
+	if err != nil {
+		panic(fmt.Errorf("cross accident record failed, err: %v", err))
+	}
+	ctx.onAccidentRecordProcess(ar)
 }
 
 func (ctx *actorContext) Restart(refs ...*prc.ProcessRef) {
@@ -158,6 +201,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		switch m := message.(type) {
 		case *OnTerminate:
 			if m.Gracefully {
+				ctx.gracefullyTerminated = true
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
@@ -184,6 +228,10 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.onRestart()
 	case *supervision.AccidentRecord:
 		ctx.onAccidentRecordProcess(m)
+	case *supervision.CrossAccidentRecord:
+		ctx.onCrossAccidentRecordProcess(m)
+	case *messages.GenerateRemoteActor:
+		ctx.onGenerateRemoteActor(m)
 	}
 }
 
@@ -238,6 +286,47 @@ func (ctx *actorContext) Ref() ActorRef {
 	return ctx.ref
 }
 
+// findClusterNode 寻找符合条件的集群节点，如果为空，那么没有满足的
+func (ctx *actorContext) findClusterNode(provider ActorProvider, descriptor *ActorDescriptor) *prc.DiscoverNode {
+	system := ctx.system
+	if system.discoverer == nil {
+		return nil
+	}
+	if descriptor.internal != nil {
+		return nil
+	}
+	if descriptor.supervisionStrategyProvider != nil && descriptor.supervisionStrategyProvider.GetStrategyProviderName() != charproc.None {
+		return nil
+	}
+	if len(descriptor.supervisionLoggers) > 0 {
+		return nil
+	}
+
+	var matches []*prc.DiscoverNode
+	for _, node := range system.discoverer.GetNodes() {
+		md := node.Metadata()
+
+		actorCheck := md.UserMetadata[actorSystemMetadataKeyActorProviderTable] == provider.GetActorProviderName()
+		dispatcherCheck := actorCheck && md.UserMetadata[actorSystemMetadataKeyDispatcherProviderTable] == descriptor.dispatcherProvider.GetDispatcherProviderName()
+		mailboxCheck := dispatcherCheck && md.UserMetadata[actorSystemMetadataKeyMailboxProviderTable] == descriptor.mailboxProvider.GetMailboxProviderName()
+		strategyCheck := mailboxCheck && (descriptor.supervisionStrategyProvider == nil || md.UserMetadata[actorSystemMetadataKeySupervisionStrategyProviderTable] == descriptor.supervisionStrategyProvider.GetStrategyProviderName())
+
+		if !strategyCheck {
+			continue
+		}
+
+		matches = append(matches, node)
+	}
+
+	if len(matches) == 0 {
+		return nil
+	}
+
+	// 排序，暂时随机
+	collection.Shuffle(&matches)
+	return matches[0]
+}
+
 func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDescriptorConfigurator) ActorRef {
 	// 生成描述并配置
 	descriptor := newActorDescriptor()
@@ -254,8 +343,41 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 		descriptor.name = descriptor.namePrefix + "-" + descriptor.name
 	}
 
+	if node := ctx.findClusterNode(provider, descriptor); node != nil && ctx.system.rc.GetPhysicalAddress() != node.Metadata().GetRcPhysicalAddress() {
+		// 集群中生成
+		msg := &messages.GenerateRemoteActor{
+			ParentPid:              ctx.ref.GetId(),
+			ProviderName:           provider.GetActorProviderName(),
+			ActorName:              descriptor.name,
+			ActorNamePrefix:        descriptor.namePrefix,
+			MailboxProviderName:    descriptor.mailboxProvider.GetMailboxProviderName(),
+			DispatcherProviderName: descriptor.dispatcherProvider.GetDispatcherProviderName(),
+		}
+		if descriptor.supervisionStrategyProvider != nil {
+			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
+		}
+
+		remoteRef := prc.NewProcessRef(prc.NewClusterProcessId(node.Metadata().UserMetadata[actorSystemClusterName], node.Metadata().RcPhysicalAddress, "/"))
+
+		f := future.New(ctx.system.rc, ctx.ref.DerivationProcessId("future-"+convert.Uint64ToString(ctx.childGuid)), -1)
+		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
+
+		ref, err := f.Result()
+		if err != nil {
+			panic(fmt.Errorf("generate remote actor failed, err: %v", err))
+		}
+		return prc.NewProcessRef(ref.(*messages.GenerateRemoteActorResult).Pid)
+	}
+
 	// 进程 Id 初始化
-	processId := ctx.ref.DerivationProcessId(descriptor.name)
+	var processId *prc.ProcessId
+	if descriptor.internal != nil && descriptor.internal.parent != nil {
+		processId = descriptor.internal.parent.DerivationProcessId(descriptor.name)
+		processId.ClusterName = ctx.system.Name()
+		processId.PhysicalAddress = ctx.system.rc.GetPhysicalAddress()
+	} else {
+		processId = ctx.ref.DerivationProcessId(descriptor.name)
+	}
 
 	// 创建上下文
 	ctx, refBinder := newActorContext(ctx, provider, descriptor)
@@ -333,7 +455,7 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 
 	for _, ref := range ctx.children {
-		ctx.Terminate(ref, gracefully)
+		ctx.Terminate(ref, gracefully || ctx.gracefullyTerminated)
 	}
 
 	ctx.tryTerminated()
@@ -372,4 +494,27 @@ func (ctx *actorContext) tryTerminated() {
 	} else {
 		close(ctx.system.closed)
 	}
+}
+
+func (ctx *actorContext) onGenerateRemoteActor(m *messages.GenerateRemoteActor) {
+	provider, exist := ctx.system.config.actorProviderTable[m.ProviderName]
+	if !exist {
+		panic(fmt.Errorf("actor provider %s not found", m.ProviderName))
+	}
+
+	descriptor := newActorDescriptor()
+	descriptor.name = m.ActorName
+	descriptor.namePrefix = m.ActorNamePrefix
+	descriptor.mailboxProvider = ctx.system.config.mailboxProviderTable[m.MailboxProviderName]
+	descriptor.dispatcherProvider = ctx.system.config.dispatcherProviderTable[m.DispatcherProviderName]
+	descriptor.supervisionStrategyProvider = ctx.system.config.supervisionStrategyProviderTable[m.SupervisionStrategyName]
+
+	ref := ctx.ActorOf(provider, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
+		descriptor.withInternalDescriptor(&actorInternalDescriptor{
+			useDescriptor: descriptor,
+			parent:        prc.NewProcessRef(m.ParentPid),
+		})
+	}))
+
+	ctx.Reply(&messages.GenerateRemoteActorResult{Pid: ref.GetId()})
 }

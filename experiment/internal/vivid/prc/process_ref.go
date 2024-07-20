@@ -32,6 +32,13 @@ func (ref *ProcessRef) DerivationProcessId(name string) *ProcessId {
 	return ref.id.Derivation(name)
 }
 
+// ChangePhysicalAddress 改变进程引用的物理地址并返回新的进程 Id
+func (ref *ProcessRef) ChangePhysicalAddress(address PhysicalAddress) *ProcessId {
+	nid := ref.GetId()
+	nid.PhysicalAddress = address
+	return nid
+}
+
 // URL 获取进程引用的 URL
 func (ref *ProcessRef) URL() *url.URL {
 	return ref.id.URL()

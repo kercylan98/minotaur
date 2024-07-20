@@ -111,7 +111,7 @@ func (f *futureProcess) DeliveryUserMessage(receiver, sender, forward *prc.Proce
 	case error:
 		f.Close(m)
 	default:
-		f.message = forward
+		f.message = message
 		f.Close(nil)
 	}
 }

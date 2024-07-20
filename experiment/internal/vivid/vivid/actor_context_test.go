@@ -195,9 +195,11 @@ func TestActorContext_RestartN(t *testing.T) {
 			}
 		})
 	}), vivid.FunctionalActorDescriptorConfigurator(func(descriptor *vivid.ActorDescriptor) {
-		descriptor.WithSupervisionStrategy(supervision.OneForOne(restartCount, time.Millisecond*100, time.Millisecond*100, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
-			return supervision.DirectiveRestart
-		})))
+		descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+			return supervision.OneForOne(restartCount, time.Millisecond*100, time.Millisecond*100, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
+				return supervision.DirectiveRestart
+			}))
+		}))
 	}))
 	wait.Wait()
 	system.Shutdown(true)
