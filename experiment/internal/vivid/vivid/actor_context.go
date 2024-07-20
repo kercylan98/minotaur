@@ -214,6 +214,7 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
+	ctx.childGuid++
 	f := future.New(ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.childGuid)), t)
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f

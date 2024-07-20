@@ -133,7 +133,9 @@ func (f *futureProcess) Close(reason error) {
 		return
 	}
 	f.err = reason
-	f.timer.Stop()
+	if f.timer != nil {
+		f.timer.Stop()
+	}
 	f.rc.Unregister(f.ref, f.ref)
 	f.forwardsMutex.Lock()
 	defer f.forwardsMutex.Unlock()

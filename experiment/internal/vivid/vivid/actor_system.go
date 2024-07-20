@@ -27,7 +27,14 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	}))
 
 	if system.config.shared {
-		if err := prc.NewShared(system.rc).Share(); err != nil {
+		system.shared = prc.NewShared(system.rc, prc.FunctionalSharedConfigurator(func(config *prc.SharedConfiguration) {
+			config.WithRuntimeErrorHandler(prc.FunctionalErrorPolicyDecisionHandler(func(err error) prc.SharedPolicyDecision {
+				return prc.SharedPolicyDecisionRestart
+			}))
+			config.WithConsecutiveRestartLimit(-1)
+			config.WithRestartInterval(time.Millisecond*100, 3*time.Second)
+		}))
+		if err := system.shared.Share(); err != nil {
 			panic(err)
 		}
 	}
@@ -46,6 +53,12 @@ type ActorSystem struct {
 	processId *prc.ProcessId
 	guard     *actorContext
 	closed    chan struct{}
+	shared    *prc.Shared
+}
+
+// Name 获取 Actor 系统的名称
+func (sys *ActorSystem) Name() string {
+	return sys.config.actorSystemName
 }
 
 // Tell 向指定的 Actor 引用(ActorRef) 发送消息。
@@ -85,6 +98,7 @@ func (sys *ActorSystem) Signal(handler func(system *ActorSystem, signal os.Signa
 func (sys *ActorSystem) Shutdown(gracefully bool) {
 	sys.guard.Terminate(sys.guard.ref, gracefully)
 	<-sys.closed
+	sys.shared.Dead()
 	sys.logger().Info("ActorSystem", log.String("status", "shutdown"), log.String("name", sys.config.actorSystemName))
 }
 

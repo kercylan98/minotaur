@@ -1,7 +1,9 @@
 package vivid_test
 
 import (
+	"github.com/kercylan98/minotaur/experiment/internal/vivid/prc"
 	"github.com/kercylan98/minotaur/experiment/internal/vivid/vivid"
+	"sync"
 	"testing"
 )
 
@@ -24,4 +26,46 @@ func TestActorSystemConfiguration_WithShared(t *testing.T) {
 				WithShared(true)
 		})).Shutdown(true)
 	})
+}
+
+func TestActorSystemConfiguration_WithSharedTell(t *testing.T) {
+	var messageNum = 1000
+	var receiverOnce, senderOnce sync.Once
+
+	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithPhysicalAddress(":8080")
+		config.WithShared(true)
+	}))
+
+	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithPhysicalAddress(":8081")
+		config.WithShared(true)
+	}))
+
+	ref1 := system1.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch v := ctx.Message().(type) {
+			case *prc.ProcessId:
+				receiverOnce.Do(func() {
+					t.Log("receiver start", ctx.Ref().URL().String(), ctx.Sender().URL().String())
+				})
+				ctx.Reply(v)
+			}
+		})
+	})
+
+	ref2 := ref1.Clone() // 同一进程内，隔离开，避免通过缓存直接调用
+
+	message := prc.NewProcessId("none", "none")
+	for i := 1; i <= messageNum; i++ {
+		if err := system2.FutureAsk(ref2, message, -1).Wait(); err != nil {
+			panic(err)
+		}
+		senderOnce.Do(func() {
+			t.Log("sender start")
+		})
+	}
+
+	system2.Shutdown(true)
+	system1.Shutdown(true)
 }

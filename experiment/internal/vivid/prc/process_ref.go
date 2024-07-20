@@ -36,3 +36,10 @@ func (ref *ProcessRef) DerivationProcessId(name string) *ProcessId {
 func (ref *ProcessRef) URL() *url.URL {
 	return ref.id.URL()
 }
+
+// Clone 克隆一个进程引用
+func (ref *ProcessRef) Clone() *ProcessRef {
+	return &ProcessRef{
+		id: ref.id,
+	}
+}
