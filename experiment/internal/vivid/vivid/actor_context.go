@@ -288,6 +288,9 @@ func (ctx *actorContext) Ref() ActorRef {
 
 // findClusterNode 寻找符合条件的集群节点，如果为空，那么没有满足的
 func (ctx *actorContext) findClusterNode(provider ActorProvider, descriptor *ActorDescriptor) *prc.DiscoverNode {
+	if descriptor.fixedLocal {
+		return nil
+	}
 	system := ctx.system
 	if system.discoverer == nil {
 		return nil
