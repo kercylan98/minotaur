@@ -92,6 +92,9 @@ func IsLocalAddress(targetAddr string) (bool, error) {
 
 // IsSameLocalAddress 比较两个地址是否为同一本地地址
 func IsSameLocalAddress(addr1, addr2 string) bool {
+	if addr1 == addr2 {
+		return true
+	}
 	ip1, port1, err := NormalizeAddress(addr1)
 	if err != nil {
 		return false
