@@ -1,34 +1,34 @@
 package systems
 
 import (
-	"github.com/kercylan98/minotaur/core/ecs"
+	ecs2 "github.com/kercylan98/minotaur/engine/ecs"
 	cmps2 "github.com/kercylan98/minotaur/examples/internal/ecs-system-move/cmps"
 	"math"
 )
 
 type Move struct {
-	positionId   ecs.ComponentId
-	velocityId   ecs.ComponentId
-	collider2DId ecs.ComponentId
+	positionId   ecs2.ComponentId
+	velocityId   ecs2.ComponentId
+	collider2DId ecs2.ComponentId
 
-	queryWithCollider    ecs.Query
-	queryWithoutCollider ecs.Query
+	queryWithCollider    ecs2.Query
+	queryWithoutCollider ecs2.Query
 }
 
-func (m *Move) OnLifecycle(world ecs.World, lifecycle ecs.Lifecycle) {
+func (m *Move) OnLifecycle(world ecs2.World, lifecycle ecs2.Lifecycle) {
 	switch lifecycle {
-	case ecs.OnInit:
+	case ecs2.OnInit:
 		m.positionId = world.RegComponent(new(cmps2.Position2d))
 		m.velocityId = world.RegComponent(new(cmps2.Velocity))
 		m.collider2DId = world.RegComponent(new(cmps2.Collider2D))
 
-		m.queryWithCollider = ecs.In(m.positionId, m.velocityId, m.collider2DId)
-		m.queryWithoutCollider = ecs.And(ecs.In(m.positionId, m.velocityId), ecs.NotIn(m.collider2DId))
+		m.queryWithCollider = ecs2.In(m.positionId, m.velocityId, m.collider2DId)
+		m.queryWithoutCollider = ecs2.And(ecs2.In(m.positionId, m.velocityId), ecs2.NotIn(m.collider2DId))
 	default:
 	}
 }
 
-func (m *Move) OnUpdate(world ecs.World) {
+func (m *Move) OnUpdate(world ecs2.World) {
 	// 遍历具有 Position2d、Velocity 和 Collider2D 组件的实体
 	resultWithCollider := world.Query(m.queryWithCollider)
 	iterWithCollider := resultWithCollider.Iterator()

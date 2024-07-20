@@ -1,0 +1,40 @@
+syntax = "proto3";
+package prc;
+option go_package = "github.com/kercylan98/minotaur/engine/prc";
+
+import "process_id.proto";
+
+// Shared 共享服务
+service Shared {
+  rpc StreamHandler (stream SharedMessage) returns (stream SharedMessage) {}
+}
+
+message SharedMessage {
+  oneof message_type {
+    Handshake handshake = 1; // 握手
+    Farewell farewell = 2; // 告别
+    DeliveryMessage delivery_message = 3; // 传递单条消息
+    BatchDeliveryMessage batch_delivery_message = 4; // 传递多条消息
+  }
+}
+
+message Handshake {
+  string address = 1;
+}
+
+message Farewell {
+  string address = 1;
+}
+
+message DeliveryMessage {
+  ProcessId sender = 1; // 发送方
+  ProcessId receiver = 2; // 接收方
+  string message_type = 3; // 消息类型名称
+  bytes message_data = 4; // 消息数据
+  bool system = 5; // 是否是系统消息
+}
+
+message BatchDeliveryMessage {
+  repeated DeliveryMessage messages = 1;
+}
+

@@ -2,28 +2,28 @@ package room
 
 import (
 	"errors"
-	"github.com/kercylan98/minotaur/core/ecs"
 	"github.com/kercylan98/minotaur/core/vivid"
+	ecs2 "github.com/kercylan98/minotaur/engine/ecs"
 	"github.com/kercylan98/minotaur/examples/internal/room_manager/ecs/components"
 )
 
 type (
 	AskJoinRoom      struct{ UserId string }
-	AskJoinRoomReply struct{ PlayerId ecs.Entity }
+	AskJoinRoomReply struct{ PlayerId ecs2.Entity }
 )
 
 func NewRoom() *Room {
 	r := &Room{
-		world: ecs.NewWorld(),
+		world: ecs2.NewWorld(),
 	}
 	return r
 }
 
 type Room struct {
-	world ecs.World
+	world ecs2.World
 
-	playerComponentId ecs.ComponentId
-	seatComponentId   ecs.ComponentId
+	playerComponentId ecs2.ComponentId
+	seatComponentId   ecs2.ComponentId
 }
 
 func (r *Room) OnReceive(ctx vivid.ActorContext) {
@@ -42,7 +42,7 @@ func (r *Room) onLaunch(ctx vivid.ActorContext) {
 
 func (r *Room) onAskJoinRoom(ctx vivid.ActorContext, m AskJoinRoom) {
 	var exists bool
-	r.world.Query(ecs.Equal(r.playerComponentId)).Each(func(entity ecs.Entity) bool {
+	r.world.Query(ecs2.Equal(r.playerComponentId)).Each(func(entity ecs2.Entity) bool {
 		player := r.world.Get(entity, r.playerComponentId).(components.Player)
 		if exists = player.Id == m.UserId; exists {
 			return false

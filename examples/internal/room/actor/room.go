@@ -1,8 +1,8 @@
 package actor
 
 import (
-	"github.com/kercylan98/minotaur/core/ecs"
 	"github.com/kercylan98/minotaur/core/vivid"
+	ecs2 "github.com/kercylan98/minotaur/engine/ecs"
 	"github.com/kercylan98/minotaur/examples/internal/room/components"
 	"github.com/kercylan98/minotaur/examples/internal/room/messages"
 	"github.com/kercylan98/minotaur/toolkit/log"
@@ -10,15 +10,15 @@ import (
 
 func NewRoom() *Room {
 	r := &Room{
-		world: ecs.NewWorld(),
+		world: ecs2.NewWorld(),
 	}
 	return r
 }
 
 type Room struct {
-	world ecs.World
+	world ecs2.World
 
-	roomEntity ecs.ComponentId
+	roomEntity ecs2.ComponentId
 }
 
 func (r *Room) OnReceive(ctx vivid.ActorContext) {
@@ -42,7 +42,7 @@ func (r *Room) onJoinRoom(ctx vivid.ActorContext, m *messages.JoinRoomAsk) {
 
 	log.Info("joinRoom", log.String("entityId", m.EntityId), log.String("ecsId", eid.String()))
 
-	r.world.Query(ecs.Equal(r.roomEntity)).Each(func(entity ecs.Entity) bool {
+	r.world.Query(ecs2.Equal(r.roomEntity)).Each(func(entity ecs2.Entity) bool {
 		roomEntity := r.world.Get(entity, r.roomEntity).(*components.Room)
 		log.Info("roomEntity", log.String("entityId", roomEntity.Id), log.String("ecsId", entity.String()))
 		return true

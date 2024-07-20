@@ -1,8 +1,8 @@
 package room
 
 import (
-	"github.com/kercylan98/minotaur/core/ecs"
 	"github.com/kercylan98/minotaur/core/vivid"
+	ecs2 "github.com/kercylan98/minotaur/engine/ecs"
 	"github.com/kercylan98/minotaur/examples/internal/room_manager/ecs/components"
 )
 
@@ -15,15 +15,15 @@ type (
 
 func NewManager() *Manager {
 	m := &Manager{
-		world: ecs.NewWorld(),
+		world: ecs2.NewWorld(),
 	}
 	return m
 }
 
 type Manager struct {
-	world ecs.World
+	world ecs2.World
 
-	roomInfoComponentId ecs.ComponentId
+	roomInfoComponentId ecs2.ComponentId
 }
 
 func (r *Manager) OnReceive(ctx vivid.ActorContext) {
@@ -43,8 +43,8 @@ func (r *Manager) onLaunch(ctx vivid.ActorContext) {
 
 func (r *Manager) onAskRoomInfos(ctx vivid.ActorContext) {
 	rooms := make([]*components.RoomInfo, 0)
-	r.world.QueryF(ecs.Equal(r.roomInfoComponentId), func(result *ecs.Result) {
-		result.Each(func(entity ecs.Entity) bool {
+	r.world.QueryF(ecs2.Equal(r.roomInfoComponentId), func(result *ecs2.Result) {
+		result.Each(func(entity ecs2.Entity) bool {
 			room := result.Get(entity, r.roomInfoComponentId).(*components.RoomInfo)
 			rooms = append(rooms, room.Clone())
 			return true

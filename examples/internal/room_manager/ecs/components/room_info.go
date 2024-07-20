@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/kercylan98/minotaur/core/ecs"
 	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/engine/ecs"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 )
 

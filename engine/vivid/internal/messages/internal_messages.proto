@@ -1,0 +1,21 @@
+syntax = "proto3";
+package messages;
+option go_package = "/github.com/kercylan98/minotaur/engine/vivid/internal/messages";
+
+import "process_id.proto";
+
+message GenerateRemoteActor {
+  prc.ProcessId parent_pid = 1;
+  string provider_name = 2;
+  string actor_name = 100;
+  string actor_name_prefix = 101;
+  string mailbox_provider_name = 102;
+  string dispatcher_provider_name = 103;
+  string supervision_strategy_name = 104;
+  int64 expire_duration = 105;
+  int64 idle_deadline = 106;
+}
+
+message GenerateRemoteActorResult {
+  prc.ProcessId pid = 1;
+}

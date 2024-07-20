@@ -1,0 +1,11 @@
+syntax = "proto3";
+package prc;
+option go_package = "github.com/kercylan98/minotaur/engine/prc";
+
+message ProcessId {
+  uint32 physical_pid = 1; // 操作系统进程号
+  string logical_address = 2; // 本地内部的逻辑地址
+  string physical_address = 3; // 跨网络物理地址
+  string network_protocol = 4; // 采用的网络协议
+  string cluster_name = 5; // 集群名称
+}
