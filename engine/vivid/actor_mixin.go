@@ -93,6 +93,9 @@ type mixinRecipient interface {
 
 	// Sender 返回当前 Actor 接收到的消息的发送者。
 	Sender() ActorRef
+
+	// CastMessage 将当前正在处理的消息设置为指定的消息，这对于在处理消息时需要修改消息的场景非常有用。
+	CastMessage(message Message)
 }
 
 // mixinPersistence 是一个混入类型接口，它定义了支持持久化的 Actor 需要满足的接口。

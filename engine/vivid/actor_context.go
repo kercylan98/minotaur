@@ -112,6 +112,10 @@ type actorContext struct {
 	persistenceRecovering      bool                            // 持久化恢复中
 }
 
+func (ctx *actorContext) CastMessage(message Message) {
+	ctx.message = message
+}
+
 func (ctx *actorContext) initPersistenceState() {
 	if ctx.persistenceState == nil {
 		ctx.persistenceState = persistence.NewState(ctx.persistenceName, persistence.FunctionalStateConfigurator(func(configuration *persistence.StateConfiguration) {
