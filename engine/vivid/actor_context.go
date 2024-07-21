@@ -123,7 +123,7 @@ func (ctx *actorContext) initPersistenceState() {
 func (ctx *actorContext) ClearPersistence() {
 	if ctx.persistenceState != nil {
 		if err := ctx.persistenceState.Clear(); err != nil {
-			ctx.system.logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+			ctx.system.Logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
 		}
 	}
 }
@@ -558,7 +558,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 		descriptor.internal.actorContextHook(ctx)
 	}
 
-	ctx.system.logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.LogicalAddress), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.LogicalAddress), log.Int("child", len(ctx.children)))
 
 	// 第一条消息
 	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onLaunch)
@@ -616,7 +616,7 @@ func (ctx *actorContext) tryRestarted() {
 	}
 	ctx.status.Store(actorStatusAlive)
 
-	ctx.system.logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)
@@ -655,7 +655,7 @@ func (ctx *actorContext) recoveryPersistence() {
 	ctx.initPersistenceState()
 	snapshot, events, err := ctx.persistenceState.Load()
 	if err != nil && !errors.Is(err, persistence.ErrorPersistenceNotHasRecord) {
-		ctx.system.logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
 		return
 	}
 	ctx.persistenceRecovering = true
@@ -677,7 +677,7 @@ func (ctx *actorContext) recoveryPersistence() {
 func (ctx *actorContext) persistence() {
 	if ctx.persistenceState != nil {
 		if err := ctx.persistenceState.Persist(); err != nil {
-			ctx.system.logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+			ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
 		}
 	}
 }
@@ -700,7 +700,7 @@ func (ctx *actorContext) tryTerminated() {
 		ctx.scheduler.Close()
 	}
 
-	ctx.system.logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
 	if ctx.parentRef != nil {
 		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, &Terminated{TerminatedProcess: ctx.ref.GetId()})

@@ -4,9 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/toolkit/log"
 )
-
-// TODO: 使用体验待优化
 
 func NewFiber(addr string, configurator ...FiberConfigurator) *Fiber {
 	f := &Fiber{
@@ -41,11 +40,31 @@ func (f *Fiber) OnReceive(ctx vivid.ActorContext) {
 func (f *Fiber) onLaunch(ctx vivid.ActorContext) {
 	f.app = newFiberApp(fiber.New())
 
+	// 自身初始化
 	for _, service := range f.config.services {
 		service.OnInit(ctx, f.app)
 	}
 
-	// 如果 service 互相依赖
+	// 所有服务加载完成（可注入其他服务依赖）
+	if err := f.app.hooks.onLoadedHook(); err != nil {
+		ctx.System().Logger().Error("Fiber", log.String("hook", "loaded"), log.Err(err))
+		ctx.Terminate(ctx.Ref(), false)
+		return
+	}
+
+	// 所有服务挂载完成（可初始化需要依赖其他服务的内容）
+	if err := f.app.hooks.onMountedHook(); err != nil {
+		ctx.System().Logger().Error("Fiber", log.String("hook", "mounted"), log.Err(err))
+		ctx.Terminate(ctx.Ref(), false)
+		return
+	}
+
+	// 启动
+	if err := f.app.hooks.onLaunchHook(); err != nil {
+		ctx.System().Logger().Error("Fiber", log.String("hook", "launch"), log.Err(err))
+		ctx.Terminate(ctx.Ref(), false)
+		return
+	}
 
 	ctx.Future().AwaitForward(ctx.Ref(), func() prc.Message {
 		return f.app.Listen(f.addr)

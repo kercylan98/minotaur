@@ -59,7 +59,7 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 		}
 	}
 
-	system.logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
+	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
 
 	system.processId = prc.NewClusterProcessId(system.config.actorSystemName, system.rc.GetPhysicalAddress(), "/")
 	system.guard = system.spawnTopActor("user", new(guard))
@@ -120,7 +120,7 @@ func (sys *ActorSystem) Shutdown(gracefully bool) {
 	sys.guard.Terminate(sys.guard.ref, gracefully)
 	<-sys.closed
 	sys.shared.Dead()
-	sys.logger().Info("ActorSystem", log.String("status", "shutdown"), log.String("name", sys.config.actorSystemName))
+	sys.Logger().Info("ActorSystem", log.String("status", "shutdown"), log.String("name", sys.config.actorSystemName))
 }
 
 // Terminate 终止目标 Actor。
@@ -141,7 +141,9 @@ func (sys *ActorSystem) ActorOf(provider ActorProvider, configurator ...ActorDes
 func (sys *ActorSystem) ActorOfF(provider FunctionalActorProvider, configurator ...FunctionalActorDescriptorConfigurator) ActorRef {
 	return sys.guard.ActorOfF(provider, configurator...)
 }
-func (sys *ActorSystem) logger() *log.Logger {
+
+// Logger 获取 ActorSystem 的日志记录器。
+func (sys *ActorSystem) Logger() *log.Logger {
 	return sys.config.loggerProvider.Provide()
 }
 
