@@ -120,6 +120,14 @@ func (ctx *actorContext) initPersistenceState() {
 	}
 }
 
+func (ctx *actorContext) ClearPersistence() {
+	if ctx.persistenceState != nil {
+		if err := ctx.persistenceState.Clear(); err != nil {
+			ctx.system.logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		}
+	}
+}
+
 func (ctx *actorContext) StateChanged(event Message) int {
 	ctx.initPersistenceState()
 	if ctx.persistenceRecovering {

@@ -102,4 +102,7 @@ type mixinPersistence interface {
 
 	// SaveSnapshot 保存快照，该函数将会清空当前 Actor 的事件记录。
 	SaveSnapshot(snapshot Message)
+
+	// ClearPersistence 清除持久化数据
+	ClearPersistence()
 }

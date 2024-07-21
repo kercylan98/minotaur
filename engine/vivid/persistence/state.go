@@ -41,3 +41,7 @@ func (s *State) Persist() error {
 func (s *State) Load() (snapshot Snapshot, events []Event, err error) {
 	return s.config.storage.Load(s.name)
 }
+
+func (s *State) Clear() error {
+	return s.config.storage.Clear(s.name)
+}

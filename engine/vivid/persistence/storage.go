@@ -7,4 +7,7 @@ type Storage interface {
 
 	// Load 加载特定名称的状态快照和事件
 	Load(name Name) (snapshot Snapshot, events []Event, err error)
+
+	// Clear 清除特定名称的状态快照和事件
+	Clear(name Name) error
 }

@@ -12,6 +12,11 @@ func NewMemoryStorage() *MemoryStorage {
 
 type MemoryStorage struct{}
 
+type memoryStorageRecord struct {
+	snapshot Snapshot
+	events   []Event
+}
+
 func (m *MemoryStorage) Save(name Name, snapshot Snapshot, events []Event) error {
 	memoryStorageRecords.Store(name, &memoryStorageRecord{
 		snapshot: snapshot,
@@ -27,7 +32,7 @@ func (m *MemoryStorage) Load(name Name) (snapshot Snapshot, events []Event, err 
 	return nil, nil, ErrorPersistenceNotHasRecord
 }
 
-type memoryStorageRecord struct {
-	snapshot Snapshot
-	events   []Event
+func (m *MemoryStorage) Clear(name Name) error {
+	memoryStorageRecords.Delete(name)
+	return nil
 }
