@@ -11,6 +11,7 @@ var (
 	onRestarted           = new(OnRestarted)
 	onSuspendMailbox      = new(onSuspendMailboxMessage)
 	onResumeMailbox       = new(onResumeMailboxMessage)
+	onPersistenceSnapshot = new(OnPersistenceSnapshot)
 )
 
 type (
@@ -38,6 +39,9 @@ type (
 
 	// OnRestarted 当收到该消息时候即表示 Actor 的重启已完成，紧跟着将会收到 OnLaunch 消息。
 	OnRestarted int8
+
+	// OnPersistenceSnapshot 当 Actor 的事件数量超过持久化事件数量阈值时，将会触发快照的持久化，收到该消息时应主动调用 SaveSnapshot 函数保存快照。
+	OnPersistenceSnapshot int8
 )
 
 type Message = prc.Message

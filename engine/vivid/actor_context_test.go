@@ -204,3 +204,40 @@ func TestActorContext_RestartN(t *testing.T) {
 	wait.Wait()
 	system.Shutdown(true)
 }
+
+func TestActorDescriptor_WithPersistence(t *testing.T) {
+	system := vivid.NewActorSystem()
+
+	ref := system.ActorOfF(func() vivid.Actor {
+		var state = 0
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch m := ctx.Message().(type) {
+			case *vivid.OnLaunch:
+			case int:
+				state += m
+				ctx.StateChanged(m)
+				t.Log("changed:", state, "incr", m)
+			case int64:
+				state = int(m)
+				t.Log("recover to:", state)
+			case error:
+				t.Log("panic before:", state)
+				panic(m)
+			case *vivid.OnPersistenceSnapshot:
+				ctx.SaveSnapshot(int64(state))
+				t.Log("save", state)
+			}
+		})
+	}, func(descriptor *vivid.ActorDescriptor) {
+		descriptor.WithPersistenceEventThreshold(100)
+	})
+
+	for i := 0; i < 200; i++ {
+		system.Tell(ref, 1)
+		if i%50 == 0 {
+			system.Tell(ref, errors.New("panic"))
+		}
+	}
+
+	system.Shutdown(true)
+}

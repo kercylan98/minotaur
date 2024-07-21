@@ -1,9 +1,14 @@
 package vivid
 
 import (
+	"github.com/kercylan98/minotaur/engine/vivid/persistence"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	"regexp"
 	"time"
+)
+
+const (
+	DefaultPersistenceEventThreshold = 1000
 )
 
 var (
@@ -16,6 +21,10 @@ func newActorDescriptor() *ActorDescriptor {
 	return &ActorDescriptor{
 		mailboxProvider:    GetDefaultMailboxProvider(),
 		dispatcherProvider: GetDefaultDispatcherProvider(),
+		persistenceStorageProvider: persistence.FunctionalStorageProvider(func() persistence.Storage {
+			return persistence.NewMemoryStorage()
+		}),
+		persistenceEventThreshold: DefaultPersistenceEventThreshold,
 	}
 }
 
@@ -31,6 +40,32 @@ type ActorDescriptor struct {
 	fixedLocal                  bool                         // 固定本地 Actor
 	expireDuration              time.Duration                // 过期时间
 	idleDeadline                time.Duration                // 空闲截止时间
+	persistenceStorageProvider  persistence.StorageProvider  // 持久化存储提供者
+	persistenceName             persistence.Name             // 持久化名称
+	persistenceEventThreshold   int                          // 持久化事件数量阈值
+}
+
+// WithPersistenceEventThreshold 设置持久化事件数量阈值
+//   - 当 Actor 的事件数量超过该阈值时，将会触发快照的持久化
+//
+// 默认值: DefaultPersistenceEventThreshold
+func (d *ActorDescriptor) WithPersistenceEventThreshold(threshold int) *ActorDescriptor {
+	d.persistenceEventThreshold = threshold
+	return d
+}
+
+// WithPersistenceName 设置持久化名称，持久化名称用于标识 Actor 的持久化状态。
+//
+// 默认值为 Actor 的 prc.LogicalAddress
+func (d *ActorDescriptor) WithPersistenceName(name persistence.Name) *ActorDescriptor {
+	d.persistenceName = name
+	return d
+}
+
+// WithPersistenceStorageProvider 设置持久化存储提供者
+func (d *ActorDescriptor) WithPersistenceStorageProvider(provider persistence.StorageProvider) *ActorDescriptor {
+	d.persistenceStorageProvider = provider
+	return d
 }
 
 // WithIdleDeadline 设置 Actor 空闲截止时间

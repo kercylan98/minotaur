@@ -94,3 +94,12 @@ type mixinRecipient interface {
 	// Sender 返回当前 Actor 接收到的消息的发送者。
 	Sender() ActorRef
 }
+
+// mixinPersistence 是一个混入类型接口，它定义了支持持久化的 Actor 需要满足的接口。
+type mixinPersistence interface {
+	// StateChanged 记录导致状态变更的事件，该函数将返回当前 Actor 的事件数量。
+	StateChanged(event Message) int
+
+	// SaveSnapshot 保存快照，该函数将会清空当前 Actor 的事件记录。
+	SaveSnapshot(snapshot Message)
+}

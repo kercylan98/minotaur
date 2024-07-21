@@ -1,11 +1,13 @@
 package vivid
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid/internal/messages"
 	"github.com/kercylan98/minotaur/engine/vivid/mailbox"
+	"github.com/kercylan98/minotaur/engine/vivid/persistence"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
@@ -37,6 +39,7 @@ type ActorContext interface {
 	mixinRecipient
 	mixinWorker
 	mixinScheduler
+	mixinPersistence
 }
 
 var _ ActorContext = (*actorContext)(nil)
@@ -45,14 +48,17 @@ var _ supervision.Supervisor = (*actorContext)(nil)
 
 func newActorContext(parent *actorContext, provider ActorProvider, descriptor *ActorDescriptor) (*actorContext, func(ref ActorRef)) {
 	ctx := &actorContext{
-		system:            parent.system,
-		actor:             provider.Provide(),
-		provider:          provider,
-		parentRef:         parent.ref,
-		children:          make(map[prc.LogicalAddress]ActorRef),
-		accidentState:     supervision.NewAccidentState(),
-		supervisorLoggers: descriptor.supervisionLoggers,
-		idleDeadline:      descriptor.idleDeadline,
+		system:                     parent.system,
+		actor:                      provider.Provide(),
+		provider:                   provider,
+		parentRef:                  parent.ref,
+		children:                   make(map[prc.LogicalAddress]ActorRef),
+		accidentState:              supervision.NewAccidentState(),
+		supervisorLoggers:          descriptor.supervisionLoggers,
+		idleDeadline:               descriptor.idleDeadline,
+		persistenceName:            descriptor.persistenceName,
+		persistenceStorageProvider: descriptor.persistenceStorageProvider,
+		persistenceEventThreshold:  descriptor.persistenceEventThreshold,
 	}
 
 	if descriptor.expireDuration > 0 {
@@ -73,29 +79,65 @@ func newActorContext(parent *actorContext, provider ActorProvider, descriptor *A
 			parent.children[ref.LogicalAddress()] = ref
 		}
 		ctx.ref = ref
+		if ctx.persistenceName == charproc.None {
+			ctx.persistenceName = ctx.ref.LogicalAddress()
+		}
 	}
 }
 
 type actorContext struct {
-	system                 *ActorSystem                    // 所属 Actor 系统
-	actor                  Actor                           // Actor 实例
-	provider               ActorProvider                   // Actor 提供者
-	ref                    ActorRef                        // 自身 Actor 引用
-	parentRef              ActorRef                        // 父 Actor 引用
-	children               map[prc.LogicalAddress]ActorRef // 子 Actor 引用表
-	accidentState          *supervision.AccidentState      // Actor 事故状态
-	status                 atomic.Uint32                   // Actor 状态
-	childGuid              uint64                          // 子 Actor 自增 GUID 计数
-	message                Message                         // 当前处理的消息
-	sender                 ActorRef                        // 当前消息的发送者
-	supervisorStrategy     supervision.Strategy            // 监管策略
-	supervisorStrategyName supervision.StrategyName        // 监管策略名称
-	supervisorLoggers      []supervision.Logger            // 监管记录器
-	gracefullyTerminated   bool                            // 是否已优雅终止
-	scheduler              *chrono.Scheduler               // 定时调度器
-	schedulerInitializer   sync.Once                       // 调度器初始化锁
-	expireTime             time.Time                       // 过期时间，即便是重启也不会被重置
-	idleDeadline           time.Duration                   // 空闲截止时间
+	system                     *ActorSystem                    // 所属 Actor 系统
+	actor                      Actor                           // Actor 实例
+	provider                   ActorProvider                   // Actor 提供者
+	ref                        ActorRef                        // 自身 Actor 引用
+	parentRef                  ActorRef                        // 父 Actor 引用
+	children                   map[prc.LogicalAddress]ActorRef // 子 Actor 引用表
+	accidentState              *supervision.AccidentState      // Actor 事故状态
+	status                     atomic.Uint32                   // Actor 状态
+	childGuid                  uint64                          // 子 Actor 自增 GUID 计数
+	message                    Message                         // 当前处理的消息
+	sender                     ActorRef                        // 当前消息的发送者
+	supervisorStrategy         supervision.Strategy            // 监管策略
+	supervisorStrategyName     supervision.StrategyName        // 监管策略名称
+	supervisorLoggers          []supervision.Logger            // 监管记录器
+	gracefullyTerminated       bool                            // 是否已优雅终止
+	scheduler                  *chrono.Scheduler               // 定时调度器
+	schedulerInitializer       sync.Once                       // 调度器初始化锁
+	expireTime                 time.Time                       // 过期时间，即便是重启也不会被重置
+	idleDeadline               time.Duration                   // 空闲截止时间
+	persistenceName            persistence.Name                // 持久化名称，默认为 Actor 逻辑地址
+	persistenceState           *persistence.State              // 持久化状态
+	persistenceStorageProvider persistence.StorageProvider     // 持久化存储器提供者
+	persistenceEventThreshold  int                             // 持久化事件数量阈值
+	persistenceRecovering      bool                            // 持久化恢复中
+}
+
+func (ctx *actorContext) initPersistenceState() {
+	if ctx.persistenceState == nil {
+		ctx.persistenceState = persistence.NewState(ctx.persistenceName, persistence.FunctionalStateConfigurator(func(configuration *persistence.StateConfiguration) {
+			configuration.WithStorage(ctx.persistenceStorageProvider.Provide())
+		}))
+	}
+}
+
+func (ctx *actorContext) StateChanged(event Message) int {
+	ctx.initPersistenceState()
+	if ctx.persistenceRecovering {
+		return ctx.persistenceState.EventCount()
+	}
+	num := ctx.persistenceState.StateChanged(event)
+	if num >= ctx.persistenceEventThreshold {
+		ctx.processMessage(ctx.ref, ctx.ref, onPersistenceSnapshot, false)
+	}
+	return num
+}
+
+func (ctx *actorContext) SaveSnapshot(snapshot Message) {
+	if ctx.persistenceRecovering {
+		return
+	}
+	ctx.initPersistenceState()
+	ctx.persistenceState.SaveSnapshot(snapshot)
 }
 
 func (ctx *actorContext) initScheduler() {
@@ -316,6 +358,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		m()
 	case *OnLaunch:
 		ctx.processMessage(sender, receiver, m, false)
+		ctx.recoveryPersistence()
 	case *OnRestarted:
 		ctx.processMessage(sender, receiver, m, false)
 	case *OnTerminate:
@@ -411,8 +454,9 @@ func (ctx *actorContext) findClusterNode(provider ActorProvider, descriptor *Act
 		dispatcherCheck := actorCheck && md.UserMetadata[actorSystemMetadataKeyDispatcherProviderTable] == descriptor.dispatcherProvider.GetDispatcherProviderName()
 		mailboxCheck := dispatcherCheck && md.UserMetadata[actorSystemMetadataKeyMailboxProviderTable] == descriptor.mailboxProvider.GetMailboxProviderName()
 		strategyCheck := mailboxCheck && (descriptor.supervisionStrategyProvider == nil || md.UserMetadata[actorSystemMetadataKeySupervisionStrategyProviderTable] == descriptor.supervisionStrategyProvider.GetStrategyProviderName())
+		persistenceStorageCheck := strategyCheck && md.UserMetadata[actorSystemMetadataKeyPersistenceStorageProviderTable] == descriptor.persistenceStorageProvider.GetStorageProviderName()
 
-		if !strategyCheck {
+		if !persistenceStorageCheck {
 			continue
 		}
 
@@ -447,14 +491,17 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	if node := ctx.findClusterNode(provider, descriptor); node != nil && ctx.system.rc.GetPhysicalAddress() != node.Metadata().GetRcPhysicalAddress() {
 		// 集群中生成
 		msg := &messages.GenerateRemoteActor{
-			ParentPid:              ctx.ref.GetId(),
-			ProviderName:           provider.GetActorProviderName(),
-			ActorName:              descriptor.name,
-			ActorNamePrefix:        descriptor.namePrefix,
-			MailboxProviderName:    descriptor.mailboxProvider.GetMailboxProviderName(),
-			DispatcherProviderName: descriptor.dispatcherProvider.GetDispatcherProviderName(),
-			ExpireDuration:         int64(descriptor.expireDuration),
-			IdleDeadline:           int64(descriptor.idleDeadline),
+			ParentPid:                      ctx.ref.GetId(),
+			ProviderName:                   provider.GetActorProviderName(),
+			ActorName:                      descriptor.name,
+			ActorNamePrefix:                descriptor.namePrefix,
+			MailboxProviderName:            descriptor.mailboxProvider.GetMailboxProviderName(),
+			DispatcherProviderName:         descriptor.dispatcherProvider.GetDispatcherProviderName(),
+			ExpireDuration:                 int64(descriptor.expireDuration),
+			IdleDeadline:                   int64(descriptor.idleDeadline),
+			PersistenceStorageProviderName: descriptor.persistenceStorageProvider.GetStorageProviderName(),
+			PersistenceName:                descriptor.persistenceName,
+			PersistenceEventThreshold:      int32(descriptor.persistenceEventThreshold),
 		}
 		if descriptor.supervisionStrategyProvider != nil {
 			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
@@ -553,6 +600,8 @@ func (ctx *actorContext) tryRestarted() {
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 	ctx.processMessage(ctx.sender, ctx.ref, &OnTerminated{ctx.ref}, false)
 
+	ctx.persistence()
+
 	ctx.actor = ctx.provider.Provide()
 	if ctx.scheduler != nil {
 		ctx.scheduler.Clear()
@@ -594,10 +643,43 @@ func (ctx *actorContext) onTerminated(terminated *OnTerminated) {
 	}
 }
 
+func (ctx *actorContext) recoveryPersistence() {
+	ctx.initPersistenceState()
+	snapshot, events, err := ctx.persistenceState.Load()
+	if err != nil && !errors.Is(err, persistence.ErrorPersistenceNotHasRecord) {
+		ctx.system.logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		return
+	}
+	ctx.persistenceRecovering = true
+	defer func() {
+		ctx.persistenceRecovering = false
+	}()
+
+	// 快照恢复
+	if snapshot != nil {
+		ctx.processMessage(ctx.ref, ctx.ref, snapshot, false)
+	}
+
+	// 事件回放
+	for _, event := range events {
+		ctx.processMessage(ctx.ref, ctx.ref, event, false)
+	}
+}
+
+func (ctx *actorContext) persistence() {
+	if ctx.persistenceState != nil {
+		if err := ctx.persistenceState.Persist(); err != nil {
+			ctx.system.logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		}
+	}
+}
+
 func (ctx *actorContext) tryTerminated() {
 	if len(ctx.children) > 0 {
 		return
 	}
+
+	ctx.persistence()
 
 	if !ctx.status.CompareAndSwap(actorStatusTerminating, actorStatusTerminated) {
 		return
@@ -633,6 +715,9 @@ func (ctx *actorContext) onGenerateRemoteActor(m *messages.GenerateRemoteActor) 
 	descriptor.supervisionStrategyProvider = ctx.system.config.supervisionStrategyProviderTable[m.SupervisionStrategyName]
 	descriptor.idleDeadline = time.Duration(m.IdleDeadline)
 	descriptor.expireDuration = time.Duration(m.ExpireDuration)
+	descriptor.persistenceStorageProvider = ctx.system.config.persistenceStorageProviderTable[m.PersistenceStorageProviderName]
+	descriptor.persistenceName = m.PersistenceName
+	descriptor.persistenceEventThreshold = int(m.PersistenceEventThreshold)
 
 	ref := ctx.ActorOf(provider, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
 		descriptor.withInternalDescriptor(&actorInternalDescriptor{

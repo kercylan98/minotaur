@@ -14,6 +14,9 @@ message GenerateRemoteActor {
   string supervision_strategy_name = 104;
   int64 expire_duration = 105;
   int64 idle_deadline = 106;
+  string persistence_storage_provider_name = 107;
+  string persistence_name = 108;
+  int32 persistence_event_threshold = 109;
 }
 
 message GenerateRemoteActorResult {

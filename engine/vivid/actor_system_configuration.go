@@ -3,6 +3,7 @@ package vivid
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/vivid/persistence"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/random"
@@ -23,21 +24,41 @@ func newActorSystemConfiguration() *ActorSystemConfiguration {
 		dispatcherProviderTable: map[DispatcherProviderName]DispatcherProvider{
 			GetDefaultDispatcherProvider().GetDispatcherProviderName(): GetDefaultDispatcherProvider(),
 		},
+		persistenceStorageProviderTable: map[persistence.StorageProviderName]persistence.StorageProvider{
+			GetDefaultPersistenceStorageProvider().GetStorageProviderName(): GetDefaultPersistenceStorageProvider(),
+		},
 	}
 }
 
 // ActorSystemConfiguration 是 ActorSystem 的配置
 type ActorSystemConfiguration struct {
-	actorSystemName                  string                                                    // ActorSystem 名称
-	physicalAddress                  prc.PhysicalAddress                                       // 物理地址
-	loggerProvider                   log.LoggerProvider                                        // 日志提供者
-	shared                           bool                                                      // 开启网络共享
-	supervisionStrategyProviderTable map[supervision.StrategyName]supervision.StrategyProvider // 监督策略表
-	mailboxProviderTable             map[MailboxProviderName]MailboxProvider                   // 邮箱提供者表
-	dispatcherProviderTable          map[DispatcherProviderName]DispatcherProvider             // 调度器提供者表
-	actorProviderTable               map[ActorProviderName]ActorProvider                       // Actor 提供者表
-	clusterJoinNodes                 []prc.PhysicalAddress                                     // 服务发现默认加入的节点
-	clusterBindAddress               prc.PhysicalAddress                                       // 服务发现绑定的地址
+	actorSystemName                  string                                                          // ActorSystem 名称
+	physicalAddress                  prc.PhysicalAddress                                             // 物理地址
+	loggerProvider                   log.LoggerProvider                                              // 日志提供者
+	shared                           bool                                                            // 开启网络共享
+	supervisionStrategyProviderTable map[supervision.StrategyName]supervision.StrategyProvider       // 监督策略表
+	mailboxProviderTable             map[MailboxProviderName]MailboxProvider                         // 邮箱提供者表
+	dispatcherProviderTable          map[DispatcherProviderName]DispatcherProvider                   // 调度器提供者表
+	actorProviderTable               map[ActorProviderName]ActorProvider                             // Actor 提供者表
+	persistenceStorageProviderTable  map[persistence.StorageProviderName]persistence.StorageProvider // 存储提供者表
+	clusterJoinNodes                 []prc.PhysicalAddress                                           // 服务发现默认加入的节点
+	clusterBindAddress               prc.PhysicalAddress                                             // 服务发现绑定的地址
+}
+
+// WithPersistenceStorageProvider 设置持久化存储提供者
+func (c *ActorSystemConfiguration) WithPersistenceStorageProvider(providers ...persistence.StorageProvider) *ActorSystemConfiguration {
+	if c.persistenceStorageProviderTable == nil {
+		c.persistenceStorageProviderTable = make(map[persistence.StorageProviderName]persistence.StorageProvider)
+	}
+	for _, provider := range providers {
+		name := provider.GetStorageProviderName()
+		_, exist := c.persistenceStorageProviderTable[name]
+		if exist {
+			panic(fmt.Errorf("storage provider name %s already exist", name))
+		}
+		c.persistenceStorageProviderTable[name] = provider
+	}
+	return c
 }
 
 // WithActorProvider 设置 Actor 提供者
