@@ -60,6 +60,16 @@ type futureProcess struct {
 	forwardsMutex sync.Mutex
 }
 
+func (f *futureProcess) AwaitForward(ref *prc.ProcessRef, asyncFunc func() prc.Message) {
+	f.Forward(ref)
+	go func() {
+		if reason := recover(); reason != nil {
+			f.rc.GetProcess(ref).DeliveryUserMessage(ref, f.ref, nil, reason)
+		}
+		f.rc.GetProcess(ref).DeliveryUserMessage(ref, f.ref, nil, asyncFunc())
+	}()
+}
+
 func (f *futureProcess) Ref() *prc.ProcessRef {
 	return f.ref
 }
