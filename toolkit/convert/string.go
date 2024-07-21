@@ -3,13 +3,7 @@ package convert
 import (
 	"strconv"
 	"strings"
-	"unsafe"
 )
-
-// StringToBytesByZeroCopy 转换 string 为 []byte 类型，使用零拷贝
-func StringToBytesByZeroCopy(str string) []byte {
-	return unsafe.Slice(unsafe.StringData(str), len(str))
-}
 
 // StringToBytes 转换 string 为 []byte 类型
 func StringToBytes(str string) []byte {
