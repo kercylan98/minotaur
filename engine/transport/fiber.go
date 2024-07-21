@@ -6,10 +6,11 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
-func NewFiber(addr prc.PhysicalAddress, configurator ...FiberConfigurator) *Fiber {
+// TODO: 使用体验待优化
+
+func NewFiber(addr string, configurator ...FiberConfigurator) *Fiber {
 	f := &Fiber{
 		config: newFiberConfiguration(),
-		app:    fiber.New(),
 		addr:   addr,
 	}
 
@@ -17,16 +18,12 @@ func NewFiber(addr prc.PhysicalAddress, configurator ...FiberConfigurator) *Fibe
 		c.Configure(f.config)
 	}
 
-	for _, service := range f.config.services {
-		service.OnInit(f.app)
-	}
-
 	return f
 }
 
 type Fiber struct {
 	config *FiberConfiguration
-	app    *fiber.App
+	app    *FiberApp
 	addr   string
 }
 
@@ -42,7 +39,15 @@ func (f *Fiber) OnReceive(ctx vivid.ActorContext) {
 }
 
 func (f *Fiber) onLaunch(ctx vivid.ActorContext) {
-	ctx.Future().AwaitForward(ctx.Ref(), func() vivid.Message {
+	f.app = newFiberApp(fiber.New())
+
+	for _, service := range f.config.services {
+		service.OnInit(ctx, f.app)
+	}
+
+	// 如果 service 互相依赖
+
+	ctx.Future().AwaitForward(ctx.Ref(), func() prc.Message {
 		return f.app.Listen(f.addr)
 	})
 }

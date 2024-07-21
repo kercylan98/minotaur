@@ -8,7 +8,7 @@ type FiberConfiguration struct {
 	services []FiberService
 }
 
-func (c *FiberConfiguration) WithServices(service ...FiberService) *FiberConfiguration {
-	c.services = append(c.services, service...)
+func (c *FiberConfiguration) WithServices(services ...FiberService) *FiberConfiguration {
+	c.services = append(c.services, services...)
 	return c
 }
