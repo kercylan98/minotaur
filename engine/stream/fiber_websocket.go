@@ -7,14 +7,6 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 )
 
-type fiberWebSocketWrapper struct {
-	*websocket.Conn
-}
-
-func (f *fiberWebSocketWrapper) Write(packet *Packet) error {
-	return f.WriteMessage(packet.Context().(int), packet.Data())
-}
-
 func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configurator ...Configurator) fiber.Handler {
 	// 创建服务器 Actor
 	server := system.ActorOfF(func() vivid.Actor {

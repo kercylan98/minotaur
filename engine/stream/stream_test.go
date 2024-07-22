@@ -5,9 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/stream"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	"github.com/kercylan98/minotaur/engine/vivid/behavior"
 	"testing"
-	"time"
 )
 
 func TestStream(t *testing.T) {
@@ -16,9 +14,9 @@ func TestStream(t *testing.T) {
 	fiberApp := fiber.New()
 	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
 		var writer vivid.ActorRef
-		c.WithPerformance(behavior.FunctionalPerformance[vivid.ActorContext](func(ctx vivid.ActorContext) {
+		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
-			case vivid.ActorRef:
+			case stream.Writer:
 				writer = m
 				ctx.Tell(writer, stream.NewPacketDC([]byte("Hello!"), websocket.TextMessage))
 			case *stream.Packet:
@@ -27,14 +25,7 @@ func TestStream(t *testing.T) {
 		}))
 	})))
 
-	go func() {
-		time.Sleep(time.Second * 3)
-		fiberApp.Shutdown()
-	}()
-
 	if err := fiberApp.Listen(":8888"); err != nil {
 		panic(err)
 	}
-
-	time.Sleep(time.Hour)
 }
