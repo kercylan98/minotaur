@@ -1,6 +1,9 @@
 package stream
 
-import "github.com/kercylan98/minotaur/engine/vivid"
+import (
+	"github.com/gofiber/contrib/websocket"
+	"github.com/kercylan98/minotaur/engine/vivid"
+)
 
 type Stream interface {
 	Write(packet *Packet) error
@@ -8,7 +11,7 @@ type Stream interface {
 	Close() error
 }
 
-func New(conn Stream, configurator ...Configurator) *Actor {
+func NewStream(conn Stream, configurator ...Configurator) *Actor {
 	c := &Actor{
 		config: newConfiguration(),
 		stream: conn,
@@ -66,6 +69,9 @@ func (c *Actor) onError(ctx vivid.ActorContext, err error) {
 func (c *Actor) onTerminate(ctx vivid.ActorContext) {
 	if c.config.performance != nil {
 		c.config.performance.Perform(ctx)
+	}
+	if fiberConn, ok := c.stream.(*fiberWebSocketWrapper); ok {
+		_ = fiberConn.WriteMessage(websocket.CloseMessage, nil)
 	}
 	_ = c.stream.Close()
 }
