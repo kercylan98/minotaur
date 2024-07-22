@@ -1,52 +1,43 @@
 package stream
 
-type readPacket Packet
-
-var _ Packet = &packet{}
-
-// NewPacket 创建一个新的数据包
-func NewPacket(data []byte) Packet {
-	return new(packet).init(data)
+func NewPacket() *Packet {
+	return &Packet{}
 }
 
-// Packet 写入连接的数据包接口
-type Packet interface {
-
-	// GetBytes 获取数据包字节流
-	GetBytes() []byte
-
-	// SetContext 设置数据包上下文，上下文通常是受特定 Network 实现所限制的
-	//  - 在内置的 network.WebSocket 实现中，上下文被用于指定连接发送数据的操作码
-	SetContext(ctx any) Packet
-
-	// GetContext 获取数据包上下文
-	GetContext() any
+func NewPacketD(data []byte) *Packet {
+	return &Packet{data: data}
 }
 
-type packet struct {
-	ctx  any
-	data []byte
+func NewPacketC(ctx any) *Packet {
+	return &Packet{ctx: ctx}
 }
 
-func (m *packet) init(data []byte) Packet {
-	m.data = data
-	return m
+func NewPacketDC(data []byte, ctx any) *Packet {
+	return &Packet{
+		data: data,
+		ctx:  ctx,
+	}
 }
 
-func (m *packet) reset() {
-	m.ctx = nil
-	m.data = m.data[:0]
+type Packet struct {
+	data []byte // 数据包数据
+	ctx  any    // 数据包上下文
 }
 
-func (m *packet) GetBytes() []byte {
-	return m.data
+func (p *Packet) SetData(data []byte) *Packet {
+	p.data = data
+	return p
 }
 
-func (m *packet) SetContext(ctx any) Packet {
-	m.ctx = ctx
-	return m
+func (p *Packet) SetContext(ctx any) *Packet {
+	p.ctx = ctx
+	return p
 }
 
-func (m *packet) GetContext() any {
-	return m.ctx
+func (p *Packet) Data() []byte {
+	return p.data
+}
+
+func (p *Packet) Context() any {
+	return p.ctx
 }
