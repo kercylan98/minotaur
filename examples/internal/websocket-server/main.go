@@ -1,26 +1,30 @@
 package main
 
 import (
-	"github.com/kercylan98/minotaur/core/transport"
-	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/fiber/v2"
+	"github.com/kercylan98/minotaur/engine/stream"
+	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
-type WebSocketService struct {
-}
-
-func (s *WebSocketService) OnInit(kit *transport.GNETKit) {
-	kit.ConnectionPacketHook(s.onConnectionPacket)
-}
-
-func (s *WebSocketService) onConnectionPacket(kit *transport.GNETKit, conn *transport.Conn, packet transport.Packet) error {
-	conn.WritePacket(packet) // echo
-	return nil
-}
-
 func main() {
-	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithModule(transport.NewWebSocket(":8877", "/ws").BindService(new(WebSocketService)))
-	})
+	system := vivid.NewActorSystem()
 
-	system.ShutdownGracefully()
+	fiberApp := fiber.New()
+	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
+		var writer vivid.ActorRef
+		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
+			switch m := ctx.Message().(type) {
+			case stream.Writer:
+				writer = m
+				ctx.Tell(writer, stream.NewPacketDC([]byte("Hello!"), websocket.TextMessage))
+			case *stream.Packet:
+				ctx.Tell(writer, m) // echo
+			}
+		}))
+	})))
+
+	if err := fiberApp.Listen(":8888"); err != nil {
+		panic(err)
+	}
 }
