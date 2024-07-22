@@ -18,7 +18,7 @@ func (f *FiberWebSocketWrapper) Write(packet *stream.Packet) error {
 	return f.WriteMessage(packet.Context().(int), packet.Data())
 }
 
-func TestConn(t *testing.T) {
+func TestStream(t *testing.T) {
 	system := vivid.NewActorSystem()
 
 	fiberApp := fiber.New()
@@ -36,6 +36,7 @@ func TestConn(t *testing.T) {
 			err error
 		)
 
+		// 危险：非并发安全
 		ref := system.ActorOfF(func() vivid.Actor {
 			return stream.New(&FiberWebSocketWrapper{c}, stream.FunctionalConfigurator(func(c *stream.Configuration) {
 				var writer vivid.ActorRef
