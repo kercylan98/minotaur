@@ -19,12 +19,10 @@ var (
 //   - 这应该是一个可以池化的对象
 func newActorDescriptor() *ActorDescriptor {
 	return &ActorDescriptor{
-		mailboxProvider:    GetDefaultMailboxProvider(),
-		dispatcherProvider: GetDefaultDispatcherProvider(),
-		persistenceStorageProvider: persistence.FunctionalStorageProvider(func() persistence.Storage {
-			return persistence.NewMemoryStorage()
-		}),
-		persistenceEventThreshold: DefaultPersistenceEventThreshold,
+		mailboxProvider:            GetDefaultMailboxProvider(),
+		dispatcherProvider:         GetDefaultDispatcherProvider(),
+		persistenceStorageProvider: GetDefaultPersistenceStorageProvider(),
+		persistenceEventThreshold:  DefaultPersistenceEventThreshold,
 	}
 }
 
