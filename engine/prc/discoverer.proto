@@ -8,5 +8,6 @@ message DiscovererState {
 
 message DiscovererMetadata {
   string rc_physical_address = 1; // 资源控制器物理地址（通常为内网地址）
+  int64 launch_at = 2; // 启动时间（毫秒级）
   map<string, string> user_metadata = 1000; // 用户自定义元数据
 }

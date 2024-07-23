@@ -46,6 +46,7 @@ func (d *Discoverer) Discover() error {
 	config.Name = d.config.name
 	config.BindAddr, config.BindPort = d.bindAddr, d.bindPort
 	config.AdvertisePort = config.BindPort
+	d.metadata.LaunchAt = time.Now().UnixMilli()
 	if d.config.advertiseAddr != "" {
 		config.AdvertiseAddr = d.config.advertiseAddr
 	}
@@ -80,6 +81,7 @@ func (d *Discoverer) Leave() {
 	}
 }
 
+// GetNodes 获取集群中的所有节点
 func (d *Discoverer) GetNodes() []*DiscoverNode {
 	members := d.memberlist.Members()
 	nodes := make([]*DiscoverNode, len(members))

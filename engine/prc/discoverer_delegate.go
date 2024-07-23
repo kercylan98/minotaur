@@ -47,5 +47,5 @@ func (d *discovererDelegate) LocalState(join bool) []byte {
 }
 
 func (d *discovererDelegate) MergeRemoteState(buf []byte, join bool) {
-
+	// 应同步集群内 Actor 状态
 }
