@@ -22,3 +22,16 @@ message GenerateRemoteActor {
 message GenerateRemoteActorResult {
   prc.ProcessId pid = 1;
 }
+
+// Terminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
+message Terminated {
+  prc.ProcessId terminated_process = 1;
+}
+
+message Watch {
+
+}
+
+message Unwatch {
+
+}

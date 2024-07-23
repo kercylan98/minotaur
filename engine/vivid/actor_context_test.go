@@ -241,3 +241,67 @@ func TestActorDescriptor_WithPersistence(t *testing.T) {
 
 	system.Shutdown(true)
 }
+
+func TestActorContext_Watch(t *testing.T) {
+	t.Run("watch_running", func(t *testing.T) {
+		wait := new(sync.WaitGroup)
+		wait.Add(1)
+		system := vivid.NewActorSystem()
+		refA := system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				// none
+			})
+		})
+
+		system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch m := ctx.Message().(type) {
+				case *vivid.OnLaunch:
+					ctx.Watch(refA)
+				case *vivid.OnTerminated:
+					if m.TerminatedActor.Equal(refA) {
+						wait.Done()
+					}
+				}
+			})
+		})
+
+		system.Terminate(refA, false)
+
+		wait.Wait()
+		system.Shutdown(true)
+	})
+
+	t.Run("watch_terminated", func(t *testing.T) {
+		wait := new(sync.WaitGroup)
+		wait.Add(1)
+		system := vivid.NewActorSystem()
+		refA := system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch m := ctx.Message().(type) {
+				case time.Duration: // 确保消息进入
+					// [block < terminate < watch]
+					ctx.Terminate(ctx.Ref(), true)
+					time.Sleep(m)
+				}
+			})
+		})
+
+		system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch m := ctx.Message().(type) {
+				case *vivid.OnLaunch:
+					ctx.Tell(refA, time.Second)
+					ctx.Watch(refA)
+				case *vivid.OnTerminated:
+					if m.TerminatedActor.Equal(refA) {
+						wait.Done()
+					}
+				}
+			})
+		})
+
+		wait.Wait()
+		system.Shutdown(true)
+	})
+}

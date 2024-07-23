@@ -60,3 +60,7 @@ func (ref *ProcessRef) GetId() *ProcessId {
 		ClusterName:     ref.id.ClusterName,
 	}
 }
+
+func (ref *ProcessRef) Equal(r *ProcessRef) bool {
+	return ref.id.Equal(r.id)
+}

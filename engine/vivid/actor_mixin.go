@@ -109,3 +109,12 @@ type mixinPersistence interface {
 	// ClearPersistence 清除持久化数据
 	ClearPersistence()
 }
+
+// mixinWatcher 是一个混入类型接口，它定义了支持观察与被观察生命周期的 Actor 需要满足的接口。
+type mixinWatcher interface {
+	// Watch 监听特定 Actor 生命周期的结束
+	Watch(target ActorRef)
+
+	// UnWatch 取消对特定 Actor 生命周期结束的监听
+	UnWatch(target ActorRef)
+}

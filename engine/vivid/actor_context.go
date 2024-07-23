@@ -27,9 +27,9 @@ const (
 
 const (
 	actorStatusAlive       uint32 = iota // Actor 存活状态
+	actorStatusRestarting                // Actor 正在重启
 	actorStatusTerminating               // Actor 正在终止
 	actorStatusTerminated                // Actor 已终止
-	actorStatusRestarting                // Actor 正在重启
 )
 
 // ActorContext 是一个 Actor 完整的上下文，也是对外暴露的可用接口。
@@ -40,6 +40,7 @@ type ActorContext interface {
 	mixinWorker
 	mixinScheduler
 	mixinPersistence
+	mixinWatcher
 }
 
 var _ ActorContext = (*actorContext)(nil)
@@ -110,6 +111,30 @@ type actorContext struct {
 	persistenceStorageProvider persistence.StorageProvider     // 持久化存储器提供者
 	persistenceEventThreshold  int                             // 持久化事件数量阈值
 	persistenceRecovering      bool                            // 持久化恢复中
+	watchers                   map[string]ActorRef             // 观察该 Actor 的观察者们
+}
+
+func (ctx *actorContext) Watch(target ActorRef) {
+	ctx.system.rc.GetProcess(target).DeliverySystemMessage(target, ctx.ref, nil, &messages.Watch{})
+}
+
+func (ctx *actorContext) UnWatch(target ActorRef) {
+	ctx.system.rc.GetProcess(target).DeliverySystemMessage(target, ctx.ref, nil, &messages.Unwatch{})
+}
+
+func (ctx *actorContext) onWatch(m *messages.Watch) {
+	if ctx.status.Load() >= actorStatusTerminating {
+		ctx.system.rc.GetProcess(ctx.sender).DeliverySystemMessage(ctx.sender, ctx.ref, nil, &messages.Terminated{TerminatedProcess: ctx.ref.GetId()})
+	} else {
+		if ctx.watchers == nil {
+			ctx.watchers = make(map[string]ActorRef)
+		}
+		ctx.watchers[ctx.sender.URL().String()] = ctx.sender
+	}
+}
+
+func (ctx *actorContext) onUnWatch(m *messages.Unwatch) {
+	delete(ctx.watchers, ctx.sender.URL().String())
 }
 
 func (ctx *actorContext) CastMessage(message Message) {
@@ -375,7 +400,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.processMessage(sender, receiver, m, false)
 	case *OnTerminate:
 		ctx.onTerminate(m.Gracefully)
-	case *Terminated: // 转换为 OnTerminated
+	case *messages.Terminated: // 转换为 OnTerminated
 		ctx.onTerminated(&OnTerminated{TerminatedActor: prc.NewProcessRef(m.TerminatedProcess)})
 	case *onRestartMessage:
 		ctx.onRestart()
@@ -385,6 +410,10 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.onCrossAccidentRecordProcess(m)
 	case *messages.GenerateRemoteActor:
 		ctx.onGenerateRemoteActor(m)
+	case *messages.Watch:
+		ctx.onWatch(m)
+	case *messages.Unwatch:
+		ctx.onUnWatch(m)
 	}
 }
 
@@ -706,8 +735,16 @@ func (ctx *actorContext) tryTerminated() {
 
 	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
 
+	// 通知消息
+	notifyMessage := &messages.Terminated{TerminatedProcess: ctx.ref.GetId()}
+	// 通知监听者
+	for _, ref := range ctx.watchers {
+		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, notifyMessage)
+	}
+
+	// 通知父 Actor
 	if ctx.parentRef != nil {
-		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, &Terminated{TerminatedProcess: ctx.ref.GetId()})
+		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, notifyMessage)
 	} else {
 		close(ctx.system.closed)
 	}

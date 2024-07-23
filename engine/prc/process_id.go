@@ -47,3 +47,17 @@ func (pid *ProcessId) URL() *url.URL {
 	}
 	return u
 }
+
+// Equal 比较两个进程 ID 是否相同
+func (pid *ProcessId) Equal(id *ProcessId) bool {
+	if pid.PhysicalAddress != id.PhysicalAddress {
+		return false
+	}
+	if pid.LogicalAddress != id.LogicalAddress {
+		return false
+	}
+	if pid.ClusterName != id.ClusterName {
+		return false
+	}
+	return true
+}
