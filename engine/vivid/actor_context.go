@@ -15,6 +15,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"reflect"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -257,7 +258,11 @@ func (ctx *actorContext) ReportAbnormal(reason Message) {
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onSuspendMailbox)
 
 	// 产生事故记录
-	record := supervision.NewAccidentRecord(ctx.sender, ctx.ref, nil, ctx.message, reason, ctx.supervisorStrategy, ctx.accidentState)
+	var stack []byte
+	if ctx.system.config.accidentTrace {
+		stack = debug.Stack()
+	}
+	record := supervision.NewAccidentRecord(ctx.sender, ctx.ref, nil, ctx.message, reason, ctx.supervisorStrategy, ctx.accidentState, stack)
 
 	// 用户日志记录器
 	for _, logger := range ctx.supervisorLoggers {

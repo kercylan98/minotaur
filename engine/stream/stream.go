@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"github.com/gofiber/contrib/websocket"
 	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
@@ -9,6 +8,12 @@ type Stream interface {
 	Write(packet *Packet) error
 
 	Close() error
+}
+
+type WriterCreatedHook interface {
+	Stream
+
+	OnWriterCreated(writer Writer)
 }
 
 func NewStream(conn Stream, configurator ...Configurator) *Actor {
@@ -54,6 +59,10 @@ func (c *Actor) onLaunch(ctx vivid.ActorContext) {
 		c.config.performance.Perform(ctx)
 	}
 	ctx.Tell(ctx.Ref(), c.writer)
+
+	if hook, ok := c.stream.(WriterCreatedHook); ok {
+		hook.OnWriterCreated(c.writer)
+	}
 }
 
 func (c *Actor) onError(ctx vivid.ActorContext, err error) {
@@ -70,8 +79,4 @@ func (c *Actor) onTerminate(ctx vivid.ActorContext) {
 	if c.config.performance != nil {
 		c.config.performance.Perform(ctx)
 	}
-	if fiberConn, ok := c.stream.(*fiberWebSocketWrapper); ok {
-		_ = fiberConn.WriteMessage(websocket.CloseMessage, nil)
-	}
-	_ = c.stream.Close()
 }

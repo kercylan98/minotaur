@@ -15,6 +15,9 @@ func (g *guard) OnReceive(ctx ActorContext) {
 	case *OnLaunch:
 		g.Strategy = supervision.OneForOne(10, time.Millisecond*200, time.Second*3, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
 			ctx.System().Logger().Warn("ActorSystem", log.String("info", "unsupervised accidents"), log.String("actor", record.Victim.LogicalAddress()), log.Any("reason", record.Reason))
+			if len(record.Stack) > 0 {
+				ctx.System().Logger().Error("trace", log.StackData("stack", record.Stack))
+			}
 			return supervision.DirectiveRestart
 		}))
 	}

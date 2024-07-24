@@ -27,6 +27,7 @@ func newActorSystemConfiguration() *ActorSystemConfiguration {
 		persistenceStorageProviderTable: map[persistence.StorageProviderName]persistence.StorageProvider{
 			GetDefaultPersistenceStorageProvider().GetStorageProviderName(): GetDefaultPersistenceStorageProvider(),
 		},
+		accidentTrace: true,
 	}
 }
 
@@ -43,6 +44,13 @@ type ActorSystemConfiguration struct {
 	persistenceStorageProviderTable  map[persistence.StorageProviderName]persistence.StorageProvider // 存储提供者表
 	clusterJoinNodes                 []prc.PhysicalAddress                                           // 服务发现默认加入的节点
 	clusterBindAddress               prc.PhysicalAddress                                             // 服务发现绑定的地址
+	accidentTrace                    bool                                                            // 事故堆栈追踪
+}
+
+// WithAccidentTrace 开启事故堆栈追踪
+func (c *ActorSystemConfiguration) WithAccidentTrace() *ActorSystemConfiguration {
+	c.accidentTrace = true
+	return c
 }
 
 // WithPersistenceStorageProvider 设置持久化存储提供者

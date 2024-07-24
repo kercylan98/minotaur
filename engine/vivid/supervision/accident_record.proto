@@ -15,6 +15,7 @@ message CrossAccidentRecord  {
   string reason = 5; // 事故原因
   string strategy = 6; // 监管策略名称（如果是远程监管，那么需要确保监管策略在远程方是已注册的）
   CrossAccidentState state = 7; // 事故状态
+  bytes Stack = 8; // 堆栈
 }
 
 message CrossAccidentState {

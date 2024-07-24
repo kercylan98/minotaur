@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -278,6 +279,21 @@ func (h *Handler) formatAttrValue(ctx context.Context, level slog.Level, fullKey
 			builder.WriteString(strconv.Quote(string(data)))
 		case []byte:
 			builder.WriteString(strconv.Quote(*(*string)(unsafe.Pointer(&v))))
+		case stack:
+			if len(v) == 0 {
+				builder.WriteString("<none>")
+			} else {
+				lines := strings.Split(string(v), "\n")
+				builder.WriteString(fmt.Sprintf("lines(%d)", len(lines)))
+				if h.opts.TrackBeautify {
+					for _, line := range lines {
+						builder.WriteToEnd('\n')
+						builder.WriteStringToEnd(line)
+					}
+					builder.WriteToEnd('\n')
+				}
+			}
+
 		default:
 			//builder.WriteString(strconv.Quote(fmt.Sprintf("%+v", attr.Value.Any())))
 			builder.WriteString(string(toolkit.MarshalJSON(attr.Value.Any())))

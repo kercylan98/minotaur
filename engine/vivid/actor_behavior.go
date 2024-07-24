@@ -6,4 +6,4 @@ type ActorBehavior = behavior.Behavior[ActorContext]
 
 type ActorPerformance = behavior.Performance[ActorContext]
 
-type ActorFunctionalPerformance = behavior.FunctionalPerformance[ActorContext]
+type FunctionalActorPerformance = behavior.FunctionalPerformance[ActorContext]

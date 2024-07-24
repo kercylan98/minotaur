@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func NewAccidentRecord(primeCulprit, victim *prc.ProcessRef, supervisor Supervisor, message, reason prc.Message, strategy Strategy, state *AccidentState) *AccidentRecord {
+func NewAccidentRecord(primeCulprit, victim *prc.ProcessRef, supervisor Supervisor, message, reason prc.Message, strategy Strategy, state *AccidentState, stack []byte) *AccidentRecord {
 	return &AccidentRecord{
 		PrimeCulprit: primeCulprit,
 		Victim:       victim,
@@ -18,6 +18,7 @@ func NewAccidentRecord(primeCulprit, victim *prc.ProcessRef, supervisor Supervis
 		Reason:       reason,
 		Strategy:     strategy,
 		State:        state,
+		Stack:        stack,
 	}
 }
 
@@ -30,6 +31,7 @@ type AccidentRecord struct {
 	Reason       prc.Message     // 事故原因
 	Strategy     Strategy        // 受害人携带的监督策略，应由责任人执行
 	State        *AccidentState  // 事故状态
+	Stack        []byte          // 事件堆栈
 }
 
 // CrossAccidentRecord 转换为支持跨网络传输的事故记录
@@ -49,6 +51,7 @@ func (ar *AccidentRecord) CrossAccidentRecord(strategyName StrategyName, shared 
 		State: &CrossAccidentState{
 			AccidentTimes: make([]*timestamppb.Timestamp, len(ar.State.accidentTimes)),
 		},
+		Stack: ar.Stack,
 	}
 
 	for _, t := range ar.State.accidentTimes {
@@ -84,6 +87,7 @@ func (car *CrossAccidentRecord) AccidentRecord(supervisor Supervisor, shared *pr
 		State: &AccidentState{
 			accidentTimes: make([]time.Time, len(car.State.AccidentTimes)),
 		},
+		Stack: car.Stack,
 	}
 	for _, t := range car.State.AccidentTimes {
 		ar.State.accidentTimes = append(ar.State.accidentTimes, t.AsTime())

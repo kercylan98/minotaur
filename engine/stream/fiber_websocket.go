@@ -3,6 +3,7 @@ package stream
 import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 )
@@ -17,19 +18,27 @@ import (
 func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configurator ...Configurator) fiber.Handler {
 	// 创建服务器 Actor
 	server := system.ActorOfF(func() vivid.Actor {
+		wrappers := make(map[prc.LogicalAddress]*fiberWebSocketWrapper)
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
 			case *websocket.Conn:
-				wrapper := &fiberWebSocketWrapper{m}
-				ref := ctx.ActorOfF(func() vivid.Actor {
+				wrapper := &fiberWebSocketWrapper{system: system, Conn: m, closed: make(chan struct{})}
+				wrapper.streamRef = ctx.ActorOfF(func() vivid.Actor {
 					return NewStream(wrapper, configurator...)
 				}, func(descriptor *vivid.ActorDescriptor) {
 					descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
 						return supervision.StopStrategy()
 					}))
 				})
-				ctx.Tell(ref, m)
-				ctx.Reply(ref)
+				wrappers[wrapper.streamRef.LogicalAddress()] = wrapper
+				ctx.Reply(wrapper)
+			case *vivid.OnTerminated:
+				key := m.TerminatedActor.LogicalAddress()
+				wrapper, exist := wrappers[key]
+				if exist {
+					close(wrapper.closed)
+					delete(wrappers, key)
+				}
 			}
 		})
 	})
@@ -42,15 +51,14 @@ func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configu
 
 	// 定义连接 Reader Actor
 	handler := websocket.New(func(conn *websocket.Conn) {
-		message, err := system.FutureAsk(server, conn).Result()
+		message, err := system.FutureAsk(server, conn, -1).Result()
 		if err != nil {
 			return
 		}
-		stream, ok := message.(vivid.ActorRef)
+		wrapper, ok := message.(*fiberWebSocketWrapper)
 		if !ok {
 			return
 		}
-		defer system.Terminate(stream, true)
 
 		var (
 			mt  int
@@ -58,11 +66,12 @@ func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configu
 		)
 		for {
 			if mt, msg, err = conn.ReadMessage(); err != nil {
-				system.Tell(stream, err)
+				system.Tell(wrapper.streamRef, err)
 				break
 			}
-			system.Tell(stream, NewPacketDC(msg, mt))
+			system.Tell(wrapper.streamRef, NewPacketDC(msg, mt))
 		}
+		<-wrapper.closed
 	})
 
 	// 返回 Upgrader 函数

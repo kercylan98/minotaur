@@ -14,6 +14,8 @@ func (w *streamWriter) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *Packet:
 		w.onPacket(ctx, m)
+	case *vivid.OnTerminate:
+		_ = w.stream.Close()
 	}
 }
 

@@ -14,7 +14,7 @@ func TestStream(t *testing.T) {
 	fiberApp := fiber.New()
 	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
 		var writer vivid.ActorRef
-		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
+		c.WithPerformance(vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
 			case stream.Writer:
 				writer = m

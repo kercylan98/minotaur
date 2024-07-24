@@ -11,7 +11,7 @@ func main() {
 
 	if err := gnet.Run(stream.NewGNETEventHandler(system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
 		var writer stream.Writer
-		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
+		c.WithPerformance(vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
 			case stream.Writer:
 				writer = m

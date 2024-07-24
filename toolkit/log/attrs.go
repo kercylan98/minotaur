@@ -248,7 +248,12 @@ func Group(key string, args ...any) Attr {
 
 // Stack 返回堆栈字段
 func Stack(key string) Attr {
-	return slog.Any(key, debug.Stack())
+	return slog.Any(key, stack(debug.Stack()))
+}
+
+// StackData 返回堆栈字段
+func StackData(key string, data []byte) Attr {
+	return slog.Any(key, stack(data))
 }
 
 // Err 构造一个带有错误值的字段
