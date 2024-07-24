@@ -3,7 +3,7 @@ package manager
 import (
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	"github.com/kercylan98/minotaur/examples/internal/chat-room/internal/room"
+	"github.com/kercylan98/minotaur/examples/internal/chat-room/internal/manager/room"
 	"github.com/kercylan98/minotaur/toolkit/log"
 )
 
