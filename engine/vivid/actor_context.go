@@ -170,6 +170,13 @@ func (ctx *actorContext) StateChanged(event Message) int {
 	return num
 }
 
+func (ctx *actorContext) StateChangeEventApply(event Message) {
+	curr := ctx.Message()
+	ctx.CastMessage(event)
+	defer ctx.CastMessage(curr)
+	ctx.actor.OnReceive(ctx)
+}
+
 func (ctx *actorContext) SaveSnapshot(snapshot Message) {
 	if ctx.persistenceRecovering {
 		return
@@ -395,8 +402,8 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case onSchedulerFunc:
 		m()
 	case *OnLaunch:
-		ctx.processMessage(sender, receiver, m, false)
 		ctx.recoveryPersistence()
+		ctx.processMessage(sender, receiver, m, false)
 	case *OnRestarted:
 		ctx.processMessage(sender, receiver, m, false)
 	case *OnTerminate:

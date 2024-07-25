@@ -100,6 +100,9 @@ type mixinPersistence interface {
 	// StateChanged 记录导致状态变更的事件，该函数将返回当前 Actor 的事件数量。
 	StateChanged(event Message) int
 
+	// StateChangeEventApply 将事件应用到 Actor 的状态上，通过该函数可以使得在状态回放时绕过业务逻辑的校验，它将当前消息转换为事件后重新对 Actor.OnReceive 发起调用以应用状态。
+	StateChangeEventApply(event Message)
+
 	// SaveSnapshot 保存快照，该函数将会清空当前 Actor 的事件记录。
 	SaveSnapshot(snapshot Message)
 
