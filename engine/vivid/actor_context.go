@@ -184,13 +184,9 @@ func (ctx *actorContext) initScheduler() {
 	})
 }
 
-func (ctx *actorContext) Future(timeout ...time.Duration) future.Future {
-	var t time.Duration
-	if len(timeout) > 0 {
-		t = timeout[0]
-	}
+func (ctx *actorContext) nextChildGuid() uint64 {
 	ctx.childGuid++
-	return future.New(ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.childGuid)), t)
+	return ctx.childGuid
 }
 
 func (ctx *actorContext) CronTask(name, expression string, function func(ctx ActorContext)) error {
@@ -444,13 +440,13 @@ func (ctx *actorContext) Ask(target ActorRef, message Message) {
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, ctx.ref, nil, message)
 }
 
-func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future {
+func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future[Message] {
 	var t = DefaultFutureAskTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	ctx.childGuid++
-	f := ctx.Future(t)
+
+	f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), t)
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }
@@ -527,8 +523,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 
 	// 名称及前缀初始化
 	if descriptor.name == charproc.None {
-		ctx.childGuid++
-		descriptor.name = convert.Uint64ToString(ctx.childGuid)
+		descriptor.name = convert.Uint64ToString(ctx.nextChildGuid())
 	}
 	if descriptor.namePrefix != charproc.None {
 		descriptor.name = descriptor.namePrefix + "-" + descriptor.name
@@ -555,7 +550,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 
 		remoteRef := prc.NewProcessRef(prc.NewClusterProcessId(node.Metadata().UserMetadata[actorSystemClusterName], node.Metadata().RcPhysicalAddress, "/"))
 
-		f := ctx.Future()
+		f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
 		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
 
 		ref, err := f.Result()

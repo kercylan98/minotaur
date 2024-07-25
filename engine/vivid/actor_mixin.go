@@ -55,9 +55,6 @@ type mixinWorker interface {
 
 	// ReportAbnormal 报告异常，该函数将触发事故向监管者传递
 	ReportAbnormal(reason Message)
-
-	// Future 创建一个 Future 对象，用于异步行为，默认情况下该 Future 不会超时。
-	Future(timeout ...time.Duration) future.Future
 }
 
 // mixinDeliver 是一个混入类型接口，它定义了作为 Actor 消息发送者需要满足的接口。
@@ -70,7 +67,7 @@ type mixinDeliver interface {
 
 	// FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 future.Future 对象，可被用于获取响应消息
 	//  - 当 timeout 参数为空时，将会使用默认的超时时间 DefaultFutureAskTimeout
-	FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future
+	FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future[Message]
 
 	// Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
 	//  - 子级的子级不会收到广播消息

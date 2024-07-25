@@ -94,7 +94,7 @@ func (sys *ActorSystem) Ask(target ActorRef, message Message) {
 
 // FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 future.Future 对象，可被用于获取响应消息
 //   - 当 timeout 参数为空时，将会使用默认的超时时间 DefaultFutureAskTimeout
-func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future {
+func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future[Message] {
 	return sys.guard.FutureAsk(target, message, timeout...)
 }
 
