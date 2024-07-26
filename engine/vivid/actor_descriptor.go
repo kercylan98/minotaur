@@ -60,7 +60,7 @@ func (d *ActorDescriptor) WithPersistenceName(name persistence.Name) *ActorDescr
 	return d
 }
 
-// WithPersistenceStorageProvider 设置持久化存储提供者
+// WithPersistenceStorageProvider 设置持久化存储器提供者
 func (d *ActorDescriptor) WithPersistenceStorageProvider(provider persistence.StorageProvider) *ActorDescriptor {
 	d.persistenceStorageProvider = provider
 	return d

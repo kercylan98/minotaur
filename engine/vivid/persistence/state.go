@@ -36,6 +36,9 @@ func (s *State) EventCount() int {
 }
 
 func (s *State) Persist() error {
+	if s.snapshot == nil && len(s.events) == 0 {
+		return nil
+	}
 	return s.config.storage.Save(s.name, s.snapshot, s.events)
 }
 func (s *State) Load() (snapshot Snapshot, events []Event, err error) {
