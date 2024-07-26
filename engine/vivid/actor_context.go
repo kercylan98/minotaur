@@ -402,8 +402,8 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case onSchedulerFunc:
 		m()
 	case *OnLaunch:
-		ctx.recoveryPersistence()
 		ctx.processMessage(sender, receiver, m, false)
+		ctx.recoveryPersistence()
 	case *OnRestarted:
 		ctx.processMessage(sender, receiver, m, false)
 	case *OnTerminate:
