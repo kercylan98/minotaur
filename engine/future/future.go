@@ -42,24 +42,20 @@ func New[M prc.Message](rc *prc.ResourceController, id *prc.ProcessId, timeout t
 		timeout: timeout,
 	}
 
-	var exist bool
-	fp.ref, exist = rc.Register(id, fp)
-	if exist {
-		panic("future process already exist")
-	}
+	fp.ref, _ = rc.Register(id, fp)
 	return fp
 }
 
 type futureProcess[M prc.Message] struct {
 	rc            *prc.ResourceController
 	ref           *prc.ProcessRef
+	timer         *time.Timer
 	done          chan struct{}
-	closed        atomic.Bool
-	timeout       time.Duration
 	message       any
 	err           error
-	timer         *time.Timer
+	timeout       time.Duration
 	forwards      []*prc.ProcessRef
+	closed        atomic.Bool
 	forwardsMutex sync.Mutex
 }
 
@@ -151,7 +147,7 @@ func (f *futureProcess[M]) IsTerminated() bool {
 }
 
 func (f *futureProcess[M]) Terminate(source *prc.ProcessRef) {
-	close(f.done)
+	// 不做什么
 }
 
 func (f *futureProcess[M]) Close(reason error) {
@@ -159,6 +155,7 @@ func (f *futureProcess[M]) Close(reason error) {
 		return
 	}
 	f.err = reason
+	close(f.done)
 	if f.timer != nil {
 		f.timer.Stop()
 	}
