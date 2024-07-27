@@ -458,6 +458,11 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 	return f
 }
 
+func (ctx *actorContext) AwaitForward(target ActorRef, asyncFunc func() Message) {
+	f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
+	f.AwaitForward(target, asyncFunc)
+}
+
 func (ctx *actorContext) Broadcast(message Message) {
 	for _, child := range ctx.children {
 		ctx.Ask(child, message)

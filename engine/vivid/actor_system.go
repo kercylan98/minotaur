@@ -98,6 +98,11 @@ func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, timeout ...t
 	return sys.guard.FutureAsk(target, message, timeout...)
 }
 
+// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
+func (sys *ActorSystem) AwaitForward(target ActorRef, asyncFunc func() Message) {
+	sys.guard.AwaitForward(target, asyncFunc)
+}
+
 // Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
 //   - 子级的子级不会收到广播消息
 func (sys *ActorSystem) Broadcast(message Message) {

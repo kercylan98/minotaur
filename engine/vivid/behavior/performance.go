@@ -13,3 +13,11 @@ type FunctionalPerformance[T any] func(ctx T)
 func (f FunctionalPerformance[T]) Perform(ctx T) {
 	f(ctx)
 }
+
+// FunctionalStatefulPerformance 函数式有状态的行为表现
+type FunctionalStatefulPerformance[T any] func() Performance[T]
+
+// Stateful 将其状态化
+func (f FunctionalStatefulPerformance[T]) Stateful() Performance[T] {
+	return f()
+}

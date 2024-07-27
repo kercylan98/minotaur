@@ -72,6 +72,9 @@ type mixinDeliver interface {
 	// Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
 	//  - 子级的子级不会收到广播消息
 	Broadcast(message Message)
+
+	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
+	AwaitForward(target ActorRef, asyncFunc func() Message)
 }
 
 // mixinRecipient 是一个混入类型接口，它定义了作为 Actor 接收者需要满足的接口。
