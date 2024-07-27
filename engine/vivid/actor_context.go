@@ -402,8 +402,8 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case onSchedulerFunc:
 		m()
 	case *OnLaunch:
-		ctx.recoveryPersistence()
 		ctx.processMessage(sender, receiver, m, false)
+		ctx.recoveryPersistence()
 	case *OnRestarted:
 		ctx.processMessage(sender, receiver, m, false)
 	case *OnTerminate:
@@ -653,7 +653,7 @@ func (ctx *actorContext) tryRestarted() {
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 	ctx.processMessage(ctx.sender, ctx.ref, &OnTerminated{ctx.ref}, false)
 
-	ctx.persistence()
+	ctx.internalPersistence()
 
 	ctx.actor = ctx.provider.Provide()
 	if ctx.scheduler != nil {
@@ -719,11 +719,18 @@ func (ctx *actorContext) recoveryPersistence() {
 	}
 }
 
-func (ctx *actorContext) persistence() {
+func (ctx *actorContext) Persistence() error {
 	if ctx.persistenceState != nil {
 		if err := ctx.persistenceState.Persist(); err != nil {
-			ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+			return err
 		}
+	}
+	return nil
+}
+
+func (ctx *actorContext) internalPersistence() {
+	if err := ctx.Persistence(); err != nil {
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
 	}
 }
 
@@ -732,7 +739,7 @@ func (ctx *actorContext) tryTerminated() {
 		return
 	}
 
-	ctx.persistence()
+	ctx.internalPersistence()
 
 	if !ctx.status.CompareAndSwap(actorStatusTerminating, actorStatusTerminated) {
 		return

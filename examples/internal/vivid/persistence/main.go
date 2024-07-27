@@ -22,10 +22,7 @@ func (a *MyActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *vivid.OnLaunch:
 		// 初始化状态
-		if a.counter == nil {
-			a.counter = &CounterSnapshot{}
-		}
-		fmt.Println("启动完成", a.counter.Count)
+		a.counter = &CounterSnapshot{}
 	case *CounterSnapshot:
 		a.counter = m
 	case *CounterChangeEvent:
@@ -42,6 +39,9 @@ func (a *MyActor) OnReceive(ctx vivid.ActorContext) {
 		ctx.SaveSnapshot(a.counter)
 	case error:
 		ctx.ReportAbnormal(m) // 模拟崩溃
+	case string:
+		// 测试当前值
+		fmt.Println("当前值", a.counter.Count)
 	}
 }
 
@@ -55,6 +55,7 @@ func main() {
 		system.Tell(ref, i)
 	}
 	system.Tell(ref, errors.New("panic"))
+	system.Tell(ref, "test")
 
 	system.Shutdown(true)
 }

@@ -111,6 +111,9 @@ type mixinPersistence interface {
 
 	// ClearPersistence 清除持久化数据
 	ClearPersistence()
+
+	// Persistence 主动进行状态的持久化，将存储的事件及快照应用到存储器中
+	Persistence() error
 }
 
 // mixinWatcher 是一个混入类型接口，它定义了支持观察与被观察生命周期的 Actor 需要满足的接口。
