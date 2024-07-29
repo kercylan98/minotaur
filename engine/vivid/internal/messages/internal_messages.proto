@@ -17,6 +17,8 @@ message GenerateRemoteActor {
   string persistence_storage_provider_name = 107;
   string persistence_name = 108;
   int32 persistence_event_threshold = 109;
+  int64 slow_process_duration = 110;
+  repeated prc.ProcessId slow_process_receivers = 111;
 }
 
 message GenerateRemoteActorResult {
@@ -34,4 +36,9 @@ message Watch {
 
 message Unwatch {
 
+}
+
+message SlowProcess {
+  int64 duration = 1; // 耗时
+  prc.ProcessId pid = 2; // 耗时进程
 }

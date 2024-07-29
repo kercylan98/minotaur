@@ -1,6 +1,9 @@
 package vivid
 
-import "github.com/kercylan98/minotaur/engine/prc"
+import (
+	"github.com/kercylan98/minotaur/engine/prc"
+	"time"
+)
 
 var (
 	onTerminate           = &OnTerminate{}
@@ -42,6 +45,11 @@ type (
 
 	// OnPersistenceSnapshot 当 Actor 的事件数量超过持久化事件数量阈值时，将会触发快照的持久化，收到该消息时应主动调用 SaveSnapshot 函数保存快照。
 	OnPersistenceSnapshot int8
+
+	OnSlowProcess struct {
+		Duration time.Duration // 处理耗时
+		ActorRef ActorRef      // 慢处理 Actor 引用
+	}
 )
 
 type Message = prc.Message

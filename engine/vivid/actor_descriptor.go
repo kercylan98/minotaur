@@ -41,6 +41,18 @@ type ActorDescriptor struct {
 	persistenceStorageProvider  persistence.StorageProvider  // 持久化存储提供者
 	persistenceName             persistence.Name             // 持久化名称
 	persistenceEventThreshold   int                          // 持久化事件数量阈值
+	slowProcessingDuration      time.Duration                // 慢处理时间
+	slowProcessReceivers        []ActorRef                   // 慢处理消息接收人
+}
+
+// WithSlowProcessingDuration 设置慢处理时间
+//   - 当 duration > 0 且消息处理耗时超过该值时，将会打印一条警告日志，并且你可以设置接收人来处理 OnSlowProcess 消息以取代日志行为
+func (d *ActorDescriptor) WithSlowProcessingDuration(duration time.Duration, receivers ...ActorRef) *ActorDescriptor {
+	if duration > 0 {
+		d.slowProcessingDuration = duration
+		d.slowProcessReceivers = receivers
+	}
+	return d
 }
 
 // WithPersistenceEventThreshold 设置持久化事件数量阈值

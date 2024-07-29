@@ -113,6 +113,8 @@ type actorContext struct {
 	persistenceEventThreshold  int                             // 持久化事件数量阈值
 	persistenceRecovering      bool                            // 持久化恢复中
 	watchers                   map[string]ActorRef             // 观察该 Actor 的观察者们
+	slowProcessDuration        time.Duration                   // 慢处理时长
+	slowProcessReceivers       []ActorRef                      // 慢处理消息接收人
 }
 
 func (ctx *actorContext) Watch(target ActorRef) {
@@ -422,16 +424,46 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.onWatch(m)
 	case *messages.Unwatch:
 		ctx.onUnWatch(m)
+	case *messages.SlowProcess: // 转换为 OnSlowProcess
+		ctx.processMessage(sender, receiver, &OnSlowProcess{Duration: time.Duration(m.Duration), ActorRef: prc.NewProcessRef(m.Pid)}, false)
+	}
+}
+
+func (ctx *actorContext) slowProcess() func() {
+	startAt := time.Now()
+	return func() {
+		cost := time.Since(startAt)
+		if cost >= ctx.slowProcessDuration {
+			if len(ctx.slowProcessReceivers) == 0 {
+				ctx.system.Logger().Warn("ActorSystem", log.String("info", "slow process"), log.String("cost", cost.String()), log.String("actor", ctx.ref.URL().String()))
+			} else {
+				m := &messages.SlowProcess{
+					Duration: int64(cost),
+					Pid:      ctx.ref.GetId(),
+				}
+				for _, processReceiver := range ctx.slowProcessReceivers {
+					ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(processReceiver, ctx.ref, nil, m)
+				}
+			}
+		}
 	}
 }
 
 func (ctx *actorContext) ProcessUserMessage(message prc.Message) {
 	sender, receiver, message := unwrapMessage(message)
+	if ctx.slowProcessDuration > 0 {
+		f := ctx.slowProcess()
+		defer f()
+	}
 	ctx.processMessage(sender, receiver, message, false)
 }
 
 func (ctx *actorContext) ProcessSystemMessage(message prc.Message) {
 	sender, receiver, message := unwrapMessage(message)
+	if ctx.slowProcessDuration > 0 {
+		f := ctx.slowProcess()
+		defer f()
+	}
 	ctx.processMessage(sender, receiver, message, true)
 }
 
@@ -555,6 +587,11 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 			PersistenceStorageProviderName: descriptor.persistenceStorageProvider.GetStorageProviderName(),
 			PersistenceName:                descriptor.persistenceName,
 			PersistenceEventThreshold:      int32(descriptor.persistenceEventThreshold),
+			SlowProcessDuration:            int64(descriptor.slowProcessingDuration),
+			SlowProcessReceivers:           make([]*prc.ProcessId, len(ctx.slowProcessReceivers)),
+		}
+		for i, receiver := range ctx.slowProcessReceivers {
+			msg.SlowProcessReceivers[i] = receiver.GetId()
 		}
 		if descriptor.supervisionStrategyProvider != nil {
 			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
@@ -785,6 +822,12 @@ func (ctx *actorContext) onGenerateRemoteActor(m *messages.GenerateRemoteActor) 
 	descriptor.persistenceStorageProvider = ctx.system.config.persistenceStorageProviderTable[m.PersistenceStorageProviderName]
 	descriptor.persistenceName = m.PersistenceName
 	descriptor.persistenceEventThreshold = int(m.PersistenceEventThreshold)
+	descriptor.slowProcessingDuration = time.Duration(m.SlowProcessDuration)
+	descriptor.slowProcessReceivers = make([]ActorRef, len(m.SlowProcessReceivers))
+
+	for i, receiver := range m.SlowProcessReceivers {
+		descriptor.slowProcessReceivers[i] = prc.NewProcessRef(receiver)
+	}
 
 	ref := ctx.ActorOf(provider, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
 		descriptor.withInternalDescriptor(&actorInternalDescriptor{
