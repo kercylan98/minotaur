@@ -1,6 +1,7 @@
 package prc
 
 import (
+	"github.com/kercylan98/minotaur/toolkit"
 	"net/url"
 	"sync/atomic"
 )
@@ -15,6 +16,17 @@ func NewProcessRef(id *ProcessId) *ProcessRef {
 type ProcessRef struct {
 	id    *ProcessId
 	cache atomic.Pointer[Process]
+}
+
+func (ref *ProcessRef) UnmarshalJSON(bytes []byte) error {
+	if ref.id == nil {
+		ref.id = new(ProcessId)
+	}
+	return toolkit.UnmarshalJSONE(bytes, ref.id)
+}
+
+func (ref *ProcessRef) MarshalJSON() ([]byte, error) {
+	return toolkit.MarshalJSONE(ref)
 }
 
 // PhysicalAddress 获取进程引用的物理地址

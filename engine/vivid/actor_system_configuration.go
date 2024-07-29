@@ -3,6 +3,7 @@ package vivid
 import (
 	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/prc/codec"
 	"github.com/kercylan98/minotaur/engine/vivid/persistence"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	"github.com/kercylan98/minotaur/toolkit/log"
@@ -37,6 +38,7 @@ type ActorSystemConfiguration struct {
 	physicalAddress                  prc.PhysicalAddress                                             // 物理地址
 	loggerProvider                   log.LoggerProvider                                              // 日志提供者
 	shared                           bool                                                            // 开启网络共享
+	sharedCodec                      codec.Codec                                                     // 网络共享编解码器
 	supervisionStrategyProviderTable map[supervision.StrategyName]supervision.StrategyProvider       // 监督策略表
 	mailboxProviderTable             map[MailboxProviderName]MailboxProvider                         // 邮箱提供者表
 	dispatcherProviderTable          map[DispatcherProviderName]DispatcherProvider                   // 调度器提供者表
@@ -141,8 +143,12 @@ func (c *ActorSystemConfiguration) WithSupervisionStrategyProvider(providers ...
 }
 
 // WithShared 设置是否开启网络共享，开启后 ActorSystem 将允许通过网络与其他 ActorSystem 交互。
-func (c *ActorSystemConfiguration) WithShared(shared bool) *ActorSystemConfiguration {
+//   - 默认的网络序列化是采用的 ProtoBuffer，如果需要调整，可指定编解码器
+func (c *ActorSystemConfiguration) WithShared(shared bool, codec ...codec.Codec) *ActorSystemConfiguration {
 	c.shared = shared
+	if len(codec) > 0 {
+		c.sharedCodec = codec[0]
+	}
 	return c
 }
 

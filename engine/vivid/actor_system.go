@@ -38,6 +38,9 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 			config.WithUnknownReceiverRedirect(func(message prc.Message) *prc.ProcessRef {
 				return system.guard.ref
 			})
+			if system.config.sharedCodec != nil {
+				config.WithCodec(system.config.sharedCodec)
+			}
 		}))
 		if err := system.shared.Share(); err != nil {
 			panic(err)
