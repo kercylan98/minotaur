@@ -17,15 +17,8 @@ func newResourceControllerConfiguration() *ResourceControllerConfiguration {
 
 // ResourceControllerConfiguration 是 ActorSystem 的配置
 type ResourceControllerConfiguration struct {
-	clusterName     ClusterName        // 集群名称
 	physicalAddress PhysicalAddress    // 物理地址
 	loggerProvider  log.LoggerProvider // 日志提供者
-}
-
-// WithClusterName 设置集群名称
-func (c *ResourceControllerConfiguration) WithClusterName(name ClusterName) *ResourceControllerConfiguration {
-	c.clusterName = name
-	return c
 }
 
 // WithPhysicalAddress 设置物理地址

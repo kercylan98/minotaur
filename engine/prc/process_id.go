@@ -1,23 +1,14 @@
 package prc
 
 import (
-	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"net/url"
-	"os"
 	"strings"
 )
 
 func NewProcessId(physicalAddress PhysicalAddress, logicalAddress LogicalAddress) *ProcessId {
-	return NewClusterProcessId(charproc.None, physicalAddress, logicalAddress)
-}
-
-func NewClusterProcessId(clusterName ClusterName, physicalAddress PhysicalAddress, logicalAddress LogicalAddress) *ProcessId {
 	return &ProcessId{
-		PhysicalPid:     uint32(os.Getpid()),
 		LogicalAddress:  logicalAddress,
 		PhysicalAddress: physicalAddress,
-		NetworkProtocol: "",
-		ClusterName:     clusterName,
 	}
 }
 
@@ -27,11 +18,8 @@ func (pid *ProcessId) Derivation(name string) *ProcessId {
 		name = "/" + name
 	}
 	return &ProcessId{
-		PhysicalPid:     pid.PhysicalPid,
 		LogicalAddress:  pid.LogicalAddress + name,
 		PhysicalAddress: pid.PhysicalAddress,
-		NetworkProtocol: pid.NetworkProtocol,
-		ClusterName:     pid.ClusterName,
 	}
 }
 
@@ -42,9 +30,6 @@ func (pid *ProcessId) URL() *url.URL {
 		Host:   pid.PhysicalAddress,
 		Path:   pid.LogicalAddress,
 	}
-	if pid.ClusterName != charproc.None {
-		u.User = url.User(pid.ClusterName)
-	}
 	return u
 }
 
@@ -54,9 +39,6 @@ func (pid *ProcessId) Equal(id *ProcessId) bool {
 		return false
 	}
 	if pid.LogicalAddress != id.LogicalAddress {
-		return false
-	}
-	if pid.ClusterName != id.ClusterName {
 		return false
 	}
 	return true

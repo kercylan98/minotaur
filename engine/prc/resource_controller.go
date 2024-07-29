@@ -64,7 +64,7 @@ func (rc *ResourceController) Unregister(killer *ProcessRef, ref *ProcessRef) {
 
 // Belong 检查 ref 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
 func (rc *ResourceController) Belong(ref *ProcessRef) bool {
-	return rc.config.clusterName == ref.id.ClusterName && network.IsSameLocalAddress(rc.config.physicalAddress, ref.id.PhysicalAddress)
+	return network.IsSameLocalAddress(rc.config.physicalAddress, ref.id.PhysicalAddress)
 }
 
 // GetProcess 获取一个进程

@@ -23,7 +23,6 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	}
 
 	system.rc = prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
-		config.WithClusterName(system.config.actorSystemName)
 		config.WithPhysicalAddress(system.config.physicalAddress)
 		config.WithLoggerProvider(system.config.loggerProvider)
 	}))
@@ -64,7 +63,7 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 
 	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
 
-	system.processId = prc.NewClusterProcessId(system.config.actorSystemName, system.rc.GetPhysicalAddress(), "/")
+	system.processId = prc.NewProcessId(system.rc.GetPhysicalAddress(), "/")
 	system.guard = system.spawnTopActor("user", new(guard))
 
 	return system

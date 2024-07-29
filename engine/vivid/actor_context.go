@@ -560,7 +560,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
 		}
 
-		remoteRef := prc.NewProcessRef(prc.NewClusterProcessId(node.Metadata().UserMetadata[actorSystemClusterName], node.Metadata().RcPhysicalAddress, "/"))
+		remoteRef := NewActorRef(node.Metadata().RcPhysicalAddress, "/")
 
 		f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
 		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
@@ -576,7 +576,6 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	var processId *prc.ProcessId
 	if descriptor.internal != nil && descriptor.internal.parent != nil {
 		processId = descriptor.internal.parent.DerivationProcessId(descriptor.name)
-		processId.ClusterName = ctx.system.Name()
 		processId.PhysicalAddress = ctx.system.rc.GetPhysicalAddress()
 	} else {
 		processId = ctx.ref.DerivationProcessId(descriptor.name)
