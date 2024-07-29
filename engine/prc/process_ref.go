@@ -22,7 +22,11 @@ func (ref *ProcessRef) UnmarshalJSON(bytes []byte) error {
 	if ref.id == nil {
 		ref.id = new(ProcessId)
 	}
-	return toolkit.UnmarshalJSONE(bytes, ref.id)
+	err := toolkit.UnmarshalJSONE(bytes, ref.id)
+	if err == nil {
+		ref.cache.Store(nil)
+	}
+	return nil
 }
 
 func (ref *ProcessRef) MarshalJSON() ([]byte, error) {
