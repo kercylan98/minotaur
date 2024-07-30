@@ -61,6 +61,8 @@ func newActorContext(parent *actorContext, provider ActorProvider, descriptor *A
 		persistenceName:            descriptor.persistenceName,
 		persistenceStorageProvider: descriptor.persistenceStorageProvider,
 		persistenceEventThreshold:  descriptor.persistenceEventThreshold,
+		slowProcessDuration:        descriptor.slowProcessingDuration,
+		slowProcessReceivers:       descriptor.slowProcessReceivers,
 	}
 
 	if descriptor.expireDuration > 0 {
@@ -442,7 +444,7 @@ func (ctx *actorContext) slowProcess() func() {
 					Pid:      ctx.ref.GetId(),
 				}
 				for _, processReceiver := range ctx.slowProcessReceivers {
-					ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(processReceiver, ctx.ref, nil, m)
+					ctx.system.rc.GetProcess(processReceiver).DeliverySystemMessage(processReceiver, ctx.ref, nil, m)
 				}
 			}
 		}
