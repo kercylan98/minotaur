@@ -8,6 +8,37 @@ import (
 	"time"
 )
 
+func TestActorDescriptor_WithSlowProcessingDuration(t *testing.T) {
+	wait := new(sync.WaitGroup)
+	wait.Add(1)
+
+	system := vivid.NewActorSystem()
+	defer system.Shutdown(true)
+
+	watcher := system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnSlowProcess:
+				wait.Done()
+			}
+		})
+	})
+
+	slow := system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case int:
+				time.Sleep(time.Second)
+			}
+		})
+	}, func(descriptor *vivid.ActorDescriptor) {
+		descriptor.WithSlowProcessingDuration(time.Millisecond*100, watcher)
+	})
+
+	system.Tell(slow, 1)
+	wait.Wait()
+}
+
 func TestActorSystemConfiguration_WithShared(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
 		defer func() {
