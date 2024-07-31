@@ -144,17 +144,12 @@ func (c *ActorSystemConfiguration) WithSupervisionStrategyProvider(providers ...
 
 // WithShared 设置是否开启网络共享，开启后 ActorSystem 将允许通过网络与其他 ActorSystem 交互。
 //   - 默认的网络序列化是采用的 ProtoBuffer，如果需要调整，可指定编解码器
-func (c *ActorSystemConfiguration) WithShared(shared bool, codec ...codec.Codec) *ActorSystemConfiguration {
-	c.shared = shared
+func (c *ActorSystemConfiguration) WithShared(address prc.PhysicalAddress, codec ...codec.Codec) *ActorSystemConfiguration {
+	c.physicalAddress = address
+	c.shared = true
 	if len(codec) > 0 {
 		c.sharedCodec = codec[0]
 	}
-	return c
-}
-
-// WithPhysicalAddress 设置物理地址
-func (c *ActorSystemConfiguration) WithPhysicalAddress(address prc.PhysicalAddress) *ActorSystemConfiguration {
-	c.physicalAddress = address
 	return c
 }
 

@@ -40,24 +40,9 @@ func TestActorDescriptor_WithSlowProcessingDuration(t *testing.T) {
 }
 
 func TestActorSystemConfiguration_WithShared(t *testing.T) {
-	t.Run("panic", func(t *testing.T) {
-		defer func() {
-			if err := recover(); err == nil {
-				t.Error("expect panic, but not")
-			}
-		}()
-		vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-			config.WithShared(true)
-		})).Shutdown(true)
-	})
-
-	t.Run("good", func(t *testing.T) {
-		vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-			config.
-				WithPhysicalAddress(":8080").
-				WithShared(true)
-		})).Shutdown(true)
-	})
+	vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithShared(":8080")
+	})).Shutdown(true)
 }
 
 func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
@@ -65,13 +50,11 @@ func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
 	var receiverOnce, senderOnce sync.Once
 
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8080")
-		config.WithShared(true)
+		config.WithShared(":8080")
 	}))
 
 	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8081")
-		config.WithShared(true)
+		config.WithShared(":8081")
 	}))
 
 	ref1 := system1.ActorOfF(func() vivid.Actor {
@@ -106,13 +89,11 @@ func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8080")
-		config.WithShared(true)
+		config.WithShared(":8080")
 	}))
 
 	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8081")
-		config.WithShared(true)
+		config.WithShared(":8081")
 	}))
 
 	ref1 := system1.ActorOfF(func() vivid.Actor {
@@ -152,16 +133,14 @@ func TestActorSystemConfiguration_WithSharedActorOf(t *testing.T) {
 
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
 		config.WithName("system1")
-		config.WithPhysicalAddress(":8080")
-		config.WithShared(true)
+		config.WithShared(":8080")
 		config.WithCluster("127.0.0.1:18080", "127.0.0.1:18080")
 		config.WithActorProvider(provider)
 	}))
 
 	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
 		config.WithName("system2")
-		config.WithPhysicalAddress(":8081")
-		config.WithShared(true)
+		config.WithShared(":8081")
 		config.WithCluster("127.0.0.1:18081", "127.0.0.1:18080")
 	}))
 
