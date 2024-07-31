@@ -23,7 +23,7 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	}
 
 	if system.config.abyss != nil {
-		system.config.abyss.Initialize(system)
+		system.config.abyss.OnInitialize(system)
 	}
 	system.rc = prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
 		config.WithPhysicalAddress(system.config.physicalAddress)

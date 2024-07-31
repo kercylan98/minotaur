@@ -19,11 +19,11 @@ func newResourceControllerConfiguration() *ResourceControllerConfiguration {
 type ResourceControllerConfiguration struct {
 	physicalAddress    PhysicalAddress    // 物理地址
 	loggerProvider     log.LoggerProvider // 日志提供者
-	notFoundSubstitute UnboundProcess     // 未找到处理器的替代处理器
+	notFoundSubstitute Process            // 未找到处理器的替代处理器
 }
 
 // WithNotFoundSubstitute 设置未找到处理器的替代处理器
-func (c *ResourceControllerConfiguration) WithNotFoundSubstitute(substitute UnboundProcess) *ResourceControllerConfiguration {
+func (c *ResourceControllerConfiguration) WithNotFoundSubstitute(substitute Process) *ResourceControllerConfiguration {
 	c.notFoundSubstitute = substitute
 	return c
 }

@@ -16,7 +16,7 @@ type abyss struct {
 	system *ActorSystem
 }
 
-func (a *abyss) Initialize(system *ActorSystem) {
+func (a *abyss) OnInitialize(system *ActorSystem) {
 	a.system = system
 }
 
@@ -26,4 +26,16 @@ func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, m
 
 func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
 	a.system.Logger().Error("ActorSystem", log.String("info", "system abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
+}
+
+func (a *abyss) Initialize(rc *prc.ResourceController, id *prc.ProcessId) {
+	panic("abyss cannot be initialized")
+}
+
+func (a *abyss) IsTerminated() bool {
+	panic("abyss is eternal")
+}
+
+func (a *abyss) Terminate(source *prc.ProcessRef) {
+	panic("abyss cannot be terminated")
 }
