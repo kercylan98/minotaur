@@ -94,6 +94,9 @@ func (rc *ResourceController) GetProcess(ref *ProcessRef) (process Process) {
 	process, exist = rc.processes.Load(ref.id.LogicalAddress)
 	if exist {
 		ref.cache.Store(&process)
+		return process
+	} else {
+		// 找不到进程时返回默认的替代进程，当默认的替代进程也不存在那么将是空指针
+		return rc.config.notFoundSubstitute
 	}
-	return process // 如果进程不存在，返回的是一个 Process 的空指针
 }

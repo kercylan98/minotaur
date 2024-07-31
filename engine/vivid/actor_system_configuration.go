@@ -29,6 +29,7 @@ func newActorSystemConfiguration() *ActorSystemConfiguration {
 			GetDefaultPersistenceStorageProvider().GetStorageProviderName(): GetDefaultPersistenceStorageProvider(),
 		},
 		accidentTrace: true,
+		abyss:         newAbyss(),
 	}
 }
 
@@ -47,6 +48,13 @@ type ActorSystemConfiguration struct {
 	clusterJoinNodes                 []prc.PhysicalAddress                                           // 服务发现默认加入的节点
 	clusterBindAddress               prc.PhysicalAddress                                             // 服务发现绑定的地址
 	accidentTrace                    bool                                                            // 事故堆栈追踪
+	abyss                            AbyssProcess                                                    // 深渊进程
+}
+
+// WithAbyss 设置深渊进程，深渊进程将在进程无法寻址到时作为替代进程进行返回。这在其他地方也叫做死信
+func (c *ActorSystemConfiguration) WithAbyss(abyss AbyssProcess) *ActorSystemConfiguration {
+	c.abyss = abyss
+	return c
 }
 
 // WithAccidentTrace 开启事故堆栈追踪

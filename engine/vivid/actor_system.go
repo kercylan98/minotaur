@@ -22,9 +22,13 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 		systemConfigurator.Configure(system.config)
 	}
 
+	if system.config.abyss != nil {
+		system.config.abyss.Initialize(system)
+	}
 	system.rc = prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
 		config.WithPhysicalAddress(system.config.physicalAddress)
 		config.WithLoggerProvider(system.config.loggerProvider)
+		config.WithNotFoundSubstitute(system.config.abyss)
 	}))
 
 	if system.config.shared {
