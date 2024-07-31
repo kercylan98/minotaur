@@ -9,6 +9,34 @@ import (
 	"time"
 )
 
+func TestActorContext_OnLaunchRepayParent(t *testing.T) {
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+
+	system := vivid.NewActorSystem()
+	defer system.Shutdown(true)
+
+	system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				ctx.ActorOfF(func() vivid.Actor {
+					return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+						switch ctx.Message().(type) {
+						case *vivid.OnLaunch:
+							ctx.Reply(1)
+						}
+					})
+				})
+			case int:
+				wg.Done()
+			}
+		})
+	})
+
+	wg.Wait()
+}
+
 func TestActorContext_Sender(t *testing.T) {
 	system := vivid.NewActorSystem()
 	ref := system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {

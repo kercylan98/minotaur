@@ -644,7 +644,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	ctx.system.Logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.LogicalAddress), log.Int("child", len(ctx.children)))
 
 	// 第一条消息
-	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onLaunch)
+	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.parentRef, nil, onLaunch)
 
 	ctx.setExpireDuration()
 	return ref
@@ -703,7 +703,7 @@ func (ctx *actorContext) tryRestarted() {
 
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)
-	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onLaunch)
+	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.parentRef, nil, onLaunch)
 
 	ctx.setExpireDuration()
 }
