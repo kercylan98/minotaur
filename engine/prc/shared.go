@@ -34,7 +34,7 @@ func NewShared(rc *ResourceController, configurator ...SharedConfigurator) *Shar
 	}
 
 	for _, c := range configurator {
-		c.Config(s.config)
+		c.Configure(s.config)
 	}
 
 	s.streamServer = newSharedServer(s)
