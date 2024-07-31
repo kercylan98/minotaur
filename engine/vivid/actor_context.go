@@ -590,9 +590,9 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 			PersistenceName:                descriptor.persistenceName,
 			PersistenceEventThreshold:      int32(descriptor.persistenceEventThreshold),
 			SlowProcessDuration:            int64(descriptor.slowProcessingDuration),
-			SlowProcessReceivers:           make([]*prc.ProcessId, len(ctx.slowProcessReceivers)),
+			SlowProcessReceivers:           make([]*prc.ProcessId, len(descriptor.slowProcessReceivers)),
 		}
-		for i, receiver := range ctx.slowProcessReceivers {
+		for i, receiver := range descriptor.slowProcessReceivers {
 			msg.SlowProcessReceivers[i] = receiver.GetId()
 		}
 		if descriptor.supervisionStrategyProvider != nil {
