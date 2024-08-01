@@ -18,11 +18,25 @@ type ProcessRef struct {
 	cache atomic.Pointer[Process]
 }
 
+func (ref *ProcessRef) GetId() *ProcessId {
+	return ref.id
+}
+
+// PhysicalAddress 获取进程引用的物理地址
+func (ref *ProcessRef) PhysicalAddress() PhysicalAddress {
+	return ref.GetId().PhysicalAddress
+}
+
+// LogicalAddress 获取进程引用的逻辑地址
+func (ref *ProcessRef) LogicalAddress() LogicalAddress {
+	return ref.GetId().LogicalAddress
+}
+
 func (ref *ProcessRef) UnmarshalJSON(bytes []byte) error {
-	if ref.id == nil {
+	if ref.GetId() == nil {
 		ref.id = new(ProcessId)
 	}
-	err := toolkit.UnmarshalJSONE(bytes, ref.id)
+	err := toolkit.UnmarshalJSONE(bytes, ref.GetId())
 	if err == nil {
 		ref.cache.Store(nil)
 	}
@@ -33,47 +47,23 @@ func (ref *ProcessRef) MarshalJSON() ([]byte, error) {
 	return toolkit.MarshalJSONE(ref)
 }
 
-// PhysicalAddress 获取进程引用的物理地址
-func (ref *ProcessRef) PhysicalAddress() PhysicalAddress {
-	return ref.id.PhysicalAddress
-}
-
-// LogicalAddress 获取进程引用的逻辑地址
-func (ref *ProcessRef) LogicalAddress() LogicalAddress {
-	return ref.id.LogicalAddress
-}
-
 // DerivationProcessId 衍生一个新的进程 Id
 func (ref *ProcessRef) DerivationProcessId(name string) *ProcessId {
-	return ref.id.Derivation(name)
-}
-
-// ChangePhysicalAddress 改变进程引用的物理地址并返回新的进程 Id
-func (ref *ProcessRef) ChangePhysicalAddress(address PhysicalAddress) *ProcessId {
-	nid := ref.GetId()
-	nid.PhysicalAddress = address
-	return nid
+	return ref.GetId().Derivation(name)
 }
 
 // URL 获取进程引用的 URL
 func (ref *ProcessRef) URL() *url.URL {
-	return ref.id.URL()
+	return ref.GetId().URL()
 }
 
 // Clone 克隆一个进程引用
 func (ref *ProcessRef) Clone() *ProcessRef {
 	return &ProcessRef{
-		id: ref.id,
-	}
-}
-
-func (ref *ProcessRef) GetId() *ProcessId {
-	return &ProcessId{
-		LogicalAddress:  ref.id.LogicalAddress,
-		PhysicalAddress: ref.id.PhysicalAddress,
+		id: ref.GetId(),
 	}
 }
 
 func (ref *ProcessRef) Equal(r *ProcessRef) bool {
-	return ref.id.Equal(r.id)
+	return ref.GetId().Equal(r.GetId())
 }

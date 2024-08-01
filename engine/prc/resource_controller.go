@@ -54,7 +54,7 @@ func (rc *ResourceController) Register(id *ProcessId, process Process) (ref *Pro
 
 // Unregister 从资源控制器注销一个进程
 func (rc *ResourceController) Unregister(killer *ProcessRef, ref *ProcessRef) {
-	process, exist := rc.processes.LoadAndDelete(ref.id.LogicalAddress)
+	process, exist := rc.processes.LoadAndDelete(ref.GetId().LogicalAddress)
 	if !exist {
 		return
 	}
@@ -64,7 +64,7 @@ func (rc *ResourceController) Unregister(killer *ProcessRef, ref *ProcessRef) {
 
 // Belong 检查 ref 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
 func (rc *ResourceController) Belong(ref *ProcessRef) bool {
-	return network.IsSameLocalAddress(rc.config.physicalAddress, ref.id.PhysicalAddress)
+	return network.IsSameLocalAddress(rc.config.physicalAddress, ref.GetId().PhysicalAddress)
 }
 
 // GetProcess 获取一个进程
@@ -82,7 +82,7 @@ func (rc *ResourceController) GetProcess(ref *ProcessRef) (process Process) {
 	if !rc.Belong(ref) {
 		// 远程进程加载
 		for _, resolver := range rc.par {
-			if process = resolver.Resolve(ref.id); process != nil {
+			if process = resolver.Resolve(ref.GetId()); process != nil {
 				ref.cache.Store(&process)
 				return
 			}
@@ -91,7 +91,7 @@ func (rc *ResourceController) GetProcess(ref *ProcessRef) (process Process) {
 
 	// 本地进程加载
 	var exist bool
-	process, exist = rc.processes.Load(ref.id.LogicalAddress)
+	process, exist = rc.processes.Load(ref.GetId().LogicalAddress)
 	if exist {
 		ref.cache.Store(&process)
 		return process

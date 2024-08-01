@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+	"sync/atomic"
 )
 
 const (
@@ -25,8 +26,9 @@ type ProcessId struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	LogicalAddress  string `protobuf:"bytes,1,opt,name=logical_address,json=logicalAddress,proto3" json:"logical_address,omitempty"`    // 本地内部的逻辑地址
-	PhysicalAddress string `protobuf:"bytes,2,opt,name=physical_address,json=physicalAddress,proto3" json:"physical_address,omitempty"` // 跨网络物理地址
+	LogicalAddress  string `protobuf:"bytes,1,opt,name=logical_address,json=logicalAddress,proto3" json:"logical_address,omitempty"`
+	PhysicalAddress string `protobuf:"bytes,2,opt,name=physical_address,json=physicalAddress,proto3" json:"physical_address,omitempty"`
+	cache           atomic.Pointer[Process]
 }
 
 func (x *ProcessId) Reset() {

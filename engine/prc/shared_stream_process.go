@@ -53,10 +53,10 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessRef,
 		System:      system,
 	}
 	if sender != nil {
-		dm.Sender = sender.id
+		dm.Sender = sender.GetId()
 	}
 	if receiver != nil {
-		dm.Receiver = receiver.id
+		dm.Receiver = receiver.GetId()
 	}
 
 	// 入列
