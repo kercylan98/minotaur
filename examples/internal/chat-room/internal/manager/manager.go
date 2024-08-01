@@ -44,7 +44,7 @@ func (m *Manager) onFindOrCreateRoom(ctx vivid.ActorContext, msg *FindOrCreateRo
 		r = ctx.ActorOfF(func() vivid.Actor {
 			return room.New(msg.RoomId)
 		})
-		m.roomMap[r.LogicalAddress] = msg.RoomId
+		m.roomMap[r.GetLogicalAddress()] = msg.RoomId
 		m.rooms[msg.RoomId] = r
 		ctx.System().Logger().Info("RoomManager", log.String("status", "create"), log.String("room_id", msg.RoomId))
 	}
@@ -53,9 +53,10 @@ func (m *Manager) onFindOrCreateRoom(ctx vivid.ActorContext, msg *FindOrCreateRo
 }
 
 func (m *Manager) onTerminated(ctx vivid.ActorContext, msg *vivid.OnTerminated) {
-	roomId, exist := m.roomMap[msg.TerminatedActor.LogicalAddress]
+	la := msg.TerminatedActor.GetLogicalAddress()
+	roomId, exist := m.roomMap[la]
 	if exist {
-		delete(m.roomMap, msg.TerminatedActor.LogicalAddress)
+		delete(m.roomMap, la)
 		delete(m.rooms, roomId)
 		ctx.System().Logger().Info("RoomManager", log.String("status", "destroy"), log.String("room_id", roomId))
 	}

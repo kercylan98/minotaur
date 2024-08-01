@@ -103,23 +103,38 @@ func onDevelopGenerateProcessIdInject() {
 	// 查找并修改结构体
 	found := false
 	ast.Inspect(file, func(n ast.Node) bool {
-		// 查找类型声明
 		if ts, ok := n.(*ast.TypeSpec); ok {
-			// 检查类型是否为结构体，并且名称是否匹配
-			if structType, ok := ts.Type.(*ast.StructType); ok && ts.Name.Name == "ProcessId" {
-				// 创建新字段
-				newField := &ast.Field{
+			switch v := ts.Type.(type) {
+			case *ast.StructType:
+				processCacheField := &ast.Field{
 					Names: []*ast.Ident{ast.NewIdent("cache")},
 					Type:  ast.NewIdent("atomic.Pointer[Process]"),
 				}
-				// 添加新字段到结构体
-				structType.Fields.List = append(structType.Fields.List, newField)
+				v.Fields.List = append(v.Fields.List, processCacheField)
+
+				redirectAddressField := &ast.Field{
+					Names: []*ast.Ident{ast.NewIdent("redirect")},
+					Type:  ast.NewIdent("atomic.Pointer[*ProcessId]"),
+				}
+				v.Fields.List = append(v.Fields.List, redirectAddressField)
 				found = true
-				return false // 退出遍历
+				return false
 			}
 		}
 		return true
 	})
+
+	// 查找并删除特定方法
+	var newDecls []ast.Decl
+	for _, decl := range file.Decls {
+		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
+			if funcDecl.Name.Name == "GetPhysicalAddress" || funcDecl.Name.Name == "GetLogicalAddress" {
+				continue // 跳过这个方法，不加入新的声明列表
+			}
+		}
+		newDecls = append(newDecls, decl)
+	}
+	file.Decls = newDecls
 
 	if !found {
 		cobra.CheckErr(fmt.Errorf("struct prc.ProcessId not found"))

@@ -80,11 +80,11 @@ func newActorContext(parent *actorContext, provider ActorProvider, descriptor *A
 
 	return ctx, func(ref ActorRef) {
 		if descriptor.internal == nil || descriptor.internal.parent == nil {
-			parent.children[ref.LogicalAddress] = ref
+			parent.children[ref.GetLogicalAddress()] = ref
 		}
 		ctx.ref = ref
 		if ctx.persistenceName == charproc.None {
-			ctx.persistenceName = ctx.ref.LogicalAddress
+			ctx.persistenceName = ctx.ref.GetLogicalAddress()
 		}
 	}
 }
@@ -157,7 +157,7 @@ func (ctx *actorContext) initPersistenceState() {
 func (ctx *actorContext) ClearPersistence() {
 	if ctx.persistenceState != nil {
 		if err := ctx.persistenceState.Clear(); err != nil {
-			ctx.system.Logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
+			ctx.system.Logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.GetLogicalAddress()), log.Err(err))
 		}
 	}
 }
@@ -630,7 +630,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	process := newActorProcess(mb)
 	ref, exist := ctx.system.rc.Register(processId, process)
 	if exist {
-		panic(fmt.Errorf("actor %s already exists", processId.LogicalAddress))
+		panic(fmt.Errorf("actor %s already exists", processId.GetLogicalAddress()))
 	}
 
 	// 绑定 ActorRef
@@ -641,7 +641,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 		descriptor.internal.actorContextHook(ctx)
 	}
 
-	ctx.system.Logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.LogicalAddress), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "launch"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", processId.GetLogicalAddress()), log.Int("child", len(ctx.children)))
 
 	// 第一条消息
 	ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.parentRef, nil, onLaunch)
@@ -699,7 +699,7 @@ func (ctx *actorContext) tryRestarted() {
 	}
 	ctx.status.Store(actorStatusAlive)
 
-	ctx.system.Logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.GetLogicalAddress()), log.Int("child", len(ctx.children)))
 
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)
@@ -722,7 +722,7 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 }
 
 func (ctx *actorContext) onTerminated(terminated *OnTerminated) {
-	delete(ctx.children, terminated.TerminatedActor.LogicalAddress)
+	delete(ctx.children, terminated.TerminatedActor.GetLogicalAddress())
 
 	ctx.processMessage(ctx.sender, ctx.ref, terminated, false)
 	switch ctx.status.Load() {
@@ -738,7 +738,7 @@ func (ctx *actorContext) recoveryPersistence() {
 	ctx.initPersistenceState()
 	snapshot, events, err := ctx.persistenceState.Load()
 	if err != nil && !errors.Is(err, persistence.ErrorPersistenceNotHasRecord) {
-		ctx.system.Logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.GetLogicalAddress()), log.Err(err))
 		return
 	}
 	ctx.persistenceRecovering = true
@@ -768,7 +768,7 @@ func (ctx *actorContext) Persistence() error {
 
 func (ctx *actorContext) internalPersistence() {
 	if err := ctx.Persistence(); err != nil {
-		ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.GetLogicalAddress()), log.Err(err))
 	}
 }
 
@@ -790,7 +790,7 @@ func (ctx *actorContext) tryTerminated() {
 		ctx.scheduler.Close()
 	}
 
-	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.GetLogicalAddress()), log.Int("child", len(ctx.children)))
 
 	// 通知消息
 	notifyMessage := &messages.Terminated{TerminatedProcess: ctx.ref}

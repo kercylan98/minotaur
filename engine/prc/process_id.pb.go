@@ -29,6 +29,7 @@ type ProcessId struct {
 	LogicalAddress  string `protobuf:"bytes,1,opt,name=logical_address,json=logicalAddress,proto3" json:"logical_address,omitempty"`
 	PhysicalAddress string `protobuf:"bytes,2,opt,name=physical_address,json=physicalAddress,proto3" json:"physical_address,omitempty"`
 	cache           atomic.Pointer[Process]
+	redirect        atomic.Pointer[*ProcessId]
 }
 
 func (x *ProcessId) Reset() {
@@ -61,20 +62,6 @@ func (x *ProcessId) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ProcessId.ProtoReflect.Descriptor instead.
 func (*ProcessId) Descriptor() ([]byte, []int) {
 	return file_process_id_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ProcessId) GetLogicalAddress() string {
-	if x != nil {
-		return x.LogicalAddress
-	}
-	return ""
-}
-
-func (x *ProcessId) GetPhysicalAddress() string {
-	if x != nil {
-		return x.PhysicalAddress
-	}
-	return ""
 }
 
 var File_process_id_proto protoreflect.FileDescriptor
@@ -136,7 +123,10 @@ func file_process_id_proto_init() {
 			}
 		}
 	}
-	type x struct{}
+	type x struct {
+		cache    atomic.Pointer[Process]
+		redirect atomic.Pointer[*ProcessId]
+	}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),

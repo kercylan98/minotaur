@@ -43,7 +43,7 @@ func (rc *ResourceController) GetPhysicalAddress() PhysicalAddress {
 
 // Register 向资源控制器注册一个进程，如果进程已存在，将会返回已有的 ProcessId 和一个标识是否已存在的状态信息，这对于进程的重复注册检测是非常有用的
 func (rc *ResourceController) Register(id *ProcessId, process Process) (pid *ProcessId, exist bool) {
-	process, exist = rc.processes.LoadOrStore(id.LogicalAddress, process)
+	process, exist = rc.processes.LoadOrStore(id.GetLogicalAddress(), process)
 	if !exist {
 		process.Initialize(rc, id)
 		rc.logger().Debug("ResourceController", log.String("register", id.URL().String()))
@@ -53,7 +53,7 @@ func (rc *ResourceController) Register(id *ProcessId, process Process) (pid *Pro
 
 // Unregister 从资源控制器注销一个进程
 func (rc *ResourceController) Unregister(killer *ProcessId, target *ProcessId) {
-	process, exist := rc.processes.LoadAndDelete(target.LogicalAddress)
+	process, exist := rc.processes.LoadAndDelete(target.GetLogicalAddress())
 	if !exist {
 		return
 	}
@@ -63,7 +63,7 @@ func (rc *ResourceController) Unregister(killer *ProcessId, target *ProcessId) {
 
 // Belong 检查 id 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
 func (rc *ResourceController) Belong(id *ProcessId) bool {
-	return network.IsSameLocalAddress(rc.config.physicalAddress, id.PhysicalAddress)
+	return network.IsSameLocalAddress(rc.config.physicalAddress, id.GetPhysicalAddress())
 }
 
 // GetProcess 获取一个进程
@@ -90,7 +90,7 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 
 	// 本地进程加载
 	var exist bool
-	process, exist = rc.processes.Load(id.LogicalAddress)
+	process, exist = rc.processes.Load(id.GetLogicalAddress())
 	if exist {
 		id.cache.Store(&process)
 		return process

@@ -91,13 +91,14 @@ func (s *Shared) Share() error {
 	}()
 
 	s.rc.RegisterResolver(FunctionalPhysicalAddressResolver(func(id *ProcessId) Process {
-		process, exist := s.streams.Load(id.PhysicalAddress)
+		pa := id.GetPhysicalAddress()
+		process, exist := s.streams.Load(pa)
 		if exist {
 			return process.(sharedStream)
 		}
 
 		var err error
-		process, err = s.open(id.PhysicalAddress)
+		process, err = s.open(pa)
 		if err != nil {
 			panic(err)
 		}
