@@ -14,7 +14,9 @@ const (
 
 // developCmd represents the develop command
 var developCmd = &cobra.Command{
-	Use: "develop",
+	Use:   "develop",
+	Short: "CLI commands involved in minotaur development",
+	Long:  "Use this command to develop minotaur, such as building, testing, etc.",
 	Run: func(cmd *cobra.Command, args []string) {
 		abs, err := filepath.Abs(viper.GetString(configKeyDevelopWorkdir))
 		cobra.CheckErr(err)

@@ -3,7 +3,7 @@ package prc;
 option go_package = "github.com/kercylan98/minotaur/engine/prc";
 
 message DiscovererState {
-
+  int64 update_at = 1; // 更新时间（毫秒级）
 }
 
 message DiscovererMetadata {
