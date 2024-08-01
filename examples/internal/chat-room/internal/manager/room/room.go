@@ -47,7 +47,7 @@ func (r *Room) onJoinRoom(ctx vivid.ActorContext, m *JoinRoomMessage) {
 		return
 	}
 
-	r.userMap[m.User.LogicalAddress()] = m.UserId
+	r.userMap[m.User.LogicalAddress] = m.UserId
 	r.users[m.UserId] = m.User
 	message := &ChatMessage{
 		UserId: m.UserId,
@@ -71,13 +71,13 @@ func (r *Room) onChat(ctx vivid.ActorContext, m *ChatMessage) {
 }
 
 func (r *Room) onTerminated(ctx vivid.ActorContext, m *vivid.OnTerminated) {
-	userId, exist := r.userMap[m.TerminatedActor.LogicalAddress()]
+	userId, exist := r.userMap[m.TerminatedActor.LogicalAddress]
 	if !exist {
 		return
 	}
 
 	delete(r.users, userId)
-	delete(r.userMap, m.TerminatedActor.LogicalAddress())
+	delete(r.userMap, m.TerminatedActor.LogicalAddress)
 
 	message := &ChatMessage{
 		UserId: userId,

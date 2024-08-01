@@ -38,7 +38,7 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 			}))
 			config.WithConsecutiveRestartLimit(-1)
 			config.WithRestartInterval(time.Millisecond*100, 3*time.Second)
-			config.WithUnknownReceiverRedirect(func(message prc.Message) *prc.ProcessRef {
+			config.WithUnknownReceiverRedirect(func(message prc.Message) *prc.ProcessId {
 				return system.guard.ref
 			})
 			if system.config.sharedCodec != nil {
@@ -172,7 +172,7 @@ func (sys *ActorSystem) spawnTopActor(name string, actor Actor, configurator ...
 	// 创建 Guard Actor
 	(&actorContext{
 		system:   sys,
-		ref:      prc.NewProcessRef(sys.processId),
+		ref:      sys.processId,
 		children: make(map[prc.LogicalAddress]ActorRef),
 	}).ActorOf(FunctionalActorProvider(func() Actor {
 		return actor

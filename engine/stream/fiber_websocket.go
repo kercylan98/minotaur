@@ -30,10 +30,10 @@ func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configu
 						return supervision.StopStrategy()
 					}))
 				})
-				wrappers[wrapper.streamRef.LogicalAddress()] = wrapper
+				wrappers[wrapper.streamRef.LogicalAddress] = wrapper
 				ctx.Reply(wrapper)
 			case *vivid.OnTerminated:
-				key := m.TerminatedActor.LogicalAddress()
+				key := m.TerminatedActor.LogicalAddress
 				wrapper, exist := wrappers[key]
 				if exist {
 					close(wrapper.closed)

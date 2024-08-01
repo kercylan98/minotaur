@@ -262,7 +262,7 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 		panic(err)
 	}
 
-	sender, receiver := NewProcessRef(m.Sender), NewProcessRef(m.Receiver)
+	sender, receiver := m.Sender, m.Receiver
 	receiverProcess := s.rc.GetProcess(receiver)
 	if receiverProcess == nil && s.config.unknownReceiverRedirect != nil {
 		receiver = s.config.unknownReceiverRedirect(message)

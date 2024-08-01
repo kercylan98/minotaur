@@ -80,11 +80,11 @@ func newActorContext(parent *actorContext, provider ActorProvider, descriptor *A
 
 	return ctx, func(ref ActorRef) {
 		if descriptor.internal == nil || descriptor.internal.parent == nil {
-			parent.children[ref.LogicalAddress()] = ref
+			parent.children[ref.LogicalAddress] = ref
 		}
 		ctx.ref = ref
 		if ctx.persistenceName == charproc.None {
-			ctx.persistenceName = ctx.ref.LogicalAddress()
+			ctx.persistenceName = ctx.ref.LogicalAddress
 		}
 	}
 }
@@ -129,7 +129,7 @@ func (ctx *actorContext) UnWatch(target ActorRef) {
 
 func (ctx *actorContext) onWatch(m *messages.Watch) {
 	if ctx.status.Load() >= actorStatusTerminating {
-		ctx.system.rc.GetProcess(ctx.sender).DeliverySystemMessage(ctx.sender, ctx.ref, nil, &messages.Terminated{TerminatedProcess: ctx.ref.GetId()})
+		ctx.system.rc.GetProcess(ctx.sender).DeliverySystemMessage(ctx.sender, ctx.ref, nil, &messages.Terminated{TerminatedProcess: ctx.ref})
 	} else {
 		if ctx.watchers == nil {
 			ctx.watchers = make(map[string]ActorRef)
@@ -157,7 +157,7 @@ func (ctx *actorContext) initPersistenceState() {
 func (ctx *actorContext) ClearPersistence() {
 	if ctx.persistenceState != nil {
 		if err := ctx.persistenceState.Clear(); err != nil {
-			ctx.system.Logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+			ctx.system.Logger().Error("ActorSystem", log.String("event", "clear persistence failed"), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
 		}
 	}
 }
@@ -330,20 +330,20 @@ func (ctx *actorContext) onCrossAccidentRecordProcess(m *supervision.CrossAccide
 	ctx.onAccidentRecordProcess(ar)
 }
 
-func (ctx *actorContext) Restart(refs ...*prc.ProcessRef) {
+func (ctx *actorContext) Restart(refs ...*prc.ProcessId) {
 	for _, ref := range refs {
 		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onRestart)
 	}
 }
 
-func (ctx *actorContext) Stop(refs ...*prc.ProcessRef) {
+func (ctx *actorContext) Stop(refs ...*prc.ProcessId) {
 	for _, ref := range refs {
 		ctx.Terminate(ref, false)
 	}
 	ctx.tryTerminated()
 }
 
-func (ctx *actorContext) Resume(refs ...*prc.ProcessRef) {
+func (ctx *actorContext) Resume(refs ...*prc.ProcessId) {
 	for _, ref := range refs {
 		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, onResumeMailbox)
 	}
@@ -413,7 +413,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case *OnTerminate:
 		ctx.onTerminate(m.Gracefully)
 	case *messages.Terminated: // 转换为 OnTerminated
-		ctx.onTerminated(&OnTerminated{TerminatedActor: prc.NewProcessRef(m.TerminatedProcess)})
+		ctx.onTerminated(&OnTerminated{TerminatedActor: m.TerminatedProcess})
 	case *onRestartMessage:
 		ctx.onRestart()
 	case *supervision.AccidentRecord:
@@ -427,7 +427,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case *messages.Unwatch:
 		ctx.onUnWatch(m)
 	case *messages.SlowProcess: // 转换为 OnSlowProcess
-		ctx.processMessage(sender, receiver, &OnSlowProcess{Duration: time.Duration(m.Duration), ActorRef: prc.NewProcessRef(m.Pid)}, false)
+		ctx.processMessage(sender, receiver, &OnSlowProcess{Duration: time.Duration(m.Duration), ActorRef: m.Pid}, false)
 	}
 }
 
@@ -441,7 +441,7 @@ func (ctx *actorContext) slowProcess() func() {
 			} else {
 				m := &messages.SlowProcess{
 					Duration: int64(cost),
-					Pid:      ctx.ref.GetId(),
+					Pid:      ctx.ref,
 				}
 				for _, processReceiver := range ctx.slowProcessReceivers {
 					ctx.system.rc.GetProcess(processReceiver).DeliverySystemMessage(processReceiver, ctx.ref, nil, m)
@@ -487,13 +487,13 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 		t = timeout[0]
 	}
 
-	f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), t)
+	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), t)
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }
 
 func (ctx *actorContext) AwaitForward(target ActorRef, asyncFunc func() Message) {
-	f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
+	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
 	f.AwaitForward(target, asyncFunc)
 }
 
@@ -578,7 +578,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	if node := ctx.findClusterNode(provider, descriptor); node != nil && ctx.system.rc.GetPhysicalAddress() != node.Metadata().GetRcPhysicalAddress() {
 		// 集群中生成
 		msg := &messages.GenerateRemoteActor{
-			ParentPid:                      ctx.ref.GetId(),
+			ParentPid:                      ctx.ref,
 			ProviderName:                   provider.GetActorProviderName(),
 			ActorName:                      descriptor.name,
 			ActorNamePrefix:                descriptor.namePrefix,
@@ -593,7 +593,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 			SlowProcessReceivers:           make([]*prc.ProcessId, len(descriptor.slowProcessReceivers)),
 		}
 		for i, receiver := range descriptor.slowProcessReceivers {
-			msg.SlowProcessReceivers[i] = receiver.GetId()
+			msg.SlowProcessReceivers[i] = receiver
 		}
 		if descriptor.supervisionStrategyProvider != nil {
 			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
@@ -601,23 +601,23 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 
 		remoteRef := NewActorRef(node.Metadata().RcPhysicalAddress, "/")
 
-		f := future.New[Message](ctx.system.rc, ctx.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
+		f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
 		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
 
 		ref, err := f.Result()
 		if err != nil {
 			panic(fmt.Errorf("generate remote actor failed, err: %v", err))
 		}
-		return prc.NewProcessRef(ref.(*messages.GenerateRemoteActorResult).Pid)
+		return ref.(*messages.GenerateRemoteActorResult).Pid
 	}
 
 	// 进程 Id 初始化
 	var processId *prc.ProcessId
 	if descriptor.internal != nil && descriptor.internal.parent != nil {
-		processId = descriptor.internal.parent.DerivationProcessId(descriptor.name)
+		processId = descriptor.internal.parent.Derivation(descriptor.name)
 		processId.PhysicalAddress = ctx.system.rc.GetPhysicalAddress()
 	} else {
-		processId = ctx.ref.DerivationProcessId(descriptor.name)
+		processId = ctx.ref.Derivation(descriptor.name)
 	}
 
 	// 创建上下文
@@ -699,7 +699,7 @@ func (ctx *actorContext) tryRestarted() {
 	}
 	ctx.status.Store(actorStatusAlive)
 
-	ctx.system.Logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "restarted"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Int("child", len(ctx.children)))
 
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onResumeMailbox)
 	ctx.system.rc.GetProcess(ctx.ref).DeliverySystemMessage(ctx.ref, ctx.ref, nil, onRestarted)
@@ -722,7 +722,7 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 }
 
 func (ctx *actorContext) onTerminated(terminated *OnTerminated) {
-	delete(ctx.children, terminated.TerminatedActor.LogicalAddress())
+	delete(ctx.children, terminated.TerminatedActor.LogicalAddress)
 
 	ctx.processMessage(ctx.sender, ctx.ref, terminated, false)
 	switch ctx.status.Load() {
@@ -738,7 +738,7 @@ func (ctx *actorContext) recoveryPersistence() {
 	ctx.initPersistenceState()
 	snapshot, events, err := ctx.persistenceState.Load()
 	if err != nil && !errors.Is(err, persistence.ErrorPersistenceNotHasRecord) {
-		ctx.system.Logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "recovery failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
 		return
 	}
 	ctx.persistenceRecovering = true
@@ -768,7 +768,7 @@ func (ctx *actorContext) Persistence() error {
 
 func (ctx *actorContext) internalPersistence() {
 	if err := ctx.Persistence(); err != nil {
-		ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Err(err))
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "persistence failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Err(err))
 	}
 }
 
@@ -790,10 +790,10 @@ func (ctx *actorContext) tryTerminated() {
 		ctx.scheduler.Close()
 	}
 
-	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress()), log.Int("child", len(ctx.children)))
+	ctx.system.Logger().Debug("ActorSystem", log.String("event", "terminated"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.LogicalAddress), log.Int("child", len(ctx.children)))
 
 	// 通知消息
-	notifyMessage := &messages.Terminated{TerminatedProcess: ctx.ref.GetId()}
+	notifyMessage := &messages.Terminated{TerminatedProcess: ctx.ref}
 	// 通知监听者
 	for _, ref := range ctx.watchers {
 		ctx.system.rc.GetProcess(ref).DeliverySystemMessage(ref, ctx.ref, nil, notifyMessage)
@@ -828,15 +828,15 @@ func (ctx *actorContext) onGenerateRemoteActor(m *messages.GenerateRemoteActor) 
 	descriptor.slowProcessReceivers = make([]ActorRef, len(m.SlowProcessReceivers))
 
 	for i, receiver := range m.SlowProcessReceivers {
-		descriptor.slowProcessReceivers[i] = prc.NewProcessRef(receiver)
+		descriptor.slowProcessReceivers[i] = receiver
 	}
 
 	ref := ctx.ActorOf(provider, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
 		descriptor.withInternalDescriptor(&actorInternalDescriptor{
 			useDescriptor: descriptor,
-			parent:        prc.NewProcessRef(m.ParentPid),
+			parent:        m.ParentPid,
 		})
 	}))
 
-	ctx.Reply(&messages.GenerateRemoteActorResult{Pid: ref.GetId()})
+	ctx.Reply(&messages.GenerateRemoteActorResult{Pid: ref})
 }

@@ -26,16 +26,16 @@ func newSharedConfiguration() *SharedConfiguration {
 
 // SharedConfiguration 共享配置
 type SharedConfiguration struct {
-	runtimeErrorHandler     ErrorPolicyDecisionHandler        // 运行时错误处理器，当处理器不存在时将会引发 panic
-	codec                   codec.Codec                       // 编解码器
-	sharedStartHook         SharedStartHook                   // 当开启共享时的钩子
-	consecutiveRestartLimit int                               // 连续重启限制
-	restartInterval         func(count int) time.Duration     // 重启间隔
-	unknownReceiverRedirect func(message Message) *ProcessRef // 未知接收者重定向
+	runtimeErrorHandler     ErrorPolicyDecisionHandler       // 运行时错误处理器，当处理器不存在时将会引发 panic
+	codec                   codec.Codec                      // 编解码器
+	sharedStartHook         SharedStartHook                  // 当开启共享时的钩子
+	consecutiveRestartLimit int                              // 连续重启限制
+	restartInterval         func(count int) time.Duration    // 重启间隔
+	unknownReceiverRedirect func(message Message) *ProcessId // 未知接收者重定向
 }
 
 // WithUnknownReceiverRedirect 设置未知接收者重定向
-func (c *SharedConfiguration) WithUnknownReceiverRedirect(redirect func(message Message) *ProcessRef) {
+func (c *SharedConfiguration) WithUnknownReceiverRedirect(redirect func(message Message) *ProcessId) {
 	c.unknownReceiverRedirect = redirect
 }
 

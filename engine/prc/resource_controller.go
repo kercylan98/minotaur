@@ -18,7 +18,7 @@ func NewResourceController(configurator ...ResourceControllerConfigurator) *Reso
 	return rc
 }
 
-// ResourceController 是一个支持分布式、集群架构的资源控制器，它将所有资源视为进程(Process)，进程之间通过 ProcessRef 进行通信。
+// ResourceController 是一个支持分布式、集群架构的资源控制器，它将所有资源视为进程(Process)，进程之间通过 ProcessId 进行通信。
 type ResourceController struct {
 	config    *ResourceControllerConfiguration
 	par       []PhysicalAddressResolver             // 线程不安全的物理地址解析器列表，将遍历找到首个有效解析器（应在初始化期间便注册完毕）
@@ -41,49 +41,48 @@ func (rc *ResourceController) GetPhysicalAddress() PhysicalAddress {
 	return rc.config.physicalAddress
 }
 
-// Register 向资源控制器注册一个进程，如果进程已存在，将会返回已有的 ProcessRef 和一个标识是否已存在的状态信息，这对于进程的重复注册检测是非常有用的
-func (rc *ResourceController) Register(id *ProcessId, process Process) (ref *ProcessRef, exist bool) {
+// Register 向资源控制器注册一个进程，如果进程已存在，将会返回已有的 ProcessId 和一个标识是否已存在的状态信息，这对于进程的重复注册检测是非常有用的
+func (rc *ResourceController) Register(id *ProcessId, process Process) (pid *ProcessId, exist bool) {
 	process, exist = rc.processes.LoadOrStore(id.LogicalAddress, process)
 	if !exist {
 		process.Initialize(rc, id)
 		rc.logger().Debug("ResourceController", log.String("register", id.URL().String()))
 	}
-	ref = NewProcessRef(id)
-	return
+	return id, exist
 }
 
 // Unregister 从资源控制器注销一个进程
-func (rc *ResourceController) Unregister(killer *ProcessRef, ref *ProcessRef) {
-	process, exist := rc.processes.LoadAndDelete(ref.GetId().LogicalAddress)
+func (rc *ResourceController) Unregister(killer *ProcessId, target *ProcessId) {
+	process, exist := rc.processes.LoadAndDelete(target.LogicalAddress)
 	if !exist {
 		return
 	}
 	process.Terminate(killer)
-	rc.logger().Debug("ResourceController", log.String("unregister", ref.URL().String()))
+	rc.logger().Debug("ResourceController", log.String("unregister", target.URL().String()))
 }
 
-// Belong 检查 ref 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
-func (rc *ResourceController) Belong(ref *ProcessRef) bool {
-	return network.IsSameLocalAddress(rc.config.physicalAddress, ref.GetId().PhysicalAddress)
+// Belong 检查 id 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
+func (rc *ResourceController) Belong(id *ProcessId) bool {
+	return network.IsSameLocalAddress(rc.config.physicalAddress, id.PhysicalAddress)
 }
 
 // GetProcess 获取一个进程
-func (rc *ResourceController) GetProcess(ref *ProcessRef) (process Process) {
-	processPtr := ref.cache.Load()
+func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
+	processPtr := id.cache.Load()
 	if processPtr != nil {
 		process = *processPtr
 		if !process.IsTerminated() {
 			return process
 		}
 
-		ref.cache.Store(nil)
+		id.cache.Store(nil)
 	}
 
-	if !rc.Belong(ref) {
+	if !rc.Belong(id) {
 		// 远程进程加载
 		for _, resolver := range rc.par {
-			if process = resolver.Resolve(ref.GetId()); process != nil {
-				ref.cache.Store(&process)
+			if process = resolver.Resolve(id); process != nil {
+				id.cache.Store(&process)
 				return
 			}
 		}
@@ -91,9 +90,9 @@ func (rc *ResourceController) GetProcess(ref *ProcessRef) (process Process) {
 
 	// 本地进程加载
 	var exist bool
-	process, exist = rc.processes.Load(ref.GetId().LogicalAddress)
+	process, exist = rc.processes.Load(id.LogicalAddress)
 	if exist {
-		ref.cache.Store(&process)
+		id.cache.Store(&process)
 		return process
 	} else {
 		// 找不到进程时返回默认的替代进程，当默认的替代进程也不存在那么将是空指针

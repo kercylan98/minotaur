@@ -43,3 +43,10 @@ func (pid *ProcessId) Equal(id *ProcessId) bool {
 	}
 	return true
 }
+
+func (pid *ProcessId) Clone() *ProcessId {
+	return &ProcessId{
+		LogicalAddress:  pid.LogicalAddress,
+		PhysicalAddress: pid.PhysicalAddress,
+	}
+}

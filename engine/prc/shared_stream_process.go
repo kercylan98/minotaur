@@ -34,15 +34,15 @@ func (c *sharedStreamProcess) Initialize(rc *ResourceController, id *ProcessId) 
 	// 该进程不注册，不会触发
 }
 
-func (c *sharedStreamProcess) DeliveryUserMessage(receiver, sender, forward *ProcessRef, message Message) {
+func (c *sharedStreamProcess) DeliveryUserMessage(receiver, sender, forward *ProcessId, message Message) {
 	c.packMessage(receiver, sender, forward, message, false)
 }
 
-func (c *sharedStreamProcess) DeliverySystemMessage(receiver, sender, forward *ProcessRef, message Message) {
+func (c *sharedStreamProcess) DeliverySystemMessage(receiver, sender, forward *ProcessId, message Message) {
 	c.packMessage(receiver, sender, forward, message, true)
 }
 
-func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessRef, message Message, system bool) {
+func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, message Message, system bool) {
 	name, data, err := c.shared.config.codec.Encode(message)
 	if err != nil {
 		panic(err)
@@ -51,12 +51,8 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessRef,
 		MessageType: name,
 		MessageData: data,
 		System:      system,
-	}
-	if sender != nil {
-		dm.Sender = sender.GetId()
-	}
-	if receiver != nil {
-		dm.Receiver = receiver.GetId()
+		Sender:      sender,
+		Receiver:    receiver,
 	}
 
 	// 入列
@@ -71,7 +67,7 @@ func (c *sharedStreamProcess) IsTerminated() bool {
 	return false
 }
 
-func (c *sharedStreamProcess) Terminate(source *ProcessRef) {
+func (c *sharedStreamProcess) Terminate(source *ProcessId) {
 	// 该进程不注册，不会由资源控制器触发
 }
 

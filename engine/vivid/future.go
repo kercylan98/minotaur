@@ -24,7 +24,7 @@ func FutureAsk[M Message](ctx mixinDeliver, target ActorRef, message Message, ti
 		system = c.system
 	}
 
-	f := future.New[M](c.system.rc, c.ref.DerivationProcessId(futureNamePrefix+convert.Uint64ToString(c.nextChildGuid())), t)
+	f := future.New[M](c.system.rc, c.ref.Derivation(futureNamePrefix+convert.Uint64ToString(c.nextChildGuid())), t)
 	system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }

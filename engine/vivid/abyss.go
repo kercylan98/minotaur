@@ -20,11 +20,11 @@ func (a *abyss) OnInitialize(system *ActorSystem) {
 	a.system = system
 }
 
-func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	a.system.Logger().Error("ActorSystem", log.String("info", "user abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
 }
 
-func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	a.system.Logger().Error("ActorSystem", log.String("info", "system abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
 }
 
@@ -36,6 +36,6 @@ func (a *abyss) IsTerminated() bool {
 	panic("abyss is eternal")
 }
 
-func (a *abyss) Terminate(source *prc.ProcessRef) {
+func (a *abyss) Terminate(source *prc.ProcessId) {
 	panic("abyss cannot be terminated")
 }

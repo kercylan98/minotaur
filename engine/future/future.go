@@ -9,7 +9,7 @@ import (
 
 type Future[M prc.Message] interface {
 	// Ref 返回该 Future 的 ActorRef
-	Ref() *prc.ProcessRef
+	Ref() *prc.ProcessId
 
 	// Result 阻塞地等待结果
 	Result() (M, error)
@@ -27,13 +27,13 @@ type Future[M prc.Message] interface {
 	AssertWait()
 
 	// Forward 将结果转发给其他的 ActorRef
-	Forward(refs ...*prc.ProcessRef)
+	Forward(refs ...*prc.ProcessId)
 
 	// Close 提前关闭
 	Close(reason error)
 
 	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
-	AwaitForward(ref *prc.ProcessRef, f func() M)
+	AwaitForward(ref *prc.ProcessId, f func() M)
 }
 
 func New[M prc.Message](rc *prc.ResourceController, id *prc.ProcessId, timeout time.Duration) Future[M] {
@@ -48,13 +48,13 @@ func New[M prc.Message](rc *prc.ResourceController, id *prc.ProcessId, timeout t
 
 type futureProcess[M prc.Message] struct {
 	rc            *prc.ResourceController
-	ref           *prc.ProcessRef
+	ref           *prc.ProcessId
 	timer         *time.Timer
 	done          chan struct{}
 	message       any
 	err           error
 	timeout       time.Duration
-	forwards      []*prc.ProcessRef
+	forwards      []*prc.ProcessId
 	closed        atomic.Bool
 	forwardsMutex sync.Mutex
 }
@@ -67,7 +67,7 @@ func (f *futureProcess[M]) OnlyResult() (m M) {
 	return result
 }
 
-func (f *futureProcess[M]) AwaitForward(ref *prc.ProcessRef, asyncFunc func() M) {
+func (f *futureProcess[M]) AwaitForward(ref *prc.ProcessId, asyncFunc func() M) {
 	f.Forward(ref)
 	go func() {
 		if reason := recover(); reason != nil {
@@ -78,7 +78,7 @@ func (f *futureProcess[M]) AwaitForward(ref *prc.ProcessRef, asyncFunc func() M)
 	}()
 }
 
-func (f *futureProcess[M]) Ref() *prc.ProcessRef {
+func (f *futureProcess[M]) Ref() *prc.ProcessId {
 	return f.ref
 }
 
@@ -106,7 +106,7 @@ func (f *futureProcess[M]) AssertWait() {
 	}
 }
 
-func (f *futureProcess[M]) Forward(refs ...*prc.ProcessRef) {
+func (f *futureProcess[M]) Forward(refs ...*prc.ProcessId) {
 	f.forwardsMutex.Lock()
 	defer f.forwardsMutex.Unlock()
 	f.forwards = append(f.forwards, refs...)
@@ -124,7 +124,7 @@ func (f *futureProcess[M]) Initialize(rc *prc.ResourceController, id *prc.Proces
 	}
 }
 
-func (f *futureProcess[M]) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (f *futureProcess[M]) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	if f.closed.Load() {
 		return
 	}
@@ -138,7 +138,7 @@ func (f *futureProcess[M]) DeliveryUserMessage(receiver, sender, forward *prc.Pr
 	}
 }
 
-func (f *futureProcess[M]) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (f *futureProcess[M]) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	f.DeliveryUserMessage(receiver, sender, forward, message)
 }
 
@@ -146,7 +146,7 @@ func (f *futureProcess[M]) IsTerminated() bool {
 	return f.closed.Load()
 }
 
-func (f *futureProcess[M]) Terminate(source *prc.ProcessRef) {
+func (f *futureProcess[M]) Terminate(source *prc.ProcessId) {
 	// 不做什么
 }
 

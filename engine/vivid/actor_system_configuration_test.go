@@ -145,7 +145,7 @@ func TestActorSystemConfiguration_WithSharedActorOf(t *testing.T) {
 	}))
 
 	ref := system2.ActorOf(provider)
-	system2.Tell(ref, ref.GetId())
+	system2.Tell(ref, ref)
 	system2.Terminate(ref, true)
 
 	wait.Wait()

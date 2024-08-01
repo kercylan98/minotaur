@@ -110,11 +110,11 @@ func (p *TestSharedProcess) Initialize(rc *prc.ResourceController, id *prc.Proce
 
 }
 
-func (p *TestSharedProcess) DeliveryUserMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (p *TestSharedProcess) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	p.wg.Done()
 }
 
-func (p *TestSharedProcess) DeliverySystemMessage(receiver, sender, forward *prc.ProcessRef, message prc.Message) {
+func (p *TestSharedProcess) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
 	p.DeliveryUserMessage(receiver, sender, forward, message)
 }
 
@@ -122,7 +122,7 @@ func (p *TestSharedProcess) IsTerminated() bool {
 	return false
 }
 
-func (p *TestSharedProcess) Terminate(source *prc.ProcessRef) {
+func (p *TestSharedProcess) Terminate(source *prc.ProcessId) {
 
 }
 func (p *TestSharedProcess) Add(n int) {
