@@ -112,11 +112,11 @@ func onDevelopGenerateProcessIdInject() {
 				}
 				v.Fields.List = append(v.Fields.List, processCacheField)
 
-				redirectAddressField := &ast.Field{
-					Names: []*ast.Ident{ast.NewIdent("redirect")},
-					Type:  ast.NewIdent("atomic.Pointer[*ProcessId]"),
-				}
-				v.Fields.List = append(v.Fields.List, redirectAddressField)
+				//redirectAddressField := &ast.Field{
+				//	Names: []*ast.Ident{ast.NewIdent("redirect")},
+				//	Type:  ast.NewIdent("atomic.Pointer[ProcessId]"),
+				//}
+				//v.Fields.List = append(v.Fields.List, redirectAddressField)
 				found = true
 				return false
 			}

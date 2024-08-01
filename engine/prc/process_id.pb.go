@@ -29,7 +29,6 @@ type ProcessId struct {
 	LogicalAddress  string `protobuf:"bytes,1,opt,name=logical_address,json=logicalAddress,proto3" json:"logical_address,omitempty"`
 	PhysicalAddress string `protobuf:"bytes,2,opt,name=physical_address,json=physicalAddress,proto3" json:"physical_address,omitempty"`
 	cache           atomic.Pointer[Process]
-	redirect        atomic.Pointer[*ProcessId]
 }
 
 func (x *ProcessId) Reset() {
@@ -123,10 +122,7 @@ func file_process_id_proto_init() {
 			}
 		}
 	}
-	type x struct {
-		cache    atomic.Pointer[Process]
-		redirect atomic.Pointer[*ProcessId]
-	}
+	type x struct{ cache atomic.Pointer[Process] }
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
