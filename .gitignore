@@ -1,5 +1,7 @@
 ### Minotaur
 old/app/monopoly/
+go.work
+go.work.sum
 
 ### VisualStudioCode template
 .vscode/*
@@ -166,4 +168,4 @@ Temporary Items
 
 .refer
 .refer/*
-.log
+.log!/ax/go.work
