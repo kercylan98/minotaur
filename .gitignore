@@ -2,6 +2,7 @@
 old/app/monopoly/
 go.work
 go.work.sum
+*.exe
 
 ### VisualStudioCode template
 .vscode/*

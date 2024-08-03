@@ -4,27 +4,6 @@ option go_package = "/github.com/kercylan98/minotaur/engine/vivid/internal/messa
 
 import "process_id.proto";
 
-message GenerateRemoteActor {
-  prc.ProcessId parent_pid = 1;
-  string provider_name = 2;
-  string actor_name = 100;
-  string actor_name_prefix = 101;
-  string mailbox_provider_name = 102;
-  string dispatcher_provider_name = 103;
-  string supervision_strategy_name = 104;
-  int64 expire_duration = 105;
-  int64 idle_deadline = 106;
-  string persistence_storage_provider_name = 107;
-  string persistence_name = 108;
-  int32 persistence_event_threshold = 109;
-  int64 slow_process_duration = 110;
-  repeated prc.ProcessId slow_process_receivers = 111;
-}
-
-message GenerateRemoteActorResult {
-  prc.ProcessId pid = 1;
-}
-
 // Terminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
 message Terminated {
   prc.ProcessId terminated_process = 1;

@@ -75,7 +75,6 @@ func newActorContext(parent *actorContext, provider ActorProvider, descriptor *A
 
 	if descriptor.supervisionStrategyProvider != nil {
 		ctx.supervisorStrategy = descriptor.supervisionStrategyProvider.Provide()
-		ctx.supervisorStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
 	}
 
 	return ctx, func(ref ActorRef) {
@@ -102,7 +101,6 @@ type actorContext struct {
 	message                    Message                         // 当前处理的消息
 	sender                     ActorRef                        // 当前消息的发送者
 	supervisorStrategy         supervision.Strategy            // 监管策略
-	supervisorStrategyName     supervision.StrategyName        // 监管策略名称
 	supervisorLoggers          []supervision.Logger            // 监管记录器
 	gracefullyTerminated       bool                            // 是否已优雅终止
 	scheduler                  *chrono.Scheduler               // 定时调度器
@@ -287,16 +285,6 @@ func (ctx *actorContext) Escalate(record *supervision.AccidentRecord) {
 		panic(fmt.Errorf("the root actor should not continue to upgrade!, err: %v", record.Reason))
 	}
 
-	if !ctx.system.rc.Belong(ctx.parentRef) {
-		// 远程的父级 Actor，需要通过网络传输
-		car, err := record.CrossAccidentRecord(ctx.supervisorStrategyName, ctx.system.shared)
-		if err != nil {
-			panic(fmt.Errorf("cross accident record failed, err: %v", err))
-		}
-		ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, car)
-		return
-	}
-
 	ctx.system.rc.GetProcess(ctx.parentRef).DeliverySystemMessage(ctx.parentRef, ctx.ref, nil, record)
 }
 
@@ -312,22 +300,6 @@ func (ctx *actorContext) onAccidentRecordProcess(m *supervision.AccidentRecord) 
 	} else {
 		ctx.Escalate(m) // 继续升级
 	}
-}
-
-func (ctx *actorContext) onCrossAccidentRecordProcess(m *supervision.CrossAccidentRecord) {
-	var strategy supervision.Strategy
-	if m.Strategy != charproc.None {
-		provider, exist := ctx.system.config.supervisionStrategyProviderTable[m.Strategy]
-		if !exist {
-			panic(fmt.Errorf("supervisor strategy %s not found", m.Strategy))
-		}
-		strategy = provider.Provide()
-	}
-	ar, err := m.AccidentRecord(ctx, ctx.system.shared, strategy)
-	if err != nil {
-		panic(fmt.Errorf("cross accident record failed, err: %v", err))
-	}
-	ctx.onAccidentRecordProcess(ar)
 }
 
 func (ctx *actorContext) Restart(refs ...*prc.ProcessId) {
@@ -418,10 +390,6 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 		ctx.onRestart()
 	case *supervision.AccidentRecord:
 		ctx.onAccidentRecordProcess(m)
-	case *supervision.CrossAccidentRecord:
-		ctx.onCrossAccidentRecordProcess(m)
-	case *messages.GenerateRemoteActor:
-		ctx.onGenerateRemoteActor(m)
 	case *messages.Watch:
 		ctx.onWatch(m)
 	case *messages.Unwatch:
@@ -515,51 +483,6 @@ func (ctx *actorContext) Ref() ActorRef {
 	return ctx.ref
 }
 
-// findClusterNode 寻找符合条件的集群节点，如果为空，那么没有满足的
-func (ctx *actorContext) findClusterNode(provider ActorProvider, descriptor *ActorDescriptor) *prc.DiscoverNode {
-	if descriptor.fixedLocal {
-		return nil
-	}
-	system := ctx.system
-	if system.discoverer == nil {
-		return nil
-	}
-	if descriptor.internal != nil {
-		return nil
-	}
-	if descriptor.supervisionStrategyProvider != nil && descriptor.supervisionStrategyProvider.GetStrategyProviderName() != charproc.None {
-		return nil
-	}
-	if len(descriptor.supervisionLoggers) > 0 {
-		return nil
-	}
-
-	var matches []*prc.DiscoverNode
-	for _, node := range system.discoverer.GetNodes() {
-		md := node.Metadata()
-
-		actorCheck := md.UserMetadata[actorSystemMetadataKeyActorProviderTable] == provider.GetActorProviderName()
-		dispatcherCheck := actorCheck && md.UserMetadata[actorSystemMetadataKeyDispatcherProviderTable] == descriptor.dispatcherProvider.GetDispatcherProviderName()
-		mailboxCheck := dispatcherCheck && md.UserMetadata[actorSystemMetadataKeyMailboxProviderTable] == descriptor.mailboxProvider.GetMailboxProviderName()
-		strategyCheck := mailboxCheck && (descriptor.supervisionStrategyProvider == nil || md.UserMetadata[actorSystemMetadataKeySupervisionStrategyProviderTable] == descriptor.supervisionStrategyProvider.GetStrategyProviderName())
-		persistenceStorageCheck := strategyCheck && md.UserMetadata[actorSystemMetadataKeyPersistenceStorageProviderTable] == descriptor.persistenceStorageProvider.GetStorageProviderName()
-
-		if !persistenceStorageCheck {
-			continue
-		}
-
-		matches = append(matches, node)
-	}
-
-	if len(matches) == 0 {
-		return nil
-	}
-
-	// 排序，暂时随机
-	collection.Shuffle(&matches)
-	return matches[0]
-}
-
 func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDescriptorConfigurator) ActorRef {
 	// 生成描述并配置
 	descriptor := newActorDescriptor()
@@ -573,42 +496,6 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	}
 	if descriptor.namePrefix != charproc.None {
 		descriptor.name = descriptor.namePrefix + "-" + descriptor.name
-	}
-
-	if node := ctx.findClusterNode(provider, descriptor); node != nil && ctx.system.rc.GetPhysicalAddress() != node.Metadata().GetRcPhysicalAddress() {
-		// 集群中生成
-		msg := &messages.GenerateRemoteActor{
-			ParentPid:                      ctx.ref,
-			ProviderName:                   provider.GetActorProviderName(),
-			ActorName:                      descriptor.name,
-			ActorNamePrefix:                descriptor.namePrefix,
-			MailboxProviderName:            descriptor.mailboxProvider.GetMailboxProviderName(),
-			DispatcherProviderName:         descriptor.dispatcherProvider.GetDispatcherProviderName(),
-			ExpireDuration:                 int64(descriptor.expireDuration),
-			IdleDeadline:                   int64(descriptor.idleDeadline),
-			PersistenceStorageProviderName: descriptor.persistenceStorageProvider.GetStorageProviderName(),
-			PersistenceName:                descriptor.persistenceName,
-			PersistenceEventThreshold:      int32(descriptor.persistenceEventThreshold),
-			SlowProcessDuration:            int64(descriptor.slowProcessingDuration),
-			SlowProcessReceivers:           make([]*prc.ProcessId, len(descriptor.slowProcessReceivers)),
-		}
-		for i, receiver := range descriptor.slowProcessReceivers {
-			msg.SlowProcessReceivers[i] = receiver
-		}
-		if descriptor.supervisionStrategyProvider != nil {
-			msg.SupervisionStrategyName = descriptor.supervisionStrategyProvider.GetStrategyProviderName()
-		}
-
-		remoteRef := NewActorRef(node.Metadata().RcPhysicalAddress, "/")
-
-		f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
-		ctx.system.rc.GetProcess(remoteRef).DeliverySystemMessage(remoteRef, f.Ref(), nil, msg)
-
-		ref, err := f.Result()
-		if err != nil {
-			panic(fmt.Errorf("generate remote actor failed, err: %v", err))
-		}
-		return ref.(*messages.GenerateRemoteActorResult).Pid
 	}
 
 	// 进程 Id 初始化
@@ -805,38 +692,4 @@ func (ctx *actorContext) tryTerminated() {
 	} else {
 		close(ctx.system.closed)
 	}
-}
-
-func (ctx *actorContext) onGenerateRemoteActor(m *messages.GenerateRemoteActor) {
-	provider, exist := ctx.system.config.actorProviderTable[m.ProviderName]
-	if !exist {
-		panic(fmt.Errorf("actor provider %s not found", m.ProviderName))
-	}
-
-	descriptor := newActorDescriptor()
-	descriptor.name = m.ActorName
-	descriptor.namePrefix = m.ActorNamePrefix
-	descriptor.mailboxProvider = ctx.system.config.mailboxProviderTable[m.MailboxProviderName]
-	descriptor.dispatcherProvider = ctx.system.config.dispatcherProviderTable[m.DispatcherProviderName]
-	descriptor.supervisionStrategyProvider = ctx.system.config.supervisionStrategyProviderTable[m.SupervisionStrategyName]
-	descriptor.idleDeadline = time.Duration(m.IdleDeadline)
-	descriptor.expireDuration = time.Duration(m.ExpireDuration)
-	descriptor.persistenceStorageProvider = ctx.system.config.persistenceStorageProviderTable[m.PersistenceStorageProviderName]
-	descriptor.persistenceName = m.PersistenceName
-	descriptor.persistenceEventThreshold = int(m.PersistenceEventThreshold)
-	descriptor.slowProcessingDuration = time.Duration(m.SlowProcessDuration)
-	descriptor.slowProcessReceivers = make([]ActorRef, len(m.SlowProcessReceivers))
-
-	for i, receiver := range m.SlowProcessReceivers {
-		descriptor.slowProcessReceivers[i] = receiver
-	}
-
-	ref := ctx.ActorOf(provider, FunctionalActorDescriptorConfigurator(func(descriptor *ActorDescriptor) {
-		descriptor.withInternalDescriptor(&actorInternalDescriptor{
-			useDescriptor: descriptor,
-			parent:        m.ParentPid,
-		})
-	}))
-
-	ctx.Reply(&messages.GenerateRemoteActorResult{Pid: ref})
 }

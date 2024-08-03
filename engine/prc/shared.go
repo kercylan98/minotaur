@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc/codec"
-	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"github.com/kercylan98/minotaur/toolkit/network"
 	"github.com/puzpuzpuz/xsync/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -53,6 +51,11 @@ type Shared struct {
 	restartTimer atomic.Pointer[time.Timer]
 }
 
+// GetResourceController 获取资源控制器
+func (s *Shared) GetResourceController() *ResourceController {
+	return s.rc
+}
+
 // Dead 设置共享彻底关闭，将无法再继续重启
 func (s *Shared) Dead() {
 	if s == nil {
@@ -80,8 +83,11 @@ func (s *Shared) Share() error {
 
 	listener, err := net.Listen("tcp", s.rc.GetPhysicalAddress())
 	if err != nil {
-		return fmt.Errorf("%w local ResourceController not support shared! plese use ResourceControllerConfiguration.WithPhysicalAddress to set a valid address", err)
+		return fmt.Errorf("shared listen error: %w", err)
 	}
+
+	// 可能存在端口为 0 的情况，使用新物理地址替代
+	s.rc.config.physicalAddress = listener.Addr().String()
 
 	s.grpc = grpc.NewServer()
 	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
@@ -142,12 +148,7 @@ func (s *Shared) Close(err ...error) {
 
 // open 打开一个资源控制器
 func (s *Shared) open(address PhysicalAddress) (sharedStream, error) {
-	host, port, err := network.NormalizeAddress(address)
-	if err != nil {
-		return nil, err
-	}
-
-	cc, err := grpc.NewClient(net.JoinHostPort(host, convert.IntToString(port)), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cc, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +262,10 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 	message, err := s.config.codec.Decode(m.MessageType, m.MessageData)
 	if err != nil {
 		panic(err)
+	}
+	switch v := message.(type) {
+	case *SharedErrorMessage:
+		message = errors.New(v.Message)
 	}
 
 	sender, receiver := m.Sender, m.Receiver

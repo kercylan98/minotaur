@@ -3,9 +3,7 @@ package vivid
 import (
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/prc"
-	"github.com/kercylan98/minotaur/toolkit/charproc"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"github.com/kercylan98/minotaur/toolkit/network"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,8 +11,12 @@ import (
 )
 
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
+	return NewActorSystemWithConfiguration(NewActorSystemConfiguration(), configurator...)
+}
+
+func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, configurator ...ActorSystemConfigurator) *ActorSystem {
 	system := &ActorSystem{
-		config: newActorSystemConfiguration(),
+		config: configuration,
 		closed: make(chan struct{}),
 	}
 
@@ -22,9 +24,6 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 		systemConfigurator.Configure(system.config)
 	}
 
-	if system.config.abyss != nil {
-		system.config.abyss.OnInitialize(system)
-	}
 	system.rc = prc.NewResourceController(prc.FunctionalResourceControllerConfigurator(func(config *prc.ResourceControllerConfiguration) {
 		config.WithPhysicalAddress(system.config.physicalAddress)
 		config.WithLoggerProvider(system.config.loggerProvider)
@@ -48,39 +47,41 @@ func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 		if err := system.shared.Share(); err != nil {
 			panic(err)
 		}
+		system.config.physicalAddress = system.rc.GetPhysicalAddress()
 	}
 
-	if system.config.clusterBindAddress != charproc.None {
-		host, port, err := network.NormalizeAddress(system.config.clusterBindAddress)
-		if err != nil {
-			panic(err)
-		}
-		system.discoverer = prc.NewDiscoverer(system.rc, host, port, prc.FunctionalDiscovererConfigurator(func(configuration *prc.DiscovererConfiguration) {
-			configuration.WithJoinNodes(system.config.clusterJoinNodes...)
-			configuration.WithName(system.config.actorSystemName)
-			configuration.WithUserMetadata(packActorSystemMetadata(system))
-		}))
-		if err = system.discoverer.Discover(); err != nil {
-			panic(err)
-		}
+	system.processId = prc.NewProcessId(system.rc.GetPhysicalAddress(), "/")
+
+	if system.config.abyss != nil {
+		system.config.abyss.OnInitialize(system)
+		system.abyssRef, _ = system.rc.Register(system.processId.Derivation("abyss"), system.config.abyss)
 	}
 
 	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
 
-	system.processId = prc.NewProcessId(system.rc.GetPhysicalAddress(), "/")
 	system.guard = system.spawnTopActor("user", new(guard))
 
 	return system
 }
 
 type ActorSystem struct {
-	config     *ActorSystemConfiguration
-	rc         *prc.ResourceController
-	processId  *prc.ProcessId
-	guard      *actorContext
-	shared     *prc.Shared
-	discoverer *prc.Discoverer
-	closed     chan struct{}
+	config    *ActorSystemConfiguration
+	rc        *prc.ResourceController
+	processId *prc.ProcessId
+	guard     *actorContext
+	shared    *prc.Shared
+	abyssRef  ActorRef
+	closed    chan struct{}
+}
+
+// Abyss 获取 Actor 系统的深渊引用
+func (sys *ActorSystem) Abyss() ActorRef {
+	return sys.abyssRef
+}
+
+// PhysicalAddress 获取 Actor 系统的物理地址
+func (sys *ActorSystem) PhysicalAddress() prc.PhysicalAddress {
+	return sys.rc.GetPhysicalAddress()
 }
 
 // Name 获取 Actor 系统的名称
@@ -132,6 +133,10 @@ func (sys *ActorSystem) Shutdown(gracefully bool) {
 	<-sys.closed
 	sys.shared.Dead()
 	sys.Logger().Info("ActorSystem", log.String("status", "shutdown"), log.String("name", sys.config.actorSystemName))
+
+	for _, hook := range sys.config.shutdownAfterHooks {
+		hook()
+	}
 }
 
 // Terminate 终止目标 Actor。

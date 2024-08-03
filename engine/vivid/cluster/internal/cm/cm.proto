@@ -1,0 +1,20 @@
+syntax = "proto3";
+package cm;
+option go_package = "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/cm";
+
+import "process_id.proto";
+
+message State {
+  int64 update_at = 1; // 更新时间（毫秒级）
+}
+
+message Metadata {
+  prc.ProcessId process_id = 1; // 节点进程 ID
+  int64 launch_at = 2; // 启动时间（毫秒级）
+  map<string, bool> abilities = 3; // 节点提供的能力
+}
+
+message ActorOf {
+  string identity = 1;
+  string ability = 2;
+}

@@ -1,8 +1,6 @@
 package prc
 
 type (
-	// ClusterName 集群名称
-	ClusterName = string
 	// PhysicalAddress 物理地址是用于标识内容的网络地址
 	PhysicalAddress = string
 	// LogicalAddress 逻辑地址是用于标识内容的本地内部地址
@@ -12,5 +10,5 @@ type (
 )
 
 const (
-	LocalhostPhysicalAddress = "localhost"
+	LocalhostPhysicalAddress = "localhost" // 无网络本地
 )

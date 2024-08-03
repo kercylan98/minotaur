@@ -45,6 +45,12 @@ func TestActorSystemConfiguration_WithShared(t *testing.T) {
 	})).Shutdown(true)
 }
 
+func TestActorSystemConfiguration_WithSharedLocalhost(t *testing.T) {
+	vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithShared("localhost")
+	})).Shutdown(true)
+}
+
 func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
 	var messageNum = 1000
 	var receiverOnce, senderOnce sync.Once
@@ -109,46 +115,6 @@ func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
 	ref2 := ref1.Clone() // 同一进程内，隔离开，避免通过缓存直接调用
 	system2.Terminate(ref2, true)
 	wg.Wait()
-	system1.Shutdown(true)
-	system2.Shutdown(true)
-}
-
-func TestActorSystemConfiguration_WithSharedActorOf(t *testing.T) {
-	wait := sync.WaitGroup{}
-	wait.Add(1)
-	provider := vivid.NewShortcutActorProvider("test", func() vivid.Actor {
-		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch ctx.Message().(type) {
-			case *vivid.OnLaunch:
-				t.Log("launch", ctx.Ref().URL().String(), "parent", ctx.Parent().URL().String())
-			case *vivid.OnTerminated:
-				t.Log("terminated", ctx.Ref().URL().String(), "killer", ctx.Sender().URL().String())
-				wait.Done()
-			case *prc.ProcessId:
-				t.Log("hello!")
-
-			}
-		})
-	})
-
-	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithName("system1")
-		config.WithShared(":8080")
-		config.WithCluster("127.0.0.1:18080", "127.0.0.1:18080")
-		config.WithActorProvider(provider)
-	}))
-
-	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithName("system2")
-		config.WithShared(":8081")
-		config.WithCluster("127.0.0.1:18081", "127.0.0.1:18080")
-	}))
-
-	ref := system2.ActorOf(provider)
-	system2.Tell(ref, ref)
-	system2.Terminate(ref, true)
-
-	wait.Wait()
 	system1.Shutdown(true)
 	system2.Shutdown(true)
 }

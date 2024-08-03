@@ -15,10 +15,6 @@ func GetDefaultPersistenceStorageProvider() persistence.StorageProvider {
 
 type defaultPersistenceStorageProvider struct{}
 
-func (d *defaultPersistenceStorageProvider) GetStorageProviderName() persistence.StorageProviderName {
-	return "__default"
-}
-
 func (d *defaultPersistenceStorageProvider) Provide() persistence.Storage {
 	return persistence.NewMemoryStorage()
 }

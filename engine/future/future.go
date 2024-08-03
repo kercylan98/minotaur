@@ -84,7 +84,13 @@ func (f *futureProcess[M]) Ref() *prc.ProcessId {
 
 func (f *futureProcess[M]) Result() (M, error) {
 	<-f.done
-	return f.message.(M), f.err
+	var m M
+	switch f.message.(type) {
+	case nil:
+	default:
+		m = f.message.(M)
+	}
+	return m, f.err
 }
 
 func (f *futureProcess[M]) AssertResult() M {

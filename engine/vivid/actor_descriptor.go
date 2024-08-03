@@ -35,7 +35,6 @@ type ActorDescriptor struct {
 	dispatcherProvider          DispatcherProvider           // 调度器提供者
 	supervisionStrategyProvider supervision.StrategyProvider // 监督策略提供者
 	supervisionLoggers          []supervision.Logger         // 监督日志
-	fixedLocal                  bool                         // 固定本地 Actor
 	expireDuration              time.Duration                // 过期时间
 	idleDeadline                time.Duration                // 空闲截止时间
 	persistenceStorageProvider  persistence.StorageProvider  // 持久化存储提供者
@@ -89,16 +88,6 @@ func (d *ActorDescriptor) WithIdleDeadline(deadline time.Duration) *ActorDescrip
 //   - 过期是指该 Actor 在到达期限后将会被终止
 func (d *ActorDescriptor) WithExpireDuration(duration time.Duration) *ActorDescriptor {
 	d.expireDuration = duration
-	return d
-}
-
-// WithFixedLocal 设置该 Actor 固定在本地生成，不会被远程 ActorSystem 生成。
-//   - 虽然 Actor 在不满足集群情况时不会在集群的其他节点生成，但是通过该函数可以明确的指定。
-//   - 在某些场景下，避免远程调用可以提高处理的效率，例如将 Actor 作为对 Socket 连接的处理器时。
-//
-// 该可选项仅在开启集群时会生效
-func (d *ActorDescriptor) WithFixedLocal() *ActorDescriptor {
-	d.fixedLocal = true
 	return d
 }
 

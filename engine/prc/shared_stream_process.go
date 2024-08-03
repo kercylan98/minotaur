@@ -43,6 +43,10 @@ func (c *sharedStreamProcess) DeliverySystemMessage(receiver, sender, forward *P
 }
 
 func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, message Message, system bool) {
+	if err, ok := message.(error); ok {
+		message = &SharedErrorMessage{Message: err.Error()}
+	}
+
 	name, data, err := c.shared.config.codec.Encode(message)
 	if err != nil {
 		panic(err)

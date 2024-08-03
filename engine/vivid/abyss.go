@@ -29,13 +29,13 @@ func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, 
 }
 
 func (a *abyss) Initialize(rc *prc.ResourceController, id *prc.ProcessId) {
-	panic("abyss cannot be initialized")
+
 }
 
 func (a *abyss) IsTerminated() bool {
-	panic("abyss is eternal")
+	return false
 }
 
 func (a *abyss) Terminate(source *prc.ProcessId) {
-	panic("abyss cannot be terminated")
+
 }

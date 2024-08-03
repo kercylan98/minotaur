@@ -38,3 +38,6 @@ message BatchDeliveryMessage {
   repeated DeliveryMessage messages = 1;
 }
 
+message SharedErrorMessage {
+  string message = 1;
+}

@@ -2,7 +2,6 @@ package prc
 
 import (
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"github.com/kercylan98/minotaur/toolkit/network"
 	"github.com/puzpuzpuz/xsync/v3"
 )
 
@@ -63,7 +62,7 @@ func (rc *ResourceController) Unregister(killer *ProcessId, target *ProcessId) {
 
 // Belong 检查 id 是否属于该资源控制器。该函数并不检查进程是否存在，只检查进程的归属关系。
 func (rc *ResourceController) Belong(id *ProcessId) bool {
-	return network.IsSameLocalAddress(rc.config.physicalAddress, id.GetPhysicalAddress())
+	return rc.config.physicalAddress == id.GetPhysicalAddress()
 }
 
 // GetProcess 获取一个进程

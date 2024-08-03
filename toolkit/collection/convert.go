@@ -122,6 +122,18 @@ func ConvertMapKeysToSlice[M ~map[K]V, K comparable, V any](m M) []K {
 	return r
 }
 
+// ConvertMapValuesToBoolMap 将映射的值转换为 map[K]bool
+func ConvertMapValuesToBoolMap[M ~map[K]V, K comparable, V any](m M) map[K]bool {
+	if len(m) == 0 {
+		return nil
+	}
+	var r = make(map[K]bool, len(m))
+	for k := range m {
+		r[k] = true
+	}
+	return r
+}
+
 // ConvertMapValuesToSlice 将映射的值转换为切片
 func ConvertMapValuesToSlice[M ~map[K]V, K comparable, V any](m M) []V {
 	if len(m) == 0 {
