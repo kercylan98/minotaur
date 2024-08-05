@@ -4,10 +4,10 @@ package test
 
 import (
 	context "context"
+	options "github.com/kercylan98/minotaur/engine/vivid/typed/options"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +19,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TestClient interface {
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	Tell(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Say(ctx context.Context, in *Request, opts ...grpc.CallOption) (*options.Empty, error)
+	Call(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type testClient struct {
@@ -31,18 +32,27 @@ func NewTestClient(cc grpc.ClientConnInterface) TestClient {
 	return &testClient{cc}
 }
 
-func (c *testClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, "/test.Test/Ping", in, out, opts...)
+func (c *testClient) Say(ctx context.Context, in *Request, opts ...grpc.CallOption) (*options.Empty, error) {
+	out := new(options.Empty)
+	err := c.cc.Invoke(ctx, "/test.Test/Say", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *testClient) Tell(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/test.Test/Tell", in, out, opts...)
+func (c *testClient) Call(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/test.Test/Call", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testClient) Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/test.Test/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +63,9 @@ func (c *testClient) Tell(ctx context.Context, in *PingRequest, opts ...grpc.Cal
 // All implementations must embed UnimplementedTestServer
 // for forward compatibility
 type TestServer interface {
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	Tell(context.Context, *PingRequest) (*emptypb.Empty, error)
+	Say(context.Context, *Request) (*options.Empty, error)
+	Call(context.Context, *Request) (*Response, error)
+	Ping(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedTestServer()
 }
 
@@ -62,11 +73,14 @@ type TestServer interface {
 type UnimplementedTestServer struct {
 }
 
-func (UnimplementedTestServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+func (UnimplementedTestServer) Say(context.Context, *Request) (*options.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Say not implemented")
 }
-func (UnimplementedTestServer) Tell(context.Context, *PingRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Tell not implemented")
+func (UnimplementedTestServer) Call(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
+}
+func (UnimplementedTestServer) Ping(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedTestServer) mustEmbedUnimplementedTestServer() {}
 
@@ -81,8 +95,44 @@ func RegisterTestServer(s grpc.ServiceRegistrar, srv TestServer) {
 	s.RegisterService(&Test_ServiceDesc, srv)
 }
 
+func _Test_Say_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestServer).Say(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/test.Test/Say",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestServer).Say(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Test_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestServer).Call(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/test.Test/Call",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestServer).Call(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Test_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+	in := new(Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -94,25 +144,7 @@ func _Test_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface
 		FullMethod: "/test.Test/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServer).Ping(ctx, req.(*PingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Test_Tell_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TestServer).Tell(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/test.Test/Tell",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServer).Tell(ctx, req.(*PingRequest))
+		return srv.(TestServer).Ping(ctx, req.(*Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -125,12 +157,16 @@ var Test_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TestServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Ping",
-			Handler:    _Test_Ping_Handler,
+			MethodName: "Say",
+			Handler:    _Test_Say_Handler,
 		},
 		{
-			MethodName: "Tell",
-			Handler:    _Test_Tell_Handler,
+			MethodName: "Call",
+			Handler:    _Test_Call_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _Test_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

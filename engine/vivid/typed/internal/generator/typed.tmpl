@@ -1,0 +1,161 @@
+{{ $service := . }}
+
+const (
+    {{ range $method := $service.Methods }}
+        {{ if eq $method.Options.Type 2}}
+            futureAsk{{ $method.Name }}Timeout = {{ $method.Options.Timeout }} * time.Millisecond
+        {{ end }}
+    {{ end }}
+)
+
+type {{ $service.Name }}ActorTypedProvider interface {
+    {{ $service.ModeName }}.ActorProvider
+}
+
+type Functional{{ $service.Name }}ActorTypedProvider func() {{ $service.Name }}ActorTypedInterface
+
+func (f Functional{{ $service.Name }}ActorTypedProvider) Provide() {{ $service.ModeName }}.Actor {
+    return &typed{{ $service.Name }}Actor{f()}
+}
+
+type TestActorTyped interface {
+    {{ $service.ModeName }}.Actor
+    {{ $service.Name }}ActorTypedInterface
+}
+
+type {{ $service.Name }}ActorTypedInterface interface {
+	{{ range $method := $service.Methods }}
+        {{ if eq $method.Options.Type 0 }}
+            // {{ $method.Name }} 是一个 Tell 类型的方法，它将会非阻塞的将消息投递到目标邮箱。
+            {{ $method.Name }}(ctx {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }})
+        {{ else if eq $method.Options.Type 1 }}
+            // {{ $method.Name }} 是一个 Ask 类型的方法，它将会非阻塞的将消息投递到目标邮箱，但是不一定能收到返回的结果。
+            {{ $method.Name }}(ctx {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }}, responder tm.AskResponder[*{{ $method.Output }}])
+        {{ else if eq $method.Options.Type 2 }}
+            // {{ $method.Name }} 是一个 FutureAsk 类型的方法，它将会阻塞的将消息投递到目标邮箱，并且会等待返回结果。
+            //  - 超时时间为 {{ $method.Options.Timeout }} 毫秒
+            {{ $method.Name }}(ctx {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }},) (*{{ $method.Output }}, error)
+        {{ end }}
+	{{ end }}
+}
+
+type typed{{ $service.Name }}Actor struct {
+    {{ $service.Name }}ActorTypedInterface
+}
+
+func (t *typed{{ $service.Name }}Actor) OnReceive(ctx {{ $service.ModeName }}.ActorContext) {
+	switch m := ctx.Message().(type) {
+        case *vivid.OnLaunch:
+            t.onLaunch(ctx)
+        case *vivid.OnTerminate:
+            t.onTerminate(ctx)
+        case *vivid.OnTerminated:
+            t.onTerminated(ctx)
+        case *tm.TypedMessage:
+            t.onTypedMessage(ctx, m)
+        default:
+            t.onReceive(ctx)
+	}
+}
+
+func (t *typed{{ $service.Name }}Actor) onLaunch(ctx {{ $service.ModeName }}.ActorContext) {
+    t.onReceive(ctx)
+}
+
+func (t *typed{{ $service.Name }}Actor) onTerminate(ctx {{ $service.ModeName }}.ActorContext) {
+    t.onReceive(ctx)
+}
+
+func (t *typed{{ $service.Name }}Actor) onTerminated(ctx {{ $service.ModeName }}.ActorContext) {
+    t.onReceive(ctx)
+}
+
+func (t *typed{{ $service.Name }}Actor) onReceive(ctx {{ $service.ModeName }}.ActorContext) {
+    if actor, ok := t.{{ $service.Name }}ActorTypedInterface.(TestActorTyped); ok {
+        actor.OnReceive(ctx)
+    }
+}
+
+func (t *typed{{ $service.Name }}Actor) onTypedMessage(ctx {{ $service.ModeName }}.ActorContext, m *tm.TypedMessage) {
+    switch m.MethodIndex {
+        {{ range $method := $service.Methods}}
+        case {{ $method.Index }}:
+            t.onTypedMessage{{ $method.Name }}_{{ $method.Index }}(ctx, m)
+        {{ end }}
+    }
+}
+
+{{ range $method := $service.Methods }}
+func (t *typed{{ $service.Name }}Actor) onTypedMessage{{ $method.Name }}_{{ $method.Index }}(ctx {{ $service.ModeName }}.ActorContext, m *tm.TypedMessage) {
+    protoMessage, err := tm.UnmarshalMessage(m)
+    if err != nil {
+        ctx.System().Logger().Error("ActorTyped", log.String("{{ $service.Name }}", "{{ $method.Name }}"), log.Err(err))
+        return
+    }
+
+    {{ if eq $method.Options.Type 0 }}
+        t.{{ $service.Name }}ActorTypedInterface.{{ $method.Name }}(ctx, protoMessage.(*{{ $method.Input }}))
+    {{ else if eq $method.Options.Type 1 }}
+        t.{{ $service.Name }}ActorTypedInterface.{{ $method.Name }}(ctx, protoMessage.(*{{ $method.Input }}), func (reply *{{ $method.Output }}) {
+            if reply != nil {
+                ctx.Reply(reply)
+            }
+        })
+    {{ else if eq $method.Options.Type 2 }}
+        reply, err := t.{{ $service.Name }}ActorTypedInterface.{{ $method.Name }}(ctx, protoMessage.(*{{ $method.Input }}))
+        if err != nil {
+            ctx.Reply(err)
+        }
+        if reply != nil {
+            ctx.Reply(reply)
+        }
+    {{ end }}
+}
+{{ end }}
+
+func New{{ $service.Name }}ActorTyped(ref vivid.ActorRef) *{{ $service.Name }}ActorTypedRef {
+    return &{{ $service.Name }}ActorTypedRef{ref}
+}
+
+type {{ $service.Name }}ActorTypedRef struct {
+    ref vivid.ActorRef
+}
+
+{{ range $method := $service.Methods }}
+    {{ if eq $method.Options.Type 0 }}
+        func (t *{{ $service.Name }}ActorTypedRef) {{ $method.Name }}(sender {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }}) {
+            m, err :=tm.MarshalMessage(message)
+            if err != nil {
+                panic(err)
+            }
+            m.MethodIndex = {{ $method.Index }}
+
+            sender.Tell(t.ref, m)
+        }
+    {{ else if eq $method.Options.Type 1 }}
+        func (t *{{ $service.Name }}ActorTypedRef) {{ $method.Name }}(sender {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }}) {
+            m, err :=tm.MarshalMessage(message)
+            if err != nil {
+                panic(err)
+            }
+            m.MethodIndex = {{ $method.Index }}
+
+            sender.Ask(t.ref, m)
+        }
+    {{ else if eq $method.Options.Type 2 }}
+        func (t *{{ $service.Name }}ActorTypedRef) {{ $method.Name }}(sender {{ $service.ModeName }}.ActorContext, message *{{ $method.Input }}) (*{{ $method.Output }}, error) {
+            m, err :=tm.MarshalMessage(message)
+            if err != nil {
+                return nil, err
+            }
+            m.MethodIndex = {{ $method.Index }}
+
+            result, err := sender.FutureAsk(t.ref, m, futureAsk{{ $method.Name }}Timeout).Result()
+            if err != nil {
+                return nil, err
+            }
+
+            return result.(*{{ $method.Output }}), nil
+        }
+    {{ end }}
+{{ end }}

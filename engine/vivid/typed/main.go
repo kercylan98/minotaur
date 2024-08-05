@@ -11,7 +11,7 @@ func main() {
 			if !f.Generate {
 				continue
 			}
-			generator.GenerateFile(gen, f, generator.GenerateModeConventional)
+			generator.GenerateFile(gen, f, generator.GenerateModeVivid)
 		}
 
 		return nil

@@ -8,15 +8,180 @@ package test
 
 import (
 	vivid "github.com/kercylan98/minotaur/engine/vivid"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	options "github.com/kercylan98/minotaur/engine/vivid/typed/options"
+	tm "github.com/kercylan98/minotaur/engine/vivid/typed/tm"
+	log "github.com/kercylan98/minotaur/toolkit/log"
+	time "time"
 )
 
-var _ *emptypb.Empty
+var _ *options.Empty
 
-// Test is the typed service of test.Test
-type Test interface {
-	// Ping is the typed method of test.Test.Ping
-	Ping(ctx vivid.ActorContext, message *PingRequest) (*PingResponse, error)
-	// Tell is the typed method of test.Test.Tell
-	Tell(ctx vivid.ActorContext, message *PingRequest)
+const (
+	futureAskPingTimeout = 1000 * time.Millisecond
+)
+
+type TestActorTypedProvider interface {
+	vivid.ActorProvider
+}
+
+type FunctionalTestActorTypedProvider func() TestActorTypedInterface
+
+func (f FunctionalTestActorTypedProvider) Provide() vivid.Actor {
+	return &typedTestActor{f()}
+}
+
+type TestActorTyped interface {
+	vivid.Actor
+	TestActorTypedInterface
+}
+
+type TestActorTypedInterface interface {
+
+	// Say 是一个 Tell 类型的方法，它将会非阻塞的将消息投递到目标邮箱。
+	Say(ctx vivid.ActorContext, message *Request)
+
+	// Call 是一个 Ask 类型的方法，它将会非阻塞的将消息投递到目标邮箱，但是不一定能收到返回的结果。
+	Call(ctx vivid.ActorContext, message *Request, responder tm.AskResponder[*Response])
+
+	// Ping 是一个 FutureAsk 类型的方法，它将会阻塞的将消息投递到目标邮箱，并且会等待返回结果。
+	//  - 超时时间为 1000 毫秒
+	Ping(ctx vivid.ActorContext, message *Request) (*Response, error)
+}
+
+type typedTestActor struct {
+	TestActorTypedInterface
+}
+
+func (t *typedTestActor) OnReceive(ctx vivid.ActorContext) {
+	switch m := ctx.Message().(type) {
+	case *vivid.OnLaunch:
+		t.onLaunch(ctx)
+	case *vivid.OnTerminate:
+		t.onTerminate(ctx)
+	case *vivid.OnTerminated:
+		t.onTerminated(ctx)
+	case *tm.TypedMessage:
+		t.onTypedMessage(ctx, m)
+	default:
+		t.onReceive(ctx)
+	}
+}
+
+func (t *typedTestActor) onLaunch(ctx vivid.ActorContext) {
+	t.onReceive(ctx)
+}
+
+func (t *typedTestActor) onTerminate(ctx vivid.ActorContext) {
+	t.onReceive(ctx)
+}
+
+func (t *typedTestActor) onTerminated(ctx vivid.ActorContext) {
+	t.onReceive(ctx)
+}
+
+func (t *typedTestActor) onReceive(ctx vivid.ActorContext) {
+	if actor, ok := t.TestActorTypedInterface.(TestActorTyped); ok {
+		actor.OnReceive(ctx)
+	}
+}
+
+func (t *typedTestActor) onTypedMessage(ctx vivid.ActorContext, m *tm.TypedMessage) {
+	switch m.MethodIndex {
+
+	case 0:
+		t.onTypedMessageSay_0(ctx, m)
+
+	case 1:
+		t.onTypedMessageCall_1(ctx, m)
+
+	case 2:
+		t.onTypedMessagePing_2(ctx, m)
+
+	}
+}
+
+func (t *typedTestActor) onTypedMessageSay_0(ctx vivid.ActorContext, m *tm.TypedMessage) {
+	protoMessage, err := tm.UnmarshalMessage(m)
+	if err != nil {
+		ctx.System().Logger().Error("ActorTyped", log.String("Test", "Say"), log.Err(err))
+		return
+	}
+
+	t.TestActorTypedInterface.Say(ctx, protoMessage.(*Request))
+
+}
+
+func (t *typedTestActor) onTypedMessageCall_1(ctx vivid.ActorContext, m *tm.TypedMessage) {
+	protoMessage, err := tm.UnmarshalMessage(m)
+	if err != nil {
+		ctx.System().Logger().Error("ActorTyped", log.String("Test", "Call"), log.Err(err))
+		return
+	}
+
+	t.TestActorTypedInterface.Call(ctx, protoMessage.(*Request), func(reply *Response) {
+		if reply != nil {
+			ctx.Reply(reply)
+		}
+	})
+
+}
+
+func (t *typedTestActor) onTypedMessagePing_2(ctx vivid.ActorContext, m *tm.TypedMessage) {
+	protoMessage, err := tm.UnmarshalMessage(m)
+	if err != nil {
+		ctx.System().Logger().Error("ActorTyped", log.String("Test", "Ping"), log.Err(err))
+		return
+	}
+
+	reply, err := t.TestActorTypedInterface.Ping(ctx, protoMessage.(*Request))
+	if err != nil {
+		ctx.Reply(err)
+	}
+	if reply != nil {
+		ctx.Reply(reply)
+	}
+
+}
+
+func NewTestActorTyped(ref vivid.ActorRef) *TestActorTypedRef {
+	return &TestActorTypedRef{ref}
+}
+
+type TestActorTypedRef struct {
+	ref vivid.ActorRef
+}
+
+func (t *TestActorTypedRef) Say(sender vivid.ActorContext, message *Request) {
+	m, err := tm.MarshalMessage(message)
+	if err != nil {
+		panic(err)
+	}
+	m.MethodIndex = 0
+
+	sender.Tell(t.ref, m)
+}
+
+func (t *TestActorTypedRef) Call(sender vivid.ActorContext, message *Request) {
+	m, err := tm.MarshalMessage(message)
+	if err != nil {
+		panic(err)
+	}
+	m.MethodIndex = 1
+
+	sender.Ask(t.ref, m)
+}
+
+func (t *TestActorTypedRef) Ping(sender vivid.ActorContext, message *Request) (*Response, error) {
+	m, err := tm.MarshalMessage(message)
+	if err != nil {
+		return nil, err
+	}
+	m.MethodIndex = 2
+
+	result, err := sender.FutureAsk(t.ref, m, futureAskPingTimeout).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	return result.(*Response), nil
 }

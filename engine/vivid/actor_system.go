@@ -74,6 +74,11 @@ type ActorSystem struct {
 	closed    chan struct{}
 }
 
+// Context 获取 Actor 系统的根 Actor 上下文
+func (sys *ActorSystem) Context() ActorContext {
+	return sys.guard
+}
+
 // Abyss 获取 Actor 系统的深渊引用
 func (sys *ActorSystem) Abyss() ActorRef {
 	return sys.abyssRef

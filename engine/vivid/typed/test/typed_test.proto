@@ -2,22 +2,32 @@ syntax = "proto3";
 package test;
 option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/test";
 
-import "google/protobuf/empty.proto";
 import "options.proto";
 
 service Test {
-  rpc Ping (PingRequest) returns (PingResponse) {
+  rpc Say (Request) returns (options.Empty) {
     option (options.method_options) = {
-      error: true
+      type: Tell,
     };
   }
-  rpc Tell (PingRequest) returns (google.protobuf.Empty) {}
+
+  rpc Call (Request) returns (Response) {
+    option (options.method_options) = {
+      type: Ask,
+    };
+  }
+
+  rpc Ping (Request) returns (Response) {
+    option (options.method_options) = {
+      type: FutureAsk,
+    };
+  }
 }
 
-message PingRequest {
+message Request {
   string message = 1;
 }
 
-message PingResponse {
+message Response {
   string message = 1;
 }

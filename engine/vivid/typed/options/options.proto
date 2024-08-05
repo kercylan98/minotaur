@@ -6,11 +6,20 @@ import "google/protobuf/descriptor.proto";
 
 option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/options";
 
+enum Type {
+  Tell = 0; // Tell 模式下返回值将会被忽略
+  Ask = 1; // Ask 模式
+  FutureAsk = 2; // FutureAsk 模式
+}
+
 message MethodOptions {
-  // 标记方法是否需要返回错误，默认为 false
-  bool error = 1;
+  Type type = 1; // 方法类型，默认为 Tell
+  optional uint64 timeout = 2; // FutureAsk 的毫秒级超时时间（默认 1000ms ）
 }
 
 extend google.protobuf.MethodOptions {
   MethodOptions method_options = 50000;
 }
+
+// 用于标识的消息体，它意味着该消息体是没有内容的
+message Empty {}

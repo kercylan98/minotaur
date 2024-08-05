@@ -8,17 +8,24 @@ import (
 )
 
 const (
-	GenerateModeCluster      = "cluster"
-	GenerateModeConventional = "conventional"
+	GenerateModeCluster = "cluster"
+	GenerateModeVivid   = "vivid"
 )
 
 var (
 	clusterPackages = []protogen.GoImportPath{
 		protogen.GoImportPath("github.com/kercylan98/minotaur/engine/vivid/cluster"),
+		protogen.GoImportPath("github.com/kercylan98/minotaur/engine/vivid"),
 	}
 
-	conventionalPackages = []protogen.GoImportPath{
+	vividPackages = []protogen.GoImportPath{
 		protogen.GoImportPath("github.com/kercylan98/minotaur/engine/vivid"),
+	}
+
+	generatePackages = []protogen.GoImportPath{
+		protogen.GoImportPath("github.com/kercylan98/minotaur/engine/vivid/typed/tm"),
+		protogen.GoImportPath("github.com/kercylan98/minotaur/toolkit/log"),
+		protogen.GoImportPath("time"),
 	}
 )
 
@@ -55,79 +62,74 @@ func generateHeader(gen *protogen.Plugin, g *protogen.GeneratedFile, file *proto
 }
 
 func generateContent(g *protogen.GeneratedFile, file *protogen.File, mode string) {
+	generatePackageImports(g, file, mode)
+	generateServices(g, file, mode)
+}
+
+func generatePackageImports(g *protogen.GeneratedFile, file *protogen.File, mode string) {
 	g.P("package ", "test")
 	g.P()
-	g.P("var _ *emptypb.Empty")
+	g.P("var _ *options.Empty")
 
 	switch mode {
 	case GenerateModeCluster:
 		for _, pkg := range clusterPackages {
 			g.QualifiedGoIdent(pkg.Ident(""))
 		}
-	case GenerateModeConventional:
-		for _, pkg := range conventionalPackages {
+	case GenerateModeVivid:
+		for _, pkg := range vividPackages {
 			g.QualifiedGoIdent(pkg.Ident(""))
 		}
 	}
 
-	generateServices(g, file)
+	for _, pkg := range generatePackages {
+		g.QualifiedGoIdent(pkg.Ident(""))
+	}
 }
 
-func generateServices(g *protogen.GeneratedFile, file *protogen.File) {
+func generateServices(g *protogen.GeneratedFile, file *protogen.File, mode string) {
+	if len(file.Services) == 0 {
+		return
+	}
+
 	for _, service := range file.Services {
-		generateService(g, service)
+
+		serviceDesc := &typedServiceDesc{
+			Name:     service.GoName,
+			ModeName: mode,
+		}
+
+		generateServiceMethods(g, file, service, serviceDesc)
+
+		if len(serviceDesc.Methods) > 0 {
+			g.P(serviceDesc.render())
+		}
+
 	}
 }
 
-func generateService(g *protogen.GeneratedFile, service *protogen.Service) {
-	g.P("// ", service.GoName, " is the typed service of ", service.Desc.FullName())
+func generateServiceMethods(g *protogen.GeneratedFile, file *protogen.File, service *protogen.Service, desc *typedServiceDesc) {
+	for i, method := range service.Methods {
+		if method.Desc.IsStreamingClient() || method.Desc.IsStreamingServer() {
+			continue
+		}
 
-	g.P("type ", service.GoName, " interface {")
-	for _, method := range service.Methods {
-		generateMethod(g, method)
-	}
-	g.P("}")
-}
+		methodDesc := &typedServiceMethodDesc{
+			Index:   i,
+			Name:    method.GoName,
+			Input:   g.QualifiedGoIdent(method.Input.GoIdent),
+			Output:  g.QualifiedGoIdent(method.Output.GoIdent),
+			Options: &options.MethodOptions{},
+		}
 
-func generateMethod(g *protogen.GeneratedFile, method *protogen.Method) {
-	g.P("// ", method.GoName, " is the typed method of ", method.Desc.FullName())
+		if methodOptions, ok := proto.GetExtension(method.Desc.Options(), options.E_MethodOptions).(*options.MethodOptions); ok && methodOptions != nil {
+			methodDesc.Options = methodOptions
+		}
 
-	// options
-	var (
-		hasError = false
-		isEmpty  = false
-	)
+		if methodDesc.Options.Type == options.Type_FutureAsk && methodDesc.Options.Timeout == nil {
+			methodDesc.Options.Timeout = proto.Uint64(1000)
+		}
 
-	methodOptions, ok := proto.GetExtension(method.Desc.Options(), options.E_MethodOptions).(*options.MethodOptions)
-	if ok && methodOptions != nil {
-		hasError = methodOptions.Error
-	}
-
-	// check is *emptypb.Empty
-	if method.Output.GoIdent.GoImportPath.String() == `"google.golang.org/protobuf/types/known/emptypb"` &&
-		g.QualifiedGoIdent(method.Output.GoIdent) == "emptypb.Empty" {
-		isEmpty = true
-	}
-
-	switch {
-	case !isEmpty && !hasError:
-		g.P(
-			method.GoName,
-			"(ctx vivid.ActorContext, message *", g.QualifiedGoIdent(method.Input.GoIdent), ") ",
-			"*", g.QualifiedGoIdent(method.Output.GoIdent))
-	case !isEmpty && hasError:
-		g.P(
-			method.GoName,
-			"(ctx vivid.ActorContext, message *", g.QualifiedGoIdent(method.Input.GoIdent), ") ",
-			"(*", g.QualifiedGoIdent(method.Output.GoIdent), ", error)")
-	case isEmpty && !hasError:
-		g.P(
-			method.GoName,
-			"(ctx vivid.ActorContext, message *", g.QualifiedGoIdent(method.Input.GoIdent), ") ")
-	case isEmpty && hasError:
-		g.P(
-			method.GoName,
-			"(ctx vivid.ActorContext, message *", g.QualifiedGoIdent(method.Input.GoIdent), ") ",
-			"error")
+		desc.Methods = append(desc.Methods, methodDesc)
 	}
 }
