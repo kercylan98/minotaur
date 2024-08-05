@@ -1,7 +1,6 @@
 package prc
 
 import (
-	"github.com/kercylan98/minotaur/toolkit/buffer"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync"
 	"sync/atomic"
@@ -17,7 +16,6 @@ func newSharedStreamProcess(address PhysicalAddress, stream sharedStream, shared
 		stream:  stream,
 		shared:  shared,
 		address: address,
-		batches: buffer.NewRing[*DeliveryMessage](),
 	}
 }
 
@@ -25,7 +23,7 @@ type sharedStreamProcess struct {
 	stream  sharedStream
 	shared  *Shared
 	address PhysicalAddress
-	batches *buffer.Ring[*DeliveryMessage]
+	batches []*DeliveryMessage
 	lock    sync.RWMutex
 	state   atomic.Uint32
 }
@@ -61,7 +59,7 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 
 	// 入列
 	c.lock.Lock()
-	c.batches.Write(dm)
+	c.batches = append(c.batches, dm)
 	c.lock.Unlock()
 
 	c.activation()
@@ -82,7 +80,7 @@ func (c *sharedStreamProcess) activation() {
 				c.send()
 				c.state.Store(sharedStreamProcessStateIdle)
 				c.lock.RLock()
-				empty := c.batches.IsEmpty()
+				empty := len(c.batches) == 0
 				c.lock.RUnlock()
 				if empty {
 					break
@@ -98,7 +96,15 @@ func (c *sharedStreamProcess) activation() {
 func (c *sharedStreamProcess) send() {
 	for {
 		c.lock.Lock()
-		messages := c.batches.ReadAll()
+		n := len(c.batches)
+		var messages []*DeliveryMessage
+		if n < 1024 {
+			messages = c.batches
+			c.batches = nil
+		} else {
+			messages = c.batches[:1024]
+			c.batches = c.batches[1024:]
+		}
 		c.lock.Unlock()
 		if len(messages) == 0 {
 			return
@@ -121,7 +127,9 @@ func (c *sharedStreamProcess) send() {
 		if err := c.stream.Send(sm); err != nil {
 			c.shared.detachStream(c.address)
 			c.shared.rc.logger().Error("ResourceController", log.Err(err))
-			c.batches.Reset()
+			c.lock.Lock()
+			c.batches = nil
+			c.lock.Unlock()
 			return
 		}
 	}

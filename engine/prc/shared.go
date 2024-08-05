@@ -190,6 +190,7 @@ func (s *Shared) detachStream(address PhysicalAddress) {
 	}
 }
 
+//goland:noinspection t
 func (s *Shared) runtimeError(err error) {
 	if err == nil {
 		return
