@@ -74,7 +74,6 @@ func (m *LockFree) process() {
 			break
 		}
 	}
-
 }
 
 func (m *LockFree) processHandle() {

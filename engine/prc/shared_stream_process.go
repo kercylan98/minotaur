@@ -88,7 +88,6 @@ func (c *sharedStreamProcess) activation() {
 					break
 				}
 			}
-			c.send()
 		}()
 	}
 }
@@ -107,7 +106,7 @@ func (c *sharedStreamProcess) send() {
 		}
 		c.lock.Unlock()
 		if len(messages) == 0 {
-			return
+			break
 		}
 		var sm *SharedMessage
 		if len(messages) == 1 {
@@ -130,7 +129,7 @@ func (c *sharedStreamProcess) send() {
 			c.lock.Lock()
 			c.batches = nil
 			c.lock.Unlock()
-			return
+			break
 		}
 	}
 }
