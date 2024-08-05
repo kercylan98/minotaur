@@ -11,9 +11,6 @@ import (
 type TestActor struct {
 }
 
-func (t *TestActor) OnReceive(ctx vivid.ActorContext) {
-}
-
 func (t *TestActor) Say(ctx vivid.ActorContext, message *Request) {
 	fmt.Println(message.Message)
 }

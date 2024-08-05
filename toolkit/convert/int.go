@@ -62,6 +62,28 @@ func Uint64ToString(i uint64) string {
 	return strconv.FormatUint(i, 10)
 }
 
+func FastUint64ToString(i uint64) string {
+	if i == 0 {
+		return "0"
+	}
+
+	// 临时缓冲区，uint64 最大长度为 20 个字符
+	var buf [20]byte
+	pos := len(buf)
+
+	// 使用除法和取模操作将数字转换为字符
+	for i >= 10 {
+		pos--
+		q := i / 10
+		buf[pos] = byte('0' + i%10)
+		i = q
+	}
+	pos--
+	buf[pos] = byte('0' + i)
+
+	return string(buf[pos:])
+}
+
 // IntToBoolean 将 int 转换为 bool 类型
 func IntToBoolean[I constraints.Int](i I) bool {
 	return i != 0

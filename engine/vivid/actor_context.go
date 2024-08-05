@@ -23,7 +23,6 @@ import (
 
 const (
 	DefaultFutureAskTimeout = time.Second
-	futureNamePrefix        = "future-"
 )
 
 const (
@@ -455,13 +454,13 @@ func (ctx *actorContext) FutureAsk(target ActorRef, message Message, timeout ...
 		t = timeout[0]
 	}
 
-	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), t)
+	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(convert.FastUint64ToString(ctx.nextChildGuid())), t)
 	ctx.system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }
 
 func (ctx *actorContext) AwaitForward(target ActorRef, asyncFunc func() Message) {
-	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(futureNamePrefix+convert.Uint64ToString(ctx.nextChildGuid())), 0)
+	f := future.New[Message](ctx.system.rc, ctx.ref.Derivation(convert.FastUint64ToString(ctx.nextChildGuid())), 0)
 	f.AwaitForward(target, asyncFunc)
 }
 

@@ -58,35 +58,3 @@ func (q *LFQueue) Pop() unsafe.Pointer {
 		}
 	}
 }
-
-func (q *LFQueue) BatchPop(n int) []unsafe.Pointer {
-	var (
-		head unsafe.Pointer
-		next unsafe.Pointer
-	)
-
-	values := make([]unsafe.Pointer, 0, n)
-
-	for i := 0; i < n; i++ {
-		head = atomic.LoadPointer(&q.head)
-		tail := atomic.LoadPointer(&q.tail)
-		next = atomic.LoadPointer(&(*lfNode)(head).next)
-		if head == atomic.LoadPointer(&q.head) {
-			if head == tail {
-				if next == nil {
-					break
-				}
-				atomic.CompareAndSwapPointer(&q.tail, tail, next)
-			} else {
-				value := (*lfNode)(next).value
-				if atomic.CompareAndSwapPointer(&q.head, head, next) {
-					values = append(values, value)
-				} else {
-					break
-				}
-			}
-		}
-	}
-
-	return values
-}

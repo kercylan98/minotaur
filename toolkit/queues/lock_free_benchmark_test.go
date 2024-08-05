@@ -33,14 +33,3 @@ func BenchmarkLFQueue_PushAndPop(b *testing.B) {
 		q.Pop()
 	}
 }
-
-func BenchmarkLFQueue_BatchPop(b *testing.B) {
-	q := queues.NewLFQueue()
-	for i := 0; i < b.N; i++ {
-		q.Push(unsafe.Pointer(&i))
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		q.BatchPop(1)
-	}
-}
