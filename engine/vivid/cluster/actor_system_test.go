@@ -6,6 +6,27 @@ import (
 	"testing"
 )
 
+func TestActorSystem_RepeatedJoin(t *testing.T) {
+	cluster.NewActorSystem("127.0.0.1:8080", "127.0.0.1:1267")
+	system := cluster.NewActorSystem("127.0.0.1:8081", "127.0.0.1:1268")
+	for i := 0; i < 10; i++ {
+		if err := system.JoinNodes("127.0.0.1:1267"); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func TestActorSystem_JoinNodes(t *testing.T) {
+	cluster.NewActorSystem("127.0.0.1:8080", "127.0.0.1:1267")
+	system := cluster.NewActorSystem("127.0.0.1:8081", "127.0.0.1:1268")
+	cluster.NewActorSystem("127.0.0.1:8082", "127.0.0.1:1269", cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithSeedNodes("127.0.0.1:1267")
+	}))
+
+	if err := system.JoinNodes("127.0.0.1:1267"); err != nil {
+		panic(err)
+	}
+}
 func TestNewActorSystem(t *testing.T) {
 
 	systemA := cluster.NewActorSystem("127.0.0.1:8080", "127.0.0.1:1267", cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {

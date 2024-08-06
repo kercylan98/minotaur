@@ -91,6 +91,9 @@ func (s *Shared) Share() error {
 
 	s.grpc = grpc.NewServer()
 	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
+	for _, hook := range s.config.grpcServerHooks {
+		hook(s.grpc)
+	}
 
 	go func() {
 		s.runtimeError(s.grpc.Serve(listener))

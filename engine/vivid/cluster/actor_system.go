@@ -29,6 +29,9 @@ func NewActorSystem(sharedAddress, bindAddress prc.PhysicalAddress, configurator
 	for _, c := range configurator {
 		c.Configure(config)
 	}
+	if config.clusterName == charproc.None {
+		config.clusterName = config.name
+	}
 
 	system := &ActorSystem{
 		config:      config,
@@ -56,6 +59,22 @@ type ActorSystem struct {
 	state              *actorSystemState
 	bindAddress        prc.PhysicalAddress
 	memberlist         *memberlist.Memberlist
+}
+
+// ClusterName 返回集群名称
+func (sys *ActorSystem) ClusterName() string {
+	return sys.config.clusterName
+}
+
+// Name 返回节点名称
+func (sys *ActorSystem) Name() string {
+	return sys.config.name
+}
+
+// JoinNodes 动态的尝试加入集群节点
+func (sys *ActorSystem) JoinNodes(addresses ...prc.PhysicalAddress) error {
+	_, err := sys.memberlist.Join(addresses)
+	return err
 }
 
 // ClusterRef 返回该集群的引用
@@ -108,6 +127,7 @@ func (sys *ActorSystem) ActorOfC(identity, ability string) vivid.ActorRef {
 	return actorRef
 }
 
+//goland:noinspection t
 func (sys *ActorSystem) start() {
 	bindAddr, bindPort, err := net.SplitHostPort(sys.bindAddress)
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 const (
 	sharedStreamProcessStateIdle uint32 = iota
 	sharedStreamProcessStateActive
+
+	sharedStreamBatchLimit = 1024
 )
 
 func newSharedStreamProcess(address PhysicalAddress, stream sharedStream, shared *Shared) *sharedStreamProcess {
@@ -97,12 +99,12 @@ func (c *sharedStreamProcess) send() {
 		c.lock.Lock()
 		n := len(c.batches)
 		var messages []*DeliveryMessage
-		if n < 1024 {
+		if n < sharedStreamBatchLimit {
 			messages = c.batches
 			c.batches = nil
 		} else {
-			messages = c.batches[:1024]
-			c.batches = c.batches[1024:]
+			messages = c.batches[:sharedStreamBatchLimit]
+			c.batches = c.batches[sharedStreamBatchLimit:]
 		}
 		c.lock.Unlock()
 		if len(messages) == 0 {

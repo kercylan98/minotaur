@@ -9,20 +9,28 @@ import (
 )
 
 func newActorSystemConfiguration() *ActorSystemConfiguration {
-	return &ActorSystemConfiguration{
+	asc := &ActorSystemConfiguration{
 		name:                     random.HostName(),
 		ActorSystemConfiguration: vivid.NewActorSystemConfiguration(),
 		abilities:                make(map[string]*ability),
 	}
+	return asc
 }
 
 type ActorSystemConfiguration struct {
 	*vivid.ActorSystemConfiguration
 
 	name          string              // 集群内唯一的节点名称
+	clusterName   string              // 集群名称
 	seedNodes     []string            // 默认散播的种子节点地址
 	abilities     map[string]*ability // 集群提供的能力
 	advertiseAddr prc.PhysicalAddress // 广告地址
+}
+
+// WithClusterName 设置集群名称
+func (c *ActorSystemConfiguration) WithClusterName(name string) *ActorSystemConfiguration {
+	c.clusterName = name
+	return c
 }
 
 // WithAdvertiseAddress 设置广告地址

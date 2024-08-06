@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc/codec"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -32,46 +33,60 @@ type SharedConfiguration struct {
 	consecutiveRestartLimit int                              // 连续重启限制
 	restartInterval         func(count int) time.Duration    // 重启间隔
 	unknownReceiverRedirect func(message Message) *ProcessId // 未知接收者重定向
+	grpcServerHooks         []func(server *grpc.Server)      // GRPC 服务器钩子
+}
+
+// WithGRPCServerHooks 设置 GRPC 服务器钩子，该方法将在创建 GRPC 服务器后调用
+func (c *SharedConfiguration) WithGRPCServerHooks(hooks ...func(server *grpc.Server)) *SharedConfiguration {
+	c.grpcServerHooks = append(c.grpcServerHooks, hooks...)
+	return c
 }
 
 // WithUnknownReceiverRedirect 设置未知接收者重定向
-func (c *SharedConfiguration) WithUnknownReceiverRedirect(redirect func(message Message) *ProcessId) {
+func (c *SharedConfiguration) WithUnknownReceiverRedirect(redirect func(message Message) *ProcessId) *SharedConfiguration {
 	c.unknownReceiverRedirect = redirect
+	return c
 }
 
 // WithFixedRestartInterval 使用固定间隔设置重启间隔。
 //   - 该配置将会覆盖 WithRestartInterval 方法的设置。
-func (c *SharedConfiguration) WithFixedRestartInterval(interval time.Duration) {
+func (c *SharedConfiguration) WithFixedRestartInterval(interval time.Duration) *SharedConfiguration {
 	c.restartInterval = func(count int) time.Duration {
 		return interval
 	}
+	return c
 }
 
 // WithRestartInterval 使用退避指数设置重启间隔，maxRetries 为最大重试次数，baseDelay 为基础延迟，maxDelay 为最大延迟。
 //   - 该配置将会覆盖 WithFixedRestartInterval 方法的设置。
-func (c *SharedConfiguration) WithRestartInterval(baseDelay, maxDelay time.Duration) {
+func (c *SharedConfiguration) WithRestartInterval(baseDelay, maxDelay time.Duration) *SharedConfiguration {
 	c.restartInterval = func(count int) time.Duration {
 		return chrono.StandardExponentialBackoff(count, c.consecutiveRestartLimit, baseDelay, maxDelay)
 	}
+	return c
 }
 
 // WithConsecutiveRestartLimit 设置连续重启限制，当 limit > 0 且连续重启失败到达 limit 时，将进行停止，而非继续重启。
 //   - 如果需要控制重启间隔可使用 WithRestartInterval 或 WithFixedRestartInterval 方法。
-func (c *SharedConfiguration) WithConsecutiveRestartLimit(limit int) {
+func (c *SharedConfiguration) WithConsecutiveRestartLimit(limit int) *SharedConfiguration {
 	c.consecutiveRestartLimit = limit
+	return c
 }
 
 // WithSharedHook 设置共享钩子
-func (c *SharedConfiguration) WithSharedHook(hook SharedStartHook) {
+func (c *SharedConfiguration) WithSharedHook(hook SharedStartHook) *SharedConfiguration {
 	c.sharedStartHook = hook
+	return c
 }
 
 // WithCodec 设置编解码器
-func (c *SharedConfiguration) WithCodec(codec codec.Codec) {
+func (c *SharedConfiguration) WithCodec(codec codec.Codec) *SharedConfiguration {
 	c.codec = codec
+	return c
 }
 
 // WithRuntimeErrorHandler 设置运行时错误处理器
-func (c *SharedConfiguration) WithRuntimeErrorHandler(handler ErrorPolicyDecisionHandler) {
+func (c *SharedConfiguration) WithRuntimeErrorHandler(handler ErrorPolicyDecisionHandler) *SharedConfiguration {
 	c.runtimeErrorHandler = handler
+	return c
 }
