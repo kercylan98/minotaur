@@ -43,6 +43,14 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 			if system.config.sharedCodec != nil {
 				config.WithCodec(system.config.sharedCodec)
 			}
+
+			config.WithShareOpenedHooks(prc.FunctionalShareOpenedHook(func(target prc.PhysicalAddress) {
+				system.Tell(system.subscription, &sharedSubscriptionStatusChangedMessage{address: target})
+			}))
+
+			config.WithShareClosedHooks(prc.FunctionalSharedClosedHook(func(target prc.PhysicalAddress) {
+				system.Tell(system.subscription, &sharedSubscriptionStatusChangedMessage{address: target, closed: true})
+			}))
 		}))
 		if err := system.shared.Share(); err != nil {
 			panic(err)
@@ -60,18 +68,28 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
 
 	system.guard = system.spawnTopActor("user", new(guard))
+	system.subscription = system.ActorOfF(func() Actor {
+		sa := newSubscriptionActor(system)
+		for _, provider := range system.config.subscriptionContactProviders {
+			sa.BindSubscriptionContactProvider(provider)
+		}
+		return sa
+	}, func(descriptor *ActorDescriptor) {
+		descriptor.WithName("sub")
+	})
 
 	return system
 }
 
 type ActorSystem struct {
-	config    *ActorSystemConfiguration
-	rc        *prc.ResourceController
-	processId *prc.ProcessId
-	guard     *actorContext
-	shared    *prc.Shared
-	abyssRef  ActorRef
-	closed    chan struct{}
+	config       *ActorSystemConfiguration
+	rc           *prc.ResourceController
+	processId    *prc.ProcessId
+	guard        *actorContext
+	shared       *prc.Shared
+	abyssRef     ActorRef
+	subscription ActorRef
+	closed       chan struct{}
 }
 
 // Context 获取 Actor 系统的根 Actor 上下文

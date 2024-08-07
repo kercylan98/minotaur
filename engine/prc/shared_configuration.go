@@ -4,7 +4,6 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc/codec"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
-	"google.golang.org/grpc"
 	"time"
 )
 
@@ -33,11 +32,25 @@ type SharedConfiguration struct {
 	consecutiveRestartLimit int                              // 连续重启限制
 	restartInterval         func(count int) time.Duration    // 重启间隔
 	unknownReceiverRedirect func(message Message) *ProcessId // 未知接收者重定向
-	grpcServerHooks         []func(server *grpc.Server)      // GRPC 服务器钩子
+	grpcServerHooks         []GRPCLaunchBeforeHook           // GRPC 服务器钩子
+	shareOpenedHooks        []ShareOpenedHook                // 共享连接打开时钩子
+	shareClosedHooks        []SharedClosedHook               // 共享连接关闭时钩子
 }
 
-// WithGRPCServerHooks 设置 GRPC 服务器钩子，该方法将在创建 GRPC 服务器后调用
-func (c *SharedConfiguration) WithGRPCServerHooks(hooks ...func(server *grpc.Server)) *SharedConfiguration {
+// WithShareClosedHooks 设置共享连接关闭时钩子
+func (c *SharedConfiguration) WithShareClosedHooks(hooks ...SharedClosedHook) *SharedConfiguration {
+	c.shareClosedHooks = append(c.shareClosedHooks, hooks...)
+	return c
+}
+
+// WithShareOpenedHooks 设置共享连接打开时钩子
+func (c *SharedConfiguration) WithShareOpenedHooks(hooks ...ShareOpenedHook) *SharedConfiguration {
+	c.shareOpenedHooks = append(c.shareOpenedHooks, hooks...)
+	return c
+}
+
+// WithGRPCLaunchBeforeHooks 设置 GRPC 服务器钩子，该方法将在创建 GRPC 服务器后调用
+func (c *SharedConfiguration) WithGRPCLaunchBeforeHooks(hooks ...GRPCLaunchBeforeHook) *SharedConfiguration {
 	c.grpcServerHooks = append(c.grpcServerHooks, hooks...)
 	return c
 }

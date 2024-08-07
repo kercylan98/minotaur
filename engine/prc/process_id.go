@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var zeroUrl = &url.URL{}
+
 func NewProcessId(physicalAddress PhysicalAddress, logicalAddress LogicalAddress) *ProcessId {
 	return &ProcessId{
 		LogicalAddress:  logicalAddress,
@@ -23,6 +25,9 @@ func (pid *ProcessId) Derivation(name string) *ProcessId {
 
 // URL 获取进程 Id 的 URL
 func (pid *ProcessId) URL() *url.URL {
+	if pid == nil {
+		return zeroUrl
+	}
 	u := &url.URL{
 		Scheme: "minotaur",
 		Host:   pid.GetPhysicalAddress(),

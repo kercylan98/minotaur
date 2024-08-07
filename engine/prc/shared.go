@@ -92,7 +92,7 @@ func (s *Shared) Share() error {
 	s.grpc = grpc.NewServer()
 	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
 	for _, hook := range s.config.grpcServerHooks {
-		hook(s.grpc)
+		hook.OnGRPCLaunchBefore(s.grpc)
 	}
 
 	go func() {
@@ -234,8 +234,14 @@ func (s *Shared) runtimeError(err error) {
 
 func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err error) {
 	s.attachStream(address, stream)
+	for _, hook := range s.config.shareOpenedHooks {
+		hook.OnShareOpened(address)
+	}
 	defer func() {
 		s.detachStream(address)
+		for _, hook := range s.config.shareClosedHooks {
+			hook.OnShareClosed(address)
+		}
 	}()
 
 	var message *SharedMessage

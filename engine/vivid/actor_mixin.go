@@ -124,3 +124,15 @@ type mixinWatcher interface {
 	// UnWatch 取消对特定 Actor 生命周期结束的监听
 	UnWatch(target ActorRef)
 }
+
+// mixinSupervisor 是一个混入类型接口，它定义了支持发布与订阅的 Actor 需要满足的接口。
+type mixinSubscription interface {
+	// Subscribe 订阅特定主题，在收到特定主题的消息时，Actor 将会收到该消息，当 Actor 重启或停止时，将会取消所有订阅。
+	Subscribe(topic Topic) Subscription
+
+	// UnSubscribe 取消特定订阅
+	UnSubscribe(subscription Subscription)
+
+	// Publish 向所有订阅者发布消息
+	Publish(topic Topic, message Message)
+}

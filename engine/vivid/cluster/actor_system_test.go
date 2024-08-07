@@ -3,8 +3,46 @@ package cluster_test
 import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/cluster"
+	"sync"
 	"testing"
 )
+
+func TestActorSystem_ClusterSubscription(t *testing.T) {
+	wg := new(sync.WaitGroup)
+	wg.Add(4)
+	system1 := cluster.NewActorSystem("127.0.0.1:8888", "127.0.0.1:18888")
+	system2 := cluster.NewActorSystem("127.0.0.1:9999", "127.0.0.1:19999", cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithSeedNodes("127.0.0.1:18888")
+	}))
+
+	system1.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				ctx.Subscribe("chat")
+				ctx.Publish("chat", ctx.Ref())
+			case vivid.ActorRef:
+				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())
+				wg.Done()
+			}
+		})
+	})
+
+	system2.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				ctx.Subscribe("chat")
+				ctx.Publish("chat", ctx.Ref())
+			case vivid.ActorRef:
+				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())
+				wg.Done()
+			}
+		})
+	})
+
+	wg.Wait()
+}
 
 func TestActorSystem_RepeatedJoin(t *testing.T) {
 	cluster.NewActorSystem("127.0.0.1:8080", "127.0.0.1:1267")

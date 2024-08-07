@@ -43,11 +43,14 @@ func NewActorSystem(sharedAddress, bindAddress prc.PhysicalAddress, configurator
 	config.WithShared(sharedAddress)
 	config.WithShutdownAfterHooks(system.onShutdown)
 
-	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration)
+	nodeEvent := newActorSystemEvent(system)
+	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration, vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
+		config.WithSubscriptionContactProviders(nodeEvent)
+	}))
 	system.metadata.LaunchAt = time.Now().UnixMilli()
 	system.metadata.Abilities = collection.ConvertMapValuesToBoolMap(config.abilities)
 
-	system.start()
+	system.start(nodeEvent)
 
 	return system
 }
@@ -57,8 +60,8 @@ type ActorSystem struct {
 	config             *ActorSystemConfiguration
 	metadata           *cm.Metadata
 	state              *actorSystemState
-	bindAddress        prc.PhysicalAddress
 	memberlist         *memberlist.Memberlist
+	bindAddress        prc.PhysicalAddress
 }
 
 // ClusterName 返回集群名称
@@ -128,7 +131,7 @@ func (sys *ActorSystem) ActorOfC(identity, ability string) vivid.ActorRef {
 }
 
 //goland:noinspection t
-func (sys *ActorSystem) start() {
+func (sys *ActorSystem) start(nodeEvent *actorSystemEvent) {
 	bindAddr, bindPort, err := net.SplitHostPort(sys.bindAddress)
 	if err != nil {
 		panic(err)
@@ -153,7 +156,9 @@ func (sys *ActorSystem) start() {
 		}
 		memberlistConfig.AdvertiseAddr, memberlistConfig.AdvertisePort = advertiseAddr, convert.StringToInt(advertisePort)
 	}
+
 	memberlistConfig.Delegate = newActorSystemDelegate(sys)
+	memberlistConfig.Events = nodeEvent
 
 	list, err := memberlist.Create(memberlistConfig)
 	if err != nil {

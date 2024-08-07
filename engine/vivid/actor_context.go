@@ -41,6 +41,7 @@ type ActorContext interface {
 	mixinScheduler
 	mixinPersistence
 	mixinWatcher
+	mixinSubscription
 }
 
 var _ ActorContext = (*actorContext)(nil)
@@ -114,6 +115,32 @@ type actorContext struct {
 	watchers                   map[string]ActorRef             // 观察该 Actor 的观察者们
 	slowProcessDuration        time.Duration                   // 慢处理时长
 	slowProcessReceivers       []ActorRef                      // 慢处理消息接收人
+	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
+}
+
+func (ctx *actorContext) Subscribe(topic Topic) Subscription {
+	if topic == "" {
+		panic(errors.New("subscribe topic is empty"))
+	}
+	sub, err := ctx.FutureAsk(ctx.system.subscription, &messages.SubscribeRequest{Topic: topic, Subscriber: ctx.ref}).Result()
+	if err != nil {
+		panic(err)
+	}
+	subscription := sub.(Subscription)
+	if ctx.subscriptions == nil {
+		ctx.subscriptions = make(map[uint64]Subscription)
+	}
+	ctx.subscriptions[subscription.SubscriptionId()] = subscription
+	return subscription
+}
+
+func (ctx *actorContext) UnSubscribe(subscription Subscription) {
+	ctx.Tell(ctx.system.subscription, &messages.UnsubscribeRequest{Subscription: subscription.(*messages.Subscription)})
+	delete(ctx.subscriptions, subscription.SubscriptionId())
+}
+
+func (ctx *actorContext) Publish(topic Topic, message Message) {
+	ctx.Ask(ctx.system.subscription, &messages.LocalPublishRequest{Topic: topic, Message: message})
 }
 
 func (ctx *actorContext) Watch(target ActorRef) {
@@ -574,6 +601,10 @@ func (ctx *actorContext) tryRestarted() {
 		return
 	}
 
+	for _, subscription := range ctx.subscriptions {
+		ctx.UnSubscribe(subscription)
+	}
+
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 	ctx.processMessage(ctx.sender, ctx.ref, &OnTerminated{ctx.ref}, false)
 
@@ -667,6 +698,10 @@ func (ctx *actorContext) tryTerminated() {
 
 	if !ctx.status.CompareAndSwap(actorStatusTerminating, actorStatusTerminated) {
 		return
+	}
+
+	for _, subscription := range ctx.subscriptions {
+		ctx.UnSubscribe(subscription)
 	}
 
 	terminatedMessage := &OnTerminated{TerminatedActor: ctx.ref}
