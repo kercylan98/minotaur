@@ -92,6 +92,11 @@ type ActorSystem struct {
 	closed       chan struct{}
 }
 
+// Publish 向所有订阅者发布消息
+func (sys *ActorSystem) Publish(topic Topic, message Message) {
+	sys.guard.Publish(topic, message)
+}
+
 // Context 获取 Actor 系统的根 Actor 上下文
 func (sys *ActorSystem) Context() ActorContext {
 	return sys.guard
