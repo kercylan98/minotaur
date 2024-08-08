@@ -9,27 +9,43 @@ import (
 func TestSubscription(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	wg.Add(9)
-	system := vivid.NewActorSystem()
+	start := new(sync.WaitGroup)
+	start.Add(3)
 
+	system := vivid.NewActorSystem()
+	defer system.Shutdown(true)
+
+	var refs []vivid.ActorRef
 	for i := 0; i < 3; i++ {
-		system.ActorOfF(func() vivid.Actor {
+		refs = append(refs, system.ActorOfF(func() vivid.Actor {
 			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 				switch m := ctx.Message().(type) {
 				case *vivid.OnLaunch:
 					ctx.Subscribe("chat")
-					ctx.Publish("chat", "hello")
+					start.Done()
 				case string:
+					if m == "start" {
+						ctx.Publish("chat", "hello")
+						return
+					}
 					t.Log(ctx.Ref().URL().String(), "receive", m, "from", ctx.Sender().URL().String())
 					wg.Done()
 				}
 			})
-		})
+		}))
+	}
+
+	start.Wait()
+	for _, ref := range refs {
+		system.Tell(ref, "start")
 	}
 
 	wg.Wait()
 }
 
 func TestSharedSubscription(t *testing.T) {
+	start := new(sync.WaitGroup)
+	start.Add(2)
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
@@ -47,6 +63,8 @@ func TestSharedSubscription(t *testing.T) {
 			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
 				ctx.Subscribe("chat")
+				start.Done()
+				start.Wait()
 				ctx.Publish("chat", ctx.Ref())
 			case vivid.ActorRef:
 				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())
@@ -60,6 +78,8 @@ func TestSharedSubscription(t *testing.T) {
 			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
 				ctx.Subscribe("chat")
+				start.Done()
+				start.Wait()
 				ctx.Publish("chat", ctx.Ref())
 			case vivid.ActorRef:
 				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())

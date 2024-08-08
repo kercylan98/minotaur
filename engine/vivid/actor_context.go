@@ -390,6 +390,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
+			ctx.actor.OnReceive(ctx)
 		case *messages.AbyssMessageEvent:
 			ctx.onAbyssMessageEvent(m)
 		default:
@@ -450,6 +451,10 @@ func (ctx *actorContext) slowProcess() func() {
 
 func (ctx *actorContext) ProcessUserMessage(message prc.Message) {
 	sender, receiver, message := unwrapMessage(message)
+	if ctx.status.Load() >= actorStatusTerminating {
+		ctx.system.rc.GetProcess(ctx.system.abyssRef).DeliveryUserMessage(receiver, sender, nil, message)
+		return
+	}
 	if ctx.slowProcessDuration > 0 {
 		f := ctx.slowProcess()
 		defer f()

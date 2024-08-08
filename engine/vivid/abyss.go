@@ -29,6 +29,11 @@ func (a *abyss) OnInitialize(system *ActorSystem) {
 }
 
 func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
+	switch message.(type) {
+	case *OnAbyssMessageEvent, *messages.AbyssMessageEvent, *messages.LocalPublishRequest:
+		return
+	}
+
 	if a.system.shared != nil {
 		name, data, err := a.system.shared.GetCodec().Encode(message)
 		if err == nil {
@@ -54,7 +59,12 @@ func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, me
 }
 
 func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
-	a.system.Logger().Error("ActorSystem", log.String("info", "system abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
+	switch message.(type) {
+	case *messages.Watch:
+		a.system.rc.GetProcess(sender).DeliverySystemMessage(sender, receiver, nil, &messages.Terminated{TerminatedProcess: receiver})
+	default:
+		a.system.Logger().Error("ActorSystem", log.String("info", "system abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
+	}
 }
 
 func (a *abyss) Initialize(rc *prc.ResourceController, id *prc.ProcessId) {

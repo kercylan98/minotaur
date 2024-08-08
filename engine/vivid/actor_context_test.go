@@ -270,6 +270,7 @@ func TestActorDescriptor_WithPersistence(t *testing.T) {
 	system.Shutdown(true)
 }
 
+//goland:noinspection t
 func TestActorContext_Watch(t *testing.T) {
 	t.Run("watch_running", func(t *testing.T) {
 		wait := new(sync.WaitGroup)
@@ -286,6 +287,7 @@ func TestActorContext_Watch(t *testing.T) {
 				switch m := ctx.Message().(type) {
 				case *vivid.OnLaunch:
 					ctx.Watch(refA)
+					ctx.Terminate(refA, false)
 				case *vivid.OnTerminated:
 					if m.TerminatedActor.Equal(refA) {
 						wait.Done()
@@ -293,8 +295,6 @@ func TestActorContext_Watch(t *testing.T) {
 				}
 			})
 		})
-
-		system.Terminate(refA, false)
 
 		wait.Wait()
 		system.Shutdown(true)

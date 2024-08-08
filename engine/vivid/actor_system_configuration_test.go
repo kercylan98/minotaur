@@ -93,7 +93,7 @@ func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
 
 func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
 	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	wg.Add(2)
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
 		config.WithShared(":8080")
 	}))
@@ -106,6 +106,9 @@ func TestActorSystemConfiguration_WithSharedTerminate(t *testing.T) {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch ctx.Message().(type) {
 			case *vivid.OnTerminate:
+				t.Log("terminate", ctx.Ref().URL().String(), "killer", ctx.Sender().URL().String())
+				wg.Done()
+			case *vivid.OnTerminated:
 				t.Log("terminated", ctx.Ref().URL().String(), "killer", ctx.Sender().URL().String())
 				wg.Done()
 			}
