@@ -390,8 +390,11 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
+		case *messages.AbyssMessageEvent:
+			ctx.onAbyssMessageEvent(m)
+		default:
+			ctx.actor.OnReceive(ctx)
 		}
-		ctx.actor.OnReceive(ctx)
 
 		switch message.(type) {
 		case *OnLaunch:
@@ -726,4 +729,20 @@ func (ctx *actorContext) tryTerminated() {
 	} else {
 		close(ctx.system.closed)
 	}
+}
+
+func (ctx *actorContext) onAbyssMessageEvent(m *messages.AbyssMessageEvent) {
+	am, err := ctx.system.shared.GetCodec().Decode(m.MessageType, m.Data)
+	if err != nil {
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "decode abyss message failed"), log.String("type", reflect.TypeOf(ctx.actor).String()), log.String("actor", ctx.ref.GetLogicalAddress()), log.Err(err))
+		return
+	}
+	ctx.message = &OnAbyssMessageEvent{
+		Sender:   m.Sender,
+		Receiver: m.Receiver,
+		Forward:  m.Forward,
+		Message:  am,
+		Time:     m.Timestamp.AsTime(),
+	}
+	ctx.actor.OnReceive(ctx)
 }

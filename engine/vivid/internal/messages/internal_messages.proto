@@ -3,6 +3,7 @@ package messages;
 option go_package = "/github.com/kercylan98/minotaur/engine/vivid/internal/messages";
 
 import "process_id.proto";
+import "google/protobuf/timestamp.proto";
 
 // Terminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
 message Terminated {
@@ -42,4 +43,13 @@ message PublishRequestBroadcast {
   bytes data = 2;
   string topic = 3;
   prc.ProcessId publisher = 4;
+}
+
+message AbyssMessageEvent {
+  prc.ProcessId sender = 1;
+  prc.ProcessId receiver = 2;
+  prc.ProcessId forward = 3;
+  string message_type = 4;
+  bytes data = 5;
+  google.protobuf.Timestamp timestamp = 6;
 }

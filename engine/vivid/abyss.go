@@ -2,7 +2,15 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/vivid/internal/messages"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
+)
+
+const (
+	// AbyssTopic 默认的深渊主题，订阅该主题的订阅者将会收到 OnAbyssMessageEvent 事件
+	AbyssTopic = "vivid_abyss"
 )
 
 var _ AbyssProcess = (*abyss)(nil)
@@ -21,7 +29,28 @@ func (a *abyss) OnInitialize(system *ActorSystem) {
 }
 
 func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
-	a.system.Logger().Error("ActorSystem", log.String("info", "user abyss"), log.String("sender", sender.URL().String()), log.String("receiver", receiver.URL().String()), log.Any("message", message))
+	if a.system.shared != nil {
+		name, data, err := a.system.shared.GetCodec().Encode(message)
+		if err == nil {
+			a.system.Publish(AbyssTopic, &messages.AbyssMessageEvent{
+				Sender:      sender,
+				Receiver:    receiver,
+				Forward:     forward,
+				MessageType: name,
+				Data:        data,
+				Timestamp:   timestamppb.Now(),
+			})
+			return
+		}
+	}
+
+	a.system.Publish(AbyssTopic, &OnAbyssMessageEvent{
+		Sender:   sender,
+		Receiver: receiver,
+		Forward:  forward,
+		Message:  message,
+		Time:     time.Now(),
+	})
 }
 
 func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {

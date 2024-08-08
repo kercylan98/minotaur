@@ -46,9 +46,19 @@ type (
 	// OnPersistenceSnapshot 当 Actor 的事件数量超过持久化事件数量阈值时，将会触发快照的持久化，收到该消息时应主动调用 SaveSnapshot 函数保存快照。
 	OnPersistenceSnapshot int8
 
+	// OnSlowProcess 当 Actor 处理消息耗时超过阈值时，将会收到该消息。
 	OnSlowProcess struct {
 		Duration time.Duration // 处理耗时
 		ActorRef ActorRef      // 慢处理 Actor 引用
+	}
+
+	// OnAbyssMessageEvent 当消息发送到深渊之中时，将会收到该消息。
+	OnAbyssMessageEvent struct {
+		Sender   ActorRef
+		Receiver ActorRef
+		Forward  ActorRef
+		Message  Message
+		Time     time.Time
 	}
 )
 
