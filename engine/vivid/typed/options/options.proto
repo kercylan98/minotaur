@@ -23,3 +23,6 @@ extend google.protobuf.MethodOptions {
 
 // 用于标识的消息体，它意味着该消息体是没有内容的
 message Empty {}
+
+// 一个特殊的消息类型，它作为 rpc 参数或返回值时，会将其置换为 vivid.ActorRef
+message ActorRef {}

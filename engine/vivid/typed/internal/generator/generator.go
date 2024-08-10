@@ -67,9 +67,10 @@ func generateContent(g *protogen.GeneratedFile, file *protogen.File, mode string
 }
 
 func generatePackageImports(g *protogen.GeneratedFile, file *protogen.File, mode string) {
-	g.P("package ", "test")
+	g.P("package ", file.GoPackageName)
 	g.P()
 	g.P("var _ *options.Empty")
+	g.P("var _ *time.Time")
 
 	switch mode {
 	case GenerateModeCluster:
@@ -120,6 +121,12 @@ func generateServiceMethods(g *protogen.GeneratedFile, file *protogen.File, serv
 			Input:   g.QualifiedGoIdent(method.Input.GoIdent),
 			Output:  g.QualifiedGoIdent(method.Output.GoIdent),
 			Options: &options.MethodOptions{},
+		}
+		if methodDesc.Input == "options.ActorRef" {
+			methodDesc.Input = "vivid.ActorRef"
+		}
+		if methodDesc.Output == "options.ActorRef" {
+			methodDesc.Output = "vivid.ActorRef"
 		}
 
 		if methodOptions, ok := proto.GetExtension(method.Desc.Options(), options.E_MethodOptions).(*options.MethodOptions); ok && methodOptions != nil {
