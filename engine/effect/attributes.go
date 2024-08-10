@@ -2,14 +2,34 @@ package effect
 
 type AttributeType = uint32 // 属性类型
 
-type Attributes map[AttributeType]Attribute // 属性集合
-
-// Get 获取特定属性的属性值
-func (as Attributes) Get(attributeType AttributeType) Attribute {
-	return as[attributeType]
+func newAttributes(manager *Manager) *Attributes {
+	return &Attributes{
+		manager:    manager,
+		attributes: make(map[AttributeType]Attribute),
+	}
 }
 
-// Set 设置特定属性的属性值
-func (as Attributes) Set(attributeType AttributeType, value Attribute) {
-	as[attributeType] = value
+type Attributes struct {
+	manager    *Manager
+	attributes map[AttributeType]Attribute
+}
+
+func (as *Attributes) Clone() *Attributes {
+	c := newAttributes(as.manager)
+	for attributeType, attribute := range as.attributes {
+		c.attributes[attributeType] = attribute
+	}
+	return c
+}
+
+func (as *Attributes) Get(attributeType AttributeType) Attribute {
+	attr, exist := as.attributes[attributeType]
+	if exist {
+		return attr
+	}
+	return as.manager.config.defaultAttributes[attributeType]
+}
+
+func (as *Attributes) Set(attributeType AttributeType, attribute Attribute) {
+	as.attributes[attributeType] = attribute
 }

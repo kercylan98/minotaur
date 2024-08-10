@@ -1,9 +1,49 @@
 package effect
 
 import (
+	"github.com/kercylan98/minotaur/toolkit/constraints"
 	"github.com/shopspring/decimal"
 	"math/big"
 )
+
+var (
+	Zero            = Attribute{v: decimal.New(0, 0)}          // 零
+	One             = Attribute{v: decimal.New(1, 0)}          // 一
+	Ten             = Attribute{v: decimal.New(10, 0)}         // 十
+	Hundred         = Attribute{v: decimal.New(100, 0)}        // 一百
+	Thousand        = Attribute{v: decimal.New(1000, 0)}       // 一千
+	TenThousand     = Attribute{v: decimal.New(10000, 0)}      // 一万
+	HundredThousand = Attribute{v: decimal.New(100000, 0)}     // 十万
+	Million         = Attribute{v: decimal.New(1000000, 0)}    // 一百万
+	TenMillion      = Attribute{v: decimal.New(10000000, 0)}   // 一千万
+	HundredMillion  = Attribute{v: decimal.New(100000000, 0)}  // 一亿
+	Billion         = Attribute{v: decimal.New(1000000000, 0)} // 十亿
+)
+
+func String(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	return Attribute{
+		v: dv,
+	}
+}
+
+func Int[V constraints.SignedInt](v V) Attribute {
+	return Attribute{
+		v: decimal.NewFromInt(int64(v)),
+	}
+}
+
+func Uint[V constraints.UnsignedInt](v V) Attribute {
+	return Attribute{
+		v: decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0),
+	}
+}
+
+func Float[V constraints.Float](v V) Attribute {
+	return Attribute{
+		v: decimal.NewFromFloat(float64(v)),
+	}
+}
 
 type Attribute struct {
 	v decimal.Decimal
@@ -11,6 +51,89 @@ type Attribute struct {
 
 func (attr Attribute) String() string {
 	return attr.v.String()
+}
+
+func (attr Attribute) AddString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	return Attribute{
+		attr.v.Add(dv),
+	}
+}
+
+func (attr Attribute) SubString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	return Attribute{
+		attr.v.Sub(dv),
+	}
+}
+
+func (attr Attribute) MulString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	return Attribute{
+		attr.v.Mul(dv),
+	}
+}
+
+func (attr Attribute) DivString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	return Attribute{
+		attr.v.Div(dv),
+	}
+}
+
+func (attr Attribute) MaxString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	if attr.v.GreaterThan(dv) {
+		return attr
+	} else {
+		return Attribute{
+			dv,
+		}
+	}
+}
+
+func (attr Attribute) MinString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	if attr.v.LessThan(dv) {
+		return attr
+	} else {
+		return Attribute{
+			dv,
+		}
+	}
+}
+
+func (attr Attribute) EqualString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	if attr.v.Equal(dv) {
+		return attr
+	} else {
+		return Attribute{
+			dv,
+		}
+	}
+}
+
+func (attr Attribute) LessThanString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	if attr.v.LessThan(dv) {
+		return attr
+	} else {
+		return Attribute{
+			dv,
+		}
+	}
+}
+
+func (attr Attribute) GreaterThanString(v string) Attribute {
+	dv, _ := decimal.NewFromString(v)
+	if attr.v.GreaterThan(dv) {
+		return attr
+	} else {
+		return Attribute{
+			dv,
+		}
+	}
 }
 
 func (attr Attribute) AddInt(v int) Attribute {
@@ -556,4 +679,138 @@ func (attr Attribute) LessThanUint32(v uint32) bool {
 
 func (attr Attribute) LessThanUint64(v uint64) bool {
 	return attr.LessThan(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(v), 0)})
+}
+
+func (attr Attribute) LessThanEqual(v Attribute) bool {
+	return attr.v.LessThanOrEqual(v.v)
+}
+
+func (attr Attribute) LessThanEqualFloat32(v float32) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromFloat32(v)})
+}
+
+func (attr Attribute) LessThanEqualFloat64(v float64) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromFloat(v)})
+}
+
+func (attr Attribute) LessThanEqualInt(v int) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromInt(int64(v))})
+}
+
+func (attr Attribute) LessThanEqualInt8(v int8) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromInt32(int32(v))})
+}
+
+func (attr Attribute) LessThanEqualInt16(v int16) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromInt32(int32(v))})
+}
+
+func (attr Attribute) LessThanEqualInt32(v int32) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromInt32(v)})
+}
+
+func (attr Attribute) LessThanEqualInt64(v int64) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromInt(v)})
+}
+
+func (attr Attribute) LessThanEqualUint(v uint) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) LessThanEqualUint8(v uint8) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) LessThanEqualUint16(v uint16) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) LessThanEqualUint32(v uint32) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) LessThanEqualUint64(v uint64) bool {
+	return attr.LessThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(v), 0)})
+}
+
+func (attr Attribute) GreaterThanEqual(v Attribute) bool {
+	return attr.v.GreaterThanOrEqual(v.v)
+}
+
+func (attr Attribute) GreaterThanEqualFloat32(v float32) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromFloat32(v)})
+}
+
+func (attr Attribute) GreaterThanEqualFloat64(v float64) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromFloat(v)})
+}
+
+func (attr Attribute) GreaterThanEqualInt(v int) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromInt(int64(v))})
+}
+
+func (attr Attribute) GreaterThanEqualInt8(v int8) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromInt32(int32(v))})
+}
+
+func (attr Attribute) GreaterThanEqualInt16(v int16) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromInt32(int32(v))})
+}
+
+func (attr Attribute) GreaterThanEqualInt32(v int32) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromInt32(v)})
+}
+
+func (attr Attribute) GreaterThanEqualInt64(v int64) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromInt(v)})
+}
+
+func (attr Attribute) GreaterThanEqualUint(v uint) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) GreaterThanEqualUint8(v uint8) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) GreaterThanEqualUint16(v uint16) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) GreaterThanEqualUint32(v uint32) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(uint64(v)), 0)})
+}
+
+func (attr Attribute) GreaterThanEqualUint64(v uint64) bool {
+	return attr.GreaterThanEqual(Attribute{decimal.NewFromBigInt(new(big.Int).SetUint64(v), 0)})
+}
+
+func (attr Attribute) GreaterThanEqualString(v string) bool {
+	dv, _ := decimal.NewFromString(v)
+	return attr.GreaterThanEqual(Attribute{dv})
+}
+
+func (attr Attribute) LessThanEqualString(v string) bool {
+	dv, _ := decimal.NewFromString(v)
+	return attr.LessThanEqual(Attribute{dv})
+}
+
+func (attr Attribute) IsZero() bool {
+	return attr.v.IsZero()
+}
+
+func (attr Attribute) IsPositive() bool {
+	return attr.v.IsPositive()
+}
+
+func (attr Attribute) IsNegative() bool {
+	return attr.v.IsNegative()
+}
+
+func (attr Attribute) IsNegativeOrZero() bool {
+	return attr.v.IsNegative() || attr.v.IsZero()
+}
+
+func (attr Attribute) IsPositiveOrZero() bool {
+	return attr.v.IsPositive() || attr.v.IsZero()
 }

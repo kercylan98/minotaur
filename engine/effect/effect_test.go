@@ -1,3 +1,7 @@
 package effect
 
-var ExportNewAttribute = newAttribute
+import "testing"
+
+func TestAttribute_Add(t *testing.T) {
+	t.Log(V1)
+}
