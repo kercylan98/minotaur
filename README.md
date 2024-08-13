@@ -33,6 +33,8 @@ go get -u github.com/kercylan98/minotaur@develop
 # 联系方式
 - **[Email: kercylan@gmail.com](mailto:kercylan@gmail.com)**
 - **[Telegram: ziv_siren](https://telegram.me/ziv_siren)**
+- **[QQ 群: 758219443](https://qm.qq.com/cgi-bin/qm/qr?k=WzRWJIDLzuJbH6-VjdFiTCd1_qA_Ug-D&jump_from=webapi&authKey=ktLEw3XyY9yO+i9rPbI6Fk0UA0uEhACcUidOFdblaiToZtbHcXyU7sFb31FEc9JJ&noverify=0)**
+- **WeChat 微信: Serendipity_7l7**
 
 # JetBrains OS licenses
 
