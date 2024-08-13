@@ -814,3 +814,35 @@ func (attr Attribute) IsNegativeOrZero() bool {
 func (attr Attribute) IsPositiveOrZero() bool {
 	return attr.v.IsPositive() || attr.v.IsZero()
 }
+
+func (attr Attribute) MarshalJSON() ([]byte, error) {
+	return attr.v.MarshalJSON()
+}
+
+func (attr Attribute) UnmarshalJSON(data []byte) error {
+	return attr.v.UnmarshalJSON(data)
+}
+
+func (attr Attribute) MarshalText() (text []byte, err error) {
+	return attr.v.MarshalText()
+}
+
+func (attr Attribute) UnmarshalText(text []byte) error {
+	return attr.v.UnmarshalText(text)
+}
+
+func (attr Attribute) GobEncode() ([]byte, error) {
+	return attr.v.GobEncode()
+}
+
+func (attr Attribute) GobDecode(data []byte) error {
+	return attr.v.GobDecode(data)
+}
+
+func (attr Attribute) MarshalBinary() (data []byte, err error) {
+	return attr.v.MarshalBinary()
+}
+
+func (attr Attribute) UnmarshalBinary(data []byte) error {
+	return attr.v.UnmarshalBinary(data)
+}

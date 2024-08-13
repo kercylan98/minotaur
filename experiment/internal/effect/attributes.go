@@ -1,21 +1,19 @@
 package effect
 
-type AttributeType = uint32 // 属性类型
+type AttributeType = int32 // 属性类型
 
-func newAttributes(manager *Manager) *Attributes {
+func NewAttributes() *Attributes {
 	return &Attributes{
-		manager:    manager,
 		attributes: make(map[AttributeType]Attribute),
 	}
 }
 
 type Attributes struct {
-	manager    *Manager
 	attributes map[AttributeType]Attribute
 }
 
 func (as *Attributes) Clone() *Attributes {
-	c := newAttributes(as.manager)
+	c := NewAttributes()
 	for attributeType, attribute := range as.attributes {
 		c.attributes[attributeType] = attribute
 	}
@@ -27,7 +25,7 @@ func (as *Attributes) Get(attributeType AttributeType) Attribute {
 	if exist {
 		return attr
 	}
-	return as.manager.config.defaultAttributes[attributeType]
+	return Attribute{}
 }
 
 func (as *Attributes) Set(attributeType AttributeType, attribute Attribute) {
