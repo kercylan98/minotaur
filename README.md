@@ -18,7 +18,7 @@ Minotaur 是一个通过 Actor 思想来设计的天然支持分布式的服务�
 
 # 开始使用
 ```shell
-go get -u github.com/kercylan98/minotaur@develop
+go get -u github.com/kercylan98/minotaur
 ```
 
 关于 Minotaur 的相关内容请参阅 [WIKI](https://minotaur.net.cn)。
