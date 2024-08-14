@@ -3,13 +3,13 @@ on:
     branches:
       - master  # 确保分支名称与实际默认分支一致
 
-name: Release
+name: release-please
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v3
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
@@ -19,78 +19,17 @@ jobs:
           bump-patch-for-minor-pre-major: true
           changelog-types: >
             [
-              {"type":"🎨","section":"🎨 Improve Code Structure/Format | 改进代码结构/格式","hidden":false},
-              {"type":"⚡️","section":"⚡️ Improve Performance | 提高性能","hidden":false},
-              {"type":"🔥","section":"🔥 Remove Code or Files | 删除代码或文件","hidden":false},
-              {"type":"🐛","section":"🐛 Fix a Bug | 修复错误","hidden":false},
-              {"type":"🚑","section":"🚑️ Critical Fix | 关键修补程序","hidden":false},
-              {"type":"✨","section":"✨ Introduce New Features | 引入新功能","hidden":false},
-              {"type":"📝","section":"📝 Documentation | 文档","hidden":false},
-              {"type":"🚀","section":"🚀 Deploy Function | 部署功能","hidden":false},
-              {"type":"💄","section":"💄 Add/Update UI and Style Files | 添加/更新 UI 和样式文件","hidden":false},
-              {"type":"🎉","section":"🎉 Project Start | 项目启动","hidden":false},
-              {"type":"✅","section":"✅ Add/Update/Pass Tests | 添加/更新/通过测试","hidden":false},
-              {"type":"🔒","section":"🔒️ Fix Security/Privacy Issues | 修复安全/隐私问题","hidden":false},
-              {"type":"🔐","section":"🔐 Add/Update Secrets | 添加/更新机密信息","hidden":false},
-              {"type":"🔖","section":"🔖 Release/Version Tags | 发布/版本标签","hidden":false},
-              {"type":"🚨","section":"🚨 Fix Compiler/Linter Warnings | 修复编译器/Linter 警告","hidden":false},
-              {"type":"🚧","section":"🚧 Work in Progress | 进行中的工作","hidden":false},
-              {"type":"💚","section":"💚 Fix CI Build | 修复 CI 构建","hidden":false},
-              {"type":"⬇","section":"⬇️ Downgrade Dependencies | 降级依赖项","hidden":false},
-              {"type":"⬆","section":"⬆️ Upgrade Dependencies | 升级依赖项","hidden":false},
-              {"type":"📌","section":"📌 Pin Dependencies | 将依赖项固定到特定版本","hidden":false},
-              {"type":"👷","section":"👷 Add/Update CI Build System | 添加/更新 CI 构建系统","hidden":false},
-              {"type":"📈","section":"📈 Add/Update Analytics or Tracking Code | 添加/更新分析或跟踪代码","hidden":false},
-              {"type":"♻","section":"♻️ Refactor Code | 重构代码","hidden":false},
-              {"type":"➕","section":"➕ Add Dependencies | 添加依赖项","hidden":false},
-              {"type":"➖","section":"➖ Remove Dependencies | 删除依赖项","hidden":false},
-              {"type":"🔧","section":"🔧 Add/Update Configuration Files | 添加/更新配置文件","hidden":false},
-              {"type":"🔨","section":"🔨 Add/Update Development Scripts | 添加/更新开发脚本","hidden":false},
-              {"type":"🌐","section":"🌐 Internationalization and Localization | 国际化和本地化","hidden":false},
-              {"type":"✏","section":"✏️ Fix Typos | 修正拼写错误","hidden":false},
-              {"type":"💩","section":"💩 Write Bad Code That Needs Improvement | 编写需要改进的糟糕代码","hidden":false},
-              {"type":"⏪","section":"⏪ Revert Changes | 撤销更改","hidden":false},
-              {"type":"🔀","section":"🔀 Merge Branches | 合并分支","hidden":false},
-              {"type":"📦","section":"📦️ Add/Update Compiled Files or Packages | 添加/更新已编译的文件或包","hidden":false},
-              {"type":"👽","section":"👽️ Update Code Due to External API Changes | 更新代码以适应外部 API 变化","hidden":false},
-              {"type":"🚚","section":"🚚 Move or Rename Resources (e.g., files, paths, routes) | 移动或重命名资源（如文件、路径、路由）","hidden":false},
-              {"type":"📄","section":"📄 Add/Update Licenses | 添加/更新许可证","hidden":false},
-              {"type":"💥","section":"💥 Introduce Breaking Changes | 引入重大变化","hidden":false},
-              {"type":"🍱","section":"🍱 Add/Update Assets | 添加/更新资产","hidden":false},
-              {"type":"♿","section":"♿️ Improve Accessibility | 提高可达性","hidden":false},
-              {"type":"💡","section":"💡 Add/Update Comments in Source Code | 在源代码中添加/更新注释","hidden":false},
-              {"type":"🍻","section":"🍻 Code Drunkenly | 醉酒编写代码","hidden":false},
-              {"type":"💬","section":"💬 Add/Update Texts and Messages | 添加/更新文本和消息","hidden":false},
-              {"type":"🗃","section":"🗃️ Database Related Changes | 数据库相关的更改","hidden":false},
-              {"type":"🔊","section":"🔊 Add/Update Logs | 添加/更新日志","hidden":false},
-              {"type":"🔇","section":"🔇 Remove Logs | 删除日志","hidden":false},
-              {"type":"👥","section":"👥 Add/Update Contributors | 添加/更新贡献者","hidden":false},
-              {"type":"🚸","section":"🚸 Improve User Experience/Usability | 提高用户体验/可用性","hidden":false},
-              {"type":"🏗","section":"🏗️ Architectural Changes | 架构变更","hidden":false},
-              {"type":"📱","section":"📱 Work on Responsive Design | 致力于响应式设计","hidden":false},
-              {"type":"🤡","section":"🤡 Mock Things | 嘲笑事物","hidden":false},
-              {"type":"🥚","section":"🥚 Add/Update Easter Eggs | 添加/更新复活节彩蛋","hidden":false},
-              {"type":"🙈","section":"🙈 Add/Update .gitignore Files | 添加/更新 .gitignore 文件","hidden":false},
-              {"type":"📸","section":"📸 Add/Update Snapshots | 添加/更新快照","hidden":false},
-              {"type":"⚗","section":"⚗️ Experimentation | 进行实验","hidden":false},
-              {"type":"🔍","section":"🔍️ Improve SEO | 改善 SEO","hidden":false},
-              {"type":"🏷","section":"🏷️ Add/Update Types | 添加/更新类型","hidden":false},
-              {"type":"🌱","section":"🌱 Add/Update Seed Files | 添加/更新种子文件","hidden":false},
-              {"type":"🚩","section":"🚩 Add/Update/Remove Feature Flags | 添加/更新/删除功能标志","hidden":false},
-              {"type":"🥅","section":"🥅 Capture Errors | 捕获错误","hidden":false},
-              {"type":"💫","section":"💫 Add/Update Animations and Transitions | 添加/更新动画和过渡效果","hidden":false},
-              {"type":"🗑","section":"🗑️ Deprecate Code That Needs Cleaning Up | 弃用需要清理的代码","hidden":false},
-              {"type":"🛂","section":"🛂 Manage Authorization, Roles, and Permissions | 处理授权、角色和权限相关的代码","hidden":false},
-              {"type":"🩹","section":"🩹 Apply Minor Fixes That Don't Affect Critical Issues | 对非关键问题进行简单修复","hidden":false},
-              {"type":"🧐","section":"🧐 Explore or Check Data | 数据探索/检查","hidden":false},
-              {"type":"⚰","section":"⚰️ Remove Dead Code | 删除死代码","hidden":false},
-              {"type":"🧪","section":"🧪 Add Failing Tests | 添加失败的测试","hidden":false},
-              {"type":"👔","section":"👔 Add/Update Business Logic | 添加/更新业务逻辑","hidden":false},
-              {"type":"🩺","section":"🩺 Add/Update Health Checks | 添加/更新健康检查","hidden":false},
-              {"type":"🧱","section":"🧱 Make Infrastructure Changes | 进行基础设施相关的变化","hidden":false},
-              {"type":"🧑💻","section":"🧑‍💻 Improve Developer Experience | 改善开发人员体验","hidden":false},
-              {"type":"💸","section":"💸 Add Sponsorship or Funding Related Changes | 添加赞助或资金相关的基础设施","hidden":false},
-              {"type":"🧵","section":"🧵 Add/Update Threads or Concurrency Code | 添加/更新与多线程或并发相关的代码","hidden":false},
-              {"type":"🦺","section":"🦺 Add/Update Validation Code | 添加或更新与验证相关的代码","hidden":false}
+              {"type":"可读性","section":"🎨 Improve Code Structure/Format | 改进代码结构/格式","hidden":false},
+              {"type":"性能","section":"⚡️ Improve Performance | 提高性能","hidden":false},
+              {"type":"移除","section":"🔥 Remove Code or Files | 删除代码或文件","hidden":false},
+              {"type":"修复","section":"🐛 Fix a Bug | 修复错误","hidden":false},
+              {"type":"新增","section":"✨ Introduce New Features | 引入新功能","hidden":false},
+              {"type":"文档","section":"📝 Documentation | 文档","hidden":false},
+              {"type":"注释","section":"📝 Documentation | 文档","hidden":false},
+              {"type":"测试","section":"✅ Add/Update/Pass Tests | 添加/更新/通过测试","hidden":false},
+              {"type":"用例","section":"✅ Add/Update/Pass Tests | 添加/更新/通过测试","hidden":false},
+              {"type":"重构","section":"♻️ Refactor Code | 重构代码","hidden":false},
+              {"type":"构建","section":"👷 Build Process | 构建流程","hidden":false},
+              {"type":"更新","section":"📦 Update Dependencies | 更新依赖","hidden":false},
             ]
           release-as: 0.6.0
