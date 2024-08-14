@@ -14,22 +14,3 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
           release-type: go
-          package-name: minotaur
-          bump-minor-pre-major: true
-          bump-patch-for-minor-pre-major: true
-          changelog-types: >
-            [
-              {"type":"可读性","section":"🎨 Improve Code Structure/Format | 改进代码结构/格式","hidden":false},
-              {"type":"性能","section":"⚡️ Improve Performance | 提高性能","hidden":false},
-              {"type":"移除","section":"🔥 Remove Code or Files | 删除代码或文件","hidden":false},
-              {"type":"修复","section":"🐛 Fix a Bug | 修复错误","hidden":false},
-              {"type":"新增","section":"✨ Introduce New Features | 引入新功能","hidden":false},
-              {"type":"文档","section":"📝 Documentation | 文档","hidden":false},
-              {"type":"注释","section":"📝 Documentation | 文档","hidden":false},
-              {"type":"测试","section":"✅ Add/Update/Pass Tests | 添加/更新/通过测试","hidden":false},
-              {"type":"用例","section":"✅ Add/Update/Pass Tests | 添加/更新/通过测试","hidden":false},
-              {"type":"重构","section":"♻️ Refactor Code | 重构代码","hidden":false},
-              {"type":"构建","section":"👷 Build Process | 构建流程","hidden":false},
-              {"type":"更新","section":"📦 Update Dependencies | 更新依赖","hidden":false},
-            ]
-          release-as: 0.6.0
