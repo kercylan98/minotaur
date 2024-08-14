@@ -1,10 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "bootstrap-sha": "c55cd60d4f14ae9ccd378fa953b54d016e093b2a",
+  "release-type": "go",
+  "pull-request-title-pattern": "build${scope}: release${component} ${version}",
   "packages": {
-    ".": {
-      "changelog-path": "CHANGELOG.md",
-      "release-type": "go"
-    }
+    ".": {}
   }
 }

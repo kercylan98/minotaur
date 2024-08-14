@@ -1,15 +1,44 @@
+name: release-please
 on:
   push:
     branches:
-      - master  # 确保分支名称与实际默认分支一致
+      - master
 
-name: release-please
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: google-github-actions/release-please-action@v4
         id: release
+
+      - name: Echo release outputs
+        if: ${{ steps.release.outputs }}
+        run: echo '${{ toJson(steps.release) }}'
+        continue-on-error: true
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.pr }}
         with:
-          token: ${{ secrets.RELEASE_TOKEN }}
+          ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
+
+      - name: Configure Git user
+        if: ${{ steps.release.outputs.pr }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git --no-pager show --name-only
+
+      - name: Run CHANGELOG.md through Prettier
+        if: ${{ steps.release.outputs.pr }}
+        run: npx prettier --write CHANGELOG.md
+
+      - name: Commit and push
+        if: ${{ steps.release.outputs.pr }}
+        run: |
+          git add CHANGELOG.md
+          git commit -m 'chore: run CHANGELOG.md through Prettier' --no-verify
+          git push
