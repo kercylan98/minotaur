@@ -11,9 +11,9 @@ import (
 )
 
 func TestGen(t *testing.T) {
-	xlsxFile, _ := xlsx.OpenFile(`D:\sources\minotaur\ax\cmd\table\xlsxsheet\template.xlsx`)
+	xlsxFile, _ := xlsx.OpenFile(`..\xlsxsheet\template.xlsx`)
 	t1 := xlsxsheet.NewTable(xlsxFile.Sheets[1])
-	r := table.GenerateConfigs([]table.Table{t1}, fieldparser.New(), New(), lua2jsonparser.New())
+	r := table.GenerateConfigs([]table.Table{t1}, fieldparser.New(), New("type2go"), lua2jsonparser.New())
 	code := r.GenerateCode()
 	fileproc.WriteToFile("./template_test_config.go", []byte(code))
 }

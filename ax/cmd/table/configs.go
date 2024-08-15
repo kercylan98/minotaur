@@ -23,8 +23,8 @@ type Configs struct {
 	config     []*Config
 }
 
-func (cs *Configs) GenerateCode() string {
-	return cs.codeParser.Parse(cs.config)
+func (cs *Configs) GenerateCode() []byte {
+	return []byte(cs.codeParser.Parse(cs.config))
 }
 
 //goland:noinspection t
@@ -80,9 +80,8 @@ func (cs *Configs) gen() *Configs {
 							Name: field.GetName(),
 							Type: v,
 						})
-					} else {
-						config.types = append(config.types, v)
 					}
+					config.types = append(config.types, v)
 				}
 			}
 		}

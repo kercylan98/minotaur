@@ -19,3 +19,9 @@ func Execute() {
 func init() {
 
 }
+
+func checkError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

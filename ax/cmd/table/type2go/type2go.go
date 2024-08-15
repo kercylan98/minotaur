@@ -14,13 +14,14 @@ import (
 //go:embed template.tmpl
 var typedTemplate string
 
-func New() table.CodeParser {
-	return &parser{}
+func New(packageName string) table.CodeParser {
+	return &parser{PackageName: packageName}
 }
 
 type parser struct {
-	Structs []*configStruct
-	Vars    []*configVar
+	PackageName string
+	Structs     []*configStruct
+	Vars        []*configVar
 }
 
 func (p *parser) init(configs []*table.Config) {
