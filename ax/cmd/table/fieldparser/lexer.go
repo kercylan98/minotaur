@@ -1,6 +1,9 @@
 package fieldparser
 
-import "unicode"
+import (
+	"fmt"
+	"unicode"
+)
 
 type lexer struct {
 	input string
@@ -54,6 +57,6 @@ func (l *lexer) lex() token {
 			}
 			return token{Type: TokenIdent, Value: l.input[start:l.pos]}
 		}
+		panic(fmt.Errorf("%s unexpected character: %q", l.input, ch))
 	}
-	panic("invalid character")
 }

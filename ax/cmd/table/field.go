@@ -17,6 +17,9 @@ type Field interface {
 	// GetParam 字段参数
 	GetParam() string
 
-	// GetData 字段数据
-	GetData() FieldDataScanner
+	// IsIgnore 是否忽略
+	IsIgnore() bool
+
+	// Query 数据查询
+	Query(pos int) (val map[string]any, skip, end bool)
 }

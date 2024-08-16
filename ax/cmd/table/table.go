@@ -12,4 +12,7 @@ type Table interface {
 
 	// GetFields 获取配置结构的字段
 	GetFields() FieldScanner
+
+	// IsIgnore 是否忽略该表
+	IsIgnore() bool
 }

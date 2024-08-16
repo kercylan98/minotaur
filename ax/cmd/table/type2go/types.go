@@ -16,9 +16,10 @@ type configStructField struct {
 }
 
 type configVar struct {
-	Name    string
-	Desc    string
-	HasDesc bool
-	Type    string
-	IsMake  bool
+	Name      string
+	Desc      string
+	HasDesc   bool
+	Type      string
+	IsMake    bool
+	ValueType string
 }

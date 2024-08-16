@@ -5,8 +5,9 @@ import (
 	"github.com/tealeg/xlsx"
 )
 
-func newFieldScannerIndex(sheet *xlsx.Sheet, indexCount int) table.FieldScanner {
+func newFieldScannerIndex(table *Table, sheet *xlsx.Sheet, indexCount int) table.FieldScanner {
 	return &fieldScannerIndex{
+		table: table,
 		sheet: sheet,
 		count: indexCount,
 	}
@@ -14,6 +15,7 @@ func newFieldScannerIndex(sheet *xlsx.Sheet, indexCount int) table.FieldScanner 
 
 // fieldScannerIndex 有索引字段扫描器
 type fieldScannerIndex struct {
+	table *Table
 	sheet *xlsx.Sheet
 	i     int
 	count int
@@ -31,12 +33,15 @@ func (s *fieldScannerIndex) Next() table.Field {
 		return nil
 	}
 	f := &field{
-		index:   index,
-		desc:    s.sheet.Rows[3].Cells[i].String(),
-		name:    s.sheet.Rows[4].Cells[i].String(),
-		typ:     s.sheet.Rows[5].Cells[i].String(),
-		param:   s.sheet.Rows[6].Cells[i].String(),
-		scanner: newFieldDataScanner(s.sheet, true, i),
+		table:      s.table,
+		sheet:      s.sheet,
+		sheetIndex: i,
+		index:      index,
+		desc:       s.sheet.Rows[3].Cells[i].String(),
+		name:       s.sheet.Rows[4].Cells[i].String(),
+		typ:        s.sheet.Rows[5].Cells[i].String(),
+		param:      s.sheet.Rows[6].Cells[i].String(),
+		idxTable:   true,
 	}
 
 	return f

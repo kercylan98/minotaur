@@ -41,11 +41,12 @@ func (p *parser) init(configs []*table.Config) {
 			}
 		}
 		p.Vars = append(p.Vars, &configVar{
-			Name:    c.GetName(),
-			Desc:    c.GetDesc(),
-			HasDesc: c.GetDesc() != "",
-			Type:    typ,
-			IsMake:  len(c.GetIndexes()) > 0,
+			Name:      c.GetName(),
+			Desc:      c.GetDesc(),
+			HasDesc:   c.GetDesc() != "",
+			Type:      typ,
+			ValueType: charproc.FirstUpper(c.GetName()),
+			IsMake:    len(c.GetIndexes()) > 0,
 		})
 
 		// struct
