@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.1](https://github.com/kercylan98/minotaur/compare/v0.6.1...v0.6.1) (2024-08-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **configuration:** configuration 包不再适用，它之前提供的配置表的导出功能目前已转移到 AX CLI 中。
+
+### Features
+
+* **ax:** 添加xlsx转换支持和配置生成 ([818b80c](https://github.com/kercylan98/minotaur/commit/818b80c90883f85b35ebec5515dc5cbfac72fa85))
+* **collection:** 添加 SliceSum 和 MapSum 函数 ([b448e0a](https://github.com/kercylan98/minotaur/commit/b448e0a9035a242df81f9c6ba0c2005e53418e72))
+
+
+### Code Refactoring
+
+* **configuration:** 移除不再适用的 configuration 包 ([e389b55](https://github.com/kercylan98/minotaur/commit/e389b5591f2eb46500d22a04b76900ded12331bb))
+
 ## [0.6.0](https://github.com/kercylan98/minotaur/compare/v0.6.0...v0.6.0) (2024-08-14)
 
 ### ⚠ BREAKING CHANGES
