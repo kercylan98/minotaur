@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
+	"os"
 )
+
+var stack bool
 
 var rootCmd = &cobra.Command{
 	Use:   "minotaur-ax",
@@ -11,11 +15,27 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	defer func() {
+		if err := recover(); err != nil {
+			checkError(err)
+		}
+	}()
 	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolVar(&stack, "stack", false, "show stack trace")
+}
 
+func checkError(err any) {
+	if err != nil {
+		if stack {
+			panic(err)
+		}
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

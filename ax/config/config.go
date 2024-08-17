@@ -2,7 +2,6 @@ package config
 
 import (
 	_ "embed"
-	"fmt"
 	"github.com/kercylan98/minotaur/ax/constants"
 	"github.com/spf13/viper"
 )
@@ -20,8 +19,8 @@ func init() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		//fmt.Println("Using config file:", viper.ConfigFileUsed())
 	} else {
-		fmt.Println("Using default config")
+		//fmt.Println("Using default config")
 	}
 }
