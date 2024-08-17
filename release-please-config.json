@@ -2,7 +2,18 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "go",
   "pull-request-title-pattern": "build${scope}: release${component} ${version}",
+  "bootstrap-sha": "fe1d1f5b607e09f3440d3dd1129b69487013d496",
   "packages": {
-    ".": {}
+    ".": {
+      "release-as": "0.6.1",
+      "release-type": "go",
+      "exclude-paths": ["ax"]
+    },
+
+    "ax": {
+      "release-as": "0.6.1",
+      "release-type": "go",
+      "changelog-path": "ax/CHANGELOG.md"
+    }
   }
 }
