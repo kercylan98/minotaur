@@ -2,7 +2,7 @@ package xlsxsheet
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/kercylan98/minotaur/ax/cmd/table/lua2jsonparser"
 	"github.com/tealeg/xlsx"
 	"github.com/tidwall/sjson"
 	"strconv"
@@ -21,78 +21,74 @@ type field struct {
 	idxTable   bool
 }
 
+func (f *field) readPos(pos int) (skip, end bool, val string) {
+	if !f.idxTable {
+		skip = strings.HasPrefix(strings.TrimSpace(f.sheet.Rows[f.sheetIndex].Cells[0].String()), "#")
+		val = f.sheet.Rows[f.sheetIndex].Cells[4].String()
+	} else {
+		skip = strings.HasPrefix(strings.TrimSpace(f.sheet.Rows[pos].Cells[0].String()), "#")
+		val = f.sheet.Rows[pos].Cells[f.sheetIndex].String()
+		end = f.index > 0 && val == ""
+	}
+	return
+}
+
+func (f *field) rawTypeFormat(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(f.typ)) {
+	case "string":
+		if !strings.HasPrefix(raw, "\"") && !strings.HasSuffix(raw, "\"") {
+			raw = strconv.Quote(raw)
+		}
+	}
+
+	return raw
+}
+
 //goland:noinspection t
 func (f *field) Query(pos int) (val map[string]any, skip, end bool) {
-	var jsonStr = "{}"
+	// 位置处理
 	if !f.idxTable {
 		if pos > 0 {
 			return nil, false, true
 		}
-		desc := strings.TrimSpace(f.sheet.Rows[f.sheetIndex].Cells[0].String())
-		if strings.HasPrefix(desc, "#") {
-			skip = true
-			return
-		}
-
-		var raw = f.sheet.Rows[f.sheetIndex].Cells[4].String()
-		// string 特殊检查
-		switch strings.ToLower(strings.TrimSpace(f.typ)) {
-		case "string":
-			if !strings.HasPrefix(raw, "\"") && !strings.HasSuffix(raw, "\"") {
-				raw = strconv.Quote(raw)
-			}
-		}
-
-		var err error
-		jsonStr, err = sjson.SetRaw(jsonStr, f.GetName(), raw)
-		if err != nil {
-			panic(err)
-		}
-
-		val = make(map[string]any)
-		if err = json.Unmarshal([]byte(jsonStr), &val); err != nil {
-			panic(err)
-		}
-		return
+		pos = 0
 	} else {
 		row := pos + 7
 		if row >= len(f.sheet.Rows) {
 			end = true
 			return
 		}
+		pos = row
+	}
 
-		desc := strings.TrimSpace(f.sheet.Rows[row].Cells[0].String())
-		if strings.HasPrefix(desc, "#") {
-			skip = true
-			return
-		}
-
-		var raw = f.sheet.Rows[row].Cells[f.sheetIndex].String()
-		if f.index > 0 && raw == "" {
-			end = true
-			return
-		}
-
-		// string 特殊检查
-		switch strings.ToLower(strings.TrimSpace(f.typ)) {
-		case "string":
-			if !strings.HasPrefix(raw, "\"") && !strings.HasSuffix(raw, "\"") {
-				raw = strconv.Quote(raw)
-			}
-		}
-		var err error
-		jsonStr, err = sjson.SetRaw(jsonStr, f.GetName(), raw)
-		if err != nil {
-			panic(err)
-		}
-
-		val = make(map[string]any)
-		if err = json.Unmarshal([]byte(jsonStr), &val); err != nil {
-			fmt.Println(jsonStr)
-			panic(err)
-		}
+	// 数据读取及格式化
+	var raw string
+	skip, end, raw = f.readPos(pos)
+	if skip || end {
 		return
 	}
+
+	// 转换数据为实例
+	if f.table.lua {
+		raw = f.rawTypeFormat(raw)
+		raw = lua2jsonparser.New().Parse(raw)
+	} else {
+		raw = f.rawTypeFormat(raw)
+	}
+
+	var err error
+	var jsonStr = "{}"
+	jsonStr, err = sjson.SetRaw(jsonStr, f.GetName(), raw)
+	if err != nil {
+		panic(err)
+	}
+
+	val = make(map[string]any)
+	if err = json.Unmarshal([]byte(jsonStr), &val); err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 func (f *field) IsIgnore() bool {

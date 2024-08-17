@@ -15,7 +15,7 @@ const (
 
 type ExportMode = int
 
-func NewTable(sheet *xlsx.Sheet, mode ExportMode) table.Table {
+func NewTable(sheet *xlsx.Sheet, mode ExportMode, lua bool) table.Table {
 	// 将 sheet 的列展开到最大
 	for i := 0; i < len(sheet.Rows); i++ {
 		row := sheet.Rows[i]
@@ -35,6 +35,7 @@ func NewTable(sheet *xlsx.Sheet, mode ExportMode) table.Table {
 	return &Table{
 		exportMode: mode,
 		sheet:      sheet,
+		lua:        lua,
 	}
 }
 
@@ -42,6 +43,7 @@ type Table struct {
 	sheet        *xlsx.Sheet
 	fieldScanIdx int
 	exportMode   ExportMode
+	lua          bool
 }
 
 func (t *Table) IsIgnore() bool {
