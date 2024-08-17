@@ -85,7 +85,20 @@ func (f *field) Query(pos int) (val map[string]any, skip, end bool) {
 
 	val = make(map[string]any)
 	if err = json.Unmarshal([]byte(jsonStr), &val); err != nil {
-		panic(err)
+		if !f.table.lua {
+			raw = lua2jsonparser.New().Parse(raw)
+			jsonStr, err = sjson.SetRaw("{}", f.GetName(), raw)
+			if err != nil {
+				panic(err)
+			}
+
+			val = make(map[string]any)
+			if err = json.Unmarshal([]byte(jsonStr), &val); err != nil {
+				panic(err)
+			}
+		} else {
+			panic(err)
+		}
 	}
 
 	return
