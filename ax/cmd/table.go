@@ -6,8 +6,8 @@ import (
 
 var tableCmd = &cobra.Command{
 	Use:   "table",
-	Short: "Used for data configuration table code generation and data export.",
-	Long:  `Used for data configuration table code generation and data export. It supports multiple types of exports`,
+	Short: "Generates code and exports data from configuration tables.",
+	Long:  `Generates code and exports data from configuration tables with support for various export formats.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

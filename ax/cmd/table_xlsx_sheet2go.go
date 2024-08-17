@@ -24,7 +24,8 @@ var (
 
 var tableXlsxSheet2GoCmd = &cobra.Command{
 	Use:   "sheet2go",
-	Short: "Convert xlsx sheet to go configuration code",
+	Short: "Convert an xlsx sheet to Go configuration code.",
+	Long:  `Converts a specified sheet from an xlsx file into Go configuration code, allowing easy integration of configuration data into your Go applications.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return onTableXlsxSheet2Go(xlsxTableSheet2GoFilepath, xlsxTableSheet2GoSheetName, xlsxTableSheet2GoOutput, xlsxTableSheet2GoPackage)
 	},
@@ -49,7 +50,7 @@ func onTableXlsxSheet2Go(xlsxFilePath, sheetName, output, packageName string) er
 	if err != nil {
 		return err
 	}
-	tab := xlsxsheet.NewTable(xlsxFile.Sheet[sheetName], 0)
+	tab := xlsxsheet.NewTable(xlsxFile.Sheet[sheetName], 0, false)
 	if tab.IsIgnore() {
 		return fmt.Errorf("config sheet %s is ignore", sheetName)
 	}

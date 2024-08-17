@@ -26,7 +26,8 @@ var (
 
 var tableXlsxDir2GoCmd = &cobra.Command{
 	Use:   "dir2go",
-	Short: "Convert xlsx file sheets  in dir to go configuration code",
+	Short: "Convert xlsx file sheets in a directory to Go configuration code.",
+	Long:  `Converts all xlsx file sheets within a directory into Go configuration code, automating the process of integrating multiple configuration files into your Go project.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return onTableXlsxDir2Go(tableXlsxDir2GoDir, tableXlsxDir2GoOutput, tableXlsxDir2GoPackage)
 	},
@@ -67,7 +68,7 @@ func onTableXlsxDir2Go(dir string, output string, goPackage string) error {
 	var tables = make(map[string]table.Table)
 	for _, file := range xlsxFiles {
 		for _, sheet := range file.Sheets {
-			tab := xlsxsheet.NewTable(sheet, 0)
+			tab := xlsxsheet.NewTable(sheet, 0, false)
 			if tab.IsIgnore() {
 				fmt.Println("Ignore sheet: " + sheet.Name)
 				continue

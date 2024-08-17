@@ -6,8 +6,8 @@ import (
 
 var tableXlsxCmd = &cobra.Command{
 	Use:   "xlsx",
-	Short: "Generate xlsx configuration code",
-	Long:  `Generate xlsx configuration code for real-time loading and updating`,
+	Short: "Generates configuration code from xlsx files.",
+	Long:  `Generates configuration code from xlsx files, enabling real-time loading and updates.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

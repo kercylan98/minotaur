@@ -22,13 +22,15 @@ var (
 	xlsxTableSheet2JSONSheetName  string
 	xlsxTableSheet2JSONOutput     string
 	xlsxTableSheet2JSONExportMode string
+	xlsxTableSheet2JSONLua        bool
 )
 
 var tableXlsxSheet2JSONCmd = &cobra.Command{
 	Use:   "sheet2json",
-	Short: "Convert xlsx sheet to json data file",
+	Short: "Convert an xlsx sheet to a JSON data file.",
+	Long:  `Converts a specified sheet from an xlsx file into a JSON data file, facilitating easy data exchange and integration.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return onTableXlsxSheet2JSON(xlsxTableSheet2JSONFilepath, xlsxTableSheet2JSONSheetName, xlsxTableSheet2JSONOutput)
+		return onTableXlsxSheet2JSON(xlsxTableSheet2JSONFilepath, xlsxTableSheet2JSONSheetName, xlsxTableSheet2JSONOutput, xlsxTableSheet2JSONExportMode, xlsxTableSheet2JSONLua)
 	},
 }
 
@@ -39,19 +41,20 @@ func init() {
 	tableXlsxSheet2JSONCmd.Flags().StringVarP(&xlsxTableSheet2JSONSheetName, "sheetName", "s", "", "xlsx sheet name")
 	tableXlsxSheet2JSONCmd.Flags().StringVarP(&xlsxTableSheet2JSONOutput, "output-dir", "o", "", "output dir path")
 	tableXlsxSheet2JSONCmd.Flags().StringVarP(&xlsxTableSheet2JSONExportMode, "export-mode", "m", "sc", "export only the fields contained in the parameters(sc/s/c)")
+	tableXlsxSheet2JSONCmd.Flags().BoolVarP(&xlsxTableSheet2JSONLua, "lua", "l", false, "the data is described as lua")
 
 	checkError(tableXlsxSheet2JSONCmd.MarkFlagRequired("filepath"))
 	checkError(tableXlsxSheet2JSONCmd.MarkFlagRequired("sheetName"))
 	checkError(tableXlsxSheet2JSONCmd.MarkFlagRequired("output-dir"))
 }
 
-func onTableXlsxSheet2JSON(xlsxFilePath, sheetName, output string) error {
+func onTableXlsxSheet2JSON(xlsxFilePath, sheetName, output, exportMode string, lua bool) error {
 	xlsxFile, err := xlsx.OpenFile(xlsxFilePath)
 	if err != nil {
 		return err
 	}
 	var mode xlsxsheet.ExportMode
-	switch strings.ToLower(xlsxTableSheet2JSONExportMode) {
+	switch strings.ToLower(exportMode) {
 	case "c", "cli", "client":
 		mode = xlsxsheet.ExportModeC
 	case "s", "srv", "server":
@@ -61,7 +64,7 @@ func onTableXlsxSheet2JSON(xlsxFilePath, sheetName, output string) error {
 	default:
 		checkError("export mode is not support")
 	}
-	tab := xlsxsheet.NewTable(xlsxFile.Sheet[sheetName], mode)
+	tab := xlsxsheet.NewTable(xlsxFile.Sheet[sheetName], mode, lua)
 	if tab.IsIgnore() {
 		return fmt.Errorf("config sheet %s is ignore", sheetName)
 	}

@@ -16,7 +16,8 @@ var (
 
 var tableXlsxTemplateCmd = &cobra.Command{
 	Use:   "template",
-	Short: "Export xlsx template file",
+	Short: "Export an xlsx template file.",
+	Long:  `Exports a predefined xlsx template file, which can be used as a starting point for configuration data creation.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dir := filepath.Dir(tableXlsxTemplateOutput)
 		checkError(os.MkdirAll(dir, os.ModePerm))

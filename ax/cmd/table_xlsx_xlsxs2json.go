@@ -23,13 +23,15 @@ var (
 	tableXlsxDir2JSONDir        string
 	tableXlsxDir2JSONOutput     string
 	tableXlsxDir2JSONExportMode string
+	tableXlsxDir2JSONLua        bool
 )
 
 var tableXlsxDir2JSONCmd = &cobra.Command{
 	Use:   "dir2json",
-	Short: "Convert xlsx file sheets  in dir to json data file",
+	Short: "Convert xlsx file sheets in a directory to JSON data files.",
+	Long:  `Converts all xlsx file sheets within a directory into JSON data files, streamlining data export for use in various environments.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return onTableXlsxDir2JSON(tableXlsxDir2JSONDir, tableXlsxDir2JSONOutput)
+		return onTableXlsxDir2JSON(tableXlsxDir2JSONDir, tableXlsxDir2JSONOutput, tableXlsxDir2JSONExportMode, tableXlsxDir2JSONLua)
 	},
 }
 
@@ -39,13 +41,14 @@ func init() {
 	tableXlsxDir2JSONCmd.Flags().StringVarP(&tableXlsxDir2JSONDir, "dir", "p", "", "xlsx dir")
 	tableXlsxDir2JSONCmd.Flags().StringVarP(&tableXlsxDir2JSONOutput, "output-dir", "o", "", "output dir")
 	tableXlsxDir2JSONCmd.Flags().StringVarP(&tableXlsxDir2JSONExportMode, "export-mode", "m", "sc", "export only the fields contained in the parameters(sc/s/c)")
+	tableXlsxDir2JSONCmd.Flags().BoolVarP(&tableXlsxDir2JSONLua, "lua", "l", false, "the data is described as lua")
 
 	checkError(tableXlsxDir2JSONCmd.MarkFlagRequired("dir"))
 	checkError(tableXlsxDir2JSONCmd.MarkFlagRequired("output-dir"))
 }
 
 //goland:noinspection t
-func onTableXlsxDir2JSON(dir string, output string) error {
+func onTableXlsxDir2JSON(dir, output, exportMode string, lua bool) error {
 	var xlsxFiles []*xlsx.File
 	checkError(filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
@@ -64,7 +67,7 @@ func onTableXlsxDir2JSON(dir string, output string) error {
 	}))
 
 	var mode xlsxsheet.ExportMode
-	switch strings.ToLower(xlsxTableSheet2JSONExportMode) {
+	switch strings.ToLower(exportMode) {
 	case "c", "cli", "client":
 		mode = xlsxsheet.ExportModeC
 	case "s", "srv", "server":
@@ -79,7 +82,7 @@ func onTableXlsxDir2JSON(dir string, output string) error {
 	var tables = make(map[string]table.Table)
 	for _, file := range xlsxFiles {
 		for _, sheet := range file.Sheets {
-			tab := xlsxsheet.NewTable(sheet, mode)
+			tab := xlsxsheet.NewTable(sheet, mode, lua)
 			if tab.IsIgnore() {
 				fmt.Println("Ignore sheet: " + sheet.Name)
 				continue

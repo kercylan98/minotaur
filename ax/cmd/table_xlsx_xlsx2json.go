@@ -22,13 +22,15 @@ var (
 	tableXlsxXlsx2JSONFilepath   string
 	tableXlsxXlsx2JSONOutput     string
 	tableXlsxXlsx2JSONExportMode string
+	tableXlsxXlsx2JSONLua        bool
 )
 
 var tableXlsxXlsx2JSONCmd = &cobra.Command{
 	Use:   "xlsx2json",
-	Short: "Convert xlsx file sheets to json data file",
+	Short: "Convert xlsx file sheets to JSON data files.",
+	Long:  `Converts all sheets from a specified xlsx file into JSON data files, enabling data to be used in various applications and environments.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return onTableXlsxXlsx2JSON(tableXlsxXlsx2JSONFilepath, tableXlsxXlsx2JSONOutput)
+		return onTableXlsxXlsx2JSON(tableXlsxXlsx2JSONFilepath, tableXlsxXlsx2JSONOutput, tableXlsxXlsx2JSONExportMode, tableXlsxXlsx2JSONLua)
 	},
 }
 
@@ -38,20 +40,21 @@ func init() {
 	tableXlsxXlsx2JSONCmd.Flags().StringVarP(&tableXlsxXlsx2JSONFilepath, "filepath", "p", "", "xlsx filepath")
 	tableXlsxXlsx2JSONCmd.Flags().StringVarP(&tableXlsxXlsx2JSONOutput, "output-dir", "o", "", "output dir")
 	tableXlsxXlsx2JSONCmd.Flags().StringVarP(&tableXlsxXlsx2JSONExportMode, "export-mode", "m", "sc", "export only the fields contained in the parameters(sc/s/c)")
+	tableXlsxXlsx2JSONCmd.Flags().BoolVarP(&tableXlsxXlsx2JSONLua, "lua", "l", false, "the data is described as lua")
 
 	checkError(tableXlsxXlsx2JSONCmd.MarkFlagRequired("filepath"))
 	checkError(tableXlsxXlsx2JSONCmd.MarkFlagRequired("output-dir"))
 }
 
 //goland:noinspection t
-func onTableXlsxXlsx2JSON(xlsxFilepath string, output string) error {
+func onTableXlsxXlsx2JSON(xlsxFilepath, output, exportMode string, lua bool) error {
 	xlsxFile, err := xlsx.OpenFile(xlsxFilepath)
 	if err != nil {
 		return err
 	}
 
 	var mode xlsxsheet.ExportMode
-	switch strings.ToLower(xlsxTableSheet2JSONExportMode) {
+	switch strings.ToLower(exportMode) {
 	case "c", "cli", "client":
 		mode = xlsxsheet.ExportModeC
 	case "s", "srv", "server":
@@ -65,7 +68,7 @@ func onTableXlsxXlsx2JSON(xlsxFilepath string, output string) error {
 	// 整理配置
 	var tables = make(map[string]table.Table)
 	for _, sheet := range xlsxFile.Sheets {
-		tab := xlsxsheet.NewTable(sheet, mode)
+		tab := xlsxsheet.NewTable(sheet, mode, lua)
 		if tab.IsIgnore() {
 			fmt.Println("Ignore sheet: " + sheet.Name)
 			continue
