@@ -2,30 +2,24 @@ package mailbox
 
 import (
 	"github.com/kercylan98/minotaur/engine/prc"
-	"github.com/kercylan98/minotaur/engine/vivid/dispatcher"
 	"github.com/kercylan98/minotaur/toolkit/queues"
-	"github.com/puzpuzpuz/xsync/v3"
 	"sync/atomic"
 	"unsafe"
 )
 
-var _ Mailbox = &LockFree{}
+var _ Mailbox = &Sync{}
 
-// NewLockFree 创建一个基于无锁队列实现的邮箱，该邮箱基于 queues.LFQueue 实现
-//   - 默认邮箱在 userMessageBatchLimit 大于 1 时需要注意，一批用户消息将会被处理，而不会被系统消息抢先执行
-func NewLockFree(dispatcher dispatcher.Dispatcher, recipient Recipient) *LockFree {
-	return &LockFree{
+func NewSync(recipient Recipient) *Sync {
+	return &Sync{
 		queue:       queues.NewLFQueue(),
 		systemQueue: queues.NewLFQueue(),
-		dispatcher:  dispatcher,
 		recipient:   recipient,
 	}
 }
 
-type LockFree struct {
+type Sync struct {
 	queue       *queues.LFQueue
 	systemQueue *queues.LFQueue
-	dispatcher  dispatcher.Dispatcher
 	recipient   Recipient
 	status      uint32
 	sysNum      int32
@@ -33,35 +27,34 @@ type LockFree struct {
 	suspended   uint32
 }
 
-func (m *LockFree) Suspend() {
-	xsync.NewCounter()
+func (m *Sync) Suspend() {
 	atomic.StoreUint32(&m.suspended, 1)
 }
 
-func (m *LockFree) Resume() {
+func (m *Sync) Resume() {
 	atomic.StoreUint32(&m.suspended, 0)
 	m.dispatch()
 }
 
-func (m *LockFree) DeliveryUserMessage(message prc.Message) {
+func (m *Sync) DeliveryUserMessage(message prc.Message) {
 	m.queue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.userNum, 1)
 	m.dispatch()
 }
 
-func (m *LockFree) DeliverySystemMessage(message prc.Message) {
+func (m *Sync) DeliverySystemMessage(message prc.Message) {
 	m.systemQueue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.sysNum, 1)
 	m.dispatch()
 }
 
-func (m *LockFree) dispatch() {
+func (m *Sync) dispatch() {
 	if atomic.CompareAndSwapUint32(&m.status, mailboxStatusIdle, mailboxStatusRunning) {
-		m.dispatcher.Dispatch(m.process)
+		m.process()
 	}
 }
 
-func (m *LockFree) process() {
+func (m *Sync) process() {
 	for {
 		m.processHandle()
 		atomic.StoreUint32(&m.status, mailboxStatusIdle)
@@ -74,7 +67,7 @@ func (m *LockFree) process() {
 	}
 }
 
-func (m *LockFree) processHandle() {
+func (m *Sync) processHandle() {
 	defer func() {
 		if reason := recover(); reason != nil {
 			m.recipient.ProcessAccident(reason)

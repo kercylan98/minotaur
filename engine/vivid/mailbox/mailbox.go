@@ -4,6 +4,11 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc"
 )
 
+const (
+	mailboxStatusIdle uint32 = iota
+	mailboxStatusRunning
+)
+
 type Mailbox interface {
 	// Suspend 暂停邮箱
 	Suspend()
