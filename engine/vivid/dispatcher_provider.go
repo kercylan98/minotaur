@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid/dispatcher"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/panjf2000/ants/v2"
+	"time"
 )
 
 // DispatcherProvider 是一个提供 dispatcher.Dispatcher 实例的接口
@@ -22,7 +23,10 @@ func (f FunctionalDispatcherProvider) Provide() dispatcher.Dispatcher {
 
 var defaultDispatcherProviderInstance = new(defaultDispatcherProvider)
 var defaultDispatcherSingleton = toolkit.NewInertiaSingleton[dispatcher.Dispatcher](func() dispatcher.Dispatcher {
-	ad, err := dispatcher.NewAnts(ants.DefaultAntsPoolSize, ants.WithNonblocking(true))
+	ad, err := dispatcher.NewAnts(ants.DefaultAntsPoolSize,
+		ants.WithNonblocking(true),
+		ants.WithExpiryDuration(time.Second*3),
+	)
 	if err != nil {
 		return dispatcher.NewGoroutine()
 	}
