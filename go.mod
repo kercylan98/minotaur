@@ -10,14 +10,12 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/hashicorp/memberlist v0.5.1
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/panjf2000/ants/v2 v2.9.1
 	github.com/panjf2000/gnet/v2 v2.5.2
 	github.com/pkg/errors v0.9.1
 	github.com/puzpuzpuz/xsync/v3 v3.4.0
 	github.com/shopspring/decimal v1.2.0
-	github.com/tealeg/xlsx v1.0.5
 	github.com/twmb/murmur3 v1.1.8
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/net v0.27.0
@@ -26,7 +24,6 @@ require (
 )
 
 require (
-	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -40,9 +37,6 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.6 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
-	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
-	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
@@ -51,12 +45,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/savsgio/gotils v0.0.0-20240704082632-aef3928b8a38 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
-	github.com/tidwall/gjson v1.17.3 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.55.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
