@@ -1,21 +1,26 @@
 package stream
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacket() *Packet {
 	return &Packet{}
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacketS(data string) *Packet {
 	return NewPacketD([]byte(data))
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacketD(data []byte) *Packet {
 	return &Packet{data: data}
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacketC(ctx any) *Packet {
 	return &Packet{ctx: ctx}
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacketDC(data []byte, ctx any) *Packet {
 	return &Packet{
 		data: data,
@@ -23,10 +28,12 @@ func NewPacketDC(data []byte, ctx any) *Packet {
 	}
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewPacketSC(data string, ctx any) *Packet {
 	return NewPacketDC([]byte(data), ctx)
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 type Packet struct {
 	data []byte // 数据包数据
 	ctx  any    // 数据包上下文

@@ -15,6 +15,8 @@ import (
 //   - stream.Writer：在 Stream Actor 启动后，将会收到一个写入器，这个写入器接收 *stream.Packet 类型的消息，它将会将消息写入到连接中。
 //   - *websocket.Conn：这是 WebSocket 的特殊消息，你可以获取它来进行额外的操作。
 //   - *stream.Packet：当收到该消息，也就意味着存在需要处理的数据包。
+//
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewFiberWebSocketHandler(app *fiber.App, system *vivid.ActorSystem, configurator ...Configurator) fiber.Handler {
 	// 创建服务器 Actor
 	server := system.ActorOfF(func() vivid.Actor {

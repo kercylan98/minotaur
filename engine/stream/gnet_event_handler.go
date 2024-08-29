@@ -9,6 +9,7 @@ import (
 
 var _ gnet.EventHandler = (*GNETEventHandler)(nil)
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 func NewGNETEventHandler(system *vivid.ActorSystem, configurator ...Configurator) *GNETEventHandler {
 	return &GNETEventHandler{
 		system:       system,
@@ -16,6 +17,7 @@ func NewGNETEventHandler(system *vivid.ActorSystem, configurator ...Configurator
 	}
 }
 
+// Deprecated: 该设计加大了理解成本，且不易于使用，将考虑新的方案用于处理网络连接。至 v0.7.0 版本及以后，stream 包将被移除。
 type GNETEventHandler struct {
 	system       *vivid.ActorSystem
 	configurator []Configurator
