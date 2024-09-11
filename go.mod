@@ -15,7 +15,6 @@ require (
 	github.com/panjf2000/gnet/v2 v2.5.2
 	github.com/pkg/errors v0.9.1
 	github.com/puzpuzpuz/xsync/v3 v3.4.0
-	github.com/shopspring/decimal v1.2.0
 	github.com/twmb/murmur3 v1.1.8
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/net v0.27.0
