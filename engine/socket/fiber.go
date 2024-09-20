@@ -13,7 +13,7 @@ func ProduceFiberSocketV2(factory Factory, socket fiberSocketV2, actor Actor) {
 	c := factory.Produce(actor, func(packet []byte, ctx any) error {
 		return socket.WriteMessage(ctx.(int), packet)
 	}, func() error {
-		if err := socket.WriteMessage(8, nil); err != nil {
+		if err := socket.WriteMessage(internalWebSocketCloseMessageType, nil); err != nil {
 			return err
 		}
 		return socket.Close()
