@@ -7,7 +7,11 @@ import (
 
 var _ Socket = (*socket)(nil)
 
-type Closer = func() error
+type (
+	Closer        = func() error
+	readDeadline  time.Duration
+	writeDeadline time.Duration
+)
 
 func newSocket(actor Actor, writer Writer, closer Closer) *socket {
 	return &socket{
@@ -46,17 +50,26 @@ type Socket interface {
 	// DebounceWritePacket 将数据包及其上下文以指定的防抖延迟写入到客户端的网络连接中，当防抖时间窗口期间内收到多个相同名称的数据包时，仅写入最后一次的数据包
 	DebounceWritePacket(name string, delay time.Duration, packet *Packet)
 
+	// SetReadDeadline 设置 Socket 连接的读超时，当连接在指定的时间内没有收到任何数据时，连接将被关闭
+	//  - 该参数在设置后将对后续的数据包持续生效，当 deadline <= 0 时，该功能将失效
+	SetReadDeadline(deadline time.Duration)
+
+	// SetWriteDeadline 设置 Socket 连接的写超时，当连接在指定的时间内没有发送任何数据时，连接将被关闭
+	//  - 该参数在设置后将对后续的数据包持续生效，当 deadline <= 0 时，该功能将失效
+	SetWriteDeadline(deadline time.Duration)
+
 	// Close 可携带错误信息地关闭 Socket 连接，当包含错误且 Socket 绑定的 Actor 实现了 CloseActor 接口时，可在 CloseActor.OnClose 中接收到该错误
 	Close(err ...error)
 }
 
 type socket struct {
 	Actor
-	writer    Writer
-	closer    Closer
-	ctx       vivid.ActorContext
-	writerRef vivid.ActorRef
-	err       error
+	writer       Writer
+	closer       Closer
+	ctx          vivid.ActorContext
+	writerRef    vivid.ActorRef
+	err          error
+	readDeadline time.Duration
 }
 
 func (s *socket) OnReceive(ctx vivid.ActorContext) {
@@ -70,6 +83,8 @@ func (s *socket) OnReceive(ctx vivid.ActorContext) {
 	case error:
 		s.onError(ctx, m)
 	case *Packet:
+		ctx.StopTask(readDeadlineTaskName)
+		defer s.refreshReadDeadline()
 		s.Actor.OnPacket(ctx, s, m)
 	case *vivid.OnTerminate:
 		s.Actor.OnReceive(ctx)
@@ -82,8 +97,27 @@ func (s *socket) OnReceive(ctx vivid.ActorContext) {
 			_ = s.closer()
 		}
 		return
+	case readDeadline:
+		s.readDeadline = time.Duration(m)
+		s.refreshReadDeadline()
 	}
 	s.Actor.OnReceive(ctx)
+}
+
+func (s *socket) refreshReadDeadline() {
+	if s.readDeadline > 0 {
+		s.ctx.AfterTask(readDeadlineTaskName, s.readDeadline, func(ctx vivid.ActorContext) {
+			s.Close(readDeadlineError)
+		})
+	}
+}
+
+func (s *socket) SetReadDeadline(deadline time.Duration) {
+	s.ctx.Tell(s.ctx.Ref(), readDeadline(deadline))
+}
+
+func (s *socket) SetWriteDeadline(deadline time.Duration) {
+	s.ctx.Tell(s.writerRef, writeDeadline(deadline))
 }
 
 func (s *socket) write(packet []byte, ctx any) {
