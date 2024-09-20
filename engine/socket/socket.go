@@ -34,6 +34,18 @@ type Socket interface {
 	// WritePacket 将数据包及其上下文写入到客户端的网络连接中
 	WritePacket(packet *Packet)
 
+	// DebounceWrite 将数据包及其上下文以指定的防抖延迟写入到客户端的网络连接中，当防抖时间窗口期间内收到多个相同名称的数据包时，仅写入最后一次的数据包
+	DebounceWrite(name string, delay time.Duration, packet []byte, ctx any)
+
+	// DebounceWriteBytes 将字节数据以指定的防抖延迟写入到客户端的网络连接中，当防抖时间窗口期间内收到多个相同名称的数据包时，仅写入最后一次的数据包
+	DebounceWriteBytes(name string, delay time.Duration, packet []byte)
+
+	// DebounceWriteString 将字符串数据以指定的防抖延迟写入到客户端的网络连接中，当防抖时间窗口期间内收到多个相同名称的数据包时，仅写入最后一次的数据包
+	DebounceWriteString(name string, delay time.Duration, packet string)
+
+	// DebounceWritePacket 将数据包及其上下文以指定的防抖延迟写入到客户端的网络连接中，当防抖时间窗口期间内收到多个相同名称的数据包时，仅写入最后一次的数据包
+	DebounceWritePacket(name string, delay time.Duration, packet *Packet)
+
 	// Close 可携带错误信息地关闭 Socket 连接，当包含错误且 Socket 绑定的 Actor 实现了 CloseActor 接口时，可在 CloseActor.OnClose 中接收到该错误
 	Close(err ...error)
 }
