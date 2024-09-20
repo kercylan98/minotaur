@@ -2,6 +2,7 @@ package socket
 
 import (
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"time"
 )
 
 var _ Socket = (*socket)(nil)
@@ -16,17 +17,24 @@ func newSocket(actor Actor, writer Writer, closer Closer) *socket {
 	}
 }
 
+// Socket 是维护支持 vivid.Actor 的网络长连接包装接口，该接口无需进行实现，它将由内部的 socket 实现并进行维护
 type Socket interface {
+	// React 将数据包及其上下文通过 Actor.OnPacket 函数进行响应
 	React(packet []byte, ctx any)
 
-	WriteBytes(packet []byte)
-
-	WriteString(packet string)
-
+	// Write 将数据包及其上下文写入到客户端的网络连接中
 	Write(packet []byte, ctx any)
 
+	// WriteBytes 将字节数据写入到客户端的网络连接中
+	WriteBytes(packet []byte)
+
+	// WriteString 将字符串数据写入到客户端的网络连接中
+	WriteString(packet string)
+
+	// WritePacket 将数据包及其上下文写入到客户端的网络连接中
 	WritePacket(packet *Packet)
 
+	// Close 可携带错误信息地关闭 Socket 连接，当包含错误且 Socket 绑定的 Actor 实现了 CloseActor 接口时，可在 CloseActor.OnClose 中接收到该错误
 	Close(err ...error)
 }
 
@@ -66,6 +74,10 @@ func (s *socket) OnReceive(ctx vivid.ActorContext) {
 	s.Actor.OnReceive(ctx)
 }
 
+func (s *socket) write(packet []byte, ctx any) {
+	s.ctx.Tell(s.writerRef, NewPacket(packet, ctx))
+}
+
 func (s *socket) onLaunch(ctx vivid.ActorContext, m *vivid.OnLaunch) {
 	s.ctx = ctx
 	s.writerRef = ctx.ActorOfF(func() vivid.Actor {
@@ -81,23 +93,45 @@ func (s *socket) onError(ctx vivid.ActorContext, err error) {
 }
 
 func (s *socket) React(packet []byte, ctx any) {
-	s.ctx.Tell(s.ctx.Ref(), newPacket(packet, ctx))
+	s.ctx.Tell(s.ctx.Ref(), NewPacket(packet, ctx))
 }
 
 func (s *socket) WriteBytes(packet []byte) {
-	s.Write(packet, nil)
+	s.write(packet, nil)
 }
 
 func (s *socket) WriteString(packet string) {
-	s.Write([]byte(packet), nil)
+	s.write([]byte(packet), nil)
 }
 
 func (s *socket) WritePacket(packet *Packet) {
-	s.Write(packet.GetData(), packet.GetContext())
+	s.write(packet.GetData(), packet.GetContext())
 }
 
 func (s *socket) Write(packet []byte, ctx any) {
-	s.ctx.Tell(s.writerRef, newPacket(packet, ctx))
+	s.write(packet, ctx)
+}
+
+func (s *socket) debounceWrite(name string, delay time.Duration, packet []byte, ctx any) {
+	s.ctx.AfterTask(name, delay, func(vivid.ActorContext) {
+		s.write(packet, ctx)
+	})
+}
+
+func (s *socket) DebounceWrite(name string, delay time.Duration, packet []byte, ctx any) {
+	s.debounceWrite(name, delay, packet, ctx)
+}
+
+func (s *socket) DebounceWriteBytes(name string, delay time.Duration, packet []byte) {
+	s.debounceWrite(name, delay, packet, nil)
+}
+
+func (s *socket) DebounceWriteString(name string, delay time.Duration, packet string) {
+	s.debounceWrite(name, delay, []byte(packet), nil)
+}
+
+func (s *socket) DebounceWritePacket(name string, delay time.Duration, packet *Packet) {
+	s.debounceWrite(name, delay, packet.GetData(), packet.GetContext())
 }
 
 func (s *socket) Close(err ...error) {

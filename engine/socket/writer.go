@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
+// Writer 是用于将数据写入到网络连接的写入器，它是一个函数类型。在该函数中，需要决定要如何将数据写入到网络连接中。
 type Writer func(packet []byte, ctx any) error
 
 func newWriterActor(writer Writer) *writerActor {
