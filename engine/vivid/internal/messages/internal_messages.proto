@@ -23,21 +23,26 @@ message SlowProcess {
   prc.ProcessId pid = 2; // 耗时进程
 }
 
+// 发起订阅请求，订阅者将与特定主题下的消息进行绑定，届时会收到该主题下所有类型的消息。
+// 该请求还应使用 Ask 或 FutureAsk 进行投递，否则将无法接收到回复的订阅信息，也就意味着无法取消订阅。
 message SubscribeRequest {
   string topic = 1;
   prc.ProcessId subscriber = 2;
 }
 
+// 取消订阅请求，订阅者将不再收到该主题下的消息。
 message UnsubscribeRequest {
   Subscription subscription = 1;
 }
 
+// 由 SubscribeRequest 发起后响应得到的订阅信息，用于标识订阅者与主题之间的绑定关系，也用于解除绑定。
 message Subscription {
   string topic = 1;
   uint64 id = 2;
   prc.ProcessId subscriber = 3;
 }
 
+// 发布广播消息的请求，它是在发布者投递消息后，如果存在远端节点，那么将对远端节点发送该请求进行广播。
 message PublishRequestBroadcast {
   string message_type = 1;
   bytes data = 2;

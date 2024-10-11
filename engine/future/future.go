@@ -88,7 +88,9 @@ func (f *futureProcess[M]) Result() (M, error) {
 	switch msg := f.message.(type) {
 	case nil:
 	case *prc.MessageWrapper:
-		m = msg.Message.(M)
+		if msg.Message != nil {
+			m = msg.Message.(M)
+		}
 	default:
 		m = f.message.(M)
 	}

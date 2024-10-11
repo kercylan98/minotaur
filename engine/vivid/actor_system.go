@@ -45,11 +45,11 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 			}
 
 			config.WithShareOpenedHooks(prc.FunctionalShareOpenedHook(func(target prc.PhysicalAddress) {
-				system.Tell(system.subscription, &sharedSubscriptionStatusChangedMessage{address: target})
+				_ = system.FutureAsk(system.subscription, &sharedSubscriptionStatusChangedMessage{Address: target}).Wait()
 			}))
 
 			config.WithShareClosedHooks(prc.FunctionalSharedClosedHook(func(target prc.PhysicalAddress) {
-				system.Tell(system.subscription, &sharedSubscriptionStatusChangedMessage{address: target, closed: true})
+				_ = system.FutureAsk(system.subscription, &sharedSubscriptionStatusChangedMessage{Address: target, Closed: true}).Wait()
 			}))
 		}))
 		if err := system.shared.Share(); err != nil {
@@ -71,7 +71,7 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 	system.subscription = system.ActorOfF(func() Actor {
 		sa := newSubscriptionActor(system)
 		for _, provider := range system.config.subscriptionContactProviders {
-			sa.BindSubscriptionContactProvider(provider)
+			sa.bindSubscriptionContactProvider(provider)
 		}
 		return sa
 	}, func(descriptor *ActorDescriptor) {

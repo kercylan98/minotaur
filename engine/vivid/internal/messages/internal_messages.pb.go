@@ -201,6 +201,8 @@ func (x *SlowProcess) GetPid() *prc.ProcessId {
 	return nil
 }
 
+// 发起订阅请求，订阅者将与特定主题下的消息进行绑定，届时会收到该主题下所有类型的消息。
+// 该请求还应使用 Ask 或 FutureAsk 进行投递，否则将无法接收到回复的订阅信息，也就意味着无法取消订阅。
 type SubscribeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -256,6 +258,7 @@ func (x *SubscribeRequest) GetSubscriber() *prc.ProcessId {
 	return nil
 }
 
+// 取消订阅请求，订阅者将不再收到该主题下的消息。
 type UnsubscribeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -303,6 +306,7 @@ func (x *UnsubscribeRequest) GetSubscription() *Subscription {
 	return nil
 }
 
+// 由 SubscribeRequest 发起后响应得到的订阅信息，用于标识订阅者与主题之间的绑定关系，也用于解除绑定。
 type Subscription struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -366,6 +370,7 @@ func (x *Subscription) GetSubscriber() *prc.ProcessId {
 	return nil
 }
 
+// 发布广播消息的请求，它是在发布者投递消息后，如果存在远端节点，那么将对远端节点发送该请求进行广播。
 type PublishRequestBroadcast struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

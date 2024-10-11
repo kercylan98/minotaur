@@ -8,9 +8,10 @@ import (
 	"sync"
 )
 
+// sharedSubscriptionStatusChangedMessage 用于通知集群节点状态变更的消息
 type sharedSubscriptionStatusChangedMessage struct {
-	address prc.PhysicalAddress
-	closed  bool
+	Address prc.PhysicalAddress
+	Closed  bool
 }
 
 func newSubscriptionActor(system *ActorSystem) *subscriptionActor {
@@ -21,17 +22,19 @@ func newSubscriptionActor(system *ActorSystem) *subscriptionActor {
 	return sa
 }
 
+// subscriptionActor 用于管理发布与订阅的 Actor
 type subscriptionActor struct {
-	system     *ActorSystem
-	sas        map[prc.PhysicalAddress]ActorRef
-	subscribes map[Topic]map[uint64]*messages.Subscription
-	guid       uint64
-	ctx        context.Context
-	cancel     context.CancelFunc
-	launched   sync.WaitGroup
+	system     *ActorSystem                                // 所属 ActorSystem
+	sas        map[prc.PhysicalAddress]ActorRef            // 远端 ActorSystem 的 subscriptionActor 的 ActorRef
+	subscribes map[Topic]map[uint64]*messages.Subscription // 主题订阅者们，其中第二个 key 的寓意为订阅的 ID
+	guid       uint64                                      // 订阅自增 ID 当前值
+	ctx        context.Context                             // 订阅远端节点更新的上下文
+	cancel     context.CancelFunc                          // 订阅远端节点更新的上下文取消函数，在调用后将不再订阅远端节点的更新
+	launched   sync.WaitGroup                              // 意味着该 Actor 真实启动完成的等待信号
 }
 
-func (s *subscriptionActor) BindSubscriptionContactProvider(provider SubscriptionContactProvider) {
+// bindSubscriptionContactProvider 由 ActorSystem 在创建该 Actor 时进行调用的绑定函数，它将监听集群中节点的变化
+func (s *subscriptionActor) bindSubscriptionContactProvider(provider SubscriptionContactProvider) {
 	go func() {
 		s.launched.Wait()
 		for {
@@ -39,7 +42,7 @@ func (s *subscriptionActor) BindSubscriptionContactProvider(provider Subscriptio
 			case <-s.ctx.Done():
 				return
 			case event := <-provider.ChangeNotify():
-				s.system.Tell(s.system.subscription, &sharedSubscriptionStatusChangedMessage{address: event.Address, closed: event.Stop})
+				_ = s.system.FutureAsk(s.system.subscription, &sharedSubscriptionStatusChangedMessage{Address: event.Address, Closed: event.Stop}).Wait()
 			}
 		}
 	}()
@@ -103,7 +106,14 @@ func (s *subscriptionActor) onPublishRequestBroadcast(ctx ActorContext, m *messa
 
 	for _, subscription := range s.subscribes[m.Topic] {
 		// 保持发送人
-		ctx.(*actorContext).deliveryUserMessage(subscription.Subscriber, subscription.Subscriber, ctx.Sender(), nil, message)
+		ctx.(*actorContext).deliveryUserMessage(subscription.Subscriber, subscription.Subscriber, m.Publisher, nil, message)
+		ctx.System().Logger().Debug("ActorSystem",
+			log.String("system", ctx.System().PhysicalAddress()),
+			log.String("type", "subscription"),
+			log.String("type", "remote"),
+			log.String("topic", m.Topic),
+			log.String("publisher", m.Publisher.String()),
+			log.String("subscriber", subscription.Subscriber.String()))
 	}
 }
 
@@ -129,13 +139,22 @@ func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.
 	for _, subscription := range s.subscribes[m.Topic] {
 		// 保持发送人
 		ctx.(*actorContext).deliveryUserMessage(subscription.Subscriber, subscription.Subscriber, ctx.Sender(), nil, m.Message)
+		ctx.System().Logger().Debug("ActorSystem",
+			log.String("system", ctx.System().PhysicalAddress()),
+			log.String("type", "subscription"),
+			log.String("type", "local"),
+			log.String("topic", m.Topic),
+			log.String("publisher", ctx.Sender().String()),
+			log.String("subscriber", subscription.Subscriber.String()))
 	}
 }
 
 func (s *subscriptionActor) onSharedSubscriptionStatusChangedMessage(ctx ActorContext, m *sharedSubscriptionStatusChangedMessage) {
-	if m.closed {
-		delete(s.sas, m.address)
+	if m.Closed {
+		delete(s.sas, m.Address)
 	} else {
-		s.sas[m.address] = NewActorRef(m.address, "/user/sub")
+		s.sas[m.Address] = NewActorRef(m.Address, "/user/sub")
 	}
+	ctx.Reply(nil) // 告知完成
+	ctx.System().Logger().Debug("ActorSystem", log.String("system", ctx.System().PhysicalAddress()), log.String("type", "subscription"), log.Any("changed", m))
 }

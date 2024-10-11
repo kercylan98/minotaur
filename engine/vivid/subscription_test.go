@@ -58,14 +58,14 @@ func TestSharedSubscription(t *testing.T) {
 	// 连接中便能散播
 	system2.Tell(system1.Context().Ref().Clone(), system2.Context().Ref())
 
+	var contexts []vivid.ActorContext
 	system1.ActorOfF(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
+				contexts = append(contexts, ctx)
 				ctx.Subscribe("chat")
 				start.Done()
-				start.Wait()
-				ctx.Publish("chat", ctx.Ref())
 			case vivid.ActorRef:
 				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())
 				wg.Done()
@@ -77,16 +77,20 @@ func TestSharedSubscription(t *testing.T) {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
+				contexts = append(contexts, ctx)
 				ctx.Subscribe("chat")
 				start.Done()
-				start.Wait()
-				ctx.Publish("chat", ctx.Ref())
 			case vivid.ActorRef:
 				t.Log(ctx.Ref().URL().String(), "receive", "message", "from", ctx.Sender().URL().String())
 				wg.Done()
 			}
 		})
 	})
+
+	start.Wait()
+	for _, context := range contexts {
+		context.Publish("chat", context.Ref())
+	}
 
 	wg.Wait()
 }
