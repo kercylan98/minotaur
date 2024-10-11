@@ -116,7 +116,6 @@ type actorContext struct {
 	slowProcessDuration        time.Duration                   // 慢处理时长
 	slowProcessReceivers       []ActorRef                      // 慢处理消息接收人
 	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
-	messageSequences           map[string]uint64               // 消息序列号
 }
 
 func (ctx *actorContext) Subscribe(topic Topic) Subscription {
@@ -451,7 +450,7 @@ func (ctx *actorContext) slowProcess() func() {
 }
 
 func (ctx *actorContext) ProcessUserMessage(message prc.Message) {
-	sender, receiver, message, _ := prc.UnwrapMessage(message)
+	sender, receiver, message := prc.UnwrapMessage(message)
 	if ctx.status.Load() >= actorStatusTerminating {
 		ctx.deliveryUserMessage(ctx.system.abyssRef, receiver, sender, nil, message)
 		return
@@ -464,7 +463,7 @@ func (ctx *actorContext) ProcessUserMessage(message prc.Message) {
 }
 
 func (ctx *actorContext) ProcessSystemMessage(message prc.Message) {
-	sender, receiver, message, _ := prc.UnwrapMessage(message)
+	sender, receiver, message := prc.UnwrapMessage(message)
 	if ctx.slowProcessDuration > 0 {
 		f := ctx.slowProcess()
 		defer f()
@@ -481,23 +480,16 @@ func (ctx *actorContext) findProcess(pid *prc.ProcessId) (process prc.Process) {
 	return
 }
 
-func (ctx *actorContext) nextMessageSequence(receiver ActorRef) uint64 {
-	key := receiver.PhysicalAddress + receiver.LogicalAddress
-	curr := ctx.messageSequences[key]
-	ctx.messageSequences[key] = curr + 1
-	return curr
-}
-
 // deliveryUserMessage 向特定进程投递用户消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliveryUserMessage(receiverProcess, receiver, sender, forward ActorRef, message Message) {
-	message = prc.WrapMessage(sender, receiver, message, ctx.nextMessageSequence(receiver))
+	message = prc.WrapMessage(sender, receiver, message)
 	process := ctx.findProcess(receiverProcess)
 	process.DeliveryUserMessage(receiver, sender, forward, message)
 }
 
 // deliverySystemMessage 向特定进程投递系统消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliverySystemMessage(receiverProcess, receiver, sender, forward ActorRef, message prc.Message) {
-	message = prc.WrapMessage(sender, receiver, message, 0)
+	message = prc.WrapMessage(sender, receiver, message)
 	process := ctx.findProcess(receiverProcess)
 	process.DeliverySystemMessage(receiver, sender, forward, message)
 }

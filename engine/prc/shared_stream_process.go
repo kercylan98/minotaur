@@ -60,7 +60,6 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 			System:      system,
 			Sender:      wrapper.Sender,
 			Receiver:    wrapper.Receiver,
-			Seq:         wrapper.Seq,
 		}
 	default:
 		name, data, err := c.shared.config.codec.Encode(message)
