@@ -116,7 +116,7 @@ type actorContext struct {
 	slowProcessDuration        time.Duration                   // 慢处理时长
 	slowProcessReceivers       []ActorRef                      // 慢处理消息接收人
 	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
-	messageSequence            uint64                          // 消息序列号
+	messageSequences           map[string]uint64               // 消息序列号
 }
 
 func (ctx *actorContext) Subscribe(topic Topic) Subscription {
@@ -481,15 +481,16 @@ func (ctx *actorContext) findProcess(pid *prc.ProcessId) (process prc.Process) {
 	return
 }
 
-func (ctx *actorContext) nextMessageSequence() uint64 {
-	seq := ctx.messageSequence
-	ctx.messageSequence++
-	return seq
+func (ctx *actorContext) nextMessageSequence(receiver ActorRef) uint64 {
+	key := receiver.PhysicalAddress + receiver.LogicalAddress
+	curr := ctx.messageSequences[key]
+	ctx.messageSequences[key] = curr + 1
+	return curr
 }
 
 // deliveryUserMessage 向特定进程投递用户消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliveryUserMessage(receiverProcess, receiver, sender, forward ActorRef, message Message) {
-	message = prc.WrapMessage(sender, receiver, message, ctx.nextMessageSequence())
+	message = prc.WrapMessage(sender, receiver, message, ctx.nextMessageSequence(receiver))
 	process := ctx.findProcess(receiverProcess)
 	process.DeliveryUserMessage(receiver, sender, forward, message)
 }
