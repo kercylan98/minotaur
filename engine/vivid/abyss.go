@@ -36,7 +36,7 @@ func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, me
 
 	if a.system.shared != nil {
 		name, data, err := a.system.shared.GetCodec().Encode(message)
-		if err == nil {
+		if err == nil && !receiver.Equal(a.system.subscription) {
 			a.system.Publish(AbyssTopic, &messages.AbyssMessageEvent{
 				Sender:      sender,
 				Receiver:    receiver,
@@ -49,13 +49,15 @@ func (a *abyss) DeliveryUserMessage(receiver, sender, forward *prc.ProcessId, me
 		}
 	}
 
-	a.system.Publish(AbyssTopic, &OnAbyssMessageEvent{
-		Sender:   sender,
-		Receiver: receiver,
-		Forward:  forward,
-		Message:  message,
-		Time:     time.Now(),
-	})
+	if !receiver.Equal(a.system.subscription) {
+		a.system.Publish(AbyssTopic, &OnAbyssMessageEvent{
+			Sender:   sender,
+			Receiver: receiver,
+			Forward:  forward,
+			Message:  message,
+			Time:     time.Now(),
+		})
+	}
 }
 
 func (a *abyss) DeliverySystemMessage(receiver, sender, forward *prc.ProcessId, message prc.Message) {
