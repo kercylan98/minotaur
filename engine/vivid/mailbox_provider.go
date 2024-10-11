@@ -11,7 +11,7 @@ type MailboxProvider interface {
 	Provide(dispatcher dispatcher.Dispatcher, recipient mailbox.Recipient) mailbox.Mailbox
 }
 
-// FunctionalMailboxProvider 是一个��数类型的 MailboxProvider，它定义了生成 mailbox.Mailbox 实例的方法。
+// FunctionalMailboxProvider 是一个函数类型的 MailboxProvider，它定义了生成 mailbox.Mailbox 实例的方法。
 type FunctionalMailboxProvider func(dispatcher dispatcher.Dispatcher, recipient mailbox.Recipient) mailbox.Mailbox
 
 // Provide 根据给定的 dispatcher.Dispatcher 和 mailbox.Recipient 返回一个 mailbox.Mailbox
