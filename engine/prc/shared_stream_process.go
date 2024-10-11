@@ -47,16 +47,33 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 		message = &SharedErrorMessage{Message: err.Error()}
 	}
 
-	name, data, err := c.shared.config.codec.Encode(message)
-	if err != nil {
-		panic(err)
-	}
-	dm := &DeliveryMessage{
-		MessageType: name,
-		MessageData: data,
-		System:      system,
-		Sender:      sender,
-		Receiver:    receiver,
+	var dm *DeliveryMessage
+	switch wrapper := message.(type) {
+	case *MessageWrapper:
+		name, data, err := c.shared.config.codec.Encode(wrapper.Message)
+		if err != nil {
+			panic(err)
+		}
+		dm = &DeliveryMessage{
+			MessageType: name,
+			MessageData: data,
+			System:      system,
+			Sender:      wrapper.Sender,
+			Receiver:    wrapper.Receiver,
+			Seq:         wrapper.Seq,
+		}
+	default:
+		name, data, err := c.shared.config.codec.Encode(message)
+		if err != nil {
+			panic(err)
+		}
+		dm = &DeliveryMessage{
+			MessageType: name,
+			MessageData: data,
+			System:      system,
+			Sender:      sender,
+			Receiver:    receiver,
+		}
 	}
 
 	// 入列

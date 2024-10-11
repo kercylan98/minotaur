@@ -8,7 +8,6 @@ import (
 
 func TestSubscription(t *testing.T) {
 	wg := new(sync.WaitGroup)
-	wg.Add(9)
 	start := new(sync.WaitGroup)
 	start.Add(3)
 
@@ -22,14 +21,15 @@ func TestSubscription(t *testing.T) {
 				switch m := ctx.Message().(type) {
 				case *vivid.OnLaunch:
 					ctx.Subscribe("chat")
+					wg.Add(1)
 					start.Done()
 				case string:
 					if m == "start" {
 						ctx.Publish("chat", "hello")
+						t.Log(ctx.Ref().URL().String(), "receive", m, "from", ctx.Sender().URL().String())
+						wg.Done()
 						return
 					}
-					t.Log(ctx.Ref().URL().String(), "receive", m, "from", ctx.Sender().URL().String())
-					wg.Done()
 				}
 			})
 		}))

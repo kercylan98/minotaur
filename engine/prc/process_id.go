@@ -54,13 +54,3 @@ func (pid *ProcessId) Clone() *ProcessId {
 		PhysicalAddress: pid.GetPhysicalAddress(),
 	}
 }
-
-// GetPhysicalAddress 加载进程 ID 的物理地址，在任何时候都应该通过该函数获取物理地址
-func (pid *ProcessId) GetPhysicalAddress() PhysicalAddress {
-	return pid.PhysicalAddress
-}
-
-// GetLogicalAddress 加载进程 ID 的逻辑地址，在任何时候都应该通过该函数获取逻辑地址
-func (pid *ProcessId) GetLogicalAddress() LogicalAddress {
-	return pid.LogicalAddress
-}

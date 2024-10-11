@@ -32,6 +32,7 @@ message DeliveryMessage {
   string message_type = 3; // 消息类型名称
   bytes message_data = 4; // 消息数据
   bool system = 5; // 是否是系统消息
+  uint64 seq = 6; // 消息序列
 }
 
 message BatchDeliveryMessage {

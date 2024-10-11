@@ -85,8 +85,10 @@ func (f *futureProcess[M]) Ref() *prc.ProcessId {
 func (f *futureProcess[M]) Result() (M, error) {
 	<-f.done
 	var m M
-	switch f.message.(type) {
+	switch msg := f.message.(type) {
 	case nil:
+	case *prc.MessageWrapper:
+		m = msg.Message.(M)
 	default:
 		m = f.message.(M)
 	}

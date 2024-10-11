@@ -103,7 +103,7 @@ func (s *subscriptionActor) onPublishRequestBroadcast(ctx ActorContext, m *messa
 
 	for _, subscription := range s.subscribes[m.Topic] {
 		// 保持发送人
-		ctx.System().rc.GetProcess(subscription.Subscriber).DeliveryUserMessage(subscription.Subscriber, m.Publisher, nil, message)
+		ctx.(*actorContext).deliveryUserMessage(subscription.Subscriber, subscription.Subscriber, ctx.Sender(), nil, message)
 	}
 }
 
@@ -128,7 +128,7 @@ func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.
 
 	for _, subscription := range s.subscribes[m.Topic] {
 		// 保持发送人
-		ctx.System().rc.GetProcess(subscription.Subscriber).DeliveryUserMessage(subscription.Subscriber, ctx.Sender(), nil, m.Message)
+		ctx.(*actorContext).deliveryUserMessage(subscription.Subscriber, subscription.Subscriber, ctx.Sender(), nil, m.Message)
 	}
 }
 

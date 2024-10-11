@@ -287,6 +287,7 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 		}
 	}
 
+	message = WrapMessage(sender, receiver, message, m.Seq)
 	if m.System {
 		receiverProcess.DeliverySystemMessage(receiver, sender, nil, message)
 	} else {

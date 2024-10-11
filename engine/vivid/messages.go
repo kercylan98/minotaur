@@ -63,24 +63,3 @@ type (
 )
 
 type Message = prc.Message
-type MessageWrapper struct {
-	Sender   ActorRef
-	Receiver ActorRef
-	Message  Message
-}
-
-func wrapMessage(sender ActorRef, receiver ActorRef, message Message) MessageWrapper {
-	return MessageWrapper{
-		Sender:   sender,
-		Receiver: receiver,
-		Message:  message,
-	}
-}
-
-func unwrapMessage(wrapper Message) (sender ActorRef, receiver ActorRef, message Message) {
-	w, ok := wrapper.(MessageWrapper)
-	if !ok {
-		return nil, nil, message
-	}
-	return w.Sender, w.Receiver, w.Message
-}

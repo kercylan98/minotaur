@@ -2,24 +2,29 @@ package mailbox
 
 import (
 	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/vivid/dispatcher"
 	"github.com/kercylan98/minotaur/toolkit/queues"
+	"github.com/puzpuzpuz/xsync/v3"
 	"sync/atomic"
 	"unsafe"
 )
 
-var _ Mailbox = &Sync{}
+var _ Mailbox = &LockFree{}
 
-func NewSync(recipient Recipient) *Sync {
-	return &Sync{
+// NewGlobalOrderedLockFree 创建一个全局有序的基于无锁队列实现的邮箱，该邮箱基于 queues.LFQueue 实现
+func NewGlobalOrderedLockFree(dispatcher dispatcher.Dispatcher, recipient Recipient) *GlobalOrderedLockFree {
+	return &GlobalOrderedLockFree{
 		queue:       queues.NewLFQueue(),
 		systemQueue: queues.NewLFQueue(),
+		dispatcher:  dispatcher,
 		recipient:   recipient,
 	}
 }
 
-type Sync struct {
+type GlobalOrderedLockFree struct {
 	queue       *queues.LFQueue
 	systemQueue *queues.LFQueue
+	dispatcher  dispatcher.Dispatcher
 	recipient   Recipient
 	status      uint32
 	sysNum      int32
@@ -27,34 +32,35 @@ type Sync struct {
 	suspended   uint32
 }
 
-func (m *Sync) Suspend() {
+func (m *GlobalOrderedLockFree) Suspend() {
+	xsync.NewCounter()
 	atomic.StoreUint32(&m.suspended, 1)
 }
 
-func (m *Sync) Resume() {
+func (m *GlobalOrderedLockFree) Resume() {
 	atomic.StoreUint32(&m.suspended, 0)
 	m.dispatch()
 }
 
-func (m *Sync) DeliveryUserMessage(message prc.Message) {
+func (m *GlobalOrderedLockFree) DeliveryUserMessage(message prc.Message) {
 	m.queue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.userNum, 1)
 	m.dispatch()
 }
 
-func (m *Sync) DeliverySystemMessage(message prc.Message) {
+func (m *GlobalOrderedLockFree) DeliverySystemMessage(message prc.Message) {
 	m.systemQueue.Push(unsafe.Pointer(&message))
 	atomic.AddInt32(&m.sysNum, 1)
 	m.dispatch()
 }
 
-func (m *Sync) dispatch() {
+func (m *GlobalOrderedLockFree) dispatch() {
 	if atomic.CompareAndSwapUint32(&m.status, mailboxStatusIdle, mailboxStatusRunning) {
-		m.process()
+		m.dispatcher.Dispatch(m.process)
 	}
 }
 
-func (m *Sync) process() {
+func (m *GlobalOrderedLockFree) process() {
 	for {
 		m.processHandle()
 		atomic.StoreUint32(&m.status, mailboxStatusIdle)
@@ -67,7 +73,7 @@ func (m *Sync) process() {
 	}
 }
 
-func (m *Sync) processHandle() {
+func (m *GlobalOrderedLockFree) processHandle() {
 	defer func() {
 		if reason := recover(); reason != nil {
 			m.recipient.ProcessAccident(reason)

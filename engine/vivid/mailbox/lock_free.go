@@ -12,7 +12,6 @@ import (
 var _ Mailbox = &LockFree{}
 
 // NewLockFree 创建一个基于无锁队列实现的邮箱，该邮箱基于 queues.LFQueue 实现
-//   - 默认邮箱在 userMessageBatchLimit 大于 1 时需要注意，一批用户消息将会被处理，而不会被系统消息抢先执行
 func NewLockFree(dispatcher dispatcher.Dispatcher, recipient Recipient) *LockFree {
 	return &LockFree{
 		queue:       queues.NewLFQueue(),
