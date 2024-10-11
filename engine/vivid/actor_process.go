@@ -46,7 +46,7 @@ func (a *actorProcess) delivery(sender, forward *prc.ProcessId, message prc.Mess
 	case *onResumeMailboxMessage:
 		a.mailbox.Resume()
 	default:
-		delivery(wrapMessage(sender, a.ref, message))
+		delivery(message)
 	}
 }
 
@@ -57,4 +57,9 @@ func (a *actorProcess) IsTerminated() bool {
 func (a *actorProcess) Terminate(source *prc.ProcessId) {
 	// 交由资源控制器调用
 	a.terminated.Store(true)
+}
+
+func checkMailboxType[T mailbox.Mailbox](process *actorProcess) bool {
+	_, ok := process.mailbox.(T)
+	return ok
 }
