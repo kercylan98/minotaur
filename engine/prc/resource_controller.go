@@ -88,6 +88,7 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 				return
 			}
 		}
+		return rc.config.notFoundSubstitute
 	}
 
 	// 本地进程加载
