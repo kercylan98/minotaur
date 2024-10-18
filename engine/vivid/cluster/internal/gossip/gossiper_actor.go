@@ -82,7 +82,7 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 			continue // 排除自身对自身尝试的加入
 		}
 
-		futures = append(futures, Entry{Future: ctx.FutureAsk(ref, &GossipActorTryJoinClusterMessage{Node: g.state.node}, time.Second*99999), Ref: ref})
+		futures = append(futures, Entry{Future: ctx.FutureAsk(ref, &GossipActorTryJoinClusterMessage{Node: g.state.node}, time.Second), Ref: ref})
 	}
 
 	// 避免互相等待对方直到超时，协程内需要严格保证竞态问题
