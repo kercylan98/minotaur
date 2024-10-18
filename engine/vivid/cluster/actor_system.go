@@ -130,7 +130,6 @@ func (sys *ActorSystem) ActorOfC(identity, ability string) vivid.ActorRef {
 	return actorRef
 }
 
-//goland:noinspection t
 func (sys *ActorSystem) start(nodeEvent *actorSystemEvent) {
 	bindAddr, bindPort, err := net.SplitHostPort(sys.bindAddress)
 	if err != nil {

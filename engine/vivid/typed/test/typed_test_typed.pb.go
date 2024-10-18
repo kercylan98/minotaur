@@ -15,6 +15,7 @@ import (
 )
 
 var _ *options.Empty
+var _ *time.Time
 
 const (
 	futureAskPingTimeout = 1000 * time.Millisecond

@@ -38,6 +38,9 @@ func (pid *ProcessId) URL() *url.URL {
 
 // Equal 比较两个进程 ID 是否相同
 func (pid *ProcessId) Equal(id *ProcessId) bool {
+	if pid == nil || id == nil {
+		return false
+	}
 	if pid.GetPhysicalAddress() != id.GetPhysicalAddress() {
 		return false
 	}
@@ -53,4 +56,14 @@ func (pid *ProcessId) Clone() *ProcessId {
 		LogicalAddress:  pid.GetLogicalAddress(),
 		PhysicalAddress: pid.GetPhysicalAddress(),
 	}
+}
+
+// GetPhysicalAddress 加载进程 ID 的物理地址，在任何时候都应该通过该函数获取物理地址
+func (pid *ProcessId) GetPhysicalAddress() PhysicalAddress {
+	return pid.PhysicalAddress
+}
+
+// GetLogicalAddress 加载进程 ID 的逻辑地址，在任何时候都应该通过该函数获取逻辑地址
+func (pid *ProcessId) GetLogicalAddress() LogicalAddress {
+	return pid.LogicalAddress
 }
