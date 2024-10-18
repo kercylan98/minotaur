@@ -93,6 +93,9 @@ type ActorSystem struct {
 }
 
 // Publish 向所有订阅者发布消息
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) Publish(topic Topic, message Message) {
 	sys.guard.Publish(topic, message)
 }
@@ -118,28 +121,43 @@ func (sys *ActorSystem) Name() string {
 }
 
 // Tell 向指定的 Actor 引用(ActorRef) 发送消息。
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) Tell(target ActorRef, message Message) {
 	sys.guard.Tell(target, message)
 }
 
 // Ask 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是无限期的
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) Ask(target ActorRef, message Message) {
 	sys.guard.Ask(target, message)
 }
 
 // FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 future.Future 对象，可被用于获取响应消息
 //   - 当 timeout 参数为空时，将会使用默认的超时时间 DefaultFutureAskTimeout
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future[Message] {
 	return sys.guard.FutureAsk(target, message, timeout...)
 }
 
 // AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) AwaitForward(target ActorRef, asyncFunc func() Message) {
 	sys.guard.AwaitForward(target, asyncFunc)
 }
 
 // Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
 //   - 子级的子级不会收到广播消息
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) Broadcast(message Message) {
 	sys.guard.Broadcast(message)
 }

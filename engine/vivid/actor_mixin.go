@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/engine/future"
+	"github.com/kercylan98/minotaur/engine/prc"
 	"time"
 )
 
@@ -55,25 +56,46 @@ type mixinWorker interface {
 
 	// ReportAbnormal 报告异常，该函数将触发事故向监管者传递
 	ReportAbnormal(reason Message)
+
+	// PhysicalAddress 返回当前 Actor 的物理地址
+	PhysicalAddress() prc.PhysicalAddress
+
+	// LogicalAddress 返回当前 Actor 的逻辑地址
+	LogicalAddress() prc.LogicalAddress
 }
 
 // mixinDeliver 是一个混入类型接口，它定义了作为 Actor 消息发送者需要满足的接口。
 type mixinDeliver interface {
 	// Tell 向指定的 Actor 引用(ActorRef) 发送消息。
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	Tell(target ActorRef, message Message)
 
 	// Ask 向目标 Actor 非阻塞地发送可被回复的消息，这个回复可能是无限期的
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	Ask(target ActorRef, message Message)
 
 	// FutureAsk 向目标 Actor 非阻塞地发送可被回复的消息，这个回复是有限期的，返回一个 future.Future 对象，可被用于获取响应消息
 	//  - 当 timeout 参数为空时，将会使用默认的超时时间 DefaultFutureAskTimeout
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	FutureAsk(target ActorRef, message Message, timeout ...time.Duration) future.Future[Message]
 
 	// Broadcast 向所有子级 Actor 广播消息，广播消息是可以被回复的
 	//  - 子级的子级不会收到广播消息
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	Broadcast(message Message)
 
 	// AwaitForward 异步地等待阻塞结束后向目标 Actor 转发消息
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	AwaitForward(target ActorRef, asyncFunc func() Message)
 }
 
@@ -86,6 +108,9 @@ type mixinRecipient interface {
 	Ref() ActorRef
 
 	// Reply 向消息发送者回复消息。
+	//
+	// 特殊标注：
+	//  - MarkMessageImmutability 消息不可变性注意事项
 	Reply(message Message)
 
 	// Message 返回当前 Actor 接收到的消息。
