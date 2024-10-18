@@ -62,7 +62,9 @@ func onDevelopGenerateProtobuf() {
 		fmt.Println("generate:", batPath)
 		c := exec.Command(batPath)
 		c.Dir = filepath.Dir(batPath)
-		cobra.CheckErr(c.Run())
+		if err := c.Run(); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
