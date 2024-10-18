@@ -67,6 +67,9 @@ func (rc *ResourceController) Belong(id *ProcessId) bool {
 
 // GetProcess 获取一个进程
 func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
+	if id == nil {
+		return rc.config.notFoundSubstitute
+	}
 	processPtr := id.cache.Load()
 	if processPtr != nil {
 		process = *processPtr
