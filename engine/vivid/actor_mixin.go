@@ -97,6 +97,10 @@ type mixinDeliver interface {
 	// 特殊标注：
 	//  - MarkMessageImmutability 消息不可变性注意事项
 	AwaitForward(target ActorRef, asyncFunc func() Message)
+
+	// ExecLocalFunc 发送一个仅支持本地的函数消息到目标 Actor 的队列中执行，在该函数中将获取到目标 Actor 的上下文
+	//  - 在该函数中操作函数外部内容将是危险的
+	ExecLocalFunc(target ActorRef, function func(ctx ActorContext))
 }
 
 // mixinRecipient 是一个混入类型接口，它定义了作为 Actor 接收者需要满足的接口。

@@ -118,6 +118,10 @@ type actorContext struct {
 	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
 }
 
+func (ctx *actorContext) ExecLocalFunc(target ActorRef, function func(ctx ActorContext)) {
+	ctx.Tell(target, onLocalFunc(function))
+}
+
 func (ctx *actorContext) PhysicalAddress() prc.PhysicalAddress {
 	return ctx.ref.PhysicalAddress
 }
@@ -401,6 +405,8 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 			ctx.actor.OnReceive(ctx)
 		case *messages.AbyssMessageEvent:
 			ctx.onAbyssMessageEvent(m)
+		case onLocalFunc:
+			m(ctx)
 		default:
 			ctx.actor.OnReceive(ctx)
 		}

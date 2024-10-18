@@ -92,6 +92,12 @@ type ActorSystem struct {
 	closed       chan struct{}
 }
 
+// ExecLocalFunc 发送一个仅支持本地的函数消息到目标 Actor 的队列中执行，在该函数中将获取到目标 Actor 的上下文
+//   - 在该函数中操作函数外部内容将是危险的
+func (sys *ActorSystem) ExecLocalFunc(target ActorRef, function func(ctx ActorContext)) {
+	sys.Tell(target, onLocalFunc(function))
+}
+
 // Publish 向所有订阅者发布消息
 //
 // 特殊标注：
