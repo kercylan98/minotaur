@@ -76,28 +76,27 @@ func (s *State) MarkSeen(nodeId *NodeId) {
 
 // MergeGossip 合并收到的 Gossip 数据，并更新当前节点的状态。
 func (s *State) MergeGossip(gossiped *Gossiped) {
+	ordering := s.node.Vc.CompareTo(gossiped.GossiperVersion)
 	// 如果接收到的 Gossip 版本更新，则进行合并
-	s.gossip = gossiped.Gossip
-	if s.node.Vc.CompareTo(gossiped.GossiperVersion) != VectorClockOrdering_VCO_Same {
+	if ordering != VectorClockOrdering_VCO_After {
+		s.gossip = gossiped.Gossip
+	}
+	if ordering != VectorClockOrdering_VCO_Same {
 		s.node.Vc.Merge(gossiped.GossiperVersion)
-		for _, member := range s.gossip.Members {
-			if member.Id.PhysicalAddressEqual(s.node.Id) {
-				member.Vc = s.node.Vc
-				s.node = member // 确保指针一致
-			}
-		}
 
 		// 状态更新，重置 Seen 列表为仅含自身
 		// 这里不改变版本，改变版本将导致永远无终止
 		s.gossip.Seen = []*NodeId{}
-	} else {
-		for _, member := range s.gossip.Members {
-			if member.Id.PhysicalAddressEqual(s.node.Id) {
-				member.Vc = s.node.Vc
-				s.node = member // 确保指针一致
-			}
-		}
 	}
+
+	for _, member := range s.gossip.Members {
+		if member.Id.PhysicalAddressEqual(s.node.Id) {
+			member.Vc = s.node.Vc
+			s.node = member // 确保指针一致
+		}
+		s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress)
+	}
+
 }
 
 // CalcLeaderNode 计算当前集群的领导者节点。

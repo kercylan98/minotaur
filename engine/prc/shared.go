@@ -109,7 +109,8 @@ func (s *Shared) Share() error {
 		var err error
 		process, err = s.open(pa)
 		if err != nil {
-			panic(err)
+			//panic(err)
+			return s.rc.config.notFoundSubstitute
 		}
 		return process
 	}))

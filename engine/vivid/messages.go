@@ -60,6 +60,9 @@ type (
 		Message  Message
 		Time     time.Time
 	}
+
+	// onLocalFunc 本地函数消息
+	onLocalFunc func(ctx ActorContext)
 )
 
 type Message = prc.Message

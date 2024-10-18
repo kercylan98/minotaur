@@ -4,6 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"log/slog"
@@ -13,6 +14,7 @@ import (
 func NewGossiperActor(seedNodes []prc.PhysicalAddress) *GossiperActor {
 	return &GossiperActor{
 		seedNodes: seedNodes,
+		hashRing:  NewHashRing(5),
 	}
 }
 
@@ -22,6 +24,7 @@ type GossiperActor struct {
 	logger       *slog.Logger          // 日志记录器
 	state        *State                // Gossip 状态
 	leader       *Node                 // 集群当前确定的领导者
+	hashRing     *HashRing             // 虚拟节点哈希环
 }
 
 func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
@@ -44,6 +47,8 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 		g.onGossipAckMessage(ctx, m)
 	case *GossipActorLeaveClusterMessage:
 		g.onGossipActorLeaveClusterMessage(ctx)
+	case *GossipActorPingPongMessage:
+		g.onGossipActorPingPongMessage(ctx, m)
 	}
 }
 
@@ -59,10 +64,10 @@ func (g *GossiperActor) onLaunch(ctx vivid.ActorContext) {
 	}
 
 	// 尝试加入集群
-	//ctx.AfterTask("onLaunch.initCluster", time.Second*3, func(ctx vivid.ActorContext) {
-	//	ctx.Tell(ctx.Ref(), &GossipActorInitClusterMessage{RetryIntervalDuration: int64(3 * time.Second)})
-	//})
 	ctx.Tell(ctx.Ref(), &GossipActorInitClusterMessage{RetryIntervalDuration: int64(3 * time.Second)})
+
+	// 故障检测
+	ctx.RepeatedTask("heartbeat.check", time.Second, time.Second, chrono.SchedulerForever, g.onHeartbeatCheckTask)
 }
 
 func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, m *GossipActorInitClusterMessage) {
@@ -220,7 +225,14 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 			case GossipNodeStatus_GNS_Exit:
 				changed = true
 				g.state.gossip.Members = append(g.state.gossip.Members[:i], g.state.gossip.Members[i+1:]...)
+				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "exit, remove from gossip"))
+			case GossipNodeStatus_GNS_Unreachable:
+				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "unreachable"))
+			case GossipNodeStatus_GNS_Reachable:
+				changed = true
+				member.Status = GossipNodeStatus_GNS_Alive
+				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "reachable -> alive"))
 			}
 		}
 		if changed {
@@ -243,4 +255,66 @@ func (g *GossiperActor) onGossipActorLeaveClusterMessage(ctx vivid.ActorContext)
 	g.state.gossip.Seen = []*NodeId{g.state.node.Id}
 	g.state.Increment()
 	g.state.GossipUpdate()
+}
+
+func (g *GossiperActor) onGossipActorPingPongMessage(ctx vivid.ActorContext, m *GossipActorPingPongMessage) {
+	ctx.Reply(m)
+}
+
+func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
+	//var nodes = make(map[string]struct{})
+	//
+	//for _, s := range g.hashRing.GetNeighbours(ctx.PhysicalAddress(), 5) {
+	//	nodes[s] = struct{}{}
+	//}
+	//
+	//type FutureMember struct {
+	//	Member *Node
+	//	Future future.Future[vivid.Message]
+	//}
+	//
+	//var askList = make([]FutureMember, 0, len(nodes))
+	//for _, member := range g.state.gossip.Members {
+	//	if _, ok := nodes[member.Id.Ref.PhysicalAddress]; !ok {
+	//		continue
+	//	}
+	//	askList = append(askList, FutureMember{
+	//		Member: member,
+	//		Future: ctx.FutureAsk(member.Id.Ref, &GossipActorPingPongMessage{}),
+	//	})
+	//}
+	//
+	//for _, f := range askList {
+	//	go func(f FutureMember) {
+	//		if err := f.Future.Wait(); err != nil {
+	//			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
+	//				for _, member := range g.state.gossip.Members {
+	//					if member.Id.PhysicalAddressEqual(f.Member.Id) {
+	//						member.Status = GossipNodeStatus_GNS_Unreachable
+	//						g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
+	//						g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+	//						g.state.Increment()
+	//						g.state.GossipUpdate()
+	//						break
+	//					}
+	//				}
+	//
+	//			})
+	//		} else if f.Member.Status == GossipNodeStatus_GNS_Unreachable {
+	//			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
+	//				for _, member := range g.state.gossip.Members {
+	//					if member.Id.PhysicalAddressEqual(f.Member.Id) {
+	//						member.Status = GossipNodeStatus_GNS_Reachable
+	//						g.logger.Warn("cluster", log.String("event", "node reachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
+	//						g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+	//						g.state.Increment()
+	//						g.state.GossipUpdate()
+	//						break
+	//					}
+	//				}
+	//			})
+	//		}
+	//	}(f)
+	//}
+
 }

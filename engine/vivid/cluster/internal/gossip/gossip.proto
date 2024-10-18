@@ -66,6 +66,8 @@ message GossipedAckMessage {
 // 该消息用于表示节点需要离开集群，通常为本地发送给 GossipActor
 message GossipActorLeaveClusterMessage {}
 
+message GossipActorPingPongMessage {}
+
 // 节点状态
 enum GossipNodeStatus {
   GNS_Joining = 0; // 加入中
@@ -74,7 +76,7 @@ enum GossipNodeStatus {
   GNS_Exit = 3; // 退出
   GNS_Removed = 4; // 移除
   GNS_Unreachable = 5; // 不可达
-  GNS_Failed = 6; // 失败
+  GNS_Reachable = 6; // 可达（网络恢复期间缓冲）
 }
 
 // 矢量时钟结构
