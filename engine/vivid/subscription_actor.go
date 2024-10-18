@@ -119,20 +119,24 @@ func (s *subscriptionActor) onPublishRequestBroadcast(ctx ActorContext, m *messa
 
 func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.LocalPublishRequest) {
 	if len(s.sas) > 0 {
+		var networkMessage bool
 		tn, data, err := ctx.System().shared.GetCodec().Encode(m.Message)
 		if err != nil {
-			panic(err)
+			networkMessage = true
 		}
 
-		broadcast := &messages.PublishRequestBroadcast{
-			Data:        data,
-			MessageType: tn,
-			Publisher:   ctx.Sender(),
-			Topic:       m.Topic,
-		}
+		// 仅网络消息允许跨网络传输，否则仅投送本地
+		if !networkMessage {
+			broadcast := &messages.PublishRequestBroadcast{
+				Data:        data,
+				MessageType: tn,
+				Publisher:   ctx.Sender(),
+				Topic:       m.Topic,
+			}
 
-		for _, ref := range s.sas {
-			ctx.Tell(ref, broadcast)
+			for _, ref := range s.sas {
+				ctx.Tell(ref, broadcast)
+			}
 		}
 	}
 
