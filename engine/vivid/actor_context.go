@@ -118,6 +118,14 @@ type actorContext struct {
 	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
 }
 
+func (ctx *actorContext) PhysicalAddress() prc.PhysicalAddress {
+	return ctx.ref.PhysicalAddress
+}
+
+func (ctx *actorContext) LogicalAddress() prc.LogicalAddress {
+	return ctx.ref.LogicalAddress
+}
+
 func (ctx *actorContext) Subscribe(topic Topic) Subscription {
 	if topic == "" {
 		panic(errors.New("subscribe topic is empty"))
