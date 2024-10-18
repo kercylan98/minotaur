@@ -346,3 +346,11 @@ func FindMin2MaxFromMap[M ~map[K]V, K comparable, V constraints.Ordered](m M) (m
 	}
 	return
 }
+
+// IsFirst 判断是否是第一个元素，当 slice 长度为 0 时，返回 false
+func IsFirst[S ~[]V, V comparable](slice S, v V) bool {
+	if len(slice) == 0 {
+		return false
+	}
+	return slice[0] == v
+}
