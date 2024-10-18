@@ -78,16 +78,18 @@ func (s *State) MarkSeen(nodeId *NodeId) {
 func (s *State) MergeGossip(gossiped *Gossiped) {
 	ordering := s.node.Vc.CompareTo(gossiped.GossiperVersion)
 	// 如果接收到的 Gossip 版本更新，则进行合并
-	if ordering != VectorClockOrdering_VCO_After {
+	var accessibilityChanged = len(gossiped.Gossip.AccessibilityChange) > 0
+	if ordering != VectorClockOrdering_VCO_After || accessibilityChanged {
 		s.gossip = gossiped.Gossip
 	}
-	if ordering != VectorClockOrdering_VCO_Same {
+	if ordering != VectorClockOrdering_VCO_Same || accessibilityChanged {
 		s.node.Vc.Merge(gossiped.GossiperVersion)
 
 		// 状态更新，重置 Seen 列表为仅含自身
 		// 这里不改变版本，改变版本将导致永远无终止
 		s.gossip.Seen = []*NodeId{}
 	}
+	s.gossip.AccessibilityChange = nil
 
 	for _, member := range s.gossip.Members {
 		if member.Id.PhysicalAddressEqual(s.node.Id) {

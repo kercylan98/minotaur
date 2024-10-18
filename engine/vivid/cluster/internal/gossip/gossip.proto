@@ -50,6 +50,7 @@ message NodeId {
 message Gossip {
   repeated Node members = 1; // 集群成员
   repeated NodeId seen = 2; // 已seen的节点
+  map<string, GossipNodeStatus> accessibility_change = 3; // 节点可达性变化
 }
 
 // Gossiped 已传播到达的状态

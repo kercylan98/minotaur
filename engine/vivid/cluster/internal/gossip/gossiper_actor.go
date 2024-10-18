@@ -262,59 +262,67 @@ func (g *GossiperActor) onGossipActorPingPongMessage(ctx vivid.ActorContext, m *
 }
 
 func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
-	//var nodes = make(map[string]struct{})
-	//
-	//for _, s := range g.hashRing.GetNeighbours(ctx.PhysicalAddress(), 5) {
-	//	nodes[s] = struct{}{}
-	//}
-	//
-	//type FutureMember struct {
-	//	Member *Node
-	//	Future future.Future[vivid.Message]
-	//}
-	//
-	//var askList = make([]FutureMember, 0, len(nodes))
-	//for _, member := range g.state.gossip.Members {
-	//	if _, ok := nodes[member.Id.Ref.PhysicalAddress]; !ok {
-	//		continue
-	//	}
-	//	askList = append(askList, FutureMember{
-	//		Member: member,
-	//		Future: ctx.FutureAsk(member.Id.Ref, &GossipActorPingPongMessage{}),
-	//	})
-	//}
-	//
-	//for _, f := range askList {
-	//	go func(f FutureMember) {
-	//		if err := f.Future.Wait(); err != nil {
-	//			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
-	//				for _, member := range g.state.gossip.Members {
-	//					if member.Id.PhysicalAddressEqual(f.Member.Id) {
-	//						member.Status = GossipNodeStatus_GNS_Unreachable
-	//						g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
-	//						g.state.gossip.Seen = []*NodeId{g.state.node.Id}
-	//						g.state.Increment()
-	//						g.state.GossipUpdate()
-	//						break
-	//					}
-	//				}
-	//
-	//			})
-	//		} else if f.Member.Status == GossipNodeStatus_GNS_Unreachable {
-	//			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
-	//				for _, member := range g.state.gossip.Members {
-	//					if member.Id.PhysicalAddressEqual(f.Member.Id) {
-	//						member.Status = GossipNodeStatus_GNS_Reachable
-	//						g.logger.Warn("cluster", log.String("event", "node reachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
-	//						g.state.gossip.Seen = []*NodeId{g.state.node.Id}
-	//						g.state.Increment()
-	//						g.state.GossipUpdate()
-	//						break
-	//					}
-	//				}
-	//			})
-	//		}
-	//	}(f)
-	//}
+	var nodes = make(map[string]struct{})
+
+	for _, s := range g.hashRing.GetNeighbours(ctx.PhysicalAddress(), 5) {
+		nodes[s] = struct{}{}
+	}
+
+	type FutureMember struct {
+		Member *Node
+		Future future.Future[vivid.Message]
+	}
+
+	var askList = make([]FutureMember, 0, len(nodes))
+	for _, member := range g.state.gossip.Members {
+		if _, ok := nodes[member.Id.Ref.PhysicalAddress]; !ok {
+			continue
+		}
+		askList = append(askList, FutureMember{
+			Member: member,
+			Future: ctx.FutureAsk(member.Id.Ref, &GossipActorPingPongMessage{}),
+		})
+	}
+
+	for _, f := range askList {
+		go func(f FutureMember) {
+			if err := f.Future.Wait(); err != nil && f.Member.Status == GossipNodeStatus_GNS_Alive {
+				ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
+					for _, member := range g.state.gossip.Members {
+						if member.Id.PhysicalAddressEqual(f.Member.Id) {
+							member.Status = GossipNodeStatus_GNS_Unreachable
+							g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
+							if g.state.gossip.AccessibilityChange == nil {
+								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
+							}
+							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = GossipNodeStatus_GNS_Unreachable
+							g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+							g.state.Increment()
+							g.state.GossipUpdate()
+							break
+						}
+					}
+
+				})
+			} else if f.Member.Status == GossipNodeStatus_GNS_Unreachable {
+				ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
+					for _, member := range g.state.gossip.Members {
+						if member.Id.PhysicalAddressEqual(f.Member.Id) {
+							member.Status = GossipNodeStatus_GNS_Reachable
+							g.logger.Warn("cluster", log.String("event", "node reachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
+							if g.state.gossip.AccessibilityChange == nil {
+								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
+							}
+							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = GossipNodeStatus_GNS_Reachable
+							g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+							g.state.Increment()
+							g.state.GossipUpdate()
+							break
+						}
+					}
+				})
+			}
+		}(f)
+	}
 
 }
