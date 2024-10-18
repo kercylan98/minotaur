@@ -29,6 +29,11 @@ func NewVectorClock() *VectorClock {
 	}
 }
 
+// Version 返回当前时钟的版本信息
+func (vc *VectorClock) Version() map[Node]int64 {
+	return vc.versions
+}
+
 // Increment 对特定节点的版本进行递增，并返回更新后的向量时钟
 func (vc *VectorClock) Increment(node Node, v int64) *VectorClock {
 	vc.versions[node] = vc.versions[node] + v
