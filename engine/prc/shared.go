@@ -173,7 +173,10 @@ func (s *Shared) open(address PhysicalAddress) (sharedStream, error) {
 	go func() {
 		if err = s.streaming(address, stream); err != nil {
 			// 连接断开，无需重连？下次使用会重新建连
-			log.Debug("ResourceController", log.String("feature", "shared"), log.String("info", "streaming error"), log.Err(err))
+			if s.config.transportErrorHandler != nil {
+				s.config.transportErrorHandler(address, err)
+			}
+			//log.Debug("ResourceController", log.String("feature", "shared"), log.String("info", "streaming error"), log.Err(err))
 		}
 	}()
 

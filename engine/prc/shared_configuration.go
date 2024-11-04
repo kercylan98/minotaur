@@ -15,6 +15,7 @@ const (
 type SharedPolicyDecision uint8
 type ErrorPolicyDecisionHandler = toolkit.ErrorPolicyDecisionHandler[SharedPolicyDecision]
 type FunctionalErrorPolicyDecisionHandler = toolkit.FunctionalErrorPolicyDecisionHandler[SharedPolicyDecision]
+type TransportErrorHandler = func(targetAddress string, err error)
 
 // newSharedConfiguration 创建一个资源控制器的共享配置
 func newSharedConfiguration() *SharedConfiguration {
@@ -35,6 +36,13 @@ type SharedConfiguration struct {
 	grpcServerHooks         []GRPCLaunchBeforeHook           // GRPC 服务器钩子
 	shareOpenedHooks        []ShareOpenedHook                // 共享连接打开时钩子
 	shareClosedHooks        []SharedClosedHook               // 共享连接关闭时钩子
+	transportErrorHandler   TransportErrorHandler            // 传输错误处理器
+}
+
+// WithTransportErrorHandler 设置传输错误处理器
+func (c *SharedConfiguration) WithTransportErrorHandler(handler TransportErrorHandler) *SharedConfiguration {
+	c.transportErrorHandler = handler
+	return c
 }
 
 // WithShareClosedHooks 设置共享连接关闭时钩子

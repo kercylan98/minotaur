@@ -1,7 +1,6 @@
 package prc
 
 import (
-	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync"
 	"sync/atomic"
 )
@@ -143,7 +142,9 @@ func (c *sharedStreamProcess) send() {
 
 		if err := c.stream.Send(sm); err != nil {
 			c.shared.detachStream(c.address)
-			c.shared.rc.logger().Debug("ResourceController", log.Err(err))
+			if c.shared.config.transportErrorHandler != nil {
+				c.shared.config.transportErrorHandler(c.address, err)
+			}
 			c.lock.Lock()
 			c.batches = nil
 			c.lock.Unlock()

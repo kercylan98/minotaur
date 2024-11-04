@@ -32,6 +32,12 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 
 	if system.config.shared {
 		system.shared = prc.NewShared(system.rc, prc.FunctionalSharedConfigurator(func(config *prc.SharedConfiguration) {
+			config.WithTransportErrorHandler(func(targetAddress string, err error) {
+				system.Publish(TransportTopic, &OnTransportError{
+					TargetAddress: targetAddress,
+					Error:         err,
+				})
+			})
 			config.WithRuntimeErrorHandler(prc.FunctionalErrorPolicyDecisionHandler(func(err error) prc.SharedPolicyDecision {
 				return prc.SharedPolicyDecisionRestart
 			}))

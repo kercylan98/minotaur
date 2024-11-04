@@ -63,6 +63,12 @@ type (
 
 	// onLocalFunc 本地函数消息
 	onLocalFunc func(ctx ActorContext)
+
+	// OnTransportError 当 Actor 的网络连接出现异常时，将会收到该消息。
+	OnTransportError struct {
+		TargetAddress string
+		Error         error
+	}
 )
 
 type Message = prc.Message
