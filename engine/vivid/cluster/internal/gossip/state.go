@@ -2,10 +2,13 @@ package gossip
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/phi"
 	"sort"
+	"time"
 )
 
 func newState(ctx vivid.ActorContext, actor *GossiperActor) *State {
@@ -96,7 +99,20 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 			member.Vc = s.node.Vc
 			s.node = member // 确保指针一致
 		}
-		s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress)
+		if s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress) {
+			// 初始化故障检测器
+			afd, _ := phi.NewAccrualFailureDetector(
+				8.0,
+				200,
+				1000*time.Millisecond,
+				0,
+				1000*time.Millisecond,
+				nil)
+			if s.actor.afd == nil {
+				s.actor.afd = make(map[prc.PhysicalAddress]*phi.AccrualFailureDetector)
+			}
+			s.actor.afd[member.Id.Ref.PhysicalAddress] = afd
+		}
 	}
 
 }

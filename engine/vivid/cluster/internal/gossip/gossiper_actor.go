@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"github.com/kercylan98/minotaur/toolkit/phi"
 	"log/slog"
 	"time"
 )
@@ -19,12 +20,13 @@ func NewGossiperActor(seedNodes []prc.PhysicalAddress) *GossiperActor {
 }
 
 type GossiperActor struct {
-	seedNodes    []prc.PhysicalAddress // 种子节点
-	seedNodeRefs []vivid.ActorRef      // 种子节点 Actor 引用
-	logger       *slog.Logger          // 日志记录器
-	state        *State                // Gossip 状态
-	leader       *Node                 // 集群当前确定的领导者
-	hashRing     *HashRing             // 虚拟节点哈希环
+	seedNodes    []prc.PhysicalAddress                               // 种子节点
+	seedNodeRefs []vivid.ActorRef                                    // 种子节点 Actor 引用
+	logger       *slog.Logger                                        // 日志记录器
+	state        *State                                              // Gossip 状态
+	leader       *Node                                               // 集群当前确定的领导者
+	hashRing     *HashRing                                           // 虚拟节点哈希环
+	afd          map[prc.PhysicalAddress]*phi.AccrualFailureDetector // 故障检测器
 }
 
 func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
@@ -226,6 +228,8 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 				changed = true
 				g.state.gossip.Members = append(g.state.gossip.Members[:i], g.state.gossip.Members[i+1:]...)
 				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)
+				// 移除故障检测器
+				delete(g.afd, member.Id.Ref.PhysicalAddress)
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "exit, remove from gossip"))
 			case GossipNodeStatus_GNS_Unreachable:
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "alive -> unreachable"))
@@ -286,42 +290,44 @@ func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
 
 	for _, f := range askList {
 		go func(f FutureMember) {
-			if err := f.Future.Wait(); err != nil && f.Member.Status == GossipNodeStatus_GNS_Alive {
+			// 等待心跳响应
+			if err := f.Future.Wait(); err == nil {
 				ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
-					for _, member := range g.state.gossip.Members {
-						if member.Id.PhysicalAddressEqual(f.Member.Id) {
-							member.Status = GossipNodeStatus_GNS_Unreachable
-							g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
-							if g.state.gossip.AccessibilityChange == nil {
-								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
-							}
-							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = GossipNodeStatus_GNS_Unreachable
-							g.state.gossip.Seen = []*NodeId{g.state.node.Id}
-							g.state.Increment()
-							g.state.GossipUpdate()
-							break
-						}
-					}
-
-				})
-			} else if f.Member.Status == GossipNodeStatus_GNS_Unreachable {
-				ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
-					for _, member := range g.state.gossip.Members {
-						if member.Id.PhysicalAddressEqual(f.Member.Id) {
-							member.Status = GossipNodeStatus_GNS_Reachable
-							g.logger.Warn("cluster", log.String("event", "node reachable"), log.String("node", f.Member.Id.Ref.URL().String()), log.Err(err))
-							if g.state.gossip.AccessibilityChange == nil {
-								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
-							}
-							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = GossipNodeStatus_GNS_Reachable
-							g.state.gossip.Seen = []*NodeId{g.state.node.Id}
-							g.state.Increment()
-							g.state.GossipUpdate()
-							break
-						}
-					}
+					g.afd[f.Member.Id.Ref.PhysicalAddress].Heartbeat()
 				})
 			}
+
+			// 检查节点状态
+			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
+				afd := g.afd[f.Member.Id.Ref.PhysicalAddress]
+				for _, member := range g.state.gossip.Members {
+					if member.Id.PhysicalAddressEqual(f.Member.Id) {
+						var nextStatus = member.Status
+						if !afd.IsAvailable() && member.Status == GossipNodeStatus_GNS_Alive {
+							nextStatus = GossipNodeStatus_GNS_Unreachable
+							g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
+						} else if afd.IsAvailable() && member.Status == GossipNodeStatus_GNS_Unreachable {
+							nextStatus = GossipNodeStatus_GNS_Reachable
+							g.logger.Info("cluster", log.String("event", "node reachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
+						}
+
+						if nextStatus != member.Status {
+							member.Status = nextStatus
+							if g.state.gossip.AccessibilityChange == nil {
+								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
+							}
+							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = nextStatus
+							g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+							g.state.Increment()
+							g.state.GossipUpdate()
+						}
+
+						break
+					}
+				}
+
+			})
+
 		}(f)
 	}
 

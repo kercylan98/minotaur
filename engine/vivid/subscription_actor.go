@@ -121,12 +121,12 @@ func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.
 	if len(s.sas) > 0 {
 		var networkMessage bool
 		tn, data, err := ctx.System().shared.GetCodec().Encode(m.Message)
-		if err != nil {
+		if err == nil {
 			networkMessage = true
 		}
 
 		// 仅网络消息允许跨网络传输，否则仅投送本地
-		if !networkMessage {
+		if networkMessage {
 			broadcast := &messages.PublishRequestBroadcast{
 				Data:        data,
 				MessageType: tn,

@@ -30,11 +30,11 @@ func (h *HashRing) hash(key string) uint32 {
 	return uint32(bs[0])<<24 | uint32(bs[1])<<16 | uint32(bs[2])<<8 | uint32(bs[3])
 }
 
-// AddNode 添加一个节点到哈希环中
-func (h *HashRing) AddNode(node string) {
+// AddNode 添加一个节点到哈希环中，当返回 true 时表示该节点已经存在，否则添加成功
+func (h *HashRing) AddNode(node string) (exist bool) {
 	for i := 0; i < h.replicas; i++ {
 		hash := h.hash(fmt.Sprintf("%s:%d", node, i))
-		if _, exist := h.nodeMap[hash]; exist {
+		if _, exist = h.nodeMap[hash]; exist {
 			return
 		}
 		h.sortedKeys = append(h.sortedKeys, hash)
@@ -44,6 +44,7 @@ func (h *HashRing) AddNode(node string) {
 		return h.sortedKeys[i] < h.sortedKeys[j]
 	})
 	h.nodes = append(h.nodes, node)
+	return
 }
 
 // GetNeighbours 根据节点名称获取最近的 numNeighbours 个节点
