@@ -181,7 +181,7 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 	var seenNum int
 	for _, member := range g.state.gossip.Members {
 		switch member.Status {
-		case GossipNodeStatus_GNS_Removed:
+		case GossipNodeStatus_GNS_Removed, GossipNodeStatus_GNS_Unreachable:
 			continue
 		}
 		seenNum++
@@ -228,7 +228,7 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "exit, remove from gossip"))
 			case GossipNodeStatus_GNS_Unreachable:
-				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "unreachable"))
+				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "alive -> unreachable"))
 			case GossipNodeStatus_GNS_Reachable:
 				changed = true
 				member.Status = GossipNodeStatus_GNS_Alive

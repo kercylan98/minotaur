@@ -143,7 +143,7 @@ func (c *sharedStreamProcess) send() {
 
 		if err := c.stream.Send(sm); err != nil {
 			c.shared.detachStream(c.address)
-			c.shared.rc.logger().Error("ResourceController", log.Err(err))
+			c.shared.rc.logger().Debug("ResourceController", log.Err(err))
 			c.lock.Lock()
 			c.batches = nil
 			c.lock.Unlock()
