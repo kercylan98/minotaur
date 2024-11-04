@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 // NewAccrualFailureDetector 返回一个新的 AccrualFailureDetector 实例
@@ -42,8 +43,8 @@ func NewAccrualFailureDetector(threshold float64, maxSampleSize uint, minStdDevi
 		firstHeartbeat:             firstHeartbeat,
 		acceptableHeartbeatPauseMS: uint64(acceptableHeartbeatPause.Milliseconds()),
 		minStdDeviationMS:          uint64(minStdDeviation.Milliseconds()),
+		state:                      &accrualFailureDetectorState{history: firstHeartbeat},
 	}
-	afd.state.Store(&accrualFailureDetectorState{history: firstHeartbeat})
 	return afd, nil
 }
 
@@ -57,7 +58,7 @@ type AccrualFailureDetector struct {
 	firstHeartbeat             accrualFailureDetectorHistory
 	acceptableHeartbeatPauseMS uint64
 	minStdDeviationMS          uint64
-	state                      atomic.Pointer[accrualFailureDetectorState]
+	state                      *accrualFailureDetectorState
 }
 
 // IsAvailable 返回资源正常运行
@@ -72,14 +73,25 @@ func (fd *AccrualFailureDetector) isAvailableAt(time time.Time) bool {
 
 // IsMonitoring 如果故障检测器已收到任何心跳并开始监视资源，则 IsMonitoring 返回 true
 func (fd *AccrualFailureDetector) IsMonitoring() bool {
-	return fd.state.Load().timestamp != nil
+	return fd.loadState().timestamp != nil
+}
+
+func (fd *AccrualFailureDetector) loadState() *accrualFailureDetectorState {
+	return (*accrualFailureDetectorState)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&fd.state))))
+}
+
+func (fd *AccrualFailureDetector) compareAndSwapState(old, new *accrualFailureDetectorState) bool {
+	return atomic.CompareAndSwapPointer(
+		(*unsafe.Pointer)(unsafe.Pointer(&fd.state)),
+		unsafe.Pointer(old),
+		unsafe.Pointer(new))
 }
 
 // Heartbeat 通知检测器有来自受监控资源的心跳，更新其状态
 func (fd *AccrualFailureDetector) Heartbeat() {
 	for {
 		timestamp := time.Now()
-		oldState := fd.state.Load()
+		oldState := fd.loadState()
 
 		var newHistory accrualFailureDetectorHistory
 
@@ -101,7 +113,7 @@ func (fd *AccrualFailureDetector) Heartbeat() {
 		newState := &accrualFailureDetectorState{history: newHistory, timestamp: &timestamp} // record new timestamp
 
 		// 如果更新失败，那么继续重试
-		if fd.state.CompareAndSwap(oldState, newState) {
+		if fd.compareAndSwapState(oldState, newState) {
 			break
 		}
 	}
@@ -113,11 +125,11 @@ func (fd *AccrualFailureDetector) Phi() float64 {
 }
 
 func (fd *AccrualFailureDetector) phiAt(timestamp time.Time) float64 {
-	oldState := fd.state.Load()
+	oldState := fd.loadState()
 	oldTimestamp := oldState.timestamp
 
 	if oldTimestamp == nil {
-		return 0.0 // treat unmanaged connections, e.g. with zero heartbeats, as healthy connections
+		return 0.0
 	}
 
 	timeDiff := timestamp.Sub(*oldTimestamp)
@@ -142,4 +154,11 @@ func (fd *AccrualFailureDetector) phi(timeDiff, mean, stdDeviation float64) floa
 	}
 
 	return -math.Log10(1.0 - 1.0/(1.0+e))
+}
+func (fd *AccrualFailureDetector) LastHeartbeat() time.Time {
+	state := fd.loadState()
+	if state.timestamp == nil {
+		return time.Time{}
+	}
+	return *state.timestamp
 }

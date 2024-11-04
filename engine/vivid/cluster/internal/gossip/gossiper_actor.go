@@ -1,6 +1,7 @@
 package gossip
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
@@ -183,7 +184,7 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 	var seenNum int
 	for _, member := range g.state.gossip.Members {
 		switch member.Status {
-		case GossipNodeStatus_GNS_Removed, GossipNodeStatus_GNS_Unreachable:
+		case GossipNodeStatus_GNS_Removed, GossipNodeStatus_GNS_Unreachable, GossipNodeStatus_GNS_Down:
 			continue
 		}
 		seenNum++
@@ -224,13 +225,13 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 				changed = true
 				member.Status = GossipNodeStatus_GNS_Exit
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "leaving -> exit"))
-			case GossipNodeStatus_GNS_Exit:
+			case GossipNodeStatus_GNS_Exit, GossipNodeStatus_GNS_Down:
 				changed = true
 				g.state.gossip.Members = append(g.state.gossip.Members[:i], g.state.gossip.Members[i+1:]...)
 				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)
 				// 移除故障检测器
 				delete(g.afd, member.Id.Ref.PhysicalAddress)
-				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "exit, remove from gossip"))
+				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", fmt.Sprintf("%s, remove from gossip", member.Status.String())))
 			case GossipNodeStatus_GNS_Unreachable:
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "alive -> unreachable"))
 			case GossipNodeStatus_GNS_Reachable:
@@ -299,16 +300,20 @@ func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
 
 			// 检查节点状态
 			ctx.ExecLocalFunc(ctx.Ref(), func(ctx vivid.ActorContext) {
-				afd := g.afd[f.Member.Id.Ref.PhysicalAddress]
 				for _, member := range g.state.gossip.Members {
 					if member.Id.PhysicalAddressEqual(f.Member.Id) {
+						afd := g.afd[f.Member.Id.Ref.PhysicalAddress]
+						available := afd.IsAvailable() && afd.IsMonitoring()
 						var nextStatus = member.Status
-						if !afd.IsAvailable() && member.Status == GossipNodeStatus_GNS_Alive {
+						if !available && member.Status == GossipNodeStatus_GNS_Alive {
 							nextStatus = GossipNodeStatus_GNS_Unreachable
 							g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
-						} else if afd.IsAvailable() && member.Status == GossipNodeStatus_GNS_Unreachable {
+						} else if available && member.Status == GossipNodeStatus_GNS_Unreachable {
 							nextStatus = GossipNodeStatus_GNS_Reachable
 							g.logger.Info("cluster", log.String("event", "node reachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
+						} else if !available && member.Status == GossipNodeStatus_GNS_Unreachable && afd.LastHeartbeat().Before(time.Now().Add(-10*time.Minute)) {
+							nextStatus = GossipNodeStatus_GNS_Down
+							g.logger.Info("cluster", log.String("event", "node unreachable timeout"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
 						}
 
 						if nextStatus != member.Status {

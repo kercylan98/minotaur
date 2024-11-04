@@ -78,6 +78,7 @@ enum GossipNodeStatus {
   GNS_Removed = 4; // 移除
   GNS_Unreachable = 5; // 不可达
   GNS_Reachable = 6; // 可达（网络恢复期间缓冲）
+  GNS_Down = 7; // 宕机
 }
 
 // 矢量时钟结构
