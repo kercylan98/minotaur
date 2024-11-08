@@ -190,11 +190,6 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 
 		ctx.Tell(ctx.Parent(), &GossipActorClusterExitingMessage{})
 		return
-	case GossipNodeStatus_GNS_Exited:
-		g.logger.Info("cluster", log.String("status", "exited"))
-		ctx.Tell(ctx.Parent(), &GossipActorClusterExitedMessage{})
-		ctx.Terminate(ctx.Ref(), false)
-		return
 	}
 
 	// 检查是否已收敛
@@ -213,9 +208,6 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 
 func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorContext) {
 	g.logger.Info("cluster", log.String("status", "converged"))
-	for _, member := range g.state.gossip.Members {
-		g.logger.Debug("cluster", log.String("member", member.Id.Ref.URL().String()), log.String("status", member.Status.String()))
-	}
 
 	// 确定领导者
 	before := g.leader
@@ -267,6 +259,16 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 			// 传播新的 Gossip 状态
 			g.state.GossipUpdate()
 		}
+	}
+
+	for _, member := range g.state.gossip.Members {
+		g.logger.Debug("cluster", log.String("member", member.Id.Ref.URL().String()), log.String("status", member.Status.String()))
+	}
+
+	if g.state.node.Status == GossipNodeStatus_GNS_Exited {
+		g.logger.Info("cluster", log.String("status", "exited"))
+		ctx.Tell(ctx.Parent(), &GossipActorClusterExitedMessage{})
+		ctx.Terminate(ctx.Ref(), false)
 	}
 }
 
