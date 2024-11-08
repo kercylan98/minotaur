@@ -294,6 +294,7 @@ func (ctx *actorContext) Parent() ActorRef {
 
 func (ctx *actorContext) ReportAbnormal(reason Message) {
 	if ctx.status.Load() != actorStatusAlive {
+		ctx.system.Logger().Error("ActorSystem", log.String("event", "actor abnormal"), log.String("actor", ctx.ref.GetLogicalAddress()), log.Err(reason.(error)))
 		return
 	}
 
