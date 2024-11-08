@@ -14,6 +14,9 @@ import (
 )
 
 func NewGossiperActor(seedNodes []prc.PhysicalAddress) *GossiperActor {
+	if len(seedNodes) == 0 {
+		panic(fmt.Errorf("seed nodes cannot be empty"))
+	}
 	return &GossiperActor{
 		seedNodes: seedNodes,
 		hashRing:  NewHashRing(5),
@@ -52,6 +55,8 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 		g.onGossipActorLeaveClusterMessage(ctx)
 	case *GossipActorPingPongMessage:
 		g.onGossipActorPingPongMessage(ctx, m)
+	case *vivid.OnTerminated:
+		fmt.Println(111)
 	}
 }
 
@@ -174,9 +179,21 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 	g.state.MergeGossip(m.Gossiped)
 	g.state.MarkSeen(g.state.node.Id)
 
-	if g.state.node.Status == GossipNodeStatus_GNS_Exit {
-		g.logger.Info("cluster", log.String("status", "exit"))
-		ctx.Terminate(ctx.Ref(), true)
+	switch g.state.node.Status {
+	case GossipNodeStatus_GNS_Exiting:
+		// 自身节点清理
+		g.state.node.Status = GossipNodeStatus_GNS_Exited
+
+		g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+		g.state.Increment()
+		g.state.GossipUpdate()
+
+		ctx.Tell(ctx.Parent(), &GossipActorClusterExitingMessage{})
+		return
+	case GossipNodeStatus_GNS_Exited:
+		g.logger.Info("cluster", log.String("status", "exited"))
+		ctx.Tell(ctx.Parent(), &GossipActorClusterExitedMessage{})
+		ctx.Terminate(ctx.Ref(), false)
 		return
 	}
 
@@ -221,11 +238,11 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 				member.Status = GossipNodeStatus_GNS_Alive
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "joining -> alive"))
 			case GossipNodeStatus_GNS_Leaving:
-				// 确认节点离开行为已经执行完毕后标记为 Exit
+				// 切换至退出中状态，开始善后处理
 				changed = true
-				member.Status = GossipNodeStatus_GNS_Exit
-				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "leaving -> exit"))
-			case GossipNodeStatus_GNS_Exit, GossipNodeStatus_GNS_Down:
+				member.Status = GossipNodeStatus_GNS_Exiting
+				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "leaving -> exiting"))
+			case GossipNodeStatus_GNS_Exited, GossipNodeStatus_GNS_Down:
 				changed = true
 				g.state.gossip.Members = append(g.state.gossip.Members[:i], g.state.gossip.Members[i+1:]...)
 				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)

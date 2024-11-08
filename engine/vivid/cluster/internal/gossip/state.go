@@ -160,7 +160,7 @@ func (s *State) GossipUpdate() {
 		}
 
 		switch member.Status {
-		case GossipNodeStatus_GNS_Joining, GossipNodeStatus_GNS_Alive, GossipNodeStatus_GNS_Leaving, GossipNodeStatus_GNS_Exit:
+		case GossipNodeStatus_GNS_Joining, GossipNodeStatus_GNS_Alive, GossipNodeStatus_GNS_Leaving, GossipNodeStatus_GNS_Exiting, GossipNodeStatus_GNS_Exited:
 			targets = append(targets, member)
 		}
 	}

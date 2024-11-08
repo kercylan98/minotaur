@@ -1,0 +1,20 @@
+package cluster_test
+
+import (
+	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/vivid/cluster/v2"
+	"testing"
+	"time"
+)
+
+func TestActorSystem(t *testing.T) {
+	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"})
+	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"})
+
+	_ = system1
+	_ = system2
+
+	time.Sleep(time.Second * 3)
+
+	system2.Shutdown(true)
+}
