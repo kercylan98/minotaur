@@ -187,7 +187,7 @@ func (s *Scheduler) task(name string, after, interval time.Duration, expr *crone
 			})
 		}
 	}
-	s.wheel.ScheduleFunc(task, caller)
+	task.timer = s.wheel.ScheduleFunc(task, caller)
 }
 
 func (s *Scheduler) call(name string, function any, args ...any) {

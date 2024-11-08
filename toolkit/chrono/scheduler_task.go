@@ -78,7 +78,7 @@ func (t *schedulerTask) close() {
 		return
 	}
 	t.kill = true
-	if t.total <= 0 || t.trigger < t.total {
+	if t.timer != nil && (t.total <= 0 || t.trigger < t.total) {
 		t.timer.Stop()
 	}
 }
