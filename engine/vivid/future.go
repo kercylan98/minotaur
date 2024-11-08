@@ -8,6 +8,7 @@ import (
 
 var futureAskTypes []func(ctx any) *ActorSystem
 
+// RegisterFutureAskType 注册一个 FutureAsk 类型，当通过 FutureAsk 发送消息时，如果 ctx 是该类型，将会使用该类型的 ActorSystem
 func RegisterFutureAskType(handler func(ctx any) *ActorSystem) {
 	futureAskTypes = append(futureAskTypes, handler)
 }
