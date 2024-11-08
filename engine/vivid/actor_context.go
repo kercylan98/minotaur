@@ -116,6 +116,20 @@ type actorContext struct {
 	slowProcessDuration        time.Duration                   // 慢处理时长
 	slowProcessReceivers       []ActorRef                      // 慢处理消息接收人
 	subscriptions              map[uint64]Subscription         // 订阅列表，用于释放
+	stash                      []Message                       // 暂存消息
+	rawMessage                 Message                         // 解包前的原始消息
+	mailbox                    mailbox.Mailbox                 // Actor 自身的邮箱
+}
+
+func (ctx *actorContext) Stash() {
+	ctx.stash = append(ctx.stash, ctx.rawMessage)
+}
+
+func (ctx *actorContext) PopStash() {
+	rawMessage := ctx.stash[0]
+	ctx.stash = ctx.stash[1:]
+
+	ctx.mailbox.DeliveryUserMessage(rawMessage)
 }
 
 func (ctx *actorContext) ExecLocalFunc(target ActorRef, function func(ctx ActorContext)) {
@@ -465,6 +479,8 @@ func (ctx *actorContext) slowProcess() func() {
 }
 
 func (ctx *actorContext) ProcessUserMessage(message prc.Message) {
+	ctx.rawMessage = message
+
 	sender, receiver, message := prc.UnwrapMessage(message)
 	if ctx.status.Load() >= actorStatusTerminating {
 		ctx.deliveryUserMessage(ctx.system.abyssRef, receiver, sender, nil, message)
@@ -580,6 +596,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 
 	// 初始化分发器及邮箱
 	mb := descriptor.mailboxProvider.Provide(descriptor.dispatcherProvider.Provide(), ctx)
+	ctx.mailbox = mb
 
 	// 创建进程
 	process := newActorProcess(mb)

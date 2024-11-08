@@ -62,6 +62,12 @@ type mixinWorker interface {
 
 	// LogicalAddress 返回当前 Actor 的逻辑地址
 	LogicalAddress() prc.LogicalAddress
+
+	// Stash 暂存当前 Actor 的消息，当暂存消息后续被消费时，通过 PopStash 弹出后可能导致重复消费
+	Stash()
+
+	// PopStash 弹出一条暂存的消息到待处理的消息队列中
+	PopStash()
 }
 
 // mixinDeliver 是一个混入类型接口，它定义了作为 Actor 消息发送者需要满足的接口。

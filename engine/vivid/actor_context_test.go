@@ -9,6 +9,40 @@ import (
 	"time"
 )
 
+func TestActorContext_Stash(t *testing.T) {
+	system := vivid.NewActorSystem()
+	wait := new(sync.WaitGroup)
+	wait.Add(1)
+
+	ref := system.ActorOfF(func() vivid.Actor {
+		var stashed = false
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch m := ctx.Message().(type) {
+			case int:
+				switch m {
+				case 1:
+					if stashed {
+						t.Log(m)
+						wait.Done()
+					} else {
+						stashed = true
+						ctx.Stash()
+					}
+				case 2:
+					t.Log(m)
+					ctx.PopStash()
+				}
+			}
+		})
+	})
+
+	system.Tell(ref, 1)
+	system.Tell(ref, 2)
+
+	wait.Wait()
+	system.Shutdown(true)
+}
+
 func TestActorContext_OnLaunchRepayParent(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
