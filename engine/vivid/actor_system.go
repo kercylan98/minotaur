@@ -187,6 +187,10 @@ func (sys *ActorSystem) Signal(handler func(system *ActorSystem, signal os.Signa
 // Shutdown 关闭 Actor 系统。
 //   - 该函数会等待所有 Actor 终止后再关闭 Actor 系统。
 func (sys *ActorSystem) Shutdown(gracefully bool) {
+	for _, hook := range sys.config.shutdownBeforeHooks {
+		hook()
+	}
+
 	sys.guard.Terminate(sys.guard.ref, gracefully)
 	<-sys.closed
 	sys.shared.Dead()
