@@ -31,6 +31,7 @@ type GossiperActor struct {
 	leader       *Node                                               // 集群当前确定的领导者
 	hashRing     *HashRing                                           // 虚拟节点哈希环
 	afd          map[prc.PhysicalAddress]*phi.AccrualFailureDetector // 故障检测器
+	converged    bool                                                // 集群是否已收敛
 }
 
 func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
@@ -55,9 +56,16 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 		g.onGossipActorLeaveClusterMessage(ctx)
 	case *GossipActorPingPongMessage:
 		g.onGossipActorPingPongMessage(ctx, m)
-	case *vivid.OnTerminated:
-		fmt.Println(111)
+	case *GossipLeaderMessage:
+		g.onGossipLeaderMessage(ctx, m)
 	}
+}
+
+func (g *GossiperActor) onGossipLeaderMessage(ctx vivid.ActorContext, m *GossipLeaderMessage) {
+	//switch m := m.Operation.(type) {
+	//case *GossipLeaderMessage_GetLongestLastingNode_:
+	//	g.onGossipLeaderGetLongestLastingNode(ctx, m.GetLongestLastingNode)
+	//}
 }
 
 func (g *GossiperActor) onLaunch(ctx vivid.ActorContext) {
@@ -207,16 +215,25 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 }
 
 func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorContext) {
-	g.logger.Info("cluster", log.String("status", "converged"))
+	ctx.PopStash()
+	g.converged = true
+	if g.state.node.LaunchTimestampMillis == 0 {
+		g.state.node.LaunchTimestampMillis = time.Now().UnixMilli()
+	}
+	g.logger.Info("cluster", log.String("status", "converged"), log.Bool("info", g.converged))
 
 	// 确定领导者
 	before := g.leader
 	g.leader = g.state.CalcLeaderNode()
 	if before != nil {
+		// 领导者变更
 		if g.leader.Id.Ref.PhysicalAddress != before.Id.Ref.PhysicalAddress {
+			ctx.Tell(ctx.Parent(), g.leader)
 			g.logger.Info("cluster", log.String("info", "LeaderChange"), log.String("leader", g.leader.Id.Ref.URL().String()), log.String("before", before.Id.Ref.URL().String()))
 		}
 	} else {
+		// 领导者初始化
+		ctx.Tell(ctx.Parent(), g.leader)
 		g.logger.Info("cluster", log.String("info", "LeaderInit"), log.String("leader", g.leader.Id.Ref.URL().String()))
 	}
 

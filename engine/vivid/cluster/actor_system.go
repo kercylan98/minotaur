@@ -1,187 +1,60 @@
 package cluster
 
 import (
-	"fmt"
-	"github.com/hashicorp/memberlist"
+	"context"
+	"errors"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	"github.com/kercylan98/minotaur/engine/vivid/cluster/internal/cm"
-	"github.com/kercylan98/minotaur/toolkit/charproc"
-	"github.com/kercylan98/minotaur/toolkit/collection"
-	"github.com/kercylan98/minotaur/toolkit/convert"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"google.golang.org/protobuf/proto"
-	"net"
-	"time"
 )
 
 func init() {
 	vivid.RegisterFutureAskType(func(ctx any) *vivid.ActorSystem {
-		if as, ok := ctx.(*ActorSystem); ok {
-			return as.ActorSystem
-		}
-		return nil
+		as, _ := ctx.(*ActorSystem)
+		return as.ActorSystem
 	})
 }
 
-func NewActorSystem(sharedAddress, bindAddress prc.PhysicalAddress, configurator ...ActorSystemConfigurator) *ActorSystem {
+func NewActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress, configurator ...ActorSystemConfigurator) *ActorSystem {
 	config := newActorSystemConfiguration()
 	for _, c := range configurator {
 		c.Configure(config)
 	}
-	if config.clusterName == charproc.None {
-		config.clusterName = config.name
-	}
 
 	system := &ActorSystem{
-		config:      config,
-		bindAddress: bindAddress,
-		metadata:    new(cm.Metadata),
-		state:       newActorSystemState(),
+		config: config,
 	}
 
-	config.WithShared(sharedAddress)
-	config.WithShutdownAfterHooks(system.onShutdown)
+	config.WithShared(address)
+	config.WithShutdownBeforeHooks(system.onShutdown)
 
-	nodeEvent := newActorSystemEvent(system)
-	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration, vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithSubscriptionContactProviders(nodeEvent)
-	}))
-	system.metadata.LaunchAt = time.Now().UnixMilli()
-	system.metadata.Abilities = collection.ConvertMapValuesToBoolMap(config.abilities)
+	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration)
 
-	system.start(nodeEvent)
+	system.systemRef = system.ActorOfF(func() vivid.Actor {
+		return newActorSystemActor(system, seedNodes)
+	}, func(descriptor *vivid.ActorDescriptor) {
+		descriptor.WithName("cluster")
+	})
 
 	return system
 }
 
 type ActorSystem struct {
-	*vivid.ActorSystem // 如果单独使用，那么一切行为将越过集群
-	config             *ActorSystemConfiguration
-	metadata           *cm.Metadata
-	state              *actorSystemState
-	memberlist         *memberlist.Memberlist
-	bindAddress        prc.PhysicalAddress
-}
-
-// ClusterName 返回集群名称
-func (sys *ActorSystem) ClusterName() string {
-	return sys.config.clusterName
-}
-
-// Name 返回节点名称
-func (sys *ActorSystem) Name() string {
-	return sys.config.name
-}
-
-// JoinNodes 动态的尝试加入集群节点
-func (sys *ActorSystem) JoinNodes(addresses ...prc.PhysicalAddress) error {
-	_, err := sys.memberlist.Join(addresses)
-	return err
-}
-
-// ClusterRef 返回该集群的引用
-func (sys *ActorSystem) ClusterRef() vivid.ActorRef {
-	return sys.metadata.ProcessId
-}
-
-// findClusterNode 寻找符合条件的集群节点
-func (sys *ActorSystem) findClusterNode(ability string) vivid.ActorRef {
-	var mds []*cm.Metadata
-	for _, node := range sys.memberlist.Members() {
-		var md = new(cm.Metadata)
-
-		// false: not match cluster generate condition
-		if err := proto.Unmarshal(node.Meta, md); err != nil {
-			sys.Logger().Error("ActorSystemCluster", log.String("metadata error", node.Name), log.String("address", node.Addr.String()), log.Err(err))
-			continue
-		} else if !md.Abilities[ability] {
-			continue
-		}
-
-		mds = append(mds, md)
-	}
-
-	if len(mds) == 0 {
-		return nil
-	}
-
-	collection.Shuffle(&mds)
-	return mds[0].ProcessId
-}
-
-// ActorOfC 以特定身份获取集群中的对应能力 Actor 的引用
-func (sys *ActorSystem) ActorOfC(identity, ability string) vivid.ActorRef {
-	nodeRef := sys.findClusterNode(ability)
-	if nodeRef == nil {
-		return sys.ActorSystem.Abyss()
-	}
-
-	msg := &cm.ActorOf{
-		Identity: identity,
-		Ability:  ability,
-	}
-	actorRef, err := vivid.FutureAsk[vivid.ActorRef](sys, nodeRef, msg).Result()
-	if err != nil {
-		sys.Logger().Error("ActorSystemCluster", log.Err(err))
-		return sys.ActorSystem.Abyss()
-	}
-
-	return actorRef
-}
-
-func (sys *ActorSystem) start(nodeEvent *actorSystemEvent) {
-	bindAddr, bindPort, err := net.SplitHostPort(sys.bindAddress)
-	if err != nil {
-		panic(err)
-	}
-
-	sys.metadata.ProcessId = sys.ActorOfF(func() vivid.Actor {
-		return newDrillmasterActor(sys)
-	}, func(descriptor *vivid.ActorDescriptor) {
-		descriptor.WithName("cluster")
-	})
-
-	memberlistConfig := memberlist.DefaultLocalConfig()
-	if sys.config.name != charproc.None {
-		memberlistConfig.Name = sys.config.name
-	}
-	memberlistConfig.BindAddr, memberlistConfig.BindPort = bindAddr, convert.StringToInt(bindPort)
-	memberlistConfig.AdvertisePort = memberlistConfig.BindPort
-	if sys.config.advertiseAddr != charproc.None {
-		advertiseAddr, advertisePort, err := net.SplitHostPort(sys.config.advertiseAddr)
-		if err != nil {
-			panic(err)
-		}
-		memberlistConfig.AdvertiseAddr, memberlistConfig.AdvertisePort = advertiseAddr, convert.StringToInt(advertisePort)
-	}
-
-	memberlistConfig.Delegate = newActorSystemDelegate(sys)
-	memberlistConfig.Events = nodeEvent
-
-	list, err := memberlist.Create(memberlistConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	sys.memberlist = list
-	if len(sys.config.seedNodes) == 0 {
-		_, err = sys.memberlist.Join([]string{fmt.Sprintf("%s:%s", bindAddr, bindPort)})
-	} else {
-		_, err = sys.memberlist.Join(sys.config.seedNodes)
-	}
-
-	if err != nil {
-		panic(err)
-	}
+	*vivid.ActorSystem                           // 如果单独使用，那么一切行为将越过集群
+	config             *ActorSystemConfiguration // 集群配置
+	systemRef          vivid.ActorRef            // 集群 ActorSystem 的 Actor 引用
 }
 
 func (sys *ActorSystem) onShutdown() {
-	var err error
-	if err = sys.memberlist.Leave(15 * time.Second); err != nil {
-		panic(err)
-	}
-	if err = sys.memberlist.Shutdown(); err != nil {
-		panic(err)
+	sys.Logger().Info("cluster", log.String("status", "shutdown in progress"))
+
+	ctx, cancel := context.WithTimeout(context.Background(), sys.config.shutdownTimeout)
+	sys.Tell(sys.systemRef, &actorSystemActorExitMessage{cancel: cancel})
+	<-ctx.Done()
+
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		sys.Logger().Error("cluster", log.String("status", "shutdown timeout"))
+	} else {
+		sys.Logger().Info("cluster", log.String("status", "shutdown success"))
 	}
 }

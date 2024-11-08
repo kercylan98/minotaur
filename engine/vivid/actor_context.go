@@ -126,6 +126,9 @@ func (ctx *actorContext) Stash() {
 }
 
 func (ctx *actorContext) PopStash() {
+	if len(ctx.stash) == 0 {
+		return
+	}
 	rawMessage := ctx.stash[0]
 	ctx.stash = ctx.stash[1:]
 

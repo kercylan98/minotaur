@@ -42,6 +42,7 @@ type State struct {
 
 // Increment VectorClock 自增 1
 func (s *State) Increment() {
+	s.actor.converged = false
 	s.node.Vc.Increment(s.ctx.Ref().PhysicalAddress)
 }
 

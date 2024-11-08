@@ -38,6 +38,7 @@ message Node {
   NodeId id = 1; // 节点 ID
   GossipNodeStatus status = 2; // 节点状态
   VectorClock vc = 3; // 矢量时钟
+  int64 launch_timestamp_millis = 4; // 节点启动时间戳
 }
 
 // 节点 ID
@@ -99,4 +100,14 @@ enum VectorClockOrdering {
   VCO_After = 1; // 之后
   VCO_Before = 2; // 之前
   VCO_Same = 3; // 相同
+}
+
+// 集群中需要由领导者处理的消息
+message GossipLeaderMessage {
+  oneof operation {
+    None none = 1;
+  }
+  
+  // 获取已经存在的最长时间节点
+  message None {}
 }

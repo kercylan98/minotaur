@@ -22,15 +22,18 @@ func newActorSystemActor(system *ActorSystem, seedNodes []prc.PhysicalAddress) *
 
 type actorSystemActor struct {
 	system    *ActorSystem
-	seedNodes []prc.PhysicalAddress
-	gossipRef vivid.ActorRef
-	exited    context.CancelFunc
+	seedNodes []prc.PhysicalAddress // 种子节点
+	gossipRef vivid.ActorRef        // gossip actor ref
+	exited    context.CancelFunc    // 退出信号
+	leaderRef vivid.ActorRef        // 集群当前的领导者引用
 }
 
 func (a *actorSystemActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *vivid.OnLaunch:
 		a.onLaunch(ctx)
+	case vivid.ActorRef:
+		a.onLeaderChanged(ctx, m)
 	case *actorSystemActorExitMessage:
 		a.onActorSystemActorExitMessage(ctx, m)
 	case *gossip.GossipActorClusterExitingMessage:
@@ -59,4 +62,8 @@ func (a *actorSystemActor) onGossipActorClusterExitingMessage(ctx vivid.ActorCon
 
 func (a *actorSystemActor) onGossipActorClusterExitedMessage(ctx vivid.ActorContext, m *gossip.GossipActorClusterExitedMessage) {
 	a.exited()
+}
+
+func (a *actorSystemActor) onLeaderChanged(ctx vivid.ActorContext, m vivid.ActorRef) {
+	a.leaderRef = m
 }
