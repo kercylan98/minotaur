@@ -10,7 +10,8 @@ import (
 )
 
 type (
-	ShutdownAfterHook func() // 在 ActorSystem 被关闭后将调用此回调
+	ShutdownBeforeHook func() // 在 ActorSystem 被关闭前将调用此回调
+	ShutdownAfterHook  func() // 在 ActorSystem 被关闭后将调用此回调
 )
 
 // NewActorSystemConfiguration 创建 ActorSystemConfiguration 默认实例
@@ -35,6 +36,7 @@ type ActorSystemConfiguration struct {
 	sharedCodec                  codec.Codec                   // 网络共享编解码器
 	accidentTrace                bool                          // 事故堆栈追踪
 	abyss                        AbyssProcess                  // 深渊进程
+	shutdownBeforeHooks          []ShutdownBeforeHook          // ActorSystem 关闭前将调用此回调
 	shutdownAfterHooks           []ShutdownAfterHook           // ActorSystem 关闭后将调用此回调
 	grpcServerHooks              []func(server *grpc.Server)   // GRPC 服务器钩子
 	subscriptionContactProviders []SubscriptionContactProvider // 订阅联系人提供者
@@ -49,6 +51,12 @@ func (c *ActorSystemConfiguration) WithSubscriptionContactProviders(providers ..
 // WithGRPCServerHooks 设置 GRPC 服务器钩子，该方法将在创建 GRPC 服务器后调用
 func (c *ActorSystemConfiguration) WithGRPCServerHooks(hooks ...func(server *grpc.Server)) *ActorSystemConfiguration {
 	c.grpcServerHooks = append(c.grpcServerHooks, hooks...)
+	return c
+}
+
+// WithShutdownBeforeHooks 设置 ActorSystem 关闭前将调用此回调
+func (c *ActorSystemConfiguration) WithShutdownBeforeHooks(hooks ...ShutdownBeforeHook) *ActorSystemConfiguration {
+	c.shutdownBeforeHooks = append(c.shutdownBeforeHooks, hooks...)
 	return c
 }
 
