@@ -152,7 +152,7 @@ func (c *sharedStreamProcess) send() {
 				c.shared.config.transportErrorHandler(c.address, err)
 			}
 			c.lock.Lock()
-			c.batches = nil
+			c.batches = append(messages, c.batches...)
 			c.lock.Unlock()
 			break
 		}
