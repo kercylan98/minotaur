@@ -13,7 +13,7 @@ message SharedMessage {
   oneof message_type {
     Handshake handshake = 1; // 握手
     Farewell farewell = 2; // 告别
-    DeliveryMessage delivery_message = 3; // 传递单条消息
+    bytes delivery_message = 3; // 传递单条消息
     BatchDeliveryMessage batch_delivery_message = 4; // 传递多条消息
   }
 }
@@ -35,7 +35,8 @@ message DeliveryMessage {
 }
 
 message BatchDeliveryMessage {
-  repeated DeliveryMessage messages = 1;
+//  repeated DeliveryMessage messages = 1;
+  repeated bytes messages = 1;
 }
 
 message SharedErrorMessage {

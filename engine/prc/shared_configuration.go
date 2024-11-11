@@ -20,23 +20,31 @@ type TransportErrorHandler = func(targetAddress string, err error)
 // newSharedConfiguration 创建一个资源控制器的共享配置
 func newSharedConfiguration() *SharedConfiguration {
 	return &SharedConfiguration{
-		codec:                   codec.NewProtobuf(),
-		consecutiveRestartLimit: 10,
+		codec:                             codec.NewProtobuf(),
+		consecutiveRestartLimit:           10,
+		disconnectionMessageRetentionTime: time.Minute,
 	}
 }
 
 // SharedConfiguration 共享配置
 type SharedConfiguration struct {
-	runtimeErrorHandler     ErrorPolicyDecisionHandler       // 运行时错误处理器，当处理器不存在时将会引发 panic
-	codec                   codec.Codec                      // 编解码器
-	sharedStartHook         SharedStartHook                  // 当开启共享时的钩子
-	consecutiveRestartLimit int                              // 连续重启限制
-	restartInterval         func(count int) time.Duration    // 重启间隔
-	unknownReceiverRedirect func(message Message) *ProcessId // 未知接收者重定向
-	grpcServerHooks         []GRPCLaunchBeforeHook           // GRPC 服务器钩子
-	shareOpenedHooks        []ShareOpenedHook                // 共享连接打开时钩子
-	shareClosedHooks        []SharedClosedHook               // 共享连接关闭时钩子
-	transportErrorHandler   TransportErrorHandler            // 传输错误处理器
+	runtimeErrorHandler               ErrorPolicyDecisionHandler       // 运行时错误处理器，当处理器不存在时将会引发 panic
+	codec                             codec.Codec                      // 编解码器
+	sharedStartHook                   SharedStartHook                  // 当开启共享时的钩子
+	consecutiveRestartLimit           int                              // 连续重启限制
+	restartInterval                   func(count int) time.Duration    // 重启间隔
+	unknownReceiverRedirect           func(message Message) *ProcessId // 未知接收者重定向
+	grpcServerHooks                   []GRPCLaunchBeforeHook           // GRPC 服务器钩子
+	shareOpenedHooks                  []ShareOpenedHook                // 共享连接打开时钩子
+	shareClosedHooks                  []SharedClosedHook               // 共享连接关闭时钩子
+	transportErrorHandler             TransportErrorHandler            // 传输错误处理器
+	disconnectionMessageRetentionTime time.Duration                    // 断开连接后，在指定的时间内保证消息不丢失
+}
+
+// WithDisconnectionMessageRetentionTime 设置断开连接后，在指定的时间内保证消息不丢失
+func (c *SharedConfiguration) WithDisconnectionMessageRetentionTime(duration time.Duration) *SharedConfiguration {
+	c.disconnectionMessageRetentionTime = duration
+	return c
 }
 
 // WithTransportErrorHandler 设置传输错误处理器

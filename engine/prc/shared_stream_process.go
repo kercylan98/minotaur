@@ -24,7 +24,7 @@ type sharedStreamProcess struct {
 	stream  sharedStream
 	shared  *Shared
 	address PhysicalAddress
-	batches []*DeliveryMessage
+	batches [][]byte
 	lock    sync.RWMutex
 	state   atomic.Uint32
 }
@@ -74,9 +74,15 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 		}
 	}
 
-	// 入列
+	// 持久化网络消息，避免消息丢失
+	_, data, err := c.shared.config.codec.Encode(dm)
+	if err != nil {
+		panic(err)
+	}
+
+	// 消息入列
 	c.lock.Lock()
-	c.batches = append(c.batches, dm)
+	c.batches = append(c.batches, data)
 	c.lock.Unlock()
 
 	c.activation()
@@ -113,7 +119,7 @@ func (c *sharedStreamProcess) send() {
 	for {
 		c.lock.Lock()
 		n := len(c.batches)
-		var messages []*DeliveryMessage
+		var messages [][]byte
 		if n < sharedStreamBatchLimit {
 			messages = c.batches
 			c.batches = nil

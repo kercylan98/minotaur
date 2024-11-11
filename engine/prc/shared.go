@@ -9,8 +9,10 @@ import (
 	"github.com/puzpuzpuz/xsync/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -23,12 +25,23 @@ const (
 	sharedStateDead
 )
 
+var (
+	deliveryMessageTypeName     string
+	deliveryMessageTypeNameInit sync.Once
+)
+
 // NewShared 创建一个资源控制器的共享
 func NewShared(rc *ResourceController, configurator ...SharedConfigurator) *Shared {
+	deliveryMessageTypeNameInit.Do(func() {
+		deliveryMessageTypeName = string(proto.MessageName(new(DeliveryMessage)))
+	})
+
 	s := &Shared{
-		config:  newSharedConfiguration(),
-		rc:      rc,
-		streams: xsync.NewMapOf[PhysicalAddress, sharedStream](),
+		config:               newSharedConfiguration(),
+		rc:                   rc,
+		streams:              xsync.NewMapOf[PhysicalAddress, sharedStream](),
+		streamArchives:       make(map[PhysicalAddress][][]byte),
+		streamArchiveTimeout: make(map[PhysicalAddress]*time.Timer),
 	}
 
 	for _, c := range configurator {
@@ -41,14 +54,17 @@ func NewShared(rc *ResourceController, configurator ...SharedConfigurator) *Shar
 
 // Shared 是用于对资源控制器进行网络共享的数据结构，它任需要主动的向特定已知的资源管理器发起交互。
 type Shared struct {
-	config       *SharedConfiguration
-	streamServer *sharedServer
-	rc           *ResourceController // 共享的资源控制器
-	grpc         *grpc.Server
-	streams      *xsync.MapOf[PhysicalAddress, sharedStream]
-	state        atomic.Uint32
-	restartCount int
-	restartTimer atomic.Pointer[time.Timer]
+	config               *SharedConfiguration
+	streamServer         *sharedServer
+	rc                   *ResourceController // 共享的资源控制器
+	grpc                 *grpc.Server
+	streams              *xsync.MapOf[PhysicalAddress, sharedStream]
+	state                atomic.Uint32
+	restartCount         int
+	restartTimer         atomic.Pointer[time.Timer]
+	streamArchiveLock    sync.Mutex
+	streamArchives       map[PhysicalAddress][][]byte    // stream 关闭期间尚未发送的数据，避免数据丢失
+	streamArchiveTimeout map[PhysicalAddress]*time.Timer // stream 关闭期间尚未发送的数据的释放定时器
 }
 
 // GetResourceController 获取资源控制器
@@ -237,6 +253,18 @@ func (s *Shared) runtimeError(err error) {
 }
 
 func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err error) {
+	// 加载未送达消息
+	s.streamArchiveLock.Lock()
+	messages := s.streamArchives[address]
+	timer, exist := s.streamArchiveTimeout[address]
+	if exist {
+		timer.Stop()
+	}
+	delete(s.streamArchives, address)
+	delete(s.streamArchiveTimeout, address)
+	s.streamArchiveLock.Unlock()
+	stream.LoadArchives(messages)
+
 	s.attachStream(address, stream)
 	for _, hook := range s.config.shareOpenedHooks {
 		hook.OnShareOpened(address)
@@ -272,7 +300,14 @@ func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err er
 	}
 }
 
-func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress, m *DeliveryMessage) {
+func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress, sdm []byte) {
+	var dm, err = s.config.codec.Decode(deliveryMessageTypeName, sdm)
+	if err != nil {
+		panic(err)
+	}
+
+	var m = dm.(*DeliveryMessage)
+
 	message, err := s.config.codec.Decode(m.MessageType, m.MessageData)
 	if err != nil {
 		panic(err)

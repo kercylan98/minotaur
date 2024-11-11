@@ -2,6 +2,7 @@ package prc
 
 import (
 	"google.golang.org/grpc"
+	"time"
 )
 
 type sharedStream interface {
@@ -9,6 +10,7 @@ type sharedStream interface {
 	Send(*SharedMessage) error
 	Recv() (*SharedMessage, error)
 	Close()
+	LoadArchives(messages [][]byte)
 }
 
 func newClientStream(address PhysicalAddress, shared *Shared, stream Shared_StreamHandlerServer) *clientStream {
@@ -42,7 +44,28 @@ func (c *clientStream) Recv() (*SharedMessage, error) {
 }
 
 func (c *clientStream) Close() {
-	return
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if len(c.batches) > 0 {
+		c.shared.streamArchiveLock.Lock()
+		c.shared.streamArchives[c.address] = c.batches
+		c.shared.streamArchiveTimeout[c.address] = time.AfterFunc(c.shared.config.disconnectionMessageRetentionTime, func() {
+			c.shared.streamArchiveLock.Lock()
+			delete(c.shared.streamArchives, c.address)
+			delete(c.shared.streamArchiveTimeout, c.address)
+			c.shared.streamArchiveLock.Unlock()
+		})
+		c.shared.streamArchiveLock.Unlock()
+	}
+}
+
+func (c *clientStream) LoadArchives(messages [][]byte) {
+	if len(messages) == 0 {
+		return
+	}
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.batches = append(messages, c.batches...)
 }
 
 type serverStream struct {
@@ -62,4 +85,27 @@ func (s *serverStream) Recv() (*SharedMessage, error) {
 func (s *serverStream) Close() {
 	_ = s.stream.CloseSend()
 	_ = s.cc.Close()
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if len(s.batches) > 0 {
+		s.shared.streamArchiveLock.Lock()
+		s.shared.streamArchives[s.address] = s.batches
+		s.shared.streamArchiveTimeout[s.address] = time.AfterFunc(s.shared.config.disconnectionMessageRetentionTime, func() {
+			s.shared.streamArchiveLock.Lock()
+			delete(s.shared.streamArchives, s.address)
+			delete(s.shared.streamArchiveTimeout, s.address)
+			s.shared.streamArchiveLock.Unlock()
+		})
+		s.shared.streamArchiveLock.Unlock()
+	}
+}
+
+func (s *serverStream) LoadArchives(messages [][]byte) {
+	if len(messages) == 0 {
+		return
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.batches = append(messages, s.batches...)
 }
