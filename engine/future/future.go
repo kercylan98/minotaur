@@ -139,10 +139,9 @@ func (f *futureProcess[M]) DeliveryUserMessage(receiver, sender, forward *prc.Pr
 		return
 	}
 
-	switch m := message.(type) {
-	case error:
-		f.Close(m)
-	default:
+	if err, ok := message.(error); ok {
+		f.Close(err)
+	} else {
 		f.message = message
 		f.Close(nil)
 	}
