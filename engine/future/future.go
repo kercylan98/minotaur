@@ -141,6 +141,13 @@ func (f *futureProcess[M]) DeliveryUserMessage(receiver, sender, forward *prc.Pr
 
 	if err, ok := message.(error); ok {
 		f.Close(err)
+	} else if wrapper, ok := message.(*prc.MessageWrapper); ok {
+		if err, ok = wrapper.Message.(error); ok {
+			f.Close(err)
+		} else {
+			f.message = message
+			f.Close(nil)
+		}
 	} else {
 		f.message = message
 		f.Close(nil)
