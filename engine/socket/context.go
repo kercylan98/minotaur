@@ -1,5 +1,16 @@
 package socket
 
+// ContextEditor 是用于对 Socket 上下文进行编辑的接口，它将允许修改器提供的数据。
+type ContextEditor interface {
+	OnEdit(ctx *Context)
+}
+
+type FunctionalContextEditor func(ctx *Context)
+
+func (f FunctionalContextEditor) OnEdit(ctx *Context) {
+	f(ctx)
+}
+
 func newContext() *Context {
 	return &Context{}
 }
@@ -16,16 +27,10 @@ func (c *Context) Set(key string, value any) {
 }
 
 func (c *Context) Get(key string) any {
-	if c.data == nil {
-		return nil
-	}
 	return c.data[key]
 }
 
 func (c *Context) Has(key string) bool {
-	if c.data == nil {
-		return false
-	}
 	_, ok := c.data[key]
 	return ok
 }
@@ -39,6 +44,9 @@ func (c *Context) Delete(key string) {
 }
 
 func (c *Context) Keys() []string {
+	if len(c.data) == 0 {
+		return nil
+	}
 	keys := make([]string, 0, len(c.data))
 	for k := range c.data {
 		keys = append(keys, k)

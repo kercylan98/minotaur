@@ -9,7 +9,12 @@ type fiberSocketV2 interface {
 
 // ProduceFiberSocketV2 创建一个基于 Fiber 的 Socket，它使用 FiberSocket 作为 Fiber WebSocket 实现的接口，并使用 factory 来创建 Socket
 //   - 该函数仅支持基于 fiber v2 实现的 "github.com/gofiber/contrib/websocket" 生成的 WebSocket 连接
-func ProduceFiberSocketV2(factory Factory, socket fiberSocketV2, actor Actor) {
+func ProduceFiberSocketV2(factory Factory, socket fiberSocketV2, actor Actor, configurator ...FiberV2Configurator) {
+	config := NewFiberV2Configuration()
+	for _, c := range configurator {
+		c.Configure(config)
+	}
+
 	c := factory.Produce(actor, func(packet []byte, ctx any) error {
 		return socket.WriteMessage(ctx.(int), packet)
 	}, func() error {
@@ -18,6 +23,10 @@ func ProduceFiberSocketV2(factory Factory, socket fiberSocketV2, actor Actor) {
 		}
 		return socket.Close()
 	})
+
+	if config.contextInitializer != nil {
+		config.contextInitializer.OnEdit(c.Context())
+	}
 
 	defer c.Close()
 	for {

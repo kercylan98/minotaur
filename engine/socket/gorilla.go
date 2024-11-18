@@ -8,7 +8,12 @@ type gorillaSocket interface {
 }
 
 // ProduceGorillaSocket 创建一个基于 github.com/gorilla/websocket 的 Socket
-func ProduceGorillaSocket(factory Factory, socket gorillaSocket, actor Actor) {
+func ProduceGorillaSocket(factory Factory, socket gorillaSocket, actor Actor, configurator ...GorillaConfigurator) {
+	config := NewGorillaConfiguration()
+	for _, c := range configurator {
+		c.Configure(config)
+	}
+
 	c := factory.Produce(actor, func(packet []byte, ctx any) error {
 		return socket.WriteMessage(ctx.(int), packet)
 	}, func() error {
@@ -17,6 +22,10 @@ func ProduceGorillaSocket(factory Factory, socket gorillaSocket, actor Actor) {
 		}
 		return socket.Close()
 	})
+
+	if config.contextInitializer != nil {
+		config.contextInitializer.OnEdit(c.Context())
+	}
 
 	defer c.Close()
 	for {
