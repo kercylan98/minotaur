@@ -15,14 +15,19 @@ type (
 
 func newSocket(actor Actor, writer Writer, closer Closer) *socket {
 	return &socket{
-		Actor:  actor,
-		writer: writer,
-		closer: closer,
+		Actor:   actor,
+		writer:  writer,
+		closer:  closer,
+		context: newContext(),
 	}
 }
 
 // Socket 是维护支持 vivid.Actor 的网络长连接包装接口，该接口无需进行实现，它将由内部的 socket 实现并进行维护
 type Socket interface {
+	// Context 返回 Socket 的上下文，上下文可用于构建之处的数据传递，也可用于数据存储，它的本质是一个 map 结构
+	//  - 上下文本质上属于状态的一部分，将其作为消息传递可能会导致不可预见的影响
+	Context() *Context
+
 	// React 将数据包及其上下文通过 Actor.OnPacket 函数进行响应
 	React(packet []byte, ctx any)
 
@@ -70,6 +75,7 @@ type socket struct {
 	writerRef    vivid.ActorRef
 	err          error
 	readDeadline time.Duration
+	context      *Context
 }
 
 func (s *socket) OnReceive(ctx vivid.ActorContext) {
@@ -102,6 +108,10 @@ func (s *socket) OnReceive(ctx vivid.ActorContext) {
 		s.refreshReadDeadline()
 	}
 	s.Actor.OnReceive(ctx)
+}
+
+func (s *socket) Context() *Context {
+	return s.context
 }
 
 func (s *socket) refreshReadDeadline() {
