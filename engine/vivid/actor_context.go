@@ -16,6 +16,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"reflect"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -173,11 +174,31 @@ func (ctx *actorContext) Publish(topic Topic, message Message) {
 }
 
 func (ctx *actorContext) Watch(target ActorRef) {
+	// 子 Actor 本身销毁可被父 Actor 观测，监听会导致重复执行
+	if ctx.IsChild(target) {
+		return
+	}
 	ctx.deliverySystemMessage(target, target, ctx.ref, nil, &messages.Watch{})
 }
 
 func (ctx *actorContext) UnWatch(target ActorRef) {
 	ctx.deliverySystemMessage(target, target, ctx.ref, nil, &messages.Unwatch{})
+}
+
+func (ctx *actorContext) IsChild(target ActorRef) bool {
+	return ctx.parentRef != nil && target.Equal(ctx.parentRef)
+}
+
+func (ctx *actorContext) IsSub(target ActorRef) bool {
+	return strings.HasPrefix(ctx.ref.URL().Path, target.URL().Path)
+}
+
+func (ctx *actorContext) HasChild(target ActorRef) bool {
+	return ctx.children[target.GetLogicalAddress()] != nil
+}
+
+func (ctx *actorContext) HasSub(target ActorRef) bool {
+	return strings.HasPrefix(target.URL().Path, ctx.ref.URL().Path)
 }
 
 func (ctx *actorContext) onWatch(m *messages.Watch) {
@@ -691,8 +712,22 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 	if !ctx.status.CompareAndSwap(actorStatusAlive, actorStatusTerminating) {
 		return
 	}
+
+	// 如果子级 Actor Watch 了当前 Actor，应该提前通知，并移除监听列表
+	if len(ctx.watchers) > 0 {
+		watchMessage := &messages.Terminated{TerminatedProcess: ctx.ref}
+		for key, ref := range ctx.watchers {
+			if ctx.HasSub(ref) {
+				ctx.deliverySystemMessage(ref, ref, ctx.ref, nil, watchMessage)
+				delete(ctx.watchers, key)
+			}
+		}
+	}
+
+	// 销毁子 Actor
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 
+	// 销毁子 Actor
 	for _, ref := range ctx.children {
 		ctx.Terminate(ref, gracefully || ctx.gracefullyTerminated)
 	}

@@ -20,6 +20,19 @@ type mixinSpawner interface {
 	// Parent 获取当前 Actor 的父 Actor 引用
 	Parent() ActorRef
 
+	// IsChild 判断当前 Actor 是否是指定 Actor 的直接子 Actor
+	//   - 该函数仅支持检查 Actor 的直接父子关系，不支持检查 Actor 更深层级的关系，如果需要检查 Actor 更深层级的关系，请使用 IsSub
+	IsChild(target ActorRef) bool
+
+	// IsSub 判断当前 Actor 是否是指定 Actor 的子级 Actor
+	IsSub(target ActorRef) bool
+
+	// HasChild 判断当前 Actor 是否包含指定 Actor 的直接子 Actor
+	HasChild(target ActorRef) bool
+
+	// HasSub 判断当前 Actor 的子级 Actor 是否包含指定 Actor
+	HasSub(target ActorRef) bool
+
 	// Children 返回当前 Actor 的所有子 Actor 引用(ActorRef)。
 	Children() []ActorRef
 }
@@ -155,7 +168,8 @@ type mixinPersistence interface {
 
 // mixinWatcher 是一个混入类型接口，它定义了支持观察与被观察生命周期的 Actor 需要满足的接口。
 type mixinWatcher interface {
-	// Watch 监听特定 Actor 生命周期的结束
+	// Watch 监听特定 Actor 生命周期的结束，当被监听 Actor 停止时，当前 Actor 将会收到一个 OnTerminated 消息
+	//   - 当监听的目标是自己的父级或更外层级的 Actor 时，收到 OnTerminated 的时机并不代表其已经销毁，而是是其即将销毁。
 	Watch(target ActorRef)
 
 	// UnWatch 取消对特定 Actor 生命周期结束的监听
