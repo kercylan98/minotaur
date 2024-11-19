@@ -72,7 +72,9 @@ type mixinWorker interface {
 
 // mixinDeliver 是一个混入类型接口，它定义了作为 Actor 消息发送者需要满足的接口。
 type mixinDeliver interface {
-	// Tell 向指定的 Actor 引用(ActorRef) 发送消息。
+	// Tell 向指定的 Actor 引用(ActorRef) 发送消息，接收方对于发送人是不可知的。
+	//
+	// 在使用该类型发送时需明确注意接收方是对发送方不可寻址的，否则在 Reply 时会导致消息不可达，通常建议使用 Ask，但是在一些特殊的场景中为了避免不必要的消息干扰，可使用 Tell
 	//
 	// 特殊标注：
 	//  - MarkMessageImmutability 消息不可变性注意事项
