@@ -61,7 +61,7 @@ func (f *factory) Produce(actor Actor, writer Writer, closer Closer) Socket {
 }
 
 func (f *factory) onOnlineStatusChanged(ctx vivid.ActorContext, m *vivid.OnTerminated) {
-	f.onlineNum.Add(1)
+	f.onlineNum.Add(-1)
 }
 
 func (f *factory) onInitSocket(ctx vivid.ActorContext, m *socket) {
@@ -83,5 +83,5 @@ func (f *factory) onInitSocket(ctx vivid.ActorContext, m *socket) {
 	})
 	ctx.Watch(ref)
 	ctx.Reply(nil)
-	f.onlineNum.Add(-1)
+	f.onlineNum.Add(1)
 }
