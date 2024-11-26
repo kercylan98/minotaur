@@ -84,10 +84,13 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 		descriptor.WithName("sub")
 	})
 
+	system.components = newComponents(system)
+
 	return system
 }
 
 type ActorSystem struct {
+	*components
 	config       *ActorSystemConfiguration
 	rc           *prc.ResourceController
 	processId    *prc.ProcessId
@@ -201,6 +204,8 @@ func (sys *ActorSystem) Shutdown(gracefully bool) {
 	for _, hook := range sys.config.shutdownAfterHooks {
 		hook()
 	}
+
+	sys.components.onShutdown()
 }
 
 // Terminate 终止目标 Actor。

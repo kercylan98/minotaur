@@ -598,6 +598,8 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 		c.Configure(descriptor)
 	}
 
+	ctx.system.components.OnActorSpawnBefore(provider, descriptor)
+
 	// 名称及前缀初始化
 	if descriptor.name == charproc.None {
 		descriptor.name = convert.Uint64ToString(ctx.nextChildGuid())
