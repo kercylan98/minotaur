@@ -11,7 +11,7 @@ func TestComponent(t *testing.T) {
 	wait.Add(1)
 
 	system := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithComponents(vivid.FunctionalActorContextCaptureComponent(func(actorSystem *vivid.ActorSystem, ctx vivid.ActorContext) {
+		config.WithComponents(vivid.FunctionalActorContextCaptureComponent(func(ctx vivid.ActorContext) {
 			ctx.Tell(ctx.Ref(), 1)
 		}))
 	}))
