@@ -11,6 +11,7 @@ func newComponents(actorSystem *ActorSystem) *components {
 		tryBindComponent[ShutdownComponent](cs, &cs.shutdown, comp)
 		tryBindComponent[ActorDefineCaptureComponent](cs, &cs.actorDefineCapture, comp)
 		tryBindComponent[ActorContextCaptureComponent](cs, &cs.actorContextCapture, comp)
+		tryBindComponent[ActorReceiveMessageCaptureComponent](cs, &cs.actorReceiveMessageCapture, comp)
 	}
 
 	cs.onInitialize()
@@ -18,17 +19,30 @@ func newComponents(actorSystem *ActorSystem) *components {
 }
 
 type components struct {
-	actorSystem         *ActorSystem
-	shutdown            []ShutdownComponent
-	actorDefineCapture  []ActorDefineCaptureComponent
-	actorContextCapture []ActorContextCaptureComponent
+	actorSystem                *ActorSystem
+	shutdown                   []ShutdownComponent
+	actorDefineCapture         []ActorDefineCaptureComponent
+	actorContextCapture        []ActorContextCaptureComponent
+	actorReceiveMessageCapture []ActorReceiveMessageCaptureComponent
 }
 
 func tryBindComponent[C Component](components *components, slice *[]C, comp Component) {
 	if c, ok := comp.(C); ok {
 		*slice = append(*slice, c)
-		components.actorSystem.Logger().Info("component", log.String("register", reflect.TypeOf(new(C)).Elem().Name()), log.String("handler", reflect.TypeOf(comp).Name()))
+		components.actorSystem.Logger().Info("component", log.String("register", reflect.TypeOf(new(C)).Elem().Name()), log.String("handler", reflect.TypeOf(comp).Elem().Name()))
 	}
+}
+
+func (cs *components) onActorReceiveMessageCapture(context ActorContext) bool {
+	if cs == nil {
+		return false
+	}
+	for _, c := range cs.actorReceiveMessageCapture {
+		if c.OnActorReceiveMessageCapture(context) {
+			return true
+		}
+	}
+	return false
 }
 
 func (cs *components) onActorContextCapture(actorContext ActorContext) {
@@ -37,7 +51,7 @@ func (cs *components) onActorContextCapture(actorContext ActorContext) {
 	}
 	for _, c := range cs.actorContextCapture {
 		actorContext.ExecLocalFunc(actorContext.Ref(), func(ctx ActorContext) {
-			c.OnActorContextCapture(ctx.System(), ctx)
+			c.OnActorContextCapture(ctx)
 		})
 	}
 }

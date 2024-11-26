@@ -41,7 +41,7 @@ type ActorDefineCaptureComponent interface {
 	OnActorDefineCapture(actorSystem *ActorSystem, provider ActorProvider, descriptor *ActorDescriptor)
 }
 
-// FunctionalActorDefineCaptureComponent 是 ActorDefineCaptureComponent 的函数式组件
+// FunctionalActorDefineCaptureComponent 是 ActorDefineCaptureComponent 的函数式组件，但是它无法在 Component.OnInitialize 中执行任何工作
 type FunctionalActorDefineCaptureComponent func(actorSystem *ActorSystem, provider ActorProvider, descriptor *ActorDescriptor)
 
 func (f FunctionalActorDefineCaptureComponent) OnInitialize(actorSystem *ActorSystem) error {
@@ -53,6 +53,7 @@ func (f FunctionalActorDefineCaptureComponent) OnActorDefineCapture(actorSystem 
 }
 
 // ActorContextCaptureComponent 是用于在 Actor 创建完成且正常运行后对其 ActorContext 进行捕获的扩展接口
+//   - 该接口仅捕获首次次创建的 ActorContext，后续的重启等状态不会被触发
 type ActorContextCaptureComponent interface {
 	Component
 
@@ -60,15 +61,35 @@ type ActorContextCaptureComponent interface {
 	//
 	// 特殊标注：
 	//  - MarkNonStrictConcurrencySafety
-	OnActorContextCapture(actorSystem *ActorSystem, ctx ActorContext)
+	OnActorContextCapture(ctx ActorContext)
 }
 
-// FunctionalActorContextCaptureComponent 是 ActorContextCaptureComponent 的函数式组件
-type FunctionalActorContextCaptureComponent func(actorSystem *ActorSystem, ctx ActorContext)
+// FunctionalActorContextCaptureComponent 是 ActorContextCaptureComponent 的函数式组件，但是它无法在 Component.OnInitialize 中执行任何工作
+type FunctionalActorContextCaptureComponent func(ctx ActorContext)
 
 func (f FunctionalActorContextCaptureComponent) OnInitialize(actorSystem *ActorSystem) error {
 	return nil
 }
-func (f FunctionalActorContextCaptureComponent) OnActorContextCapture(actorSystem *ActorSystem, ctx ActorContext) {
-	f(actorSystem, ctx)
+func (f FunctionalActorContextCaptureComponent) OnActorContextCapture(ctx ActorContext) {
+	f(ctx)
+}
+
+// ActorReceiveMessageCaptureComponent 是用于在 Actor 收到消息时进行捕获的扩展接口
+//   - 该接口在收到消息但还未处理时被调用
+type ActorReceiveMessageCaptureComponent interface {
+	Component
+
+	// OnActorReceiveMessageCapture 在 Actor 收到消息但还未处理时被调用
+	OnActorReceiveMessageCapture(ctx ActorContext) (abort bool)
+}
+
+// FunctionalActorReceiveMessageCaptureComponent 是 ActorReceiveMessageCaptureComponent 的函数式组件，但是它无法在 Component.OnInitialize 中执行任何工作
+type FunctionalActorReceiveMessageCaptureComponent func(context ActorContext) (abort bool)
+
+func (f FunctionalActorReceiveMessageCaptureComponent) OnInitialize(actorSystem *ActorSystem) error {
+	return nil
+}
+
+func (f FunctionalActorReceiveMessageCaptureComponent) OnActorReceiveMessageCapture(ctx ActorContext) (abort bool) {
+	return f(ctx)
 }

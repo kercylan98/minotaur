@@ -35,6 +35,7 @@ const (
 
 // ActorContext 是一个 Actor 完整的上下文，也是对外暴露的可用接口。
 type ActorContext interface {
+	mixinBasic
 	mixinSpawner
 	mixinDeliver
 	mixinRecipient
@@ -120,6 +121,23 @@ type actorContext struct {
 	stash                      []Message                       // 暂存消息
 	rawMessage                 Message                         // 解包前的原始消息
 	mailbox                    mailbox.Mailbox                 // Actor 自身的邮箱
+	values                     map[any]any                     // Actor 上下文自定义值
+}
+
+func (ctx *actorContext) SetValue(key, val any) {
+	if ctx.values == nil {
+		ctx.values = make(map[any]any)
+	}
+	ctx.values[key] = val
+}
+
+func (ctx *actorContext) GetValue(key any) any {
+	return ctx.values[key]
+}
+
+func (ctx *actorContext) HasValue(key any) bool {
+	_, exist := ctx.values[key]
+	return exist
 }
 
 func (ctx *actorContext) Stash() {
@@ -441,13 +459,17 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
-			ctx.actor.OnReceive(ctx)
+			if !ctx.system.components.onActorReceiveMessageCapture(ctx) {
+				ctx.actor.OnReceive(ctx)
+			}
 		case *messages.AbyssMessageEvent:
 			ctx.onAbyssMessageEvent(m)
 		case onLocalFunc:
 			m(ctx)
 		default:
-			ctx.actor.OnReceive(ctx)
+			if !ctx.system.components.onActorReceiveMessageCapture(ctx) {
+				ctx.actor.OnReceive(ctx)
+			}
 		}
 
 		switch message.(type) {
@@ -461,6 +483,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case onSchedulerFunc:
 		m()
 	case *OnLaunch:
+		ctx.values = nil
 		ctx.processMessage(sender, receiver, m, false)
 		ctx.recoveryPersistence()
 	case *OnRestarted:
@@ -843,4 +866,8 @@ func (ctx *actorContext) onAbyssMessageEvent(m *messages.AbyssMessageEvent) {
 		Time:     m.Timestamp.AsTime(),
 	}
 	ctx.actor.OnReceive(ctx)
+}
+
+func (ctx *actorContext) Is(actor Actor) bool {
+	return reflect.TypeOf(ctx.actor) == reflect.TypeOf(actor)
 }

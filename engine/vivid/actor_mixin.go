@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+// mixinBasic 是一个混入类型接口，它定义了作为 Actor 基础类型需要满足的接口。
+type mixinBasic interface {
+	// Is 判断当前上下文是否满足指定 Actor 类型
+	Is(actor Actor) bool
+
+	// SetValue 在上下文中设置临时的键值对，当键值对已经存在时，将会被覆盖，当 Actor 停止或重启时，这些键值对将会被清除。
+	SetValue(key, val any)
+
+	// GetValue 在上下文中获取指定的键值对
+	GetValue(key any) any
+
+	// HasValue 判断当前上下文中是否存在指定的键值对
+	HasValue(key any) bool
+}
+
 // mixinSpawner 是一个混入类型接口，它定义了作为 Actor 的生成器需要满足的接口。
 type mixinSpawner interface {
 	// ActorOf 生成一个新的 Actor 实例，并以该实例作为其父 Actor。返回生成的 Actor 引用(ActorRef)
