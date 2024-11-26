@@ -598,7 +598,7 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 		c.Configure(descriptor)
 	}
 
-	ctx.system.components.OnActorSpawnBefore(provider, descriptor)
+	ctx.system.components.onActorDefineCapture(provider, descriptor)
 
 	// 名称及前缀初始化
 	if descriptor.name == charproc.None {
@@ -645,6 +645,8 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	ctx.deliverySystemMessage(ref, ref, ctx.parentRef, nil, onLaunch)
 
 	ctx.setExpireDuration()
+
+	ctx.system.components.onActorContextCapture(ctx)
 	return ref
 }
 
