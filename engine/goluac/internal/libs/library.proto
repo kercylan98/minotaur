@@ -1,7 +1,0 @@
-syntax = "proto3";
-package goluac;
-option go_package = "github.com/kercylan98/minotaur/engine/goluac/internal/libs";
-
-message LuaMessage {
-  bytes data = 1;
-}

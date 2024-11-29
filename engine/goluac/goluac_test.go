@@ -2,9 +2,7 @@ package goluac_test
 
 import (
 	_ "embed"
-	"fmt"
 	"github.com/kercylan98/minotaur/engine/goluac"
-	"github.com/kercylan98/minotaur/engine/goluac/internal/libs"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"testing"
 	"time"
@@ -18,22 +16,22 @@ func TestGoluac(t *testing.T) {
 		config.WithComponents(goluac.NewComponent())
 	}))
 
-	system.ActorOfF(func() vivid.Actor {
+	luaActorRef := system.ActorOfF(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch m := ctx.Message().(type) {
-			case *libs.LuaMessage:
-				fmt.Println("go vivid actor receive message: " + string(m.Data))
-				ctx.Reply(m)
-				fmt.Println("go vivid actor reply message: " + string(m.Data))
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				goluac.AttachActorContext(ctx, goluacTestLua)
 			}
 		})
 	})
 
 	system.ActorOfF(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch ctx.Message().(type) {
+			switch m := ctx.Message().(type) {
 			case *vivid.OnLaunch:
-				goluac.Bind(ctx, goluacTestLua)
+				ctx.Ask(luaActorRef, &goluac.LuaMessage{Data: []byte(`{"type": "test", "data": "hello goluac" }`)})
+			case *goluac.LuaMessage:
+				t.Log(string(m.Data))
 			}
 		})
 	})

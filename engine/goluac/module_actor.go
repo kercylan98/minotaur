@@ -1,0 +1,5 @@
+package goluac
+
+func init() {
+
+}

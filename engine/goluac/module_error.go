@@ -1,4 +1,4 @@
-package libs
+package goluac
 
 import lua "github.com/yuin/gopher-lua"
 

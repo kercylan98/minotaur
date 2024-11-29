@@ -1,22 +1,12 @@
 package goluac
 
 import (
-	"errors"
 	"github.com/kercylan98/minotaur/engine/vivid"
 )
-
-func Bind(ctx vivid.ActorContext, code string) {
-	if ctx.HasValue(goluacKey) {
-		panic(errors.New("the goluac component has been bound"))
-	}
-	ctx.Tell(ctx.Ref(), newGoluac(ctx, code))
-}
 
 func NewComponent() Component {
 	return &component{}
 }
-
-var goluacKey Component = (*component)(nil)
 
 type Component interface {
 	vivid.Component
@@ -32,14 +22,28 @@ func (c *component) OnInitialize(actorSystem *vivid.ActorSystem) error {
 
 func (c *component) OnActorReceiveMessageCapture(ctx vivid.ActorContext) (abort bool) {
 	switch m := ctx.Message().(type) {
-	case *goluac:
-		ctx.SetValue(goluacKey, m)
+	case *LuaMessage:
+		return c.onLuaMessage(ctx, m)
 	case *vivid.OnTerminated:
-		c, exist := ctx.GetValue(goluacKey).(*goluac)
-		if exist {
-			c.lib.Close()
-		}
+		c.onTerminated(ctx, m)
 	}
 
 	return
+}
+
+func (c *component) onTerminated(ctx vivid.ActorContext, m *vivid.OnTerminated) {
+	ac, exist := ctx.GetValue(actorContextKey).(*actorContext)
+	if !exist {
+		return
+	}
+	ac.lua.Close()
+}
+
+func (c *component) onLuaMessage(ctx vivid.ActorContext, m *LuaMessage) bool {
+	ac, exist := ctx.GetValue(actorContextKey).(*actorContext)
+	if !exist {
+		return false
+	}
+	ac.OnReceive(m)
+	return true
 }

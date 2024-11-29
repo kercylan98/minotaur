@@ -6,8 +6,10 @@ import (
 )
 
 func newComponents(actorSystem *ActorSystem) *components {
-	var cs = &components{actorSystem: actorSystem}
+	var cs = &components{actorSystem: actorSystem, componentRecord: make(map[reflect.Type]struct{})}
 	for _, comp := range actorSystem.config.components {
+		cs.componentRecord[reflect.TypeOf(comp)] = struct{}{}
+
 		tryBindComponent[ShutdownComponent](cs, &cs.shutdown, comp)
 		tryBindComponent[ActorDefineCaptureComponent](cs, &cs.actorDefineCapture, comp)
 		tryBindComponent[ActorContextCaptureComponent](cs, &cs.actorContextCapture, comp)
@@ -20,10 +22,17 @@ func newComponents(actorSystem *ActorSystem) *components {
 
 type components struct {
 	actorSystem                *ActorSystem
+	componentRecord            map[reflect.Type]struct{}
 	shutdown                   []ShutdownComponent
 	actorDefineCapture         []ActorDefineCaptureComponent
 	actorContextCapture        []ActorContextCaptureComponent
 	actorReceiveMessageCapture []ActorReceiveMessageCaptureComponent
+}
+
+// HasComponent 判断指定的 ActorSystem 是否绑定了指定的组件
+func HasComponent[C Component](actorSystem *ActorSystem) bool {
+	_, ok := actorSystem.components.componentRecord[reflect.TypeOf((*C)(nil)).Elem()]
+	return ok
 }
 
 func tryBindComponent[C Component](components *components, slice *[]C, comp Component) {

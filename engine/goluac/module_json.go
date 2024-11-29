@@ -1,11 +1,8 @@
-// refer: https://github.com/layeh/gopher-json/blob/master/json.go
-
-package libs
+package goluac
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/kercylan98/minotaur/engine/vivid"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -17,11 +14,11 @@ var (
 )
 
 func init() {
-	injectModuleFunction("json", "encode", jsonEncode)
-	injectModuleFunction("json", "decode", jsonDecode)
+	moduleGoFuncInject("json", "encode", jsonEncode)
+	moduleGoFuncInject("json", "decode", jsonDecode)
 }
 
-func jsonEncode(ctx vivid.ActorContext) lua.LGFunction {
+func jsonEncode(ctx *actorContext) lua.LGFunction {
 	return func(state *lua.LState) int {
 		data, err := readToJson(state, 1)
 		if err != nil {
@@ -33,21 +30,29 @@ func jsonEncode(ctx vivid.ActorContext) lua.LGFunction {
 		return 1
 	}
 }
-func jsonDecode(ctx vivid.ActorContext) lua.LGFunction {
+func jsonDecode(ctx *actorContext) lua.LGFunction {
 	return func(state *lua.LState) int {
 		str := state.CheckString(1)
 
-		var value any
-		err := json.Unmarshal([]byte(str), &value)
+		decoded, err := decodeFromJson(state, []byte(str))
 		if err != nil {
 			state.Push(lua.LNil)
 			state.Push(lua.LString(err.Error()))
 			return 2
 		}
-		decoded := jsonDecodeValue(state, value)
 		state.Push(decoded)
 		return 1
 	}
+}
+
+func decodeFromJson(state *lua.LState, data []byte) (lua.LValue, error) {
+	var value any
+	err := json.Unmarshal(data, &value)
+	if err != nil {
+		return lua.LNil, err
+	}
+	decoded := jsonDecodeValue(state, value)
+	return decoded, nil
 }
 
 func jsonDecodeValue(state *lua.LState, value any) lua.LValue {

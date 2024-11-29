@@ -1,22 +1,18 @@
 local actor = require("actor")
 local json = require("json")
 local errors = require("errors")
+local goluac_test_mod = require("goluac_test_mod")
 
-actor.on_receive(function(message)
-    print("lua local receive message: " .. message)
+goluac_test_mod.check()
+
+actor.on_receive(function(ctx)
+    local packet = ctx.message()
+    router[packet.type](ctx, packet.data)
 end)
 
-actor.on_receive("test receive callback")
-
-local future = actor.future_ask("monitor://localhost/user/1", { 
-    name = "John", 
-    age = 30
-})
-
-local result = future.result()
-if errors.is_error(result) then
-    print("lua receive future error: " .. errors.to_string(result))
-else
-    print("lua receive future result: " .. result)
-    print("lua parse to json got name: " ..json.decode(result).name)
-end 
+router = {
+    ["test"] = function(ctx, message)
+        print("receive test message: " .. json.encode(message))
+        ctx.reply(message)
+    end,
+}
