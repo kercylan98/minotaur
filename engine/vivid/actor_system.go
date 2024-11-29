@@ -71,7 +71,7 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 		system.abyssRef, _ = system.rc.Register(system.processId.Derivation("abyss"), system.config.abyss)
 	}
 
-	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
+	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName), log.String("physical_address", system.config.physicalAddress))
 
 	system.guard = system.spawnTopActor("user", new(guard))
 	system.subscription = system.ActorOfF(func() Actor {
