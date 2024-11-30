@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+// NewActorSystem 创建一个 ActorSystem
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	return NewActorSystemWithConfiguration(NewActorSystemConfiguration(), configurator...)
 }
 
+// NewActorSystemWithConfiguration 采用已有的配置创建一个 ActorSystem
 func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, configurator ...ActorSystemConfigurator) *ActorSystem {
 	system := &ActorSystem{
 		config: configuration,
