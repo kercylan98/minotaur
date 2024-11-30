@@ -41,7 +41,7 @@ func AttachActorContext(ctx vivid.ActorContext, luaCode string) (err error) {
 	}()
 
 	for _, script := range loadedScripts {
-		name, code := script[0], script[1]
+		name, code := script[0].(string), script[1].(*lua.LFunction)
 		ac.lua.PreloadModule(name, func(state *lua.LState) int {
 			return applyModuleGoFuncInject(ac, state, name, code, err, func(injectErr error) {
 				err = injectErr

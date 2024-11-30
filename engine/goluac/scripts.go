@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	lua "github.com/yuin/gopher-lua"
+	"github.com/yuin/gopher-lua/parse"
 	"io/fs"
 	"math"
 	"sort"
@@ -17,8 +18,8 @@ var (
 	// 内部静态脚本路径，用于加载到二进制静态资源
 	//go:embed lua-scripts/*.lua
 	libraryScriptEmbedFS embed.FS
-	// 已经加载到内存中的静态脚本（它具备优先级，其中 0：模块名称 1：脚本代码）
-	loadedScripts [][2]string
+	// 已经加载到内存中的静态脚本（它具备优先级，其中 0：模块名称 1：编译信息）
+	loadedScripts [][2]any
 	// 固定静态脚本加载优先级（当未命中名称时将最末加载）
 	internalLuaScriptLoadPriority = []string{
 		"errors.lua",
@@ -39,24 +40,42 @@ var (
 )
 
 func init() {
+	temp := lua.NewState()
+	defer temp.Close()
+
 	for _, entry := range loadScripts() {
 		if entry.IsDir() {
 			continue
 		}
-		moduleName := strings.SplitN(entry.Name(), ".", 2)[0]
+		name := strings.SplitN(entry.Name(), ".", 2)[0]
 		fileBytes, err := libraryScriptEmbedFS.ReadFile(internalLuaScriptDirName + "/" + entry.Name())
 		if err != nil {
 			panic(fmt.Errorf("read lib %s error: %v", entry.Name(), err))
 		}
-		loadedScripts = append(loadedScripts, [2]string{moduleName, string(fileBytes)})
+
+		// 编译
+		code := string(fileBytes)
+		reader := strings.NewReader(code)
+		chunk, err := parse.Parse(reader, code)
+		if err != nil {
+			panic(err)
+		}
+		proto, err := lua.Compile(chunk, code)
+		if err != nil {
+			panic(err)
+		}
+
+		loadedScripts = append(loadedScripts, [2]any{name, temp.NewFunctionFromProto(proto)})
 	}
 }
 
-func applyModuleGoFuncInject(ctx *actorContext, state *lua.LState, name, code string, currError error, errorHandler func(err error)) int {
+func applyModuleGoFuncInject(ctx *actorContext, state *lua.LState, name string, code *lua.LFunction, currError error, errorHandler func(err error)) int {
 	if currError != nil {
 		return 0
 	}
-	if err := state.DoString(code); err != nil {
+
+	state.Push(code)
+	if err := state.PCall(0, lua.MultRet, nil); err != nil {
 		errorHandler(newDoLuaScriptError(name, err))
 		return 0
 	}
