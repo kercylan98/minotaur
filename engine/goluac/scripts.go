@@ -52,9 +52,13 @@ func init() {
 	}
 }
 
-func applyModuleGoFuncInject(ctx *actorContext, state *lua.LState, name, code string) int {
+func applyModuleGoFuncInject(ctx *actorContext, state *lua.LState, name, code string, currError error, errorHandler func(err error)) int {
+	if currError != nil {
+		return 0
+	}
 	if err := state.DoString(code); err != nil {
-		panic(fmt.Errorf("load lib %s error: %v", name, err))
+		errorHandler(newDoLuaScriptError(name, err))
+		return 0
 	}
 
 	mod := state.Get(-1)

@@ -22,9 +22,7 @@ func jsonEncode(ctx *actorContext) lua.LGFunction {
 	return func(state *lua.LState) int {
 		data, err := readToJson(state, 1)
 		if err != nil {
-			state.Push(lua.LNil)
-			state.Push(lua.LString(err.Error()))
-			return 2
+			return pushError(state, err)
 		}
 		state.Push(lua.LString(data))
 		return 1
@@ -36,9 +34,7 @@ func jsonDecode(ctx *actorContext) lua.LGFunction {
 
 		decoded, err := decodeFromJson(state, []byte(str))
 		if err != nil {
-			state.Push(lua.LNil)
-			state.Push(lua.LString(err.Error()))
-			return 2
+			return pushError(state, err)
 		}
 		state.Push(decoded)
 		return 1

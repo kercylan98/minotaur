@@ -1,9 +1,9 @@
 package goluac
 
 import (
-	"errors"
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	lua "github.com/yuin/gopher-lua"
 	"net/url"
 	"sync"
@@ -16,13 +16,16 @@ var (
 )
 
 // AttachActorContext 通过一段 Lua 入口代码创建一个 Lua 虚拟机并绑定到传入的 ActorContext 上下文
-//   - 当 vivid.ActorSystem 未加载 Component 时将会发生 panic
-func AttachActorContext(ctx vivid.ActorContext, luaCode string) {
+func AttachActorContext(ctx vivid.ActorContext, luaCode string) (err error) {
 	onceComponentCheck.Do(func() {
 		if !vivid.HasComponent[*component](ctx.System()) {
-			panic(errors.New("please load goluac component first"))
+			err = ErrorNotLoadGoluacComponent
 		}
 	})
+	if err != nil {
+		return
+	}
+
 	ac := &actorContext{
 		ActorContext: ctx,
 		lua:          lua.NewState(),
@@ -32,25 +35,32 @@ func AttachActorContext(ctx vivid.ActorContext, luaCode string) {
 
 	// 标准库注入
 	defer func() {
-		if err := recover(); err != nil {
+		if err != nil {
 			ac.lua.Close()
-			panic(err)
 		}
 	}()
+
 	for _, script := range loadedScripts {
 		name, code := script[0], script[1]
 		ac.lua.PreloadModule(name, func(state *lua.LState) int {
-			return applyModuleGoFuncInject(ac, state, name, code)
+			return applyModuleGoFuncInject(ac, state, name, code, err, func(injectErr error) {
+				err = injectErr
+			})
 		})
 	}
+	if err != nil {
+		return
+	}
 
-	if err := ac.lua.DoString(luaCode); err != nil {
-		panic(err)
+	if err = ac.lua.DoString(luaCode); err != nil {
+		return err
 	}
 
 	// 模块加载
 	ac.luaActorModule = ac.lua.GetGlobal("actor").(*lua.LTable)
 	ac.luaOnReceiveHandler = ac.luaActorModule.RawGetString("on_receive").(*lua.LFunction)
+
+	return
 }
 
 type actorContext struct {
@@ -83,7 +93,7 @@ func (c *actorContext) OnReceive(m *LuaMessage) {
 		NRet:    1,
 		Protect: true,
 	}, c.luaCtx, lua.LString(m.Data)); err != nil {
-		panic(err)
+		c.System().Logger().Error("LuaActor", log.Any("on_receive", err))
 	}
 }
 
@@ -167,7 +177,7 @@ func (c *actorContext) message(state *lua.LState) int {
 	if luaMessage, ok := c.Message().(*LuaMessage); ok {
 		value, err := decodeFromJson(state, luaMessage.Data)
 		if err != nil {
-			panic(err)
+			return pushError(state, err)
 		}
 		c.messageCache = value
 		state.Push(value)
