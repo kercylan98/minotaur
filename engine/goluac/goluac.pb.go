@@ -20,6 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// LuaMessage 是用于和 Goluac 交互的消息包装，当需要发送该类型消息时，请使用 NewLuaMessage 函数进行创建
 type LuaMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -27,8 +28,8 @@ type LuaMessage struct {
 
 	Name         string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                                        // 消息名
 	Data         []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`                                        // 消息数据
-	FromLua      bool   `protobuf:"varint,3,opt,name=from_lua,json=fromLua,proto3" json:"from_lua,omitempty"`                  // 是否是 Lua 发送的消息
-	FromLuaReply bool   `protobuf:"varint,4,opt,name=from_lua_reply,json=fromLuaReply,proto3" json:"from_lua_reply,omitempty"` // 是否是 Lua 回复的消息
+	FromLua      bool   `protobuf:"varint,3,opt,name=from_lua,json=fromLua,proto3" json:"from_lua,omitempty"`                  // 是否是 Lua 发送的消息（擅自设置或更改该值，可能导致不可预的后果）
+	FromLuaReply bool   `protobuf:"varint,4,opt,name=from_lua_reply,json=fromLuaReply,proto3" json:"from_lua_reply,omitempty"` // 是否是 Lua 回复的消息（擅自设置或更改该值，可能导致不可预的后果）
 }
 
 func (x *LuaMessage) Reset() {
