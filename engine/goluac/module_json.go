@@ -3,6 +3,7 @@ package goluac
 import (
 	"encoding/json"
 	"errors"
+	"github.com/kercylan98/minotaur/toolkit"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -43,7 +44,7 @@ func jsonDecode(ctx *actorContext) lua.LGFunction {
 
 func decodeFromJson(state *lua.LState, data []byte) (lua.LValue, error) {
 	var value any
-	err := json.Unmarshal(data, &value)
+	err := toolkit.UnmarshalJSONE(data, &value)
 	if err != nil {
 		return lua.LNil, err
 	}

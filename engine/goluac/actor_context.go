@@ -86,8 +86,10 @@ func (c *actorContext) initLuaActorContext() {
 	c.luaCtx.RawSet(lua.LString("reply"), c.lua.NewFunction(c.reply))
 }
 
-func (c *actorContext) OnReceive(m *LuaMessage) {
-	c.messageCache = nil
+func (c *actorContext) OnReceive(m *LuaMessage, resetCache bool) {
+	if resetCache {
+		c.messageCache = nil
+	}
 	if err := c.lua.CallByParam(lua.P{
 		Fn:      c.luaOnReceiveHandler,
 		NRet:    1,
@@ -167,6 +169,15 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 	return 1
 }
 
+func (c *actorContext) createMessageCache(message *LuaMessage) error {
+	value, err := decodeFromJson(c.lua, message.Data)
+	if err != nil {
+		return err
+	}
+	c.messageCache = value
+	return nil
+}
+
 func (c *actorContext) message(state *lua.LState) int {
 	cache := c.messageCache
 	if cache != nil {
@@ -175,12 +186,10 @@ func (c *actorContext) message(state *lua.LState) int {
 	}
 
 	if luaMessage, ok := c.Message().(*LuaMessage); ok {
-		value, err := decodeFromJson(state, luaMessage.Data)
-		if err != nil {
+		if err := c.createMessageCache(luaMessage); err != nil {
 			return pushError(state, err)
 		}
-		c.messageCache = value
-		state.Push(value)
+		state.Push(c.messageCache)
 		return 1
 	}
 	c.messageCache = lua.LNil

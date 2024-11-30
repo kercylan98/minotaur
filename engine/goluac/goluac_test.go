@@ -30,6 +30,10 @@ func TestGoluac(t *testing.T) {
 			switch m := ctx.Message().(type) {
 			case *vivid.OnLaunch:
 				ctx.Ask(luaActorRef, &goluac.LuaMessage{Data: []byte(`{"type": "test", "data": "hello goluac" }`)})
+				ctx.Ask(luaActorRef, map[string]any{
+					"type": "test",
+					"data": "hello map",
+				})
 			case *goluac.LuaMessage:
 				t.Log(string(m.Data))
 			}
