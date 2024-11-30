@@ -603,6 +603,7 @@ func (ctx *actorContext) Broadcast(message Message) {
 }
 
 func (ctx *actorContext) Reply(message Message) {
+	ctx.system.onActorReplyCapture(ctx, message)
 	ctx.Ask(ctx.sender, message)
 }
 

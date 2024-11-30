@@ -3,5 +3,8 @@ package goluac;
 option go_package = "github.com/kercylan98/minotaur/engine/goluac";
 
 message LuaMessage {
-  bytes data = 1;
+  string name = 1; // 消息名
+  bytes data = 2; // 消息数据
+  bool from_lua = 3; // 是否是 Lua 发送的消息
+  bool from_lua_reply = 4; // 是否是 Lua 回复的消息
 }

@@ -90,51 +90,59 @@ func (c *actorContext) OnReceive(m *LuaMessage, resetCache bool) {
 	if resetCache {
 		c.messageCache = nil
 	}
+	value, err := m.toLuaMessage(c.lua)
+	if err != nil {
+		c.System().Logger().Error("LuaActor", log.Any("on_receive", err))
+		return
+	}
 	if err := c.lua.CallByParam(lua.P{
 		Fn:      c.luaOnReceiveHandler,
 		NRet:    1,
 		Protect: true,
-	}, c.luaCtx, lua.LString(m.Data)); err != nil {
+	}, c.luaCtx, value); err != nil {
 		c.System().Logger().Error("LuaActor", log.Any("on_receive", err))
 	}
 }
 
 func (c *actorContext) tell(state *lua.LState) int {
-	refUrl := state.ToString(1)
-	message, err := readToJson(state, 2)
+	actorRef := state.ToString(1)
+	name := state.ToString(2)
+	message, err := readToJson(state, 3)
 	if err != nil {
 		return pushError(state, err)
 	}
-	u, err := url.Parse(refUrl)
+	u, err := url.Parse(actorRef)
 	if err != nil {
 		return pushError(state, err)
 	}
-	c.Tell(vivid.NewActorRef(u.Host, u.Path), &LuaMessage{Data: message})
+	c.Tell(vivid.NewActorRef(u.Host, u.Path), newFromLuaMessage(name, message))
 	return 0
 }
 
 func (c *actorContext) ask(state *lua.LState) int {
-	refUrl := state.ToString(1)
-	message, err := readToJson(state, 2)
+	actorRef := state.ToString(1)
+	name := state.ToString(2)
+	message, err := readToJson(state, 3)
 	if err != nil {
 		return pushError(state, err)
 	}
-	u, err := url.Parse(refUrl)
+	u, err := url.Parse(actorRef)
 	if err != nil {
 		return pushError(state, err)
 	}
-	c.Ask(vivid.NewActorRef(u.Host, u.Path), &LuaMessage{Data: message})
+	c.Ask(vivid.NewActorRef(u.Host, u.Path), newFromLuaMessage(name, message))
 	return 0
 }
 
 func (c *actorContext) futureAsk(state *lua.LState) int {
-	refUrl := state.ToString(1)
-	message, err := readToJson(state, 2)
+	actorRef := state.ToString(1)
+	name := state.ToString(2)
+	message, err := readToJson(state, 3)
 	if err != nil {
 		return pushError(state, err)
 	}
 	timeout, hasTimeout := state.Get(3).(lua.LNumber)
-	u, err := url.Parse(refUrl)
+	u, err := url.Parse(actorRef)
 	if err != nil {
 		return pushError(state, err)
 	}
@@ -142,9 +150,9 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 	// 获取 msgpack module
 	var f future.Future[vivid.Message]
 	if hasTimeout {
-		f = c.FutureAsk(vivid.NewActorRef(u.Host, u.Path), &LuaMessage{Data: message}, time.Duration(timeout)*time.Millisecond)
+		f = c.FutureAsk(vivid.NewActorRef(u.Host, u.Path), newFromLuaMessage(name, message), time.Duration(timeout)*time.Millisecond)
 	} else {
-		f = c.FutureAsk(vivid.NewActorRef(u.Host, u.Path), &LuaMessage{Data: message})
+		f = c.FutureAsk(vivid.NewActorRef(u.Host, u.Path), newFromLuaMessage(name, message))
 	}
 
 	futureTable := state.NewTable()
@@ -153,7 +161,20 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 		if err != nil {
 			return pushError(state, err)
 		}
-		state.Push(lua.LString(result.(*LuaMessage).Data))
+		if result == nil {
+			state.Push(lua.LNil)
+			return 1
+		}
+		luaMessage, ok := result.(*LuaMessage)
+		if !ok {
+			return pushError(state, ErrorNotIsLuaMessage)
+		}
+		tab, err := luaMessage.toLuaMessage(state)
+		if err != nil {
+			return pushError(state, err)
+		}
+
+		state.Push(tab)
 		return 1
 	}))
 
@@ -170,7 +191,7 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 }
 
 func (c *actorContext) createMessageCache(message *LuaMessage) error {
-	value, err := decodeFromJson(c.lua, message.Data)
+	value, err := message.toLuaMessage(c.lua)
 	if err != nil {
 		return err
 	}
@@ -231,10 +252,11 @@ func (c *actorContext) physicalAddress(state *lua.LState) int {
 }
 
 func (c *actorContext) reply(state *lua.LState) int {
-	message, err := readToJson(state, 1)
+	name := state.ToString(1)
+	message, err := readToJson(state, 2)
 	if err != nil {
 		return pushError(state, err)
 	}
-	c.Reply(&LuaMessage{Data: message})
+	c.Reply(newFromLuaReplyMessage(name, message))
 	return 0
 }

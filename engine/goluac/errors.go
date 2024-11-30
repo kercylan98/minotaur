@@ -7,6 +7,7 @@ import (
 
 var (
 	ErrorNotLoadGoluacComponent = errors.New("not load goluac component")
+	ErrorNotIsLuaMessage        = errors.New("not is lua message")
 )
 
 func newDoLuaScriptError(name string, err error) error {

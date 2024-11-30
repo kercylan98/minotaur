@@ -29,13 +29,17 @@ func TestGoluac(t *testing.T) {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
 			case *vivid.OnLaunch:
-				ctx.Ask(luaActorRef, &goluac.LuaMessage{Data: []byte(`{"type": "test", "data": "hello goluac" }`)})
-				ctx.Ask(luaActorRef, map[string]any{
-					"type": "test",
-					"data": "hello map",
-				})
+				ctx.Ask(luaActorRef, goluac.NewLuaMessage("test", map[string]any{
+					"sender": ctx.Sender().URL().String(),
+					"data":   "i'm received a message from goluac",
+				}))
 			case *goluac.LuaMessage:
-				t.Log(string(m.Data))
+				switch m.Name {
+				case "reply":
+					var data = make(map[string]any)
+					m.UnmarshalP(&data)
+					t.Log(data)
+				}
 			}
 		})
 	})

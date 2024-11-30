@@ -7,12 +7,12 @@ goluac_test_mod.check()
 
 actor.on_receive(function(ctx)
     local packet = ctx.message()
-    router[packet.type](ctx, packet.data)
+    router[packet.name](ctx, packet.data)
 end)
 
 router = {
     ["test"] = function(ctx, message)
         print("receive test message: " .. json.encode(message))
-        ctx.reply(message)
+        ctx.reply("reply", message)
     end,
 }

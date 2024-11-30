@@ -93,3 +93,22 @@ func (f FunctionalActorReceiveMessageCaptureComponent) OnInitialize(actorSystem 
 func (f FunctionalActorReceiveMessageCaptureComponent) OnActorReceiveMessageCapture(ctx ActorContext) (abort bool) {
 	return f(ctx)
 }
+
+// ActorReplyCaptureComponent 是用于在 Actor 发送回复时进行捕获的扩展接口
+type ActorReplyCaptureComponent interface {
+	Component
+
+	// OnActorReplyCapture 在 Actor 发送回复时被调用
+	OnActorReplyCapture(ctx ActorContext, message Message)
+}
+
+// FunctionalActorReplyCaptureComponent 是 ActorReplyCaptureComponent 的函数式组件，但是它无法在 Component.OnInitialize 中执行任何工作
+type FunctionalActorReplyCaptureComponent func(ctx ActorContext, message Message)
+
+func (f FunctionalActorReplyCaptureComponent) OnInitialize(actorSystem *ActorSystem) error {
+	return nil
+}
+
+func (f FunctionalActorReplyCaptureComponent) OnActorReplyCapture(ctx ActorContext, message Message) {
+	f(ctx, message)
+}

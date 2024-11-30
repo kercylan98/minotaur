@@ -14,6 +14,7 @@ func newComponents(actorSystem *ActorSystem) *components {
 		tryBindComponent[ActorDefineCaptureComponent](cs, &cs.actorDefineCapture, comp)
 		tryBindComponent[ActorContextCaptureComponent](cs, &cs.actorContextCapture, comp)
 		tryBindComponent[ActorReceiveMessageCaptureComponent](cs, &cs.actorReceiveMessageCapture, comp)
+		tryBindComponent[ActorReplyCaptureComponent](cs, &cs.actorReplyCapture, comp)
 	}
 
 	cs.onInitialize()
@@ -27,6 +28,7 @@ type components struct {
 	actorDefineCapture         []ActorDefineCaptureComponent
 	actorContextCapture        []ActorContextCaptureComponent
 	actorReceiveMessageCapture []ActorReceiveMessageCaptureComponent
+	actorReplyCapture          []ActorReplyCaptureComponent
 }
 
 // HasComponent 判断指定的 ActorSystem 是否绑定了指定的组件
@@ -40,6 +42,16 @@ func tryBindComponent[C Component](components *components, slice *[]C, comp Comp
 		*slice = append(*slice, c)
 		components.actorSystem.Logger().Info("component", log.String("register", reflect.TypeOf(new(C)).Elem().Name()), log.String("handler", reflect.TypeOf(comp).Elem().Name()))
 	}
+}
+
+func (cs *components) onActorReplyCapture(context ActorContext, message Message) bool {
+	if cs == nil {
+		return false
+	}
+	for _, c := range cs.actorReplyCapture {
+		c.OnActorReplyCapture(context, message)
+	}
+	return false
 }
 
 func (cs *components) onActorReceiveMessageCapture(context ActorContext) bool {
