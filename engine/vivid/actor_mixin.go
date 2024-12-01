@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+// mixinBasic 是一个混入类型接口，它定义了作为 Actor 基础类型需要满足的接口。
+type mixinBasic interface {
+	// Is 判断当前上下文是否满足指定 Actor 类型
+	Is(actor Actor) bool
+
+	// SetValue 在上下文中设置临时的键值对，当键值对已经存在时，将会被覆盖，当 Actor 停止或重启时，这些键值对将会被清除。
+	SetValue(key, val any)
+
+	// GetValue 在上下文中获取指定的键值对
+	GetValue(key any) any
+
+	// HasValue 判断当前上下文中是否存在指定的键值对
+	HasValue(key any) bool
+}
+
 // mixinSpawner 是一个混入类型接口，它定义了作为 Actor 的生成器需要满足的接口。
 type mixinSpawner interface {
 	// ActorOf 生成一个新的 Actor 实例，并以该实例作为其父 Actor。返回生成的 Actor 引用(ActorRef)
@@ -19,6 +34,19 @@ type mixinSpawner interface {
 
 	// Parent 获取当前 Actor 的父 Actor 引用
 	Parent() ActorRef
+
+	// IsChild 判断当前 Actor 是否是指定 Actor 的直接子 Actor
+	//   - 该函数仅支持检查 Actor 的直接父子关系，不支持检查 Actor 更深层级的关系，如果需要检查 Actor 更深层级的关系，请使用 IsSub
+	IsChild(target ActorRef) bool
+
+	// IsSub 判断当前 Actor 是否是指定 Actor 的子级 Actor
+	IsSub(target ActorRef) bool
+
+	// HasChild 判断当前 Actor 是否包含指定 Actor 的直接子 Actor
+	HasChild(target ActorRef) bool
+
+	// HasSub 判断当前 Actor 的子级 Actor 是否包含指定 Actor
+	HasSub(target ActorRef) bool
 
 	// Children 返回当前 Actor 的所有子 Actor 引用(ActorRef)。
 	Children() []ActorRef
@@ -72,7 +100,9 @@ type mixinWorker interface {
 
 // mixinDeliver 是一个混入类型接口，它定义了作为 Actor 消息发送者需要满足的接口。
 type mixinDeliver interface {
-	// Tell 向指定的 Actor 引用(ActorRef) 发送消息。
+	// Tell 向指定的 Actor 引用(ActorRef) 发送消息，接收方对于发送人是不可知的。
+	//
+	// 在使用该类型发送时需明确注意接收方是对发送方不可寻址的，否则在 Reply 时会导致消息不可达，通常建议使用 Ask，但是在一些特殊的场景中为了避免不必要的消息干扰，可使用 Tell
 	//
 	// 特殊标注：
 	//  - MarkMessageImmutability 消息不可变性注意事项
@@ -153,7 +183,8 @@ type mixinPersistence interface {
 
 // mixinWatcher 是一个混入类型接口，它定义了支持观察与被观察生命周期的 Actor 需要满足的接口。
 type mixinWatcher interface {
-	// Watch 监听特定 Actor 生命周期的结束
+	// Watch 监听特定 Actor 生命周期的结束，当被监听 Actor 停止时，当前 Actor 将会收到一个 OnTerminated 消息
+	//   - 当监听的目标是自己的父级或更外层级的 Actor 时，收到 OnTerminated 的时机并不代表其已经销毁，而是是其即将销毁。
 	Watch(target ActorRef)
 
 	// UnWatch 取消对特定 Actor 生命周期结束的监听

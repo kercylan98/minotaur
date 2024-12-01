@@ -16,6 +16,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"reflect"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -34,6 +35,7 @@ const (
 
 // ActorContext 是一个 Actor 完整的上下文，也是对外暴露的可用接口。
 type ActorContext interface {
+	mixinBasic
 	mixinSpawner
 	mixinDeliver
 	mixinRecipient
@@ -119,6 +121,23 @@ type actorContext struct {
 	stash                      []Message                       // 暂存消息
 	rawMessage                 Message                         // 解包前的原始消息
 	mailbox                    mailbox.Mailbox                 // Actor 自身的邮箱
+	values                     map[any]any                     // Actor 上下文自定义值
+}
+
+func (ctx *actorContext) SetValue(key, val any) {
+	if ctx.values == nil {
+		ctx.values = make(map[any]any)
+	}
+	ctx.values[key] = val
+}
+
+func (ctx *actorContext) GetValue(key any) any {
+	return ctx.values[key]
+}
+
+func (ctx *actorContext) HasValue(key any) bool {
+	_, exist := ctx.values[key]
+	return exist
 }
 
 func (ctx *actorContext) Stash() {
@@ -173,11 +192,31 @@ func (ctx *actorContext) Publish(topic Topic, message Message) {
 }
 
 func (ctx *actorContext) Watch(target ActorRef) {
+	// 子 Actor 本身销毁可被父 Actor 观测，监听会导致重复执行
+	if ctx.IsChild(target) {
+		return
+	}
 	ctx.deliverySystemMessage(target, target, ctx.ref, nil, &messages.Watch{})
 }
 
 func (ctx *actorContext) UnWatch(target ActorRef) {
 	ctx.deliverySystemMessage(target, target, ctx.ref, nil, &messages.Unwatch{})
+}
+
+func (ctx *actorContext) IsChild(target ActorRef) bool {
+	return ctx.parentRef != nil && target.Equal(ctx.parentRef)
+}
+
+func (ctx *actorContext) IsSub(target ActorRef) bool {
+	return strings.HasPrefix(ctx.ref.URL().Path, target.URL().Path)
+}
+
+func (ctx *actorContext) HasChild(target ActorRef) bool {
+	return ctx.children[target.GetLogicalAddress()] != nil
+}
+
+func (ctx *actorContext) HasSub(target ActorRef) bool {
+	return strings.HasPrefix(target.URL().Path, ctx.ref.URL().Path)
 }
 
 func (ctx *actorContext) onWatch(m *messages.Watch) {
@@ -420,13 +459,17 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 				ctx.Terminate(ctx.ref, false)
 				return
 			}
-			ctx.actor.OnReceive(ctx)
+			if !ctx.system.components.onActorReceiveMessageCapture(ctx) {
+				ctx.actor.OnReceive(ctx)
+			}
 		case *messages.AbyssMessageEvent:
 			ctx.onAbyssMessageEvent(m)
 		case onLocalFunc:
 			m(ctx)
 		default:
-			ctx.actor.OnReceive(ctx)
+			if !ctx.system.components.onActorReceiveMessageCapture(ctx) {
+				ctx.actor.OnReceive(ctx)
+			}
 		}
 
 		switch message.(type) {
@@ -440,6 +483,7 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 	case onSchedulerFunc:
 		m()
 	case *OnLaunch:
+		ctx.values = nil
 		ctx.processMessage(sender, receiver, m, false)
 		ctx.recoveryPersistence()
 	case *OnRestarted:
@@ -559,6 +603,7 @@ func (ctx *actorContext) Broadcast(message Message) {
 }
 
 func (ctx *actorContext) Reply(message Message) {
+	ctx.system.onActorReplyCapture(ctx, message)
 	ctx.Ask(ctx.sender, message)
 }
 
@@ -576,6 +621,8 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	for _, c := range configurator {
 		c.Configure(descriptor)
 	}
+
+	ctx.system.components.onActorDefineCapture(provider, descriptor)
 
 	// 名称及前缀初始化
 	if descriptor.name == charproc.None {
@@ -622,6 +669,8 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	ctx.deliverySystemMessage(ref, ref, ctx.parentRef, nil, onLaunch)
 
 	ctx.setExpireDuration()
+
+	ctx.system.components.onActorContextCapture(ctx)
 	return ref
 }
 
@@ -691,8 +740,22 @@ func (ctx *actorContext) onTerminate(gracefully bool) {
 	if !ctx.status.CompareAndSwap(actorStatusAlive, actorStatusTerminating) {
 		return
 	}
+
+	// 如果子级 Actor Watch 了当前 Actor，应该提前通知，并移除监听列表
+	if len(ctx.watchers) > 0 {
+		watchMessage := &messages.Terminated{TerminatedProcess: ctx.ref}
+		for key, ref := range ctx.watchers {
+			if ctx.HasSub(ref) {
+				ctx.deliverySystemMessage(ref, ref, ctx.ref, nil, watchMessage)
+				delete(ctx.watchers, key)
+			}
+		}
+	}
+
+	// 销毁子 Actor
 	ctx.processMessage(ctx.sender, ctx.ref, onTerminate, false)
 
+	// 销毁子 Actor
 	for _, ref := range ctx.children {
 		ctx.Terminate(ref, gracefully || ctx.gracefullyTerminated)
 	}
@@ -804,4 +867,8 @@ func (ctx *actorContext) onAbyssMessageEvent(m *messages.AbyssMessageEvent) {
 		Time:     m.Timestamp.AsTime(),
 	}
 	ctx.actor.OnReceive(ctx)
+}
+
+func (ctx *actorContext) Is(actor Actor) bool {
+	return reflect.TypeOf(ctx.actor) == reflect.TypeOf(actor)
 }

@@ -40,6 +40,13 @@ type ActorSystemConfiguration struct {
 	shutdownAfterHooks           []ShutdownAfterHook           // ActorSystem 关闭后将调用此回调
 	grpcServerHooks              []func(server *grpc.Server)   // GRPC 服务器钩子
 	subscriptionContactProviders []SubscriptionContactProvider // 订阅联系人提供者
+	components                   []Component                   // 组件
+}
+
+// WithComponents 设置组件
+func (c *ActorSystemConfiguration) WithComponents(components ...Component) *ActorSystemConfiguration {
+	c.components = append(c.components, components...)
+	return c
 }
 
 // WithSubscriptionContactProviders 设置订阅联系人提供者

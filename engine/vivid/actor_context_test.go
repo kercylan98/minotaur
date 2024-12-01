@@ -366,4 +366,48 @@ func TestActorContext_Watch(t *testing.T) {
 		wait.Wait()
 		system.Shutdown(true)
 	})
+
+	t.Run("watch_prefix", func(t *testing.T) {
+		wait := new(sync.WaitGroup)
+		wait.Add(2)
+		system := vivid.NewActorSystem()
+
+		system.ActorOfF(func() vivid.Actor {
+			return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+				switch m := ctx.Message().(type) {
+				case *vivid.OnLaunch:
+					layer1 := ctx.Ref()
+					ctx.ActorOfF(func() vivid.Actor {
+						return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+							switch ctx.Message().(type) {
+							case *vivid.OnLaunch:
+								ctx.ActorOfF(func() vivid.Actor {
+									return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+										switch m := ctx.Message().(type) {
+										case *vivid.OnLaunch:
+											ctx.Watch(layer1)
+											ctx.Terminate(layer1, true)
+										case *vivid.OnTerminated: // 祖父销毁
+											if !m.TerminatedActor.Equal(ctx.Ref()) {
+												t.Log("terminated", m.TerminatedActor.URL().String())
+												wait.Done()
+											}
+										}
+									})
+								})
+							}
+						})
+					})
+				case *vivid.OnTerminated: // 子销毁
+					if !m.TerminatedActor.Equal(ctx.Ref()) {
+						t.Log("terminated", m.TerminatedActor.URL().String())
+						wait.Done()
+					}
+				}
+			})
+		})
+
+		wait.Wait()
+		system.Shutdown(true)
+	})
 }

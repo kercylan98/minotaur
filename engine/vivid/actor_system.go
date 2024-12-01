@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+// NewActorSystem 创建一个 ActorSystem
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	return NewActorSystemWithConfiguration(NewActorSystemConfiguration(), configurator...)
 }
 
+// NewActorSystemWithConfiguration 采用已有的配置创建一个 ActorSystem
 func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, configurator ...ActorSystemConfigurator) *ActorSystem {
 	system := &ActorSystem{
 		config: configuration,
@@ -71,7 +73,7 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 		system.abyssRef, _ = system.rc.Register(system.processId.Derivation("abyss"), system.config.abyss)
 	}
 
-	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName))
+	system.Logger().Info("ActorSystem", log.String("status", "start"), log.String("name", system.config.actorSystemName), log.String("physical_address", system.config.physicalAddress))
 
 	system.guard = system.spawnTopActor("user", new(guard))
 	system.subscription = system.ActorOfF(func() Actor {
@@ -84,10 +86,13 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 		descriptor.WithName("sub")
 	})
 
+	system.components = newComponents(system)
+
 	return system
 }
 
 type ActorSystem struct {
+	*components
 	config       *ActorSystemConfiguration
 	rc           *prc.ResourceController
 	processId    *prc.ProcessId
@@ -132,7 +137,9 @@ func (sys *ActorSystem) Name() string {
 	return sys.config.actorSystemName
 }
 
-// Tell 向指定的 Actor 引用(ActorRef) 发送消息。
+// Tell 向指定的 Actor 引用(ActorRef) 发送消息，接收方对于发送人是不可知的。
+//
+// 在使用该类型发送时需明确注意接收方是对发送方不可寻址的，否则在 Reply 时会导致消息不可达，通常建议使用 Ask，但是在一些特殊的场景中为了避免不必要的消息干扰，可使用 Tell
 //
 // 特殊标注：
 //   - MarkMessageImmutability 消息不可变性注意事项
@@ -199,6 +206,8 @@ func (sys *ActorSystem) Shutdown(gracefully bool) {
 	for _, hook := range sys.config.shutdownAfterHooks {
 		hook()
 	}
+
+	sys.components.onShutdown()
 }
 
 // Terminate 终止目标 Actor。

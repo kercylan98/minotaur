@@ -94,7 +94,9 @@ func (d *ActorDescriptor) WithExpireDuration(duration time.Duration) *ActorDescr
 // WithSupervisionStrategyProvider 设置监督策略提供者
 func (d *ActorDescriptor) WithSupervisionStrategyProvider(provider supervision.StrategyProvider, loggers ...supervision.Logger) *ActorDescriptor {
 	d.supervisionStrategyProvider = provider
-	d.supervisionLoggers = append(d.supervisionLoggers, loggers...)
+	if len(loggers) != 0 {
+		d.supervisionLoggers = loggers
+	}
 	return d
 }
 
