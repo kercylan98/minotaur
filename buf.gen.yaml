@@ -1,0 +1,12 @@
+version: v2
+managed:
+  enabled: false
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: .
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: .
+    opt: paths=source_relative
+inputs:
+  - directory: .

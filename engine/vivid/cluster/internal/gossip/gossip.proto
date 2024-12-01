@@ -2,7 +2,7 @@ syntax = "proto3";
 package gossip;
 option go_package = "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip";
 
-import "process_id.proto";
+import "engine/prc/process_id.proto";
 
 // 初始化集群，此刻节点准备尝试加入其他集群或创建集群
 message GossipActorInitClusterMessage {

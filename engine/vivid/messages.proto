@@ -2,7 +2,7 @@ syntax = "proto3";
 package vivid;
 option go_package = "/github.com/kercylan98/minotaur/engine/vivid";
 
-import "process_id.proto";
+import "engine/prc/process_id.proto";
 
 // OnTerminate 在 Actor 处理完该消息后，将会被终止，适用于释放 Actor 资源等场景。
 message OnTerminate {

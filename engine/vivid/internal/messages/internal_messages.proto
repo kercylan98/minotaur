@@ -2,7 +2,7 @@ syntax = "proto3";
 package messages;
 option go_package = "/github.com/kercylan98/minotaur/engine/vivid/internal/messages";
 
-import "process_id.proto";
+import "engine/prc/process_id.proto";
 import "google/protobuf/timestamp.proto";
 
 // Terminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。

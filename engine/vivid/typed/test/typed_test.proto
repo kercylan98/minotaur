@@ -2,7 +2,7 @@ syntax = "proto3";
 package test;
 option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/test";
 
-import "options.proto";
+import "engine/vivid/typed/options/options.proto";
 
 service Test {
   rpc Say (Request) returns (options.Empty) {

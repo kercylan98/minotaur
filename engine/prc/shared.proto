@@ -2,7 +2,7 @@ syntax = "proto3";
 package prc;
 option go_package = "github.com/kercylan98/minotaur/engine/prc";
 
-import "process_id.proto";
+import "engine/prc/process_id.proto";
 
 // Shared 共享服务
 service Shared {
