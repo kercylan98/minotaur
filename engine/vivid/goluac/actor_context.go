@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	actorContextKey = (*actorContext)(nil)
 	// 用于确保只检查一次组件是否注册的标记
 	onceComponentCheck sync.Once
 )
@@ -90,7 +91,7 @@ func (c *actorContext) OnReceive(m *LuaMessage, resetCache bool) {
 	if resetCache {
 		c.messageCache = nil
 	}
-	value, err := m.toLuaMessage(c.lua)
+	value, err := toLuaMessage(c.lua, m)
 	if err != nil {
 		c.System().Logger().Error("LuaActor", log.Any("on_receive", err))
 		return
@@ -169,7 +170,7 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 		if !ok {
 			return pushError(state, ErrorNotIsLuaMessage)
 		}
-		tab, err := luaMessage.toLuaMessage(state)
+		tab, err := toLuaMessage(state, luaMessage)
 		if err != nil {
 			return pushError(state, err)
 		}
@@ -191,7 +192,7 @@ func (c *actorContext) futureAsk(state *lua.LState) int {
 }
 
 func (c *actorContext) createMessageCache(message *LuaMessage) error {
-	value, err := message.toLuaMessage(c.lua)
+	value, err := toLuaMessage(c.lua, message)
 	if err != nil {
 		return err
 	}

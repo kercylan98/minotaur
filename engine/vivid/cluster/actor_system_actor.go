@@ -36,9 +36,9 @@ func (a *actorSystemActor) OnReceive(ctx vivid.ActorContext) {
 		a.onLeaderChanged(ctx, m)
 	case *actorSystemActorExitMessage:
 		a.onActorSystemActorExitMessage(ctx, m)
-	case *gossip.GossipActorClusterExitingMessage:
+	case *gossip.ActorClusterExitingMessage:
 		a.onGossipActorClusterExitingMessage(ctx, m)
-	case *gossip.GossipActorClusterExitedMessage:
+	case *gossip.ActorClusterExitedMessage:
 		a.onGossipActorClusterExitedMessage(ctx, m)
 	}
 }
@@ -53,14 +53,14 @@ func (a *actorSystemActor) onLaunch(ctx vivid.ActorContext) {
 
 func (a *actorSystemActor) onActorSystemActorExitMessage(ctx vivid.ActorContext, m *actorSystemActorExitMessage) {
 	a.exited = m.cancel
-	ctx.Tell(a.gossipRef, &gossip.GossipActorLeaveClusterMessage{})
+	ctx.Tell(a.gossipRef, &gossip.ActorLeaveClusterMessage{})
 }
 
-func (a *actorSystemActor) onGossipActorClusterExitingMessage(ctx vivid.ActorContext, m *gossip.GossipActorClusterExitingMessage) {
+func (a *actorSystemActor) onGossipActorClusterExitingMessage(ctx vivid.ActorContext, m *gossip.ActorClusterExitingMessage) {
 	// 善后工作
 }
 
-func (a *actorSystemActor) onGossipActorClusterExitedMessage(ctx vivid.ActorContext, m *gossip.GossipActorClusterExitedMessage) {
+func (a *actorSystemActor) onGossipActorClusterExitedMessage(ctx vivid.ActorContext, m *gossip.ActorClusterExitedMessage) {
 	a.exited()
 }
 

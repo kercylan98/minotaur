@@ -11,11 +11,3 @@ func newNodeId(ref vivid.ActorRef) *NodeId {
 		Guid: time.Now().UnixMicro(),
 	}
 }
-
-func (ni *NodeId) Equal(other *NodeId) bool {
-	return ni.Guid == other.Guid && ni.Ref.PhysicalAddress == other.Ref.PhysicalAddress
-}
-
-func (ni *NodeId) PhysicalAddressEqual(other *NodeId) bool {
-	return ni.Ref.PhysicalAddress == other.Ref.PhysicalAddress
-}

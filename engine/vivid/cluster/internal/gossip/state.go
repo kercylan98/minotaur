@@ -17,7 +17,7 @@ func newState(ctx vivid.ActorContext, actor *GossiperActor) *State {
 
 	node := &Node{
 		Id:     newNodeId(ctx.Ref()),
-		Status: GossipNodeStatus_GNS_Joining,
+		Status: NodeStatusJoining,
 		Vc:     vc,
 	}
 	state := &State{
@@ -84,10 +84,10 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 	ordering := s.node.Vc.CompareTo(gossiped.GossiperVersion)
 	// 如果接收到的 Gossip 版本更新，则进行合并
 	var accessibilityChanged = len(gossiped.Gossip.AccessibilityChange) > 0
-	if ordering != VectorClockOrdering_VCO_After || accessibilityChanged {
+	if ordering != VectorClockOrderingAfter || accessibilityChanged {
 		s.gossip = gossiped.Gossip
 	}
-	if ordering != VectorClockOrdering_VCO_Same || accessibilityChanged {
+	if ordering != VectorClockOrderingSame || accessibilityChanged {
 		s.node.Vc.Merge(gossiped.GossiperVersion)
 
 		// 状态更新，重置 Seen 列表为仅含自身
@@ -132,7 +132,7 @@ func (s *State) CalcLeaderNode() *Node {
 
 		// 先比较状态，Alive 靠前
 		if a.Status != b.Status {
-			return a.Status == GossipNodeStatus_GNS_Alive
+			return a.Status == NodeStatusAlive
 		}
 
 		// 如果状态相同，按 PhysicalAddress 升序排序
@@ -162,7 +162,7 @@ func (s *State) GossipUpdate() {
 		}
 
 		switch member.Status {
-		case GossipNodeStatus_GNS_Joining, GossipNodeStatus_GNS_Alive, GossipNodeStatus_GNS_Leaving, GossipNodeStatus_GNS_Exiting, GossipNodeStatus_GNS_Exited:
+		case NodeStatusJoining, NodeStatusAlive, NodeStatusLeaving, NodeStatusExiting, NodeStatusExited:
 			targets = append(targets, member)
 		}
 	}

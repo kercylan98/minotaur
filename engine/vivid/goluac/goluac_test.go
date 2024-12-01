@@ -3,7 +3,7 @@ package goluac_test
 import (
 	_ "embed"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	goluac2 "github.com/kercylan98/minotaur/engine/vivid/goluac"
+	"github.com/kercylan98/minotaur/engine/vivid/goluac"
 	"testing"
 	"time"
 )
@@ -13,14 +13,14 @@ var goluacTestLua string
 
 func TestGoluac(t *testing.T) {
 	system := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithComponents(goluac2.NewComponent())
+		config.WithComponents(goluac.NewComponent())
 	}))
 
 	luaActorRef := system.ActorOfF(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
-				goluac2.AttachActorContext(ctx, goluacTestLua)
+				goluac.AttachActorContext(ctx, goluacTestLua)
 			}
 		})
 	})
@@ -29,11 +29,11 @@ func TestGoluac(t *testing.T) {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
 			switch m := ctx.Message().(type) {
 			case *vivid.OnLaunch:
-				ctx.Ask(luaActorRef, goluac2.NewLuaMessage("test", map[string]any{
+				ctx.Ask(luaActorRef, goluac.NewLuaMessage("test", map[string]any{
 					"sender": ctx.Sender().URL().String(),
 					"data":   "i'm received a message from goluac",
 				}))
-			case *goluac2.LuaMessage:
+			case *goluac.LuaMessage:
 				switch m.Name {
 				case "reply":
 					var data = make(map[string]any)

@@ -38,34 +38,25 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *vivid.OnLaunch:
 		g.onLaunch(ctx)
-	case *GossipActorInitClusterMessage:
+	case *ActorInitClusterMessage:
 		g.onGossipActorInitClusterMessage(ctx, m)
-	case *GossipActorTryJoinClusterMessage:
+	case *ActorTryJoinClusterMessage:
 		g.onGossipActorTryJoinClusterMessage(ctx, m)
-	case *GossipActorCreateClusterMessage:
+	case *ActorCreateClusterMessage:
 		g.onGossipActorCreateClusterMessage(ctx)
-	case *GossipActorTryJoinClusterAckMessage:
+	case *ActorTryJoinClusterAckMessage:
 		g.onGossipActorTryJoinClusterAckMessage(ctx, m)
-	case *GossipActorClusterConvergedMessage:
+	case *ActorClusterConvergedMessage:
 		g.onGossipActorClusterConvergedMessage(ctx)
 	case *Gossiped:
 		g.onGossiped(ctx, m)
 	case *GossipedAckMessage:
 		g.onGossipAckMessage(ctx, m)
-	case *GossipActorLeaveClusterMessage:
+	case *ActorLeaveClusterMessage:
 		g.onGossipActorLeaveClusterMessage(ctx)
-	case *GossipActorPingPongMessage:
+	case *ActorPingPongMessage:
 		g.onGossipActorPingPongMessage(ctx, m)
-	case *GossipLeaderMessage:
-		g.onGossipLeaderMessage(ctx, m)
 	}
-}
-
-func (g *GossiperActor) onGossipLeaderMessage(ctx vivid.ActorContext, m *GossipLeaderMessage) {
-	//switch m := m.Operation.(type) {
-	//case *GossipLeaderMessage_GetLongestLastingNode_:
-	//	g.onGossipLeaderGetLongestLastingNode(ctx, m.GetLongestLastingNode)
-	//}
 }
 
 func (g *GossiperActor) onLaunch(ctx vivid.ActorContext) {
@@ -80,13 +71,13 @@ func (g *GossiperActor) onLaunch(ctx vivid.ActorContext) {
 	}
 
 	// 尝试加入集群
-	ctx.Tell(ctx.Ref(), &GossipActorInitClusterMessage{RetryIntervalDuration: int64(3 * time.Second)})
+	ctx.Tell(ctx.Ref(), &ActorInitClusterMessage{RetryIntervalDuration: int64(3 * time.Second)})
 
 	// 故障检测
 	ctx.RepeatedTask("heartbeat.check", time.Second, time.Second, chrono.SchedulerForever, g.onHeartbeatCheckTask)
 }
 
-func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, m *GossipActorInitClusterMessage) {
+func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, m *ActorInitClusterMessage) {
 	type Entry struct {
 		Future future.Future[vivid.Message]
 		Ref    vivid.ActorRef
@@ -98,7 +89,7 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 			continue // 排除自身对自身尝试的加入
 		}
 
-		futures = append(futures, Entry{Future: ctx.FutureAsk(ref, &GossipActorTryJoinClusterMessage{Node: g.state.node}, time.Second), Ref: ref})
+		futures = append(futures, Entry{Future: ctx.FutureAsk(ref, &ActorTryJoinClusterMessage{Node: g.state.node}, time.Second), Ref: ref})
 	}
 
 	// 避免互相等待对方直到超时，协程内需要严格保证竞态问题
@@ -112,7 +103,7 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 			}
 		}()
 
-		var ackList []*GossipActorTryJoinClusterAckMessage
+		var ackList []*ActorTryJoinClusterAckMessage
 		for _, entry := range futures {
 			g.logger.Debug("cluster", log.String("event", "try join cluster"), log.String("ref", entry.Ref.URL().String()))
 			ack, err := entry.Future.Result()
@@ -121,7 +112,7 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 				fail = true
 				break
 			}
-			ackList = append(ackList, ack.(*GossipActorTryJoinClusterAckMessage))
+			ackList = append(ackList, ack.(*ActorTryJoinClusterAckMessage))
 		}
 
 		for _, ack := range ackList {
@@ -133,7 +124,7 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 		}
 
 		if !fail && collection.IsFirst(g.seedNodes, ctx.PhysicalAddress()) {
-			ctx.Tell(ctx.Ref(), &GossipActorCreateClusterMessage{})
+			ctx.Tell(ctx.Ref(), &ActorCreateClusterMessage{})
 			return
 		}
 
@@ -145,15 +136,15 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 func (g *GossiperActor) onGossipActorCreateClusterMessage(ctx vivid.ActorContext) {
 	g.logger.Info("cluster", log.String("status", "create"))
 	g.state.AddMember(g.state.node)
-	ctx.Tell(ctx.Ref(), &GossipActorClusterConvergedMessage{})
+	ctx.Tell(ctx.Ref(), &ActorClusterConvergedMessage{})
 }
 
-func (g *GossiperActor) onGossipActorTryJoinClusterMessage(ctx vivid.ActorContext, m *GossipActorTryJoinClusterMessage) {
+func (g *GossiperActor) onGossipActorTryJoinClusterMessage(ctx vivid.ActorContext, m *ActorTryJoinClusterMessage) {
 	g.logger.Debug("cluster", log.String("event", "received join"), log.String("node", m.Node.Id.Ref.URL().String()))
-	var ack = &GossipActorTryJoinClusterAckMessage{Handler: ctx.Ref()}
+	var ack = &ActorTryJoinClusterAckMessage{Handler: ctx.Ref()}
 
 	switch g.state.node.Status {
-	case GossipNodeStatus_GNS_Joining:
+	case NodeStatusJoining:
 		ack.Refuse = true
 	default:
 		g.state.AddMember(m.Node)
@@ -166,7 +157,7 @@ func (g *GossiperActor) onGossipActorTryJoinClusterMessage(ctx vivid.ActorContex
 	ctx.Reply(ack)
 }
 
-func (g *GossiperActor) onGossipActorTryJoinClusterAckMessage(ctx vivid.ActorContext, m *GossipActorTryJoinClusterAckMessage) {
+func (g *GossiperActor) onGossipActorTryJoinClusterAckMessage(ctx vivid.ActorContext, m *ActorTryJoinClusterAckMessage) {
 	g.logger.Debug("cluster", log.String("event", "received join ack"), log.String("node", m.Handler.URL().String()))
 	g.state.MergeGossip(m.Gossiped)
 	g.state.MarkSeen(g.state.node.Id)
@@ -188,15 +179,15 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 	g.state.MarkSeen(g.state.node.Id)
 
 	switch g.state.node.Status {
-	case GossipNodeStatus_GNS_Exiting:
+	case NodeStatusExiting:
 		// 自身节点清理
-		g.state.node.Status = GossipNodeStatus_GNS_Exited
+		g.state.node.Status = NodeStatusExited
 
 		g.state.gossip.Seen = []*NodeId{g.state.node.Id}
 		g.state.Increment()
 		g.state.GossipUpdate()
 
-		ctx.Tell(ctx.Parent(), &GossipActorClusterExitingMessage{})
+		ctx.Tell(ctx.Parent(), &ActorClusterExitingMessage{})
 		return
 	}
 
@@ -204,13 +195,13 @@ func (g *GossiperActor) onGossipAckMessage(ctx vivid.ActorContext, m *GossipedAc
 	var seenNum int
 	for _, member := range g.state.gossip.Members {
 		switch member.Status {
-		case GossipNodeStatus_GNS_Removed, GossipNodeStatus_GNS_Unreachable, GossipNodeStatus_GNS_Down:
+		case NodeStatusRemoved, NodeStatusUnreachable, NodeStatusDown:
 			continue
 		}
 		seenNum++
 	}
-	if seenNum == len(g.state.gossip.Seen) && g.state.node.Vc.CompareTo(m.Gossiped.GossiperVersion) == VectorClockOrdering_VCO_Same {
-		ctx.Tell(ctx.Ref(), &GossipActorClusterConvergedMessage{})
+	if seenNum == len(g.state.gossip.Seen) && g.state.node.Vc.CompareTo(m.Gossiped.GossiperVersion) == VectorClockOrderingSame {
+		ctx.Tell(ctx.Ref(), &ActorClusterConvergedMessage{})
 	}
 }
 
@@ -242,27 +233,27 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 		var changed bool
 		for i, member := range g.state.gossip.Members {
 			switch member.Status {
-			case GossipNodeStatus_GNS_Joining:
+			case NodeStatusJoining:
 				changed = true
-				member.Status = GossipNodeStatus_GNS_Alive
+				member.Status = NodeStatusAlive
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "joining -> alive"))
-			case GossipNodeStatus_GNS_Leaving:
+			case NodeStatusLeaving:
 				// 切换至退出中状态，开始善后处理
 				changed = true
-				member.Status = GossipNodeStatus_GNS_Exiting
+				member.Status = NodeStatusExiting
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "leaving -> exiting"))
-			case GossipNodeStatus_GNS_Exited, GossipNodeStatus_GNS_Down:
+			case NodeStatusExited, NodeStatusDown:
 				changed = true
 				g.state.gossip.Members = append(g.state.gossip.Members[:i], g.state.gossip.Members[i+1:]...)
 				g.hashRing.RemoveNode(member.Id.Ref.PhysicalAddress)
 				// 移除故障检测器
 				delete(g.afd, member.Id.Ref.PhysicalAddress)
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", fmt.Sprintf("%s, remove from gossip", member.Status.String())))
-			case GossipNodeStatus_GNS_Unreachable:
+			case NodeStatusUnreachable:
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "alive -> unreachable"))
-			case GossipNodeStatus_GNS_Reachable:
+			case NodeStatusReachable:
 				changed = true
-				member.Status = GossipNodeStatus_GNS_Alive
+				member.Status = NodeStatusAlive
 				g.logger.Info("cluster", log.String("node", member.Id.Ref.URL().String()), log.String("status", "reachable -> alive"))
 			}
 		}
@@ -282,9 +273,9 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 		g.logger.Debug("cluster", log.String("member", member.Id.Ref.URL().String()), log.String("status", member.Status.String()))
 	}
 
-	if g.state.node.Status == GossipNodeStatus_GNS_Exited {
+	if g.state.node.Status == NodeStatusExited {
 		g.logger.Info("cluster", log.String("status", "exited"))
-		ctx.Tell(ctx.Parent(), &GossipActorClusterExitedMessage{})
+		ctx.Tell(ctx.Parent(), &ActorClusterExitedMessage{})
 		ctx.Terminate(ctx.Ref(), false)
 	}
 }
@@ -292,13 +283,13 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 func (g *GossiperActor) onGossipActorLeaveClusterMessage(ctx vivid.ActorContext) {
 	g.logger.Info("cluster", log.String("status", "leave"))
 
-	g.state.node.Status = GossipNodeStatus_GNS_Leaving
+	g.state.node.Status = NodeStatusLeaving
 	g.state.gossip.Seen = []*NodeId{g.state.node.Id}
 	g.state.Increment()
 	g.state.GossipUpdate()
 }
 
-func (g *GossiperActor) onGossipActorPingPongMessage(ctx vivid.ActorContext, m *GossipActorPingPongMessage) {
+func (g *GossiperActor) onGossipActorPingPongMessage(ctx vivid.ActorContext, m *ActorPingPongMessage) {
 	ctx.Reply(m)
 }
 
@@ -321,7 +312,7 @@ func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
 		}
 		askList = append(askList, FutureMember{
 			Member: member,
-			Future: ctx.FutureAsk(member.Id.Ref, &GossipActorPingPongMessage{}),
+			Future: ctx.FutureAsk(member.Id.Ref, &ActorPingPongMessage{}),
 		})
 	}
 
@@ -341,21 +332,21 @@ func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
 						afd := g.afd[f.Member.Id.Ref.PhysicalAddress]
 						available := afd.IsAvailable() && afd.IsMonitoring()
 						var nextStatus = member.Status
-						if !available && member.Status == GossipNodeStatus_GNS_Alive {
-							nextStatus = GossipNodeStatus_GNS_Unreachable
+						if !available && member.Status == NodeStatusAlive {
+							nextStatus = NodeStatusUnreachable
 							g.logger.Warn("cluster", log.String("event", "node unreachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
-						} else if available && member.Status == GossipNodeStatus_GNS_Unreachable {
-							nextStatus = GossipNodeStatus_GNS_Reachable
+						} else if available && member.Status == NodeStatusUnreachable {
+							nextStatus = NodeStatusReachable
 							g.logger.Info("cluster", log.String("event", "node reachable"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
-						} else if !available && member.Status == GossipNodeStatus_GNS_Unreachable && afd.LastHeartbeat().Before(time.Now().Add(-10*time.Minute)) {
-							nextStatus = GossipNodeStatus_GNS_Down
+						} else if !available && member.Status == NodeStatusUnreachable && afd.LastHeartbeat().Before(time.Now().Add(-10*time.Minute)) {
+							nextStatus = NodeStatusDown
 							g.logger.Info("cluster", log.String("event", "node unreachable timeout"), log.String("node", member.Id.Ref.URL().String()), log.Float64("phi", afd.Phi()))
 						}
 
 						if nextStatus != member.Status {
 							member.Status = nextStatus
 							if g.state.gossip.AccessibilityChange == nil {
-								g.state.gossip.AccessibilityChange = make(map[string]GossipNodeStatus)
+								g.state.gossip.AccessibilityChange = make(map[string]NodeStatus)
 							}
 							g.state.gossip.AccessibilityChange[member.Id.Ref.PhysicalAddress] = nextStatus
 							g.state.gossip.Seen = []*NodeId{g.state.node.Id}

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package engine.vivid.cluster.internal.gossip;
+package engine.vivid.cluster.internal.gossip.v1;
 
 import "engine/prc/process_id.proto";
 
@@ -78,15 +78,16 @@ message GossipActorClusterExitedMessage {}
 
 // 节点状态
 enum GossipNodeStatus {
-  GNS_Joining = 0; // 加入中
-  GNS_Alive = 1; // 活跃
-  GNS_Leaving = 2; // 正在离开
-  GNS_Exiting = 3; // 退出中
-  GNS_Exited = 4; // 已退出
-  GNS_Removed = 5; // 移除
-  GNS_Unreachable = 6; // 不可达
-  GNS_Reachable = 7; // 可达（网络恢复期间缓冲）
-  GNS_Down = 8; // 宕机
+  GOSSIP_NODE_STATUS_UNSPECIFIED = 0;
+  GOSSIP_NODE_STATUS_JOINING = 1; // 加入中
+  GOSSIP_NODE_STATUS_ALIVE = 2; // 活跃
+  GOSSIP_NODE_STATUS_LEAVING = 3; // 正在离开
+  GOSSIP_NODE_STATUS_EXITING = 4; // 退出中
+  GOSSIP_NODE_STATUS_EXITED = 5; // 已退出
+  GOSSIP_NODE_STATUS_REMOVED = 6; // 移除
+  GOSSIP_NODE_STATUS_UNREACHABLE = 7; // 不可达
+  GOSSIP_NODE_STATUS_REACHABLE = 8; // 可达（网络恢复期间缓冲）
+  GOSSIP_NODE_STATUS_DOWN = 9; // 宕机
 }
 
 // 矢量时钟结构
@@ -95,8 +96,9 @@ message VectorClock {
 }
 
 enum VectorClockOrdering {
-  VCO_Concurrent = 0; // 并行
-  VCO_After = 1; // 之后
-  VCO_Before = 2; // 之前
-  VCO_Same = 3; // 相同
+  VECTOR_CLOCK_ORDERING_UNSPECIFIED = 0;
+  VECTOR_CLOCK_ORDERING_CONCURRENT = 1; // 并行
+  VECTOR_CLOCK_ORDERING_AFTER = 2; // 之后
+  VECTOR_CLOCK_ORDERING_BEFORE = 3; // 之前
+  VECTOR_CLOCK_ORDERING_SAME = 4; // 相同
 }

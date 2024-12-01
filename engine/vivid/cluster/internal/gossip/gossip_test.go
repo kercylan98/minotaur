@@ -51,7 +51,7 @@ func TestGossip2(t *testing.T) {
 
 	time.Sleep(chrono.Second * 3)
 
-	system1.Tell(ref, &GossipActorLeaveClusterMessage{})
+	system1.Tell(ref, &ActorLeaveClusterMessage{})
 
 	time.Sleep(chrono.Hour)
 }
