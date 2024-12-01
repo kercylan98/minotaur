@@ -1,10 +1,7 @@
 syntax = "proto3";
-
-package options;
+package engine.vivid.typed.options;
 
 import "google/protobuf/descriptor.proto";
-
-option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/options";
 
 enum Type {
   Tell = 0; // Tell 模式下返回值将会被忽略

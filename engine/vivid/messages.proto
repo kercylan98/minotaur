@@ -1,6 +1,5 @@
 syntax = "proto3";
-package vivid;
-option go_package = "/github.com/kercylan98/minotaur/engine/vivid";
+package engine.vivid;
 
 import "engine/prc/process_id.proto";
 

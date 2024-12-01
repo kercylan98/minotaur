@@ -1,6 +1,5 @@
 syntax = "proto3";
-package prc;
-option go_package = "github.com/kercylan98/minotaur/engine/prc";
+package engine.prc;
 
 message ProcessId {
   string logical_address = 1;

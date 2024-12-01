@@ -1,8 +1,5 @@
 syntax = "proto3";
-
-package tm;
-
-option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/tm";
+package engine.vivid.typed.tm;
 
 message TypedMessage {
   int32 method_index = 1;

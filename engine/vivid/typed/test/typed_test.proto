@@ -1,6 +1,5 @@
 syntax = "proto3";
-package test;
-option go_package = "github.com/kercylan98/minotaur/engine/vivid/typed/test";
+package engine.vivid.typed.test;
 
 import "engine/vivid/typed/options/options.proto";
 

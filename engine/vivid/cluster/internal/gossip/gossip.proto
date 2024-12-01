@@ -1,6 +1,5 @@
 syntax = "proto3";
-package gossip;
-option go_package = "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip";
+package engine.vivid.cluster.internal.gossip;
 
 import "engine/prc/process_id.proto";
 

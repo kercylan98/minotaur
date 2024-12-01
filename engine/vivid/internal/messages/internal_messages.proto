@@ -1,6 +1,5 @@
 syntax = "proto3";
-package messages;
-option go_package = "/github.com/kercylan98/minotaur/engine/vivid/internal/messages";
+package engine.vivid.internal.messages;
 
 import "engine/prc/process_id.proto";
 import "google/protobuf/timestamp.proto";
