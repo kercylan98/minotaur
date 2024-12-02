@@ -10,6 +10,15 @@ import (
 	"time"
 )
 
+// NewActorSystemF 创建一个 ActorSystem，并使用函数式的配置器进行配置
+func NewActorSystemF(configurator ...FunctionalActorSystemConfigurator) *ActorSystem {
+	var cs []ActorSystemConfigurator
+	for _, c := range configurator {
+		cs = append(cs, c)
+	}
+	return NewActorSystemWithConfiguration(NewActorSystemConfiguration(), cs...)
+}
+
 // NewActorSystem 创建一个 ActorSystem
 func NewActorSystem(configurator ...ActorSystemConfigurator) *ActorSystem {
 	return NewActorSystemWithConfiguration(NewActorSystemConfiguration(), configurator...)

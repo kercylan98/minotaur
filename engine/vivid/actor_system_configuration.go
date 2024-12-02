@@ -80,8 +80,8 @@ func (c *ActorSystemConfiguration) WithAbyss(abyss AbyssProcess) *ActorSystemCon
 }
 
 // WithAccidentTrace 开启事故堆栈追踪
-func (c *ActorSystemConfiguration) WithAccidentTrace() *ActorSystemConfiguration {
-	c.accidentTrace = true
+func (c *ActorSystemConfiguration) WithAccidentTrace(enable bool) *ActorSystemConfiguration {
+	c.accidentTrace = enable
 	return c
 }
 
