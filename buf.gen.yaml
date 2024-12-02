@@ -8,7 +8,7 @@ plugins:
   - remote: buf.build/protocolbuffers/go
     out: .
     opt: paths=source_relative
-  - remote: buf.build/connectrpc/go
+  - remote: buf.build/grpc/go
     out: .
     opt: paths=source_relative
 inputs:
