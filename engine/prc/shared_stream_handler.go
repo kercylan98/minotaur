@@ -9,18 +9,18 @@ func newSharedServer(s *Shared) *sharedServer {
 }
 
 type sharedServer struct {
-	*UnimplementedSharedServer
+	*unimplementedSharedServer
 	shared *Shared
 }
 
 // StreamHandler 监听来自客户端的流
-func (s *sharedServer) StreamHandler(client Shared_StreamHandlerServer) error {
+func (s *sharedServer) StreamHandler(client sharedStreamHandlerServer) error {
 	handshakeMessage, err := client.Recv()
 	if err != nil {
 		return err
 	}
 
-	handshake, ok := handshakeMessage.MessageType.(*SharedMessage_Handshake)
+	handshake, ok := handshakeMessage.MessageType.(*sharedMessageHandshake)
 	if !ok {
 		return errors.New("handshake message is expected")
 	}

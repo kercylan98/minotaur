@@ -1,7 +1,7 @@
 syntax = "proto3";
-package engine.vivid;
+package engine.vivid.v1;
 
-import "engine/prc/process_id.proto";
+import "engine/prc/v1/process_id.proto";
 
 // OnTerminate 在 Actor 处理完该消息后，将会被终止，适用于释放 Actor 资源等场景。
 message OnTerminate {

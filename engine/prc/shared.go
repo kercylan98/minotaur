@@ -33,7 +33,7 @@ var (
 // NewShared 创建一个资源控制器的共享
 func NewShared(rc *ResourceController, configurator ...SharedConfigurator) *Shared {
 	deliveryMessageTypeNameInit.Do(func() {
-		deliveryMessageTypeName = string(proto.MessageName(new(DeliveryMessage)))
+		deliveryMessageTypeName = string(proto.MessageName(new(deliveryMessage)))
 	})
 
 	s := &Shared{
@@ -106,7 +106,7 @@ func (s *Shared) Share() error {
 	s.rc.config.physicalAddress = listener.Addr().String()
 
 	s.grpc = grpc.NewServer()
-	s.grpc.RegisterService(&Shared_ServiceDesc, s.streamServer)
+	s.grpc.RegisterService(&sharedServiceDesc, s.streamServer)
 	for _, hook := range s.config.grpcServerHooks {
 		hook.OnGRPCLaunchBefore(s.grpc)
 	}
@@ -172,15 +172,15 @@ func (s *Shared) open(address PhysicalAddress) (sharedStream, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := NewSharedClient(cc)
+	client := newSharedClient(cc)
 	server, err := client.StreamHandler(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
 	// 与服务器发起握手
-	if err = server.Send(&SharedMessage{
-		MessageType: &SharedMessage_Handshake{Handshake: &Handshake{Address: s.rc.GetPhysicalAddress()}},
+	if err = server.Send(&sharedMessage{
+		MessageType: &sharedMessageHandshake{Handshake: &handshake{Address: s.rc.GetPhysicalAddress()}},
 	}); err != nil {
 		return nil, err
 	}
@@ -206,8 +206,8 @@ func (s *Shared) attachStream(address PhysicalAddress, stream sharedStream) {
 func (s *Shared) detachStream(address PhysicalAddress) {
 	stream, loaded := s.streams.LoadAndDelete(address)
 	if loaded {
-		_ = stream.Send(&SharedMessage{
-			MessageType: &SharedMessage_Farewell{&Farewell{Address: s.rc.GetPhysicalAddress()}},
+		_ = stream.Send(&sharedMessage{
+			MessageType: &sharedMessageFarewell{&farewell{Address: s.rc.GetPhysicalAddress()}},
 		})
 		stream.Close()
 	}
@@ -276,7 +276,7 @@ func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err er
 		}
 	}()
 
-	var message *SharedMessage
+	var message *sharedMessage
 	for {
 		message, err = stream.Recv()
 		if err != nil {
@@ -290,11 +290,11 @@ func (s *Shared) streaming(address PhysicalAddress, stream sharedStream) (err er
 		}
 
 		switch m := message.MessageType.(type) {
-		case *SharedMessage_DeliveryMessage:
+		case *sharedMessageDeliveryMessage:
 			s.onDeliveryMessage(stream, address, m.DeliveryMessage)
-		case *SharedMessage_BatchDeliveryMessage:
+		case *sharedMessageBatchDeliveryMessage:
 			s.onBatchDeliveryMessage(stream, address, m.BatchDeliveryMessage)
-		case *SharedMessage_Farewell:
+		case *sharedMessageFarewell:
 			return nil
 		}
 	}
@@ -306,14 +306,14 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 		panic(err)
 	}
 
-	var m = dm.(*DeliveryMessage)
+	var m = dm.(*deliveryMessage)
 
 	message, err := s.config.codec.Decode(m.MessageType, m.MessageData)
 	if err != nil {
 		panic(err)
 	}
 	switch v := message.(type) {
-	case *SharedErrorMessage:
+	case *sharedErrorMessage:
 		message = errors.New(v.Message)
 	}
 
@@ -334,7 +334,7 @@ func (s *Shared) onDeliveryMessage(stream sharedStream, address PhysicalAddress,
 	}
 }
 
-func (s *Shared) onBatchDeliveryMessage(stream sharedStream, address PhysicalAddress, message *BatchDeliveryMessage) {
+func (s *Shared) onBatchDeliveryMessage(stream sharedStream, address PhysicalAddress, message *batchDeliveryMessage) {
 	for _, deliveryMessage := range message.Messages {
 		s.onDeliveryMessage(stream, address, deliveryMessage)
 	}

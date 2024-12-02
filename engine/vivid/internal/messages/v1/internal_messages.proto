@@ -1,12 +1,12 @@
 syntax = "proto3";
-package engine.vivid.internal.messages;
+package engine.vivid.internal.messages.v1;
 
-import "engine/prc/process_id.proto";
+import "engine/prc/v1/process_id.proto";
 import "google/protobuf/timestamp.proto";
 
 // Terminated 当收到该消息时，说明 TerminatedActor 已经被终止，如果是自身，那么表示自身已被终止。
 message Terminated {
-  prc.ProcessId terminated_process = 1;
+  prc.v1.ProcessId terminated_process = 1;
 }
 
 message Watch {
@@ -19,14 +19,14 @@ message Unwatch {
 
 message SlowProcess {
   int64 duration = 1; // 耗时
-  prc.ProcessId pid = 2; // 耗时进程
+  prc.v1.ProcessId pid = 2; // 耗时进程
 }
 
 // 发起订阅请求，订阅者将与特定主题下的消息进行绑定，届时会收到该主题下所有类型的消息。
 // 该请求还应使用 Ask 或 FutureAsk 进行投递，否则将无法接收到回复的订阅信息，也就意味着无法取消订阅。
 message SubscribeRequest {
   string topic = 1;
-  prc.ProcessId subscriber = 2;
+  prc.v1.ProcessId subscriber = 2;
 }
 
 // 取消订阅请求，订阅者将不再收到该主题下的消息。
@@ -38,7 +38,7 @@ message UnsubscribeRequest {
 message Subscription {
   string topic = 1;
   uint64 id = 2;
-  prc.ProcessId subscriber = 3;
+  prc.v1.ProcessId subscriber = 3;
 }
 
 // 发布广播消息的请求，它是在发布者投递消息后，如果存在远端节点，那么将对远端节点发送该请求进行广播。
@@ -46,13 +46,13 @@ message PublishRequestBroadcast {
   string message_type = 1;
   bytes data = 2;
   string topic = 3;
-  prc.ProcessId publisher = 4;
+  prc.v1.ProcessId publisher = 4;
 }
 
 message AbyssMessageEvent {
-  prc.ProcessId sender = 1;
-  prc.ProcessId receiver = 2;
-  prc.ProcessId forward = 3;
+  prc.v1.ProcessId sender = 1;
+  prc.v1.ProcessId receiver = 2;
+  prc.v1.ProcessId forward = 3;
   string message_type = 4;
   bytes data = 5;
   google.protobuf.Timestamp timestamp = 6;

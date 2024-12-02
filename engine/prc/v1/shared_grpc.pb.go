@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: engine/prc/shared.proto
+// source: engine/prc/v1/shared.proto
 
-package prc
+package prcv1
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Shared_StreamHandler_FullMethodName = "/engine.prc.Shared/StreamHandler"
+	Shared_StreamHandler_FullMethodName = "/engine.prc.v1.Shared/StreamHandler"
 )
 
 // SharedClient is the client API for Shared service.
@@ -104,7 +104,7 @@ type Shared_StreamHandlerServer = grpc.BidiStreamingServer[SharedMessage, Shared
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Shared_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "engine.prc.Shared",
+	ServiceName: "engine.prc.v1.Shared",
 	HandlerType: (*SharedServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
@@ -115,5 +115,5 @@ var Shared_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "engine/prc/shared.proto",
+	Metadata: "engine/prc/v1/shared.proto",
 }

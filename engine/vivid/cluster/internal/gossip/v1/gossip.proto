@@ -1,7 +1,7 @@
 syntax = "proto3";
 package engine.vivid.cluster.internal.gossip.v1;
 
-import "engine/prc/process_id.proto";
+import "engine/prc/v1/process_id.proto";
 
 // 初始化集群，此刻节点准备尝试加入其他集群或创建集群
 message GossipActorInitClusterMessage {
@@ -17,7 +17,7 @@ message GossipActorTryJoinClusterMessage {
 message GossipActorTryJoinClusterAckMessage {
   bool refuse = 1; // 拒绝
   Gossiped gossiped = 2; // 节点状态同步
-  prc.ProcessId handler = 3; // 处理人
+  prc.v1.ProcessId handler = 3; // 处理人
 }
 
 // 创建集群消息（正常应该为本地使用）
@@ -26,7 +26,7 @@ message GossipActorCreateClusterMessage {}
 // 扩散节点状态
 message GossipActorSyncNodeStatusMessage {
   GossipNodeStatus status = 1; // 节点状态
-  prc.ProcessId node = 2; // 节点 ID
+  prc.v1.ProcessId node = 2; // 节点 ID
 }
 
 // 集群已收敛（正常应该为本地使用）
@@ -42,7 +42,7 @@ message Node {
 
 // 节点 ID
 message NodeId {
-  prc.ProcessId ref = 1; // 节点引用
+  prc.v1.ProcessId ref = 1; // 节点引用
   int64 guid = 2; // 同节点唯一标识
 }
 

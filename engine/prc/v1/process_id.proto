@@ -1,5 +1,5 @@
 syntax = "proto3";
-package engine.prc;
+package engine.prc.v1;
 
 message ProcessId {
   string logical_address = 1;

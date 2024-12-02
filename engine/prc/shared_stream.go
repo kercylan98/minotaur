@@ -7,13 +7,13 @@ import (
 
 type sharedStream interface {
 	Process
-	Send(*SharedMessage) error
-	Recv() (*SharedMessage, error)
+	Send(*sharedMessage) error
+	Recv() (*sharedMessage, error)
 	Close()
 	LoadArchives(messages [][]byte)
 }
 
-func newClientStream(address PhysicalAddress, shared *Shared, stream Shared_StreamHandlerServer) *clientStream {
+func newClientStream(address PhysicalAddress, shared *Shared, stream sharedStreamHandlerServer) *clientStream {
 	s := &clientStream{
 		stream: stream,
 	}
@@ -21,7 +21,7 @@ func newClientStream(address PhysicalAddress, shared *Shared, stream Shared_Stre
 	return s
 }
 
-func newServerStream(address PhysicalAddress, shared *Shared, stream Shared_StreamHandlerClient, conn *grpc.ClientConn) *serverStream {
+func newServerStream(address PhysicalAddress, shared *Shared, stream sharedStreamHandlerClient, conn *grpc.ClientConn) *serverStream {
 	s := &serverStream{
 		cc:     conn,
 		stream: stream,
@@ -32,14 +32,14 @@ func newServerStream(address PhysicalAddress, shared *Shared, stream Shared_Stre
 
 type clientStream struct {
 	*sharedStreamProcess
-	stream Shared_StreamHandlerServer
+	stream sharedStreamHandlerServer
 }
 
-func (c *clientStream) Send(message *SharedMessage) error {
+func (c *clientStream) Send(message *sharedMessage) error {
 	return c.stream.Send(message)
 }
 
-func (c *clientStream) Recv() (*SharedMessage, error) {
+func (c *clientStream) Recv() (*sharedMessage, error) {
 	return c.stream.Recv()
 }
 
@@ -71,14 +71,14 @@ func (c *clientStream) LoadArchives(messages [][]byte) {
 type serverStream struct {
 	*sharedStreamProcess
 	cc     *grpc.ClientConn
-	stream Shared_StreamHandlerClient
+	stream sharedStreamHandlerClient
 }
 
-func (s *serverStream) Send(message *SharedMessage) error {
+func (s *serverStream) Send(message *sharedMessage) error {
 	return s.stream.Send(message)
 }
 
-func (s *serverStream) Recv() (*SharedMessage, error) {
+func (s *serverStream) Recv() (*sharedMessage, error) {
 	return s.stream.Recv()
 }
 

@@ -1,7 +1,7 @@
 syntax = "proto3";
-package engine.prc;
+package engine.prc.v1;
 
-import "engine/prc/process_id.proto";
+import "engine/prc/v1/process_id.proto";
 
 // Shared 共享服务
 service Shared {

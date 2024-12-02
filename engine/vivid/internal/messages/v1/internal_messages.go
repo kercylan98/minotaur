@@ -1,9 +1,4 @@
-package messages
-
-type LocalPublishRequest struct {
-	Topic   string
-	Message any
-}
+package messagesv1
 
 func (s *Subscription) SubscriptionId() uint64 {
 	return s.Id

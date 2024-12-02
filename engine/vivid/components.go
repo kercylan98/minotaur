@@ -1,6 +1,7 @@
 package vivid
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"reflect"
 )
@@ -40,7 +41,7 @@ func HasComponent[C Component](actorSystem *ActorSystem) bool {
 func tryBindComponent[C Component](components *components, slice *[]C, comp Component) {
 	if c, ok := comp.(C); ok {
 		*slice = append(*slice, c)
-		components.actorSystem.Logger().Info("component", log.String("register", reflect.TypeOf(new(C)).Elem().Name()), log.String("handler", reflect.TypeOf(comp).Elem().Name()))
+		components.actorSystem.Logger().Info("component", log.String("register", fmt.Sprintf("%T", new(C))), log.String("handler", fmt.Sprintf("%T", c)))
 	}
 }
 

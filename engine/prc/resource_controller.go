@@ -70,21 +70,22 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 	if id == nil {
 		return rc.config.notFoundSubstitute
 	}
-	processPtr := id.cache.Load()
+	processPtr := id.Cache.Load()
 	if processPtr != nil {
-		process = *processPtr
+		process = (*processPtr).(Process)
 		if !process.IsTerminated() {
 			return process
 		}
 
-		id.cache.Store(nil)
+		id.Cache.Store(nil)
 	}
 
 	if !rc.Belong(id) {
 		// 远程进程加载
 		for _, resolver := range rc.par {
 			if process = resolver.Resolve(id); process != nil {
-				id.cache.Store(&process)
+				var anyProcess any = process
+				id.Cache.Store(&anyProcess)
 				return
 			}
 		}
@@ -95,7 +96,8 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 	var exist bool
 	process, exist = rc.processes.Load(id.GetLogicalAddress())
 	if exist {
-		id.cache.Store(&process)
+		var anyProcess any = process
+		id.Cache.Store(&anyProcess)
 		return process
 	} else {
 		// 找不到进程时返回默认的替代进程，当默认的替代进程也不存在那么将是空指针

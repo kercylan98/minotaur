@@ -43,17 +43,17 @@ func (c *sharedStreamProcess) DeliverySystemMessage(receiver, sender, forward *P
 
 func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, message Message, system bool) {
 	if err, ok := message.(error); ok {
-		message = &SharedErrorMessage{Message: err.Error()}
+		message = &sharedErrorMessage{Message: err.Error()}
 	}
 
-	var dm *DeliveryMessage
+	var dm *deliveryMessage
 	switch wrapper := message.(type) {
 	case *MessageWrapper:
 		name, data, err := c.shared.config.codec.Encode(wrapper.Message)
 		if err != nil {
 			panic(err)
 		}
-		dm = &DeliveryMessage{
+		dm = &deliveryMessage{
 			MessageType: name,
 			MessageData: data,
 			System:      system,
@@ -65,7 +65,7 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 		if err != nil {
 			panic(err)
 		}
-		dm = &DeliveryMessage{
+		dm = &deliveryMessage{
 			MessageType: name,
 			MessageData: data,
 			System:      system,
@@ -131,17 +131,17 @@ func (c *sharedStreamProcess) send() {
 		if len(messages) == 0 {
 			break
 		}
-		var sm *SharedMessage
+		var sm *sharedMessage
 		if len(messages) == 1 {
-			sm = &SharedMessage{
-				MessageType: &SharedMessage_DeliveryMessage{
+			sm = &sharedMessage{
+				MessageType: &sharedMessageDeliveryMessage{
 					DeliveryMessage: messages[0],
 				},
 			}
 		} else {
-			sm = &SharedMessage{
-				MessageType: &SharedMessage_BatchDeliveryMessage{
-					BatchDeliveryMessage: &BatchDeliveryMessage{Messages: messages},
+			sm = &sharedMessage{
+				MessageType: &sharedMessageBatchDeliveryMessage{
+					BatchDeliveryMessage: &batchDeliveryMessage{Messages: messages},
 				},
 			}
 		}

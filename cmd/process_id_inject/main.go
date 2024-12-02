@@ -8,57 +8,46 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
 func main() {
-	fp := filepath.Join(".", "engine", "prc", "process_id.pb.go")
+	fp := "./engine/prc/v1/process_id.pb.go"
 
-	// 读取文件内容
 	fd, err := os.ReadFile(fp)
 	if err != nil {
 		panic(err)
 	}
 
-	// 创建文件集
 	fSet := token.NewFileSet()
 
-	// 解析文件
 	file, err := parser.ParseFile(fSet, fp, fd, parser.ParseComments)
 	if err != nil {
 		panic(err)
 	}
 
-	// 导入
-	// Add the imports
 	for i := 0; i < len(file.Decls); i++ {
 		d := file.Decls[i]
 
 		switch d.(type) {
 		case *ast.FuncDecl:
-			// No action
 		case *ast.GenDecl:
 			dd := d.(*ast.GenDecl)
-
-			// IMPORT Declarations
 			if dd.Tok == token.IMPORT {
-				// Add the new import
 				iSpec := &ast.ImportSpec{Path: &ast.BasicLit{Value: strconv.Quote("sync/atomic")}}
 				dd.Specs = append(dd.Specs, iSpec)
 			}
 		}
 	}
 
-	// 查找并修改结构体
 	found := false
 	ast.Inspect(file, func(n ast.Node) bool {
 		if ts, ok := n.(*ast.TypeSpec); ok {
 			switch v := ts.Type.(type) {
 			case *ast.StructType:
 				processCacheField := &ast.Field{
-					Names: []*ast.Ident{ast.NewIdent("cache")},
-					Type:  ast.NewIdent("atomic.Pointer[Process]"),
+					Names: []*ast.Ident{ast.NewIdent("Cache")},
+					Type:  ast.NewIdent("atomic.Pointer[any]"),
 				}
 				v.Fields.List = append(v.Fields.List, processCacheField)
 
