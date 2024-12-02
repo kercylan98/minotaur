@@ -86,11 +86,7 @@ func NewActorSystemWithConfiguration(configuration *ActorSystemConfiguration, co
 
 	system.guard = system.spawnTopActor("user", new(guard))
 	system.subscription = system.ActorOfF(func() Actor {
-		sa := newSubscriptionActor(system)
-		for _, provider := range system.config.subscriptionContactProviders {
-			sa.bindSubscriptionContactProvider(provider)
-		}
-		return sa
+		return newSubscriptionActor(system)
 	}, func(descriptor *ActorDescriptor) {
 		descriptor.WithName("sub")
 	})
@@ -203,19 +199,10 @@ func (sys *ActorSystem) Signal(handler func(system *ActorSystem, signal os.Signa
 // Shutdown 关闭 Actor 系统。
 //   - 该函数会等待所有 Actor 终止后再关闭 Actor 系统。
 func (sys *ActorSystem) Shutdown(gracefully bool) {
-	for _, hook := range sys.config.shutdownBeforeHooks {
-		hook()
-	}
-
 	sys.guard.Terminate(sys.guard.ref, gracefully)
 	<-sys.closed
 	sys.shared.Dead()
 	sys.Logger().Info("ActorSystem", log.String("status", "shutdown"), log.String("name", sys.config.actorSystemName))
-
-	for _, hook := range sys.config.shutdownAfterHooks {
-		hook()
-	}
-
 	sys.components.onShutdown()
 }
 

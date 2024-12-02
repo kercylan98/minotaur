@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc/codec"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/random"
-	"google.golang.org/grpc"
 	"os"
 )
 
@@ -29,47 +28,19 @@ func NewActorSystemConfiguration() *ActorSystemConfiguration {
 
 // ActorSystemConfiguration 是 ActorSystem 的配置
 type ActorSystemConfiguration struct {
-	actorSystemName              string                        // ActorSystem 名称
-	physicalAddress              prc.PhysicalAddress           // 物理地址（透传给 prc.Shared）
-	loggerProvider               log.LoggerProvider            // 日志提供者
-	shared                       bool                          // 开启网络共享
-	sharedCodec                  codec.Codec                   // 网络共享编解码器
-	accidentTrace                bool                          // 事故堆栈追踪
-	abyss                        AbyssProcess                  // 深渊进程
-	shutdownBeforeHooks          []ShutdownBeforeHook          // ActorSystem 关闭前将调用此回调
-	shutdownAfterHooks           []ShutdownAfterHook           // ActorSystem 关闭后将调用此回调
-	grpcServerHooks              []func(server *grpc.Server)   // GRPC 服务器钩子
-	subscriptionContactProviders []SubscriptionContactProvider // 订阅联系人提供者
-	components                   []Component                   // 组件
+	actorSystemName string              // ActorSystem 名称
+	physicalAddress prc.PhysicalAddress // 物理地址（透传给 prc.Shared）
+	loggerProvider  log.LoggerProvider  // 日志提供者
+	shared          bool                // 开启网络共享
+	sharedCodec     codec.Codec         // 网络共享编解码器
+	accidentTrace   bool                // 事故堆栈追踪
+	abyss           AbyssProcess        // 深渊进程
+	components      []Component         // 组件
 }
 
 // WithComponents 设置组件
 func (c *ActorSystemConfiguration) WithComponents(components ...Component) *ActorSystemConfiguration {
 	c.components = append(c.components, components...)
-	return c
-}
-
-// WithSubscriptionContactProviders 设置订阅联系人提供者
-func (c *ActorSystemConfiguration) WithSubscriptionContactProviders(providers ...SubscriptionContactProvider) *ActorSystemConfiguration {
-	c.subscriptionContactProviders = append(c.subscriptionContactProviders, providers...)
-	return c
-}
-
-// WithGRPCServerHooks 设置 GRPC 服务器钩子，该方法将在创建 GRPC 服务器后调用
-func (c *ActorSystemConfiguration) WithGRPCServerHooks(hooks ...func(server *grpc.Server)) *ActorSystemConfiguration {
-	c.grpcServerHooks = append(c.grpcServerHooks, hooks...)
-	return c
-}
-
-// WithShutdownBeforeHooks 设置 ActorSystem 关闭前将调用此回调
-func (c *ActorSystemConfiguration) WithShutdownBeforeHooks(hooks ...ShutdownBeforeHook) *ActorSystemConfiguration {
-	c.shutdownBeforeHooks = append(c.shutdownBeforeHooks, hooks...)
-	return c
-}
-
-// WithShutdownAfterHooks 设置 ActorSystem 关闭后将调用此回调
-func (c *ActorSystemConfiguration) WithShutdownAfterHooks(hooks ...ShutdownAfterHook) *ActorSystemConfiguration {
-	c.shutdownAfterHooks = append(c.shutdownAfterHooks, hooks...)
 	return c
 }
 

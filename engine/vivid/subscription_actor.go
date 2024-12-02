@@ -33,21 +33,6 @@ type subscriptionActor struct {
 	launched   sync.WaitGroup                              // 意味着该 Actor 真实启动完成的等待信号
 }
 
-// bindSubscriptionContactProvider 由 ActorSystem 在创建该 Actor 时进行调用的绑定函数，它将监听集群中节点的变化
-func (s *subscriptionActor) bindSubscriptionContactProvider(provider SubscriptionContactProvider) {
-	go func() {
-		s.launched.Wait()
-		for {
-			select {
-			case <-s.ctx.Done():
-				return
-			case event := <-provider.ChangeNotify():
-				_ = s.system.FutureAsk(s.system.subscription, &sharedSubscriptionStatusChangedMessage{Address: event.Address, Closed: event.Stop}).Wait()
-			}
-		}
-	}()
-}
-
 func (s *subscriptionActor) OnReceive(ctx ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *OnLaunch:
