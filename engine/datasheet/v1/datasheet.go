@@ -60,13 +60,20 @@ func (p *Pos) Add(pos *Pos) {
 	p.Cell += pos.Cell
 }
 
+func (t DataSheetStructType) IsBase() bool {
+	switch t {
+	case DataSheetStructType_DATA_SHEET_FIELD_TYPE_STRUCT,
+		DataSheetStructType_DATA_SHEET_FIELD_TYPE_ARRAY,
+		DataSheetStructType_DATA_SHEET_FIELD_TYPE_SLICE,
+		DataSheetStructType_DATA_SHEET_FIELD_TYPE_MAP:
+		return false
+	}
+	return true
+}
+
 func ParseStructInfo(typ string) (*DataSheetStruct, error) {
 	dataSheetTableStruct := &DataSheetStruct{
-		IsOptional:    false,
-		Type:          0,
-		Name:          "",
-		Description:   "",
-		TypeInfoOneof: nil,
+		Name: typ,
 	}
 
 	if strings.HasPrefix(typ, "*") {
@@ -143,7 +150,7 @@ func parseOther(typeInfo any) (*DataSheetStruct, error) {
 			return ParseStructInfo(value.Name)
 		}
 	case *Struct:
-		oneof := &DataSheetStruct_StructInfo{
+		oneOf := &DataSheetStruct_StructInfo{
 			StructInfo: &DataSheetStructInfo{},
 		}
 		for fieldName, fieldType := range value.Fields {
@@ -159,12 +166,12 @@ func parseOther(typeInfo any) (*DataSheetStruct, error) {
 				return nil, err
 			}
 			fieldInfo.FieldName = fieldName
-			oneof.StructInfo.Fields = append(oneof.StructInfo.Fields, fieldInfo)
+			oneOf.StructInfo.Fields = append(oneOf.StructInfo.Fields, fieldInfo)
 		}
 		return &DataSheetStruct{
 			IsOptional:    false,
 			Type:          DataSheetStructType_DATA_SHEET_FIELD_TYPE_STRUCT,
-			TypeInfoOneof: oneof,
+			TypeInfoOneof: oneOf,
 		}, nil
 	case *Array:
 		var elemInfo *DataSheetStruct

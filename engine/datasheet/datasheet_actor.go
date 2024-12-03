@@ -80,6 +80,8 @@ func (a *actor) onGenerateDataSheetRequest(ctx vivid.ActorContext, m *datasheetv
 
 	a.onGenerateDataSheetName(ctx, m, dataSheet)
 	a.onGenerateDataSheetFields(ctx, m, dataSheet)
+
+	ctx.Reply(&datasheetv1.GenerateDataSheetResponse{DataSheet: dataSheet})
 }
 
 func (a *actor) onGenerateDataSheetName(ctx vivid.ActorContext, m *datasheetv1.GenerateDataSheetRequest, sheet *datasheetv1.DataSheet) {
