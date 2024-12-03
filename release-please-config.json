@@ -6,14 +6,7 @@
   "packages": {
     ".": {
       "release-as": "0.6.1",
-      "release-type": "go",
-      "exclude-paths": ["ax"]
-    },
-
-    "ax": {
-      "release-as": "0.6.1",
-      "release-type": "go",
-      "changelog-path": "ax/CHANGELOG.md"
+      "release-type": "go"
     }
   }
 }
