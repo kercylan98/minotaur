@@ -35,6 +35,15 @@ func (t *Tokens[T]) Peek() Token {
 	return t.tokenized.tokens[t.pos]
 }
 
+// PeekOffset 预览指定偏移的 Token
+func (t *Tokens[T]) PeekOffset(offset int) Token {
+	offset = t.pos + offset
+	if offset >= len(t.tokenized.tokens) || offset < 0 {
+		return ""
+	}
+	return t.tokenized.tokens[offset]
+}
+
 // Reset 重置所有消费
 func (t *Tokens[T]) Reset() {
 	t.pos = 0
