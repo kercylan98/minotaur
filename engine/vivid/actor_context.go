@@ -631,6 +631,9 @@ func (ctx *actorContext) ActorOf(provider ActorProvider, configurator ...ActorDe
 	if descriptor.namePrefix != charproc.None {
 		descriptor.name = descriptor.namePrefix + "-" + descriptor.name
 	}
+	if descriptor.name != charproc.None && descriptor.namePrefix != charproc.None {
+		descriptor.name += "-" + convert.Uint64ToString(ctx.nextChildGuid())
+	}
 
 	// 进程 Id 初始化
 	var processId *prc.ProcessId
