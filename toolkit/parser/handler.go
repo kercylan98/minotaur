@@ -1,11 +1,11 @@
 package parser
 
-type Handler interface {
-	Handle(tokens *Tokens) error
+type Handler[T any] interface {
+	Handle(tokens *Tokens[T]) (T, error)
 }
 
-type FunctionalHandler func(tokens *Tokens) error
+type FunctionalHandler[T any] func(tokens *Tokens[T]) (T, error)
 
-func (f FunctionalHandler) Handle(tokens *Tokens) error {
+func (f FunctionalHandler[T]) Handle(tokens *Tokens[T]) (T, error) {
 	return f(tokens)
 }

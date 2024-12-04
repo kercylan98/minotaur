@@ -7,7 +7,7 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	p := parser.New(parser.SymbolAt, parser.SymbolLeftParen, parser.SymbolRightParen)
+	p := parser.New[any](parser.SymbolAt, parser.SymbolLeftParen, parser.SymbolRightParen)
 	var tests = []struct {
 		Annotation string
 	}{
@@ -18,17 +18,17 @@ func TestParser(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Annotation, func(t *testing.T) {
 			tokenized := p.Tokenize(test.Annotation)
-			err := tokenized.Parse(parser.FunctionalHandler(func(tokens *parser.Tokens) error {
+			_, err := tokenized.Parse(parser.FunctionalHandler[any](func(tokens *parser.Tokens[any]) (any, error) {
 				token := tokens.Consume()
 
 				if token.EqualSymbol(parser.SymbolAt) {
 					name := tokens.Consume()
 					if len(name) == 0 {
-						return errors.New("name is empty")
+						return nil, errors.New("name is empty")
 					}
 
 					if !tokens.Consume().EqualSymbol(parser.SymbolLeftParen) {
-						return errors.New("expect (")
+						return nil, errors.New("expect (")
 					}
 					var params string
 					token = tokens.Consume()
@@ -37,14 +37,14 @@ func TestParser(t *testing.T) {
 						token = tokens.Consume()
 					}
 					if !token.EqualSymbol(parser.SymbolRightParen) {
-						return errors.New("expect )")
+						return nil, errors.New("expect )")
 					}
 
 					t.Log(name, params)
-					return nil
+					return nil, nil
 				}
 
-				return errors.New("expect @")
+				return nil, errors.New("expect @")
 			}))
 			if err != nil {
 				panic(err)

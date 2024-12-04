@@ -1,14 +1,15 @@
 package parser
 
-type Tokens struct {
-	tokenized *Tokenized
-	handler   Handler
-	pos       int
-	undo      int
+type Tokens[T any] struct {
+	tokenized   *Tokenized[T]
+	handler     Handler[T]
+	pos         int
+	undo        int
+	symbolTable map[Symbol]bool
 }
 
 // Consume 消费一个 Token
-func (t *Tokens) Consume() Token {
+func (t *Tokens[T]) Consume() Token {
 	if t.pos >= len(t.tokenized.tokens) {
 		return ""
 	}
@@ -19,7 +20,7 @@ func (t *Tokens) Consume() Token {
 }
 
 // Undo 回退一个 Token，当没有发生消费时，什么也不会发生
-func (t *Tokens) Undo() {
+func (t *Tokens[T]) Undo() {
 	if t.undo > 0 {
 		t.undo--
 		t.pos--
@@ -27,7 +28,7 @@ func (t *Tokens) Undo() {
 }
 
 // Peek 预览下一个 Token
-func (t *Tokens) Peek() Token {
+func (t *Tokens[T]) Peek() Token {
 	if t.pos >= len(t.tokenized.tokens) {
 		return ""
 	}
@@ -35,11 +36,20 @@ func (t *Tokens) Peek() Token {
 }
 
 // Reset 重置所有消费
-func (t *Tokens) Reset() {
+func (t *Tokens[T]) Reset() {
 	t.pos = 0
 }
 
 // Handle 以当前状态递归处理
-func (t *Tokens) Handle() error {
+func (t *Tokens[T]) Handle() (T, error) {
 	return t.handler.Handle(t)
+}
+
+// IsSymbol 判断是否为符号
+func (t *Tokens[T]) IsSymbol(token Token) bool {
+	runeToken := []rune(token)
+	if len(runeToken) != 1 {
+		return false
+	}
+	return t.symbolTable[Symbol(runeToken[0])]
 }

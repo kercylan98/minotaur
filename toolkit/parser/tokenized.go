@@ -1,14 +1,16 @@
 package parser
 
-type Tokenized struct {
-	tokens []Token
+type Tokenized[T any] struct {
+	tokens      []Token
+	symbolTable map[Symbol]bool
 }
 
-func (t *Tokenized) Parse(handler Handler) error {
-	tokens := &Tokens{
-		tokenized: t,
-		handler:   handler,
-		pos:       0,
+func (t *Tokenized[T]) Parse(handler Handler[T]) (T, error) {
+	tokens := &Tokens[T]{
+		tokenized:   t,
+		handler:     handler,
+		symbolTable: t.symbolTable,
+		pos:         0,
 	}
 	return handler.Handle(tokens)
 }

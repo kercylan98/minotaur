@@ -6,8 +6,8 @@ import (
 	"unicode"
 )
 
-func New(symbols ...Symbol) *Parser {
-	parser := &Parser{
+func New[T any](symbols ...Symbol) *Parser[T] {
+	parser := &Parser[T]{
 		symbolTable: make(map[Symbol]bool),
 	}
 	for _, symbol := range symbols {
@@ -19,12 +19,12 @@ func New(symbols ...Symbol) *Parser {
 	return parser
 }
 
-type Parser struct {
+type Parser[T any] struct {
 	delimiter   Symbol          // 分隔符
 	symbolTable map[Symbol]bool // 符号表
 }
 
-func (p *Parser) Tokenize(input string) *Tokenized {
+func (p *Parser[T]) Tokenize(input string) *Tokenized[T] {
 	var pos int
 	var tokens []Token
 	var current strings.Builder
@@ -56,5 +56,5 @@ func (p *Parser) Tokenize(input string) *Tokenized {
 		tokens = append(tokens, Token(current.String()))
 	}
 
-	return &Tokenized{tokens: tokens}
+	return &Tokenized[T]{tokens: tokens, symbolTable: p.symbolTable}
 }

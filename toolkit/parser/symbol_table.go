@@ -30,4 +30,5 @@ const (
 	SymbolRightParen   Symbol = ')'  // 右括号
 	SymbolLessThan     Symbol = '<'  // 小于号
 	SymbolGreaterThan  Symbol = '>'  // 大于号
+	SymbolPipe         Symbol = '|'  // 管道
 )
