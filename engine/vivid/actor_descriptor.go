@@ -12,6 +12,7 @@ const (
 )
 
 var (
+	// Actor 名称正则表达式，Actor 名称中禁止包含空格、换行符等特殊字符、以及 '\'、'/'
 	actorNameRegexp = regexp.MustCompile(`^[^\s\\/]+$`)
 )
 
