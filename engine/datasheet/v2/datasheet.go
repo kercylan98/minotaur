@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/toolkit/parser"
 	"github.com/xuri/excelize/v2"
+	"strconv"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ func LoadDatasheets(filePaths ...string) (*Set, error) {
 	set := newSet()
 	files := make([]*excelize.File, 0, len(filePaths))
 	prefabSheets := make(map[string][]*excelize.File)
+	datasheets := make(map[string][]*excelize.File)
 
 	// 打开文件
 	for _, path := range filePaths {
@@ -24,16 +26,15 @@ func LoadDatasheets(filePaths ...string) (*Set, error) {
 		var dType DType
 		for _, sheetName := range file.GetSheetList() {
 			dType, err = file.GetCellValue(sheetName, "B1")
+			id := fmt.Sprintf("%s:%s:%s", path, sheetName, dType)
 			if err != nil {
 				return nil, fmt.Errorf("get datasheet [%s] %s type failed: %w", sheetName, path, err)
 			}
 			switch dType {
 			case DTypePrefab:
-				prefabSheets[sheetName] = append(prefabSheets[sheetName], file)
+				prefabSheets[id] = append(prefabSheets[id], file)
 			case DTypeIndex, DTypeStandard:
-				set.Datasheets[dType] = append(set.Datasheets[dType], &Datasheet{
-					Description: sheetName,
-				})
+				datasheets[id] = append(datasheets[id], file)
 			default:
 				return nil, fmt.Errorf("unsupport datasheet type %s, [%s] %s", dType, sheetName, path)
 			}
@@ -43,6 +44,11 @@ func LoadDatasheets(filePaths ...string) (*Set, error) {
 
 	// 解析预制体
 	if err := parsePrefab(set, prefabSheets); err != nil {
+		return nil, err
+	}
+
+	// 解析数据表
+	if err := parserDatasheets(set, datasheets); err != nil {
 		return nil, err
 	}
 
@@ -56,9 +62,165 @@ func LoadDatasheets(filePaths ...string) (*Set, error) {
 	return set, nil
 }
 
+func parserDatasheets(set *Set, datasheets map[string][]*excelize.File) error {
+	for id, files := range datasheets {
+		parts := strings.SplitN(id, ":", 3)
+		sheetName := parts[1]
+		datasheetType := parts[2]
+		for _, file := range files {
+			if err := parseDatasheet(set, sheetName, datasheetType, file); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func parseDatasheet(set *Set, sheetName string, datasheetType DType, file *excelize.File) error {
+	datasheet := &Datasheet{
+		Description: sheetName,
+	}
+
+	switch datasheetType {
+	case DTypeIndex:
+		if err := parseIndexDatasheet(set, datasheet, file); err != nil {
+			return err
+		}
+	case DTypeStandard:
+		if err := parseStandardDatasheet(set, datasheet, file); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupport datasheet type %s, [%s] %s", datasheetType, sheetName, file.Path)
+	}
+
+	set.Datasheets[datasheetType] = append(set.Datasheets[datasheetType], datasheet)
+	return nil
+}
+
+func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) error {
+	sheetName := datasheet.Description
+	datasheetName, err := file.GetCellValue(sheetName, "B2")
+	if err != nil {
+		return fmt.Errorf("get index datasheet %s[%s] name failed: %w", file.Path, sheetName, err)
+	}
+
+	datasheet.Name = datasheetName
+	rows, err := file.Rows(sheetName)
+	if err != nil {
+		return fmt.Errorf("get %s[%s] rows failed: %w", file.Path, sheetName, err)
+	}
+
+	var line int
+	for rows.Next() {
+		line++
+		if line <= 4 {
+			continue
+		}
+		row, err := rows.Columns()
+		if err != nil {
+			return fmt.Errorf("get  %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
+		}
+
+		if len(row) < 4 {
+			return fmt.Errorf(" %s[%s] row line %d has not enough columns", file.Path, sheetName, line)
+		}
+
+		desc := row[0]
+		fieldName := row[1]
+		fieldType := strings.TrimSpace(row[2])
+		groups := row[3]
+
+		var optional = strings.HasPrefix(fieldType, "*")
+		if optional {
+			fieldType = fieldType[1:]
+		}
+
+		var parsed Type
+		if parsed, err = parserStruct(datasheet.Name, fieldType, set.Prefabs); err != nil {
+			return fmt.Errorf("parse %s[%s] row line %d field %s failed: %w", file.Path, sheetName, line, fieldName, err)
+		}
+
+		datasheet.Fields = append(datasheet.Fields, &Field{
+			Owner:       datasheet,
+			Name:        fieldName,
+			Optional:    optional,
+			Type:        parsed,
+			Description: desc,
+			Index:       0,
+			Groups:      strings.Split(groups, ","),
+		})
+	}
+
+	return nil
+}
+
+func parseIndexDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) error {
+	sheetName := datasheet.Description
+	datasheetName, err := file.GetCellValue(sheetName, "B2")
+	if err != nil {
+		return fmt.Errorf("get index datasheet %s[%s] name failed: %w", file.Path, sheetName, err)
+	}
+
+	datasheet.Name = datasheetName
+
+	rows, err := file.GetRows(sheetName)
+	if err != nil {
+		return fmt.Errorf("get index datasheet %s[%s] rows failed: %w", file.Path, sheetName, err)
+	}
+
+	if len(rows) < 8 {
+		return fmt.Errorf("ToType %s[%s] has not enough rows", file.Path, sheetName)
+	}
+
+	// 读取范围内数据
+	rows = rows[3:8]
+	column := 1
+	for {
+		if column >= len(rows[0]) {
+			break
+		}
+		desc := rows[0][column]
+		fieldName := rows[1][column]
+		fieldType := strings.TrimSpace(rows[2][column])
+		index := rows[3][column]
+		groups := rows[4][column]
+		column++
+
+		var indexInt int
+		if indexInt, err = strconv.Atoi(index); err != nil {
+		}
+
+		var optional = strings.HasPrefix(fieldType, "*")
+		if optional {
+			fieldType = fieldType[1:]
+		}
+
+		var parsed Type
+		if parsed, err = parserStruct(datasheet.Name, fieldType, set.Prefabs); err != nil {
+			return fmt.Errorf("ToType %s[%s] row line %d field %s parse failed: %w", file.Path, sheetName, column, fieldName, err)
+		}
+
+		datasheet.Fields = append(datasheet.Fields, &Field{
+			Owner:       datasheet,
+			Name:        fieldName,
+			Optional:    optional,
+			Type:        parsed,
+			Description: desc,
+			Index:       indexInt,
+			Groups:      strings.Split(groups, ","),
+		})
+
+	}
+
+	return nil
+}
+
 func parsePrefab(set *Set, sheets map[string][]*excelize.File) error {
 	prefabs := make(map[string]*Prefab)
-	for sheetName, files := range sheets {
+	for id, files := range sheets {
+		sheetName := strings.SplitN(id, ":", 3)[1]
 		for _, file := range files {
 			if err := parsePrefabSheet(prefabs, sheetName, file); err != nil {
 				return err
@@ -156,7 +318,7 @@ func parsePrefabSheet(prefabs map[string]*Prefab, sheetName string, file *exceli
 			return fmt.Errorf("prefab name is empty, [%s:%d] %s", sheetName, line, file.Path)
 		}
 
-		prefabType, err := parserPrefab(name, define)
+		prefabType, err := parserStruct(name, define, nil)
 		if err != nil {
 			return err
 		}
@@ -172,12 +334,12 @@ func parsePrefabSheet(prefabs map[string]*Prefab, sheetName string, file *exceli
 	return nil
 }
 
-func parserPrefab(name string, define string) (Type, error) {
-	prefabParser := parser.New[Type](
+func parserStruct(name string, define string, prefabs map[string]*Prefab) (Type, error) {
+	structParser := parser.New[Type](
 		parser.SymbolLeftBrace, parser.SymbolRightBrace, parser.SymbolDot, parser.SymbolComma, parser.SymbolPipe,
 		parser.SymbolColon, parser.SymbolLeftBracket, parser.SymbolRightBracket, parser.SymbolAsterisk,
 	)
-	tokenized := prefabParser.Tokenize(define)
+	tokenized := structParser.Tokenize(define)
 
 	var parserHandler parser.FunctionalHandler[Type]
 	parserHandler = func(tokens *parser.Tokens[Type]) (Type, error) {
@@ -345,6 +507,13 @@ func parserPrefab(name string, define string) (Type, error) {
 			}
 
 			tokens.Consume()
+			if prefabs != nil {
+				prefab, exist := prefabs[token.String()]
+				if !exist {
+					return nil, fmt.Errorf("prefab %s not found", token)
+				}
+				return prefab.Type, nil
+			}
 			return &TodoPrefab{
 				Optional: optional,
 				Name:     token.String(),
@@ -352,12 +521,12 @@ func parserPrefab(name string, define string) (Type, error) {
 		}
 	}
 
-	prefabType, err := tokenized.Parse(parserHandler)
+	parsedType, err := tokenized.Parse(parserHandler)
 	if err != nil {
 		return nil, err
 	}
-	if structType, ok := prefabType.(*Struct); ok {
+	if structType, ok := parsedType.(*Struct); ok {
 		structType.Name = name
 	}
-	return prefabType, nil
+	return parsedType, nil
 }

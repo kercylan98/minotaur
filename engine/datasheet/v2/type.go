@@ -48,15 +48,19 @@ type Set struct {
 }
 
 type Datasheet struct {
-	*Struct
-	Description string // 结构描述
+	Name        string   // 字段名称
+	Description string   // 结构描述
+	Fields      []*Field // 字段列表
 }
 
 type Field struct {
-	*StructField
-	Description string   // 字段描述
-	Index       int      // 字段索引
-	Groups      []string // 字段分组
+	Owner       *Datasheet // 所属结构
+	Name        string     // 字段名称
+	Optional    bool       // 是否可选
+	Type        Type       // 字段类型
+	Description string     // 字段描述
+	Index       int        // 字段索引
+	Groups      []string   // 字段分组
 }
 
 type Prefab struct {
