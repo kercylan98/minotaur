@@ -45,6 +45,11 @@ var (
 		GlobalSign:   func() { _Global, __Global = __Global, nil },
 		ActivitySign: func() { _Activity, __Activity = __Activity, nil },
 	}
+
+	getters = map[DatasheetSign]func() any{
+		GlobalSign:   func() any { return __Global },
+		ActivitySign: func() any { return __Activity },
+	}
 )
 
 // Award 通用奖励
@@ -150,4 +155,12 @@ func GetActivity() map[int]map[int]*Activity {
 	loadLock.RLock()
 	defer loadLock.RUnlock()
 	return _Activity
+}
+
+// GetDatasheet 根据签名获取数据表
+//  - 修改获取到的数据表数据将可能导致竞态问题，需谨慎写操作
+func GetDatasheet(sign DatasheetSign) any {
+	loadLock.RLock()
+	defer loadLock.RUnlock()
+	return getters[sign]()
 }
