@@ -8,6 +8,37 @@ const (
 	DTypeIndex    DType = "index"    // 索引数据表
 )
 
+const (
+	BasicTypeBoolean  = "boolean"
+	BasicTypeBool     = "bool"
+	BasicTypeByte     = "byte"
+	BasicTypeShort    = "short"
+	BasicTypeLong     = "long"
+	BasicTypeInt      = "int"
+	BasicTypeInt8     = "int8"
+	BasicTypeInt16    = "int16"
+	BasicTypeInt32    = "int32"
+	BasicTypeInt64    = "int64"
+	BasicTypeUint     = "uint"
+	BasicTypeUint8    = "uint8"
+	BasicTypeUint16   = "uint16"
+	BasicTypeUint32   = "uint32"
+	BasicTypeUint64   = "uint64"
+	BasicTypeFloat    = "float"
+	BasicTypeDouble   = "double"
+	BasicTypeNumber   = "number"
+	BasicTypeFloat32  = "float32"
+	BasicTypeFloat64  = "float64"
+	BasicTypeTime     = "time"     // 含时间和日期
+	BasicTypeDateTime = "datetime" // 含日期和时间
+	BasicTypeDateOnly = "dateonly" // 仅有日期
+	BasicTypeTimeOnly = "timeonly" // 仅有时间
+	BasicTypeString   = "string"
+	BasicTypeBigInt   = "bigint"
+	BasicTypeBigFloat = "bigfloat"
+	BasicTypeDuration = "duration"
+)
+
 var (
 	// nameRegexp 匹配名称的正则表达式
 	//  - [a-zA-Z] 首字母必须为字母
@@ -16,9 +47,33 @@ var (
 )
 
 var basicType = []string{
-	"boolean", "bool", "int", "int8", "int16", "int32", "int64", "uint",
-	"uint8", "uint16", "uint32", "uint64", "float", "double", "byte", "time",
-	"float32", "float64", "short", "long", "string", "bigint", "bigfloat",
+	BasicTypeBoolean,
+	BasicTypeBool,
+	BasicTypeByte,
+	BasicTypeShort,
+	BasicTypeLong,
+	BasicTypeInt,
+	BasicTypeInt8,
+	BasicTypeInt16,
+	BasicTypeInt32,
+	BasicTypeInt64,
+	BasicTypeUint,
+	BasicTypeUint8,
+	BasicTypeUint16,
+	BasicTypeUint32,
+	BasicTypeUint64,
+	BasicTypeFloat,
+	BasicTypeDouble,
+	BasicTypeFloat32,
+	BasicTypeFloat64,
+	BasicTypeNumber,
+	BasicTypeTime,
+	BasicTypeString,
+	BasicTypeBigInt,
+	BasicTypeBigFloat,
+	BasicTypeDateTime,
+	BasicTypeDateOnly,
+	BasicTypeTimeOnly,
 }
 var basicTypeMap = make(map[string]struct{})
 
@@ -50,6 +105,7 @@ type Set struct {
 type Datasheet struct {
 	Name        string   // 字段名称
 	Description string   // 结构描述
+	Filepath    string   // 文件路径
 	Fields      []*Field // 字段列表
 }
 
@@ -65,6 +121,7 @@ type Field struct {
 
 type Prefab struct {
 	Type
+	Name        string // 预制体名称
 	Description string // 预制体描述
 }
 
@@ -116,3 +173,12 @@ func (t *Slice) isTodoPrefab() bool      { return false }
 func (t *Map) isTodoPrefab() bool        { return false }
 func (t *Basic) isTodoPrefab() bool      { return false }
 func (t *TodoPrefab) isTodoPrefab() bool { return true }
+
+func (d *Datasheet) HasIndex() bool {
+	for _, field := range d.Fields {
+		if field.Index == 1 {
+			return true
+		}
+	}
+	return false
+}

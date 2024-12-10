@@ -2,274 +2,183 @@ package datasheet
 
 import (
 	"fmt"
+	"github.com/kercylan98/minotaur/toolkit/parser"
 	"github.com/xuri/excelize/v2"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-const (
-	dataSheetTypePrefab   = "prefab"   // 预制件数据表
-	dataSheetTypeStandard = "standard" // 标准数据表
-	dataSheetTypeIndex    = "index"    // 索引数据表
-)
+// LoadDatasheets 从文件路径加载数据表，这些数据表将被聚集为一个数据表集合
+func LoadDatasheets(filePaths ...string) (*Set, error) {
+	set := newSet()
+	files := make([]*excelize.File, 0, len(filePaths))
+	prefabSheets := make(map[string][]*excelize.File)
+	datasheets := make(map[string][]*excelize.File)
 
-type datasheet interface {
-	ToType() Type
-}
-
-type prefabDatasheet struct {
-	Description string             // 数据表描述
-	Prefabs     []*datasheetPrefab // 预制件
-}
-
-func (p *prefabDatasheet) ToType() Type {
-	return nil
-}
-
-type standardDatasheet struct {
-	Name        string            // 数据表名称
-	Description string            // 数据表描述
-	Fields      []*datasheetField // 数据表字段
-}
-
-func (s *standardDatasheet) ToType() Type {
-	value := &Struct{
-		StructName: s.Name,
-		Anonymity:  true,
-	}
-
-	for _, field := range s.Fields {
-		value.Fields = append(value.Fields, &Field{
-			Owner:     value,
-			FieldName: field.Name,
-			FieldType: field.Type,
-		})
-	}
-
-	return value
-}
-
-type indexDatasheet struct {
-	Name        string            // 数据表名称
-	Description string            // 数据表描述
-	Fields      []*datasheetField // 数据表字段
-}
-
-func (i *indexDatasheet) ToType() Type {
-	value := &Struct{
-		StructName: i.Name,
-		Anonymity:  true,
-	}
-
-	for _, field := range i.Fields {
-		value.Fields = append(value.Fields, &Field{
-			Owner:     value,
-			FieldName: field.Name,
-			FieldType: field.Type,
-		})
-	}
-
-	return value
-}
-
-type datasheetPrefab struct {
-	Name        string  // 预制件名称
-	Description string  // 预制件描述
-	Prefabs     *Struct // 预制件
-}
-
-type datasheetField struct {
-	Name        string   // 字段名称
-	Description string   // 字段描述
-	Groups      []string // 字段分组
-	Index       int      // 字段索引顺序
-	Type        Type     // 字段类型
-}
-
-// loadDatasheets 加载数据表
-func loadDatasheets(filePaths ...string) ([]datasheet, error) {
-	var prefabs = make(map[string]*Struct)
-	var datasheets []datasheet
-
-	type LoadInfo struct {
-		path      string
-		file      *excelize.File
-		sheetName string
-		sheetType string
-	}
-
-	var loadSorted []*LoadInfo
-
+	// 打开文件
 	for _, path := range filePaths {
 		file, err := excelize.OpenFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("open file %s failed: %w", path, err)
+			return nil, fmt.Errorf("open file failed: %w", err)
 		}
+		files = append(files, file)
 
+		var dType DType
 		for _, sheetName := range file.GetSheetList() {
-			datasheetType, err := file.GetCellValue(sheetName, "B1")
+			dType, err = file.GetCellValue(sheetName, "B1")
+			id := fmt.Sprintf("%s:%s:%s", path, sheetName, dType)
 			if err != nil {
-				return nil, fmt.Errorf("get ToType %s[%s] type failed: %w", path, sheetName, err)
+				return nil, fmt.Errorf("get datasheet [%s] %s type failed: %w", sheetName, path, err)
 			}
-			loadSorted = append(loadSorted, &LoadInfo{
-				file:      file,
-				path:      path,
-				sheetName: sheetName,
-				sheetType: datasheetType,
-			})
+			switch dType {
+			case DTypePrefab:
+				prefabSheets[id] = append(prefabSheets[id], file)
+			case DTypeIndex, DTypeStandard:
+				datasheets[id] = append(datasheets[id], file)
+			default:
+				return nil, fmt.Errorf("unsupport datasheet type %s, [%s] %s", dType, sheetName, path)
+			}
+
 		}
 	}
 
-	// 预制表最前
-	sort.Slice(loadSorted, func(i, j int) bool {
-		if loadSorted[i].sheetType == dataSheetTypePrefab && loadSorted[j].sheetType != dataSheetTypePrefab {
-			return true
-		}
-		if loadSorted[i].sheetType != dataSheetTypePrefab && loadSorted[j].sheetType == dataSheetTypePrefab {
-			return false
-		}
-		return loadSorted[i].sheetName < loadSorted[j].sheetName
-	})
-
-	type Dep struct {
-		value *Struct
-		info  *LoadInfo
+	// 解析预制体
+	if err := parsePrefab(set, prefabSheets); err != nil {
+		return nil, err
 	}
 
-	prefabDeps := make(map[string][]*Dep)
-	parser := NewParser()
-	for _, info := range loadSorted {
-		tempPrefabDeps := make(map[string][]*Struct) // 预制体名称 => 依赖它的结构体
-		switch info.sheetType {
-		case dataSheetTypePrefab:
-			prefab, err := loadPrefabDatasheet(info.file, info.sheetName, prefabs, tempPrefabDeps, parser)
-			if err != nil {
-				return nil, err
-			}
-			datasheets = append(datasheets, prefab)
-		case dataSheetTypeStandard:
+	// 解析数据表
+	if err := parserDatasheets(set, datasheets); err != nil {
+		return nil, err
+	}
 
-			standard, err := loadStandardDatasheet(info.file, info.sheetName, prefabs, tempPrefabDeps, parser)
-			if err != nil {
-				return nil, err
-			}
-			datasheets = append(datasheets, standard)
-		case dataSheetTypeIndex:
-			index, err := loadIndexDatasheet(info.file, info.sheetName, prefabs, tempPrefabDeps, parser)
-			if err != nil {
-				return nil, err
-			}
-			datasheets = append(datasheets, index)
-		default:
-			return nil, fmt.Errorf("unsupported ToType %s[%s] type %s", info.path, info.sheetName, info.sheetType)
-		}
-
-		for k, v := range tempPrefabDeps {
-			for _, s := range v {
-				prefabDeps[k] = append(prefabDeps[k], &Dep{
-					value: s,
-					info:  info,
-				})
-			}
+	// 清理文件
+	for _, file := range files {
+		if err := file.Close(); err != nil {
+			return nil, fmt.Errorf("close datasheet file %s failed, err: %w", file.Path, err)
 		}
 	}
 
-	// 预制件整理
-	for prefabName, deps := range prefabDeps {
-		for _, dep := range deps {
-			prefab, exist := prefabs[prefabName]
-			if !exist {
-				return nil, fmt.Errorf("ToType %s[%s] prefab %s not found", dep.info.path, dep.info.sheetName, prefabName)
-			}
-
-			dep.value.Fields = prefab.Fields
-			dep.value.StructName = prefab.StructName
-			dep.value.Anonymity = prefab.Anonymity
-		}
-	}
-
-	return datasheets, nil
+	return set, nil
 }
 
-func loadPrefabDatasheet(file *excelize.File, sheetName string, prefabs map[string]*Struct, deps map[string][]*Struct, parser *Parser) (*prefabDatasheet, error) {
-	rows, err := file.Rows(sheetName)
-	if err != nil {
-		return nil, fmt.Errorf("get ToType %s[%s] rows failed: %w", file.Path, sheetName, err)
+func parserDatasheets(set *Set, datasheets map[string][]*excelize.File) error {
+	for id, files := range datasheets {
+		parts := strings.SplitN(id, ":", 3)
+		sheetName := parts[1]
+		datasheetType := parts[2]
+		for _, file := range files {
+			if err := parseDatasheet(set, sheetName, datasheetType, file); err != nil {
+				return err
+			}
+		}
 	}
 
-	datasheet := &prefabDatasheet{
+	return nil
+}
+
+func parseDatasheet(set *Set, sheetName string, datasheetType DType, file *excelize.File) error {
+	absFilepath, err := filepath.Abs(file.Path)
+	if err != nil {
+		return err
+	}
+	datasheet := &Datasheet{
 		Description: sheetName,
+		Filepath:    absFilepath,
+	}
+
+	switch datasheetType {
+	case DTypeIndex:
+		if err := parseIndexDatasheet(set, datasheet, file); err != nil {
+			return err
+		}
+	case DTypeStandard:
+		if err := parseStandardDatasheet(set, datasheet, file); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupport datasheet type %s, [%s] %s", datasheetType, sheetName, file.Path)
+	}
+
+	set.Datasheets[datasheetType] = append(set.Datasheets[datasheetType], datasheet)
+	return nil
+}
+
+func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) error {
+	sheetName := datasheet.Description
+	datasheetName, err := file.GetCellValue(sheetName, "B2")
+	if err != nil {
+		return fmt.Errorf("get index datasheet %s[%s] name failed: %w", file.Path, sheetName, err)
+	}
+
+	datasheet.Name = datasheetName
+	rows, err := file.Rows(sheetName)
+	if err != nil {
+		return fmt.Errorf("get %s[%s] rows failed: %w", file.Path, sheetName, err)
 	}
 
 	var line int
 	for rows.Next() {
 		line++
-		if line <= 3 {
+		if line <= 4 {
 			continue
 		}
 		row, err := rows.Columns()
 		if err != nil {
-			return nil, fmt.Errorf("get ToType %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
+			return fmt.Errorf("get  %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
 		}
 
-		if len(row) < 3 {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d has not enough columns", file.Path, sheetName, line)
+		if len(row) < 4 {
+			return fmt.Errorf(" %s[%s] row line %d has not enough columns", file.Path, sheetName, line)
 		}
 
-		name := row[0]
-		desc := row[1]
-		define := row[2]
+		desc := row[0]
+		fieldName := row[1]
+		fieldType := strings.TrimSpace(row[2])
+		groups := row[3]
 
-		if name == "" {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d prefab name is empty", file.Path, sheetName, line)
-		}
-		if prefabs[name] != nil {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d prefab name %s already exists", file.Path, sheetName, line, name)
+		var optional = strings.HasPrefix(fieldType, "*")
+		if optional {
+			fieldType = fieldType[1:]
 		}
 
-		prefabType, err := parser.ParseStruct(define)
-		if err != nil {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d prefab define %s parse failed: %w", file.Path, sheetName, line, define, err)
+		var parsed Type
+		if parsed, err = parserStruct(datasheet.Name, fieldType, set.Prefabs); err != nil {
+			return fmt.Errorf("parse %s[%s] row line %d field %s failed: %w", file.Path, sheetName, line, fieldName, err)
 		}
-		for k, v := range parser.GetPrefabDeps() {
-			deps[k] = append(deps[k], v...)
-		}
-		prefab := prefabType.(*Struct)
-		prefab.StructName = name
-		prefab.Anonymity = false
-		datasheet.Prefabs = append(datasheet.Prefabs, &datasheetPrefab{
-			Name:        name,
+
+		datasheet.Fields = append(datasheet.Fields, &Field{
+			Owner:       datasheet,
+			Name:        fieldName,
+			Optional:    optional,
+			Type:        parsed,
 			Description: desc,
-			Prefabs:     prefab,
+			Index:       0,
+			Groups:      strings.Split(groups, ","),
 		})
-		if _, exist := prefabs[name]; exist {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d prefab name %s already exists", file.Path, sheetName, line, name)
-		}
-		prefabs[name] = prefab
 	}
-	return datasheet, nil
+
+	return nil
 }
 
-func loadIndexDatasheet(file *excelize.File, sheetName string, prefabs map[string]*Struct, deps map[string][]*Struct, parser *Parser) (*indexDatasheet, error) {
+func parseIndexDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) error {
+	sheetName := datasheet.Description
 	datasheetName, err := file.GetCellValue(sheetName, "B2")
 	if err != nil {
-		return nil, fmt.Errorf("get ToType %s[%s] name failed: %w", file.Path, sheetName, err)
+		return fmt.Errorf("get index datasheet %s[%s] name failed: %w", file.Path, sheetName, err)
 	}
 
-	datasheet := &indexDatasheet{
-		Name:        datasheetName,
-		Description: sheetName,
-		Fields:      nil,
-	}
+	datasheet.Name = datasheetName
 
 	rows, err := file.GetRows(sheetName)
 	if err != nil {
-		return nil, fmt.Errorf("get ToType %s[%s] rows failed: %w", file.Path, sheetName, err)
+		return fmt.Errorf("get index datasheet %s[%s] rows failed: %w", file.Path, sheetName, err)
 	}
 
 	if len(rows) < 8 {
-		return nil, fmt.Errorf("ToType %s[%s] has not enough rows", file.Path, sheetName)
+		return fmt.Errorf("ToType %s[%s] has not enough rows", file.Path, sheetName)
 	}
 
 	// 读取范围内数据
@@ -288,104 +197,368 @@ func loadIndexDatasheet(file *excelize.File, sheetName string, prefabs map[strin
 
 		var indexInt int
 		if indexInt, err = strconv.Atoi(index); err != nil {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d index %s parse failed: %w", file.Path, sheetName, column, index, err)
+		}
+
+		var optional = strings.HasPrefix(fieldType, "*")
+		if optional {
+			fieldType = fieldType[1:]
 		}
 
 		var parsed Type
-		switch {
-		case strings.HasPrefix(fieldType, "map["):
-			parsed, err = parser.ParseMap(fieldType)
-		case strings.HasPrefix(fieldType, "["):
-			parsed, err = parser.ParseSliceOrArray(fieldType)
-		case strings.HasPrefix(fieldType, "{"):
-			parsed, err = parser.ParseStruct(fieldType)
-		default:
-			parsed, err = parser.ParseBasicType(fieldType)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d field type %s parse failed: %w", file.Path, sheetName, column, fieldType, err)
-		}
-		for k, v := range parser.GetPrefabDeps() {
-			deps[k] = append(deps[k], v...)
+		if parsed, err = parserStruct(datasheet.Name, fieldType, set.Prefabs); err != nil {
+			return fmt.Errorf("parse index datasheet %s[%s] row line %d field %s failed: %w", file.Path, sheetName, column, fieldName, err)
 		}
 
-		field := &datasheetField{
+		datasheet.Fields = append(datasheet.Fields, &Field{
+			Owner:       datasheet,
 			Name:        fieldName,
-			Description: desc,
+			Optional:    optional,
 			Type:        parsed,
+			Description: desc,
 			Index:       indexInt,
 			Groups:      strings.Split(groups, ","),
-		}
-
-		datasheet.Fields = append(datasheet.Fields, field)
+		})
 	}
-	return datasheet, nil
+
+	sort.Slice(datasheet.Fields, func(i, j int) bool {
+		// 0 最后
+		if datasheet.Fields[i].Index == 0 {
+			return false
+		}
+		if datasheet.Fields[j].Index == 0 {
+			return true
+		}
+		return datasheet.Fields[i].Index < datasheet.Fields[j].Index
+	})
+
+	// 检查索引是否由 1 开始
+	if startField := datasheet.Fields[0]; startField.Index != 1 {
+		return fmt.Errorf("parse index datasheet(%s:%s) failed, %w, got: %d, from: %s", datasheet.Filepath, datasheet.Name, ErrorIndexStart, startField.Index, startField.Name)
+	}
+
+	// 检查索引是否连续
+	for i := 0; i < len(datasheet.Fields)-1; i++ {
+		curr := datasheet.Fields[i]
+		next := datasheet.Fields[i+1]
+		if curr.Index+1 != next.Index && next.Index != 0 {
+			return fmt.Errorf("parse index datasheet(%s:%s) failed, %w, curr:%s(%d), next: %s(%d)", datasheet.Filepath, datasheet.Name, ErrorIndexContinuous, curr.Name, curr.Index, next.Name, next.Index)
+		}
+	}
+
+	return nil
 }
 
-func loadStandardDatasheet(file *excelize.File, sheetName string, prefabs map[string]*Struct, deps map[string][]*Struct, parser *Parser) (*standardDatasheet, error) {
-	datasheetName, err := file.GetCellValue(sheetName, "B2")
-	if err != nil {
-		return nil, fmt.Errorf("get ToType %s[%s] name failed: %w", file.Path, sheetName, err)
+func parsePrefab(set *Set, sheets map[string][]*excelize.File) error {
+	prefabs := make(map[string]*Prefab)
+	for id, files := range sheets {
+		sheetName := strings.SplitN(id, ":", 3)[1]
+		for _, file := range files {
+			if err := parsePrefabSheet(prefabs, sheetName, file); err != nil {
+				return err
+			}
+		}
 	}
 
-	datasheet := &standardDatasheet{
-		Name:        datasheetName,
-		Description: sheetName,
-		Fields:      nil,
+	// 预制体依赖处理
+	var prefabDepHandler func(t Type) error
+	prefabDepHandler = func(t Type) error {
+		var exist bool
+		switch value := t.(type) {
+		case *Struct:
+			for _, field := range value.Fields {
+				if field.Type.isTodoPrefab() {
+					exceptName := field.Type.(*TodoPrefab).Name
+					if field.Type, exist = prefabs[exceptName]; !exist {
+						return fmt.Errorf("prefab %s not existed", exceptName)
+					}
+				}
+				if err := prefabDepHandler(field.Type); err != nil {
+					return err
+				}
+			}
+		case *Array:
+			if value.Type.isTodoPrefab() {
+				exceptName := value.Type.(*TodoPrefab).Name
+				if value.Type, exist = prefabs[exceptName]; !exist {
+					return fmt.Errorf("prefab %s not existed", exceptName)
+				}
+				if err := prefabDepHandler(value.Type); err != nil {
+					return err
+				}
+			}
+		case *Slice:
+			if value.Type.isTodoPrefab() {
+				exceptName := value.Type.(*TodoPrefab).Name
+				if value.Type, exist = prefabs[exceptName]; !exist {
+					return fmt.Errorf("prefab %s not existed", exceptName)
+				}
+				if err := prefabDepHandler(value.Type); err != nil {
+					return err
+				}
+			}
+		case *Map:
+			if value.ValueType.isTodoPrefab() {
+				exceptName := value.ValueType.(*TodoPrefab).Name
+				if value.ValueType, exist = prefabs[exceptName]; !exist {
+					return fmt.Errorf("prefab %s not existed", exceptName)
+				}
+				if err := prefabDepHandler(value.ValueType); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	}
 
+	for _, prefab := range prefabs {
+		if err := prefabDepHandler(prefab.Type); err != nil {
+			return err
+		}
+	}
+
+	set.Prefabs = prefabs
+	return nil
+}
+
+func parsePrefabSheet(prefabs map[string]*Prefab, sheetName string, file *excelize.File) error {
 	rows, err := file.Rows(sheetName)
 	if err != nil {
-		return nil, fmt.Errorf("get ToType %s[%s] rows failed: %w", file.Path, sheetName, err)
+		return fmt.Errorf("get ToType [%s] %s rows failed: %w", sheetName, file.Path, err)
 	}
 
 	var line int
 	for rows.Next() {
 		line++
-		if line <= 4 {
+		if line <= 3 {
 			continue
 		}
 		row, err := rows.Columns()
 		if err != nil {
-			return nil, fmt.Errorf("get ToType %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
+			return fmt.Errorf("get prefab sheet columns failed: [%s:%d] %s, %w", sheetName, line, file.Path, err)
 		}
 
-		if len(row) < 4 {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d has not enough columns", file.Path, sheetName, line)
+		if len(row) < 3 {
+			return fmt.Errorf("prefab sheet has not enough columns, [%s:%d] %s", sheetName, line, file.Path)
 		}
 
-		desc := row[0]
-		fieldName := row[1]
-		fieldType := strings.TrimSpace(row[2])
-		group := row[3]
+		name := row[0]
+		desc := row[1]
+		define := row[2]
 
-		var parsed Type
-		switch {
-		case strings.HasPrefix(fieldType, "map["):
-			parsed, err = parser.ParseMap(fieldType)
-		case strings.HasPrefix(fieldType, "["):
-			parsed, err = parser.ParseSliceOrArray(fieldType)
-		case strings.HasPrefix(fieldType, "{"):
-			parsed, err = parser.ParseStruct(fieldType)
-		default:
-			parsed, err = parser.ParseBasicType(fieldType)
+		if name == "" {
+			return fmt.Errorf("prefab name is empty, [%s:%d] %s", sheetName, line, file.Path)
 		}
+
+		prefabType, err := parserStruct(name, define, nil)
 		if err != nil {
-			return nil, fmt.Errorf("ToType %s[%s] row line %d field type %s parse failed: %w", file.Path, sheetName, line, fieldType, err)
+			return err
 		}
 
-		for k, v := range parser.GetPrefabDeps() {
-			deps[k] = append(deps[k], v...)
+		if _, exist := prefabs[name]; exist {
+			return fmt.Errorf("prefab %s existed", name)
 		}
-
-		datasheet.Fields = append(datasheet.Fields, &datasheetField{
-			Name:        fieldName,
+		prefabs[name] = &Prefab{
+			Type:        prefabType,
+			Name:        name,
 			Description: desc,
-			Groups:      strings.Split(group, ","),
-			Index:       0,
-			Type:        parsed,
-		})
+		}
+	}
+	return nil
+}
+
+func parserStruct(name string, define string, prefabs map[string]*Prefab) (Type, error) {
+	structParser := parser.New[Type](
+		parser.SymbolLeftBrace, parser.SymbolRightBrace, parser.SymbolDot, parser.SymbolComma, parser.SymbolPipe,
+		parser.SymbolColon, parser.SymbolLeftBracket, parser.SymbolRightBracket, parser.SymbolAsterisk,
+	)
+	tokenized := structParser.Tokenize(define)
+
+	var parserHandler parser.FunctionalHandler[Type]
+	parserHandler = func(tokens *parser.Tokens[Type]) (Type, error) {
+		token := tokens.Peek()
+
+		switch {
+		case token.EqualSymbol(parser.SymbolLeftBrace): // 结构体
+			value := &Struct{}
+			token = tokens.Consume() // 消费 '{'
+			for !tokens.Peek().EqualSymbol(parser.SymbolRightBrace) {
+				var fieldName string
+				var fieldType Type
+				var optional bool
+				var err error
+
+				// 字段名
+				if token = tokens.Consume(); !nameRegexp.MatchString(token.String()) {
+					return nil, fmt.Errorf("struct field name invlide: %s", token)
+				}
+				fieldName = token.String()
+
+				// 分隔符
+				if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolColon) {
+					return nil, fmt.Errorf("invlide struct, except: ':' got: %s", token)
+				}
+
+				// 是否可选
+				if token = tokens.Consume(); token.EqualSymbol(parser.SymbolAsterisk) {
+					optional = true
+				} else {
+					tokens.Undo()
+				}
+
+				// 字段类型
+				if fieldType, err = parserHandler(tokens); err != nil {
+					return nil, err
+				}
+
+				value.Fields = append(value.Fields, &StructField{
+					Owner:    value,
+					Name:     fieldName,
+					Optional: optional,
+					Type:     fieldType,
+				})
+
+				// 消费 ','
+				if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolComma) {
+					tokens.Undo()
+					break
+				}
+			}
+			// 消费 '}'
+			if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolRightBrace) {
+				return nil, fmt.Errorf("invlide struct, except: '}' got: %s", token)
+			}
+			return value, nil
+		case strings.HasPrefix(token.String(), "map"): // MAP
+			// 消费 "map"
+			tokens.Consume()
+
+			// 消费 '['
+			if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolLeftBracket) {
+				return nil, fmt.Errorf("invlide map, except: '[' got: %s", token)
+			}
+
+			// Key 类型
+			keyType, err := parserHandler(tokens)
+			if err != nil {
+				return nil, err
+			}
+			if _, ok := keyType.(*Basic); !ok {
+				return nil, fmt.Errorf("invlide map, key except basic type, but got: %T", keyType)
+			}
+
+			// 消费 ']'
+			if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolRightBracket) {
+				return nil, fmt.Errorf("invlide map, except: ']' got: %s", token)
+			}
+
+			// 是否可选
+			var optional bool
+			if token = tokens.Consume(); token.EqualSymbol(parser.SymbolAsterisk) {
+				optional = true
+			} else {
+				tokens.Undo()
+			}
+
+			// Val 类型
+			valType, err := parserHandler(tokens)
+			if err != nil {
+				return nil, err
+			}
+
+			return &Map{
+				KeyType:       keyType,
+				ValueType:     valType,
+				ValueOptional: optional,
+			}, nil
+		case token.EqualSymbol(parser.SymbolLeftBracket) && tokens.PeekOffset(1).EqualSymbol(parser.SymbolRightBracket): // 切片
+			// 消费 '['、']'
+			tokens.Consume()
+			tokens.Consume()
+
+			// 是否可选
+			var optional bool
+			if token = tokens.Consume(); token.EqualSymbol(parser.SymbolAsterisk) {
+				optional = true
+			} else {
+				tokens.Undo()
+			}
+
+			valueType, err := parserHandler(tokens)
+			if err != nil {
+				return nil, err
+			}
+
+			return &Slice{
+				Optional: optional,
+				Type:     valueType,
+			}, nil
+		case token.EqualSymbol(parser.SymbolLeftBracket) && !tokens.PeekOffset(1).EqualSymbol(parser.SymbolRightBracket): // 数组
+			// 消费 '['
+			tokens.Consume()
+
+			// 长度
+			token = tokens.Consume()
+			var size = -1
+			if _, err := fmt.Sscanf(token.String(), "%d", &size); err != nil {
+				return nil, fmt.Errorf("invalid array, expect array size, but got %s", token)
+			}
+
+			// 消费 ']'
+			if token = tokens.Consume(); !token.EqualSymbol(parser.SymbolRightBracket) {
+				return nil, fmt.Errorf("invalid array, except: ']' got: %s", token)
+			}
+
+			// 是否可选
+			var optional bool
+			if token = tokens.Consume(); token.EqualSymbol(parser.SymbolAsterisk) {
+				optional = true
+			} else {
+				tokens.Undo()
+			}
+
+			valueType, err := parserHandler(tokens)
+			if err != nil {
+				return nil, err
+			}
+
+			return &Array{
+				Length:   size,
+				Optional: optional,
+				Type:     valueType,
+			}, nil
+		case IsBasicType(strings.ToLower(token.String())): // 基本类型
+			tokens.Consume()
+			return &Basic{Name: token.String()}, nil
+		default: // 预制体
+			// 是否可选
+			var optional bool
+			if token = tokens.Consume(); token.EqualSymbol(parser.SymbolAsterisk) {
+				optional = true
+			} else {
+				tokens.Undo()
+			}
+
+			tokens.Consume()
+			if prefabs != nil {
+				prefab, exist := prefabs[token.String()]
+				if !exist {
+					return nil, fmt.Errorf("prefab %s not found", token)
+				}
+				return prefab, nil
+			}
+			return &TodoPrefab{
+				Optional: optional,
+				Name:     token.String(),
+			}, nil
+		}
 	}
 
-	return datasheet, nil
+	parsedType, err := tokenized.Parse(parserHandler)
+	if err != nil {
+		return nil, err
+	}
+	if structType, ok := parsedType.(*Struct); ok {
+		structType.Name = name
+	}
+	return parsedType, nil
 }
