@@ -12,7 +12,7 @@ func TestGenerateJSON(t *testing.T) {
 		panic(err)
 	}
 
-	if err = generator.GenerateData(generators.JSON("./test/generate-json.json")); err != nil {
+	if err = generator.GenerateData(generators.JSON("./test/generate-json.json", datasheet.ServerGroup)); err != nil {
 		panic(err)
 	}
 }
@@ -23,7 +23,7 @@ func TestSeparateJSON(t *testing.T) {
 		panic(err)
 	}
 
-	if err = generator.GenerateData(generators.SeparateJSON("./test")); err != nil {
+	if err = generator.GenerateData(generators.SeparateJSON("./test", datasheet.ServerGroup)); err != nil {
 		panic(err)
 	}
 }

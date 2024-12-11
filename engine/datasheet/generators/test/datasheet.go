@@ -13,36 +13,36 @@ var _ = (*time.Time)(nil)
 type DatasheetSign = string
 
 const (
-	// ActivitySign 索引模板
-	ActivitySign DatasheetSign = "Activity"
 	// GlobalSign 标准模板
 	GlobalSign DatasheetSign = "Global"
+	// ActivitySign 索引模板
+	ActivitySign DatasheetSign = "Activity"
 )
 
 var loaded = make(map[DatasheetSign]bool)
 var loadLock sync.RWMutex
 var upLock sync.RWMutex
 var (
-	_Activity  map[int]map[int]*Activity
-	__Activity map[int]map[int]*Activity
 	_Global    *Global
 	__Global   *Global
+	_Activity  map[int]map[int]*Activity
+	__Activity map[int]map[int]*Activity
 )
 
 var (
 	loaders = map[DatasheetSign]func(any){
-		ActivitySign: func(data any) { __Activity = data.(map[int]map[int]*Activity) },
 		GlobalSign:   func(data any) { __Global = data.(*Global) },
+		ActivitySign: func(data any) { __Activity = data.(map[int]map[int]*Activity) },
 	}
 
 	updaters = map[DatasheetSign]func(){
-		ActivitySign: func() { _Activity, __Activity = __Activity, nil },
 		GlobalSign:   func() { _Global, __Global = __Global, nil },
+		ActivitySign: func() { _Activity, __Activity = __Activity, nil },
 	}
 
 	getters = map[DatasheetSign]func() any{
-		ActivitySign: func() any { return __Activity },
 		GlobalSign:   func() any { return __Global },
+		ActivitySign: func() any { return __Activity },
 	}
 )
 
@@ -61,13 +61,6 @@ type PlayerAward struct {
 	Awards []Award
 }
 
-// Activity 索引模板
-type Activity struct {
-	Id     int     // 活动 ID
-	Day    int     // 轮转天数
-	Awards []Award // 奖励
-}
-
 // Global 标准模板
 type Global struct {
 	NewbieAwards []Award          // 新手奖励
@@ -75,24 +68,19 @@ type Global struct {
 	Idx1         time.Time        // idx1
 	Idx2         int              // idx2
 	Idx3         int              // idx3
-	Idx4         time.Duration    // idx4
+}
+
+// Activity 索引模板
+type Activity struct {
+	Id     int     // 活动 ID
+	Day    int     // 轮转天数
+	Awards []Award // 奖励
 }
 
 // Load 传入一个处理器，该函数会将所需加载的数据表名称及其接收反序列化数据的实例传入，如果 loaded 为 false，那么该数据表将不会被加载，后续可通过 Up 或 UpAll 函数将加载的数据转换为线上的数据
 //  - 如果处理器返回错误，则加载过程将中断，任何内容都不会改变
 func Load(handler func(sign DatasheetSign, data any) (loaded bool, err error)) error {
 	var handlers []func()
-	instanceActivity := make(map[int]map[int]*Activity)
-	isLoadActivity, err := handler(ActivitySign, &instanceActivity)
-	if err != nil {
-		return err
-	}
-	if isLoadActivity {
-		handlers = append(handlers, func() {
-			loaded[ActivitySign] = true
-			loaders[ActivitySign](instanceActivity)
-		})
-	}
 	instanceGlobal := new(Global)
 	isLoadGlobal, err := handler(GlobalSign, &instanceGlobal)
 	if err != nil {
@@ -102,6 +90,17 @@ func Load(handler func(sign DatasheetSign, data any) (loaded bool, err error)) e
 		handlers = append(handlers, func() {
 			loaded[GlobalSign] = true
 			loaders[GlobalSign](instanceGlobal)
+		})
+	}
+	instanceActivity := make(map[int]map[int]*Activity)
+	isLoadActivity, err := handler(ActivitySign, &instanceActivity)
+	if err != nil {
+		return err
+	}
+	if isLoadActivity {
+		handlers = append(handlers, func() {
+			loaded[ActivitySign] = true
+			loaders[ActivitySign](instanceActivity)
 		})
 	}
 
@@ -148,20 +147,20 @@ func Up(signs ...DatasheetSign) {
 	}
 }
 
-// GetActivity 索引模板
-//  - 修改获取到的数据表数据将可能导致竞态问题，需谨慎写操作
-func GetActivity() map[int]map[int]*Activity {
-	loadLock.RLock()
-	defer loadLock.RUnlock()
-	return _Activity
-}
-
 // GetGlobal 标准模板
 //  - 修改获取到的数据表数据将可能导致竞态问题，需谨慎写操作
 func GetGlobal() *Global {
 	loadLock.RLock()
 	defer loadLock.RUnlock()
 	return _Global
+}
+
+// GetActivity 索引模板
+//  - 修改获取到的数据表数据将可能导致竞态问题，需谨慎写操作
+func GetActivity() map[int]map[int]*Activity {
+	loadLock.RLock()
+	defer loadLock.RUnlock()
+	return _Activity
 }
 
 // GetDatasheet 根据签名获取数据表

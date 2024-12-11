@@ -87,6 +87,9 @@ func (g *golang) parse(set *datasheet.Set) {
 				Description: d.Description,
 			}
 			for _, field := range d.Fields {
+				if !field.InGroup(datasheet.ServerGroup) {
+					continue
+				}
 				goField := &golangStructField{
 					Name:        charproc.BigCamel(field.Name),
 					Type:        g.parseType(field.Type),

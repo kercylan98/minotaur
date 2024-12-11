@@ -5,6 +5,8 @@ type CodeGenerator interface {
 }
 
 type DataGenerator interface {
+	Group() GroupType
+
 	Generate(data map[string]any) error
 }
 
@@ -27,7 +29,7 @@ func (g *Generator) GenerateCode(codeGenerator CodeGenerator) error {
 }
 
 func (g *Generator) GenerateData(dataGenerator DataGenerator) error {
-	data, err := g.set.LoadData()
+	data, err := g.set.LoadData(dataGenerator.Group())
 	if err != nil {
 		return err
 	}

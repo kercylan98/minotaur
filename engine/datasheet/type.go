@@ -49,11 +49,34 @@ const (
 	BasicTypeDuration = "duration"
 )
 
+type GroupType = int
+
+const (
+	ServerGroup GroupType = iota
+	ClientGroup
+)
+
 var (
 	// nameRegexp 匹配名称的正则表达式
 	//  - [a-zA-Z] 首字母必须为字母
 	//  - [a-zA-Z0-9_]* 后续字符必须为字母、数字或下划线
 	nameRegexp = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
+
+	serverFieldGroups = map[string]struct{}{
+		"s":      {},
+		"srv":    {},
+		"server": {},
+		"sc":     {},
+		"cs":     {},
+	}
+
+	clientFieldGroups = map[string]struct{}{
+		"c":      {},
+		"cli":    {},
+		"client": {},
+		"sc":     {},
+		"cs":     {},
+	}
 )
 
 var timeFormats = []string{
@@ -497,7 +520,7 @@ func (d *Datasheet) HasIndex() bool {
 }
 
 // LoadData 加载数据
-func (s *Set) LoadData() (map[string]any, error) {
+func (s *Set) LoadData(groupType GroupType) (map[string]any, error) {
 	state := lua.NewState()
 	defer state.Close()
 	datasheetDataMap := make(map[string]any)
@@ -505,13 +528,13 @@ func (s *Set) LoadData() (map[string]any, error) {
 		for _, datasheet := range datasheets {
 			switch typ {
 			case DTypeStandard:
-				if v, err := loadDataFromStandardDatasheet(state, datasheet); err != nil {
+				if v, err := loadDataFromStandardDatasheet(state, datasheet, groupType); err != nil {
 					return nil, err
 				} else {
 					datasheetDataMap[datasheet.Name] = v
 				}
 			case DTypeIndex:
-				if v, err := loadDataFromIndexDatasheet(state, datasheet); err != nil {
+				if v, err := loadDataFromIndexDatasheet(state, datasheet, groupType); err != nil {
 					return nil, err
 				} else {
 					datasheetDataMap[datasheet.Name] = v
@@ -524,9 +547,13 @@ func (s *Set) LoadData() (map[string]any, error) {
 	return datasheetDataMap, nil
 }
 
-func loadDataFromIndexDatasheet(state *lua.LState, datasheet *Datasheet) (map[string]any, error) {
+func loadDataFromIndexDatasheet(state *lua.LState, datasheet *Datasheet, groupType GroupType) (map[string]any, error) {
 	var maxRow int
 	for _, field := range datasheet.Fields {
+		if !field.InGroup(groupType) {
+			continue
+		}
+
 		if len(field.Values) > maxRow {
 			maxRow = len(field.Values)
 		}
@@ -538,6 +565,13 @@ func loadDataFromIndexDatasheet(state *lua.LState, datasheet *Datasheet) (map[st
 		var row = make(map[string]any)
 		var indexValue = make(map[int]string)
 		for _, field := range datasheet.Fields {
+			if !field.InGroup(groupType) {
+				if field.Index > 0 {
+					return nil, fmt.Errorf("index field %s.%s not in group", datasheet.Description, field.Name)
+				}
+				continue
+			}
+
 			if value, err := field.Type.parseData(state, field.Values[i]); err != nil {
 				return nil, err
 			} else {
@@ -572,9 +606,13 @@ func loadDataFromIndexDatasheet(state *lua.LState, datasheet *Datasheet) (map[st
 	return rawDatasheetData, nil
 }
 
-func loadDataFromStandardDatasheet(state *lua.LState, datasheet *Datasheet) (map[any]any, error) {
+func loadDataFromStandardDatasheet(state *lua.LState, datasheet *Datasheet, groupType GroupType) (map[any]any, error) {
 	var datasheetData = make(map[any]any)
 	for _, field := range datasheet.Fields {
+		if !field.InGroup(groupType) {
+			continue
+		}
+
 		if value, err := field.Type.parseData(state, field.Values[0]); err != nil {
 			return nil, err
 		} else {
@@ -582,4 +620,25 @@ func loadDataFromStandardDatasheet(state *lua.LState, datasheet *Datasheet) (map
 		}
 	}
 	return datasheetData, nil
+}
+
+func (f *Field) InGroup(groupType GroupType) bool {
+	var found bool
+	for _, group := range f.Groups {
+		switch groupType {
+		case ServerGroup:
+			if _, exist := serverFieldGroups[group]; exist {
+				found = true
+				break
+			}
+		case ClientGroup:
+			if _, exist := clientFieldGroups[group]; exist {
+				found = true
+				break
+			}
+		default:
+			return false
+		}
+	}
+	return found
 }

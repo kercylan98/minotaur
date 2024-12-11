@@ -9,14 +9,20 @@ import (
 	"path/filepath"
 )
 
-func JSON(outputFilepath string) datasheet.DataGenerator {
+func JSON(outputFilepath string, groupType datasheet.GroupType) datasheet.DataGenerator {
 	return &json{
+		groupType:      groupType,
 		outputFilepath: outputFilepath,
 	}
 }
 
 type json struct {
 	outputFilepath string
+	groupType      datasheet.GroupType
+}
+
+func (j *json) Group() datasheet.GroupType {
+	return j.groupType
 }
 
 func (j *json) Generate(data map[string]any) error {
@@ -46,14 +52,20 @@ func (j *json) Generate(data map[string]any) error {
 	return os.WriteFile(j.outputFilepath, buffer.Bytes(), 0644)
 }
 
-func SeparateJSON(outputDir string) datasheet.DataGenerator {
+func SeparateJSON(outputDir string, groupType datasheet.GroupType) datasheet.DataGenerator {
 	return &separateJSON{
 		outputDir: outputDir,
+		groupType: groupType,
 	}
 }
 
 type separateJSON struct {
 	outputDir string
+	groupType datasheet.GroupType
+}
+
+func (s *separateJSON) Group() datasheet.GroupType {
+	return s.groupType
 }
 
 func (s *separateJSON) Generate(data map[string]any) error {

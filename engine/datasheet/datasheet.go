@@ -157,7 +157,7 @@ func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File)
 			Type:        parsed,
 			Description: desc,
 			Index:       0,
-			Groups:      strings.Split(groups, ","),
+			Groups:      strings.Split(strings.ToLower(groups), ","),
 			Values:      []string{fieldValue},
 		})
 	}
@@ -225,7 +225,7 @@ func parseIndexDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) er
 			Type:        parsed,
 			Description: desc,
 			Index:       indexInt,
-			Groups:      strings.Split(groups, ","),
+			Groups:      strings.Split(strings.ToLower(groups), ","),
 			Values:      values,
 		})
 	}
