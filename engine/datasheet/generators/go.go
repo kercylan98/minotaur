@@ -170,9 +170,9 @@ func (g *golang) parseType(t datasheet.Type) string {
 	case *datasheet.Basic:
 		switch value.Name {
 		case datasheet.BasicTypeBigInt:
-			buf.WriteString("big.Int")
+			buf.WriteString("datasheet.BigInt")
 		case datasheet.BasicTypeBigFloat:
-			buf.WriteString("big.Float")
+			buf.WriteString("datasheet.BigFloat")
 		case datasheet.BasicTypeBoolean:
 			buf.WriteString("bool")
 		case datasheet.BasicTypeFloat:

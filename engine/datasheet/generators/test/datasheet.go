@@ -3,12 +3,11 @@
 package datasheet
 
 import (
-	"math/big"
+	"github.com/kercylan98/minotaur/engine/datasheet"
 	"sync"
 	"time"
 )
 
-var _ = (*big.Int)(nil)
 var _ = (*time.Time)(nil)
 
 type DatasheetSign = string
@@ -52,6 +51,9 @@ var (
 	}
 )
 
+// Awards 一堆奖励
+type Awards []*Award
+
 // Award 通用奖励
 type Award struct {
 	Id    int
@@ -64,13 +66,10 @@ type PlayerAward struct {
 	Awards []Award
 }
 
-// Awards 一堆奖励
-type Awards []*Award
-
 // Global 标准模板
 type Global struct {
-	NewbieAwards []Award // 新手奖励
-	InitCoins    big.Int // 初始金币
+	NewbieAwards []Award          // 新手奖励
+	InitCoins    datasheet.BigInt // 初始金币
 }
 
 // Activity 索引模板

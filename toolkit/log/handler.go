@@ -295,7 +295,7 @@ func (h *Handler) formatAttrValue(ctx context.Context, level slog.Level, fullKey
 			}
 
 		default:
-			//builder.WriteString(strconv.Quote(fmt.Sprintf("%+v", attr.Value.Any())))
+			//builder.WriteString(strconv.Quote(fmt.Sprintf("%+v", attr.Values.Any())))
 			builder.WriteString(string(toolkit.MarshalJSON(attr.Value.Any())))
 		}
 	}

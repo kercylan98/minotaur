@@ -138,6 +138,7 @@ func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File)
 		fieldName := row[1]
 		fieldType := strings.TrimSpace(row[2])
 		groups := row[3]
+		fieldValue := row[4]
 
 		var optional = strings.HasPrefix(fieldType, "*")
 		if optional {
@@ -157,6 +158,7 @@ func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File)
 			Description: desc,
 			Index:       0,
 			Groups:      strings.Split(groups, ","),
+			Values:      []string{fieldValue},
 		})
 	}
 
@@ -182,21 +184,28 @@ func parseIndexDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) er
 	}
 
 	// 读取范围内数据
-	rows = rows[3:8]
 	column := 1
 	for {
-		if column >= len(rows[0]) {
+		if column >= len(rows[3]) {
 			break
 		}
-		desc := rows[0][column]
-		fieldName := rows[1][column]
-		fieldType := strings.TrimSpace(rows[2][column])
-		index := rows[3][column]
-		groups := rows[4][column]
+		desc := rows[3][column]
+		fieldName := rows[4][column]
+		fieldType := strings.TrimSpace(rows[5][column])
+		index := rows[6][column]
+		groups := rows[7][column]
+		var values []string
+		var valueRow = 8
+		for valueRow < len(rows) && column < len(rows[valueRow]) {
+			values = append(values, rows[valueRow][column])
+			valueRow++
+		}
+
 		column++
 
 		var indexInt int
 		if indexInt, err = strconv.Atoi(index); err != nil {
+			return fmt.Errorf("parse index datasheet %s[%s] row line %d field %s index %s failed: %w", file.Path, sheetName, column, fieldName, index, err)
 		}
 
 		var optional = strings.HasPrefix(fieldType, "*")
@@ -217,6 +226,7 @@ func parseIndexDatasheet(set *Set, datasheet *Datasheet, file *excelize.File) er
 			Description: desc,
 			Index:       indexInt,
 			Groups:      strings.Split(groups, ","),
+			Values:      values,
 		})
 	}
 
