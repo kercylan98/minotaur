@@ -187,6 +187,8 @@ func (g *golang) parseType(t datasheet.Type) string {
 			buf.WriteString("time.Time")
 		case datasheet.BasicTypeDuration:
 			buf.WriteString("time.Duration")
+		case datasheet.BasicTypeStr:
+			buf.WriteString("string")
 		default:
 			buf.WriteString(value.Name)
 		}

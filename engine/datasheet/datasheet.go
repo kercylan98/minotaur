@@ -127,11 +127,11 @@ func parseStandardDatasheet(set *Set, datasheet *Datasheet, file *excelize.File)
 		}
 		row, err := rows.Columns()
 		if err != nil {
-			return fmt.Errorf("get  %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
+			return fmt.Errorf("get %s[%s] row line %d columns failed: %w", file.Path, sheetName, line, err)
 		}
 
 		if len(row) < 4 {
-			return fmt.Errorf(" %s[%s] row line %d has not enough columns", file.Path, sheetName, line)
+			break
 		}
 
 		desc := row[0]

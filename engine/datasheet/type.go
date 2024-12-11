@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/maths"
 	lua "github.com/yuin/gopher-lua"
-	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -108,6 +107,7 @@ var basicType = []string{
 	BasicTypeDateTime,
 	BasicTypeDateOnly,
 	BasicTypeTimeOnly,
+	BasicTypeDuration,
 }
 var basicTypeMap = make(map[string]struct{})
 
@@ -447,25 +447,17 @@ func (t *Basic) parseData(luaState *lua.LState, value string) (result any, err e
 		}
 		result = value
 	case BasicTypeBigInt:
-		var bi = new(big.Int)
-		var text []byte
-		if err = bi.UnmarshalText([]byte(value)); err != nil {
+		var bi = new(BigInt)
+		if err = bi.UnmarshalJSON([]byte(value)); err != nil {
 			return nil, err
 		}
-		if text, err = bi.MarshalText(); err != nil {
-			return nil, err
-		}
-		result = string(text)
+		result = bi
 	case BasicTypeBigFloat:
-		var bf = new(big.Float)
-		var text []byte
-		if err = bf.UnmarshalText([]byte(value)); err != nil {
+		var bf = new(BigFloat)
+		if err = bf.UnmarshalJSON([]byte(value)); err != nil {
 			return nil, err
 		}
-		if text, err = bf.MarshalText(); err != nil {
-			return nil, err
-		}
-		result = string(text)
+		result = bf
 	case BasicTypeDuration:
 		tsv := strings.TrimSpace(value)
 		if tsv == "" {

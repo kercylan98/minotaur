@@ -35,12 +35,6 @@ var (
 )
 
 var (
-{{/*初始化构造器*/}}
-    generators = map[DatasheetSign]func() any {
-        {{- range .DatasheetVars}}
-            {{.Name}}Sign: func() any { {{- if .HasIndex}} return make({{.Type}}){{- else}} return new({{.Type}}){{- end}}},
-        {{- end}}
-    }
 {{/*初始化加载器*/}}
     loaders = map[DatasheetSign]func(any) {
         {{- range .DatasheetVars}}
@@ -87,26 +81,25 @@ var (
 // Load 传入一个处理器，该函数会将所需加载的数据表名称及其接收反序列化数据的实例传入，如果 loaded 为 false，那么该数据表将不会被加载，后续可通过 Up 或 UpAll 函数将加载的数据转换为线上的数据
 //  - 如果处理器返回错误，则加载过程将中断，任何内容都不会改变
 func Load(handler func(sign DatasheetSign, data any) (loaded bool, err error)) error {
-    temp := make(map[DatasheetSign]any)
+    var handlers []func()
     {{- range .DatasheetVars}}
-        temp[{{.Name}}Sign] = generators[{{.Name}}Sign]()
-    {{- end}}
-
-    for sign, datasheet := range temp {
-        loaded, err := handler(sign, datasheet)
+        instance{{.Name}} := {{- if .HasIndex}} make({{.Type}}){{- else}} new({{.Name}}){{- end}}
+        isLoad{{.Name}}, err := handler({{.Name}}Sign, &instance{{.Name}})
         if err != nil {
             return err
         }
-        if !loaded {
-            delete(temp, sign)
+        if isLoad{{.Name}} {
+            handlers = append(handlers, func() {
+                loaded[{{.Name}}Sign] = true
+                loaders[{{.Name}}Sign](instance{{.Name}})
+            })
         }
-    }
+    {{- end}}
 
     loadLock.Lock()
     defer loadLock.Unlock()
-    for sign, datasheet := range temp {
-        loaded[sign] = true
-        loaders[sign](datasheet)
+    for _, handler := range handlers {
+        handler()
     }
 
     return nil
