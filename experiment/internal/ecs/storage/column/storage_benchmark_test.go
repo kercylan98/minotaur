@@ -1,7 +1,7 @@
 package column_test
 
 import (
-	"github.com/kercylan98/minotaur/engine/ecs/storage/column"
+	"github.com/kercylan98/minotaur/experiment/internal/ecs/storage/column"
 	"testing"
 )
 

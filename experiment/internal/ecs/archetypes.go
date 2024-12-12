@@ -1,7 +1,7 @@
 package ecs
 
 import (
-	"github.com/kercylan98/minotaur/engine/ecs/storage/column"
+	"github.com/kercylan98/minotaur/experiment/internal/ecs/storage/column"
 	"github.com/kercylan98/minotaur/toolkit"
 )
 

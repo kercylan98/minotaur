@@ -1,7 +1,7 @@
 package column
 
 import (
-	"github.com/kercylan98/minotaur/engine/ecs/storage"
+	"github.com/kercylan98/minotaur/experiment/internal/ecs/storage"
 )
 
 func New[PK, Col comparable]() *Storage[PK, Col] {

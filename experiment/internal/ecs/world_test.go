@@ -1,7 +1,7 @@
 package ecs_test
 
 import (
-	ecs2 "github.com/kercylan98/minotaur/engine/ecs"
+	"github.com/kercylan98/minotaur/experiment/internal/ecs"
 	"testing"
 )
 
@@ -11,12 +11,12 @@ type Position struct {
 }
 
 func TestWorld_Spawn(t *testing.T) {
-	w := ecs2.NewWorld()
+	w := ecs.NewWorld()
 	pos := w.RegComponent(new(Position))
 
 	w.Spawn(pos)
 
-	iter := w.Query(ecs2.Equal(pos)).Iterator()
+	iter := w.Query(ecs.Equal(pos)).Iterator()
 	for iter.Next() {
 		t.Log(iter.Entity())
 

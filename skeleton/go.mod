@@ -1,4 +1,4 @@
-module github.com/kercylan98/minotaur/example
+module github.com/kercylan98/minotaur/skeleton
 
 go 1.23.0
 
@@ -37,5 +37,3 @@ require (
 	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
-
-replace github.com/kercylan98/minotaur v0.6.1 => ../
