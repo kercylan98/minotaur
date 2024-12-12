@@ -1,44 +1,36 @@
 package fiber
 
 import (
-	gofiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
-	"github.com/kercylan98/minotaur/skeleton/pkg/modules"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"time"
 )
 
-func NewFiber(addr string, fiberHandler ...func(fiberApp *gofiber.App)) modules.Fiber {
-	return &fiber{
-		addr:         addr,
-		fiberHandler: fiberHandler,
+var (
+	_ application.Component = (*fiberComponent)(nil)
+)
+
+func NewFiberComponent(addr string) application.Component {
+	return &fiberComponent{
+		addr: addr,
 	}
 }
 
-type fiber struct {
-	// CONFIG FIELDS
-
+type fiberComponent struct {
 	addr         string
-	fiberHandler []func(fiberApp *gofiber.App)
-
-	// RUNTIME FIELDS
-
-	fiberApp *gofiber.App
+	fiberHandler []func(fiberApp *fiber.App)
 }
 
-func (f *fiber) Name() string {
-	return "fiber"
-}
-
-func (f *fiber) Setup(app *application.Context) error {
+func (f *fiberComponent) OnStart(app *application.Context) {
 	app.ActorSystem().ActorOfF(func() vivid.Actor {
-		actor := &fiber{
-			fiberApp: gofiber.New(gofiber.Config{
+		actor := &fiberActor{
+			component: f,
+			fiberApp: fiber.New(fiber.Config{
 				DisableStartupMessage: true,
 			}),
-			addr: f.addr,
 		}
 
 		for _, h := range f.fiberHandler {
@@ -54,10 +46,18 @@ func (f *fiber) Setup(app *application.Context) error {
 			}))
 		}))
 	})
-	return nil
 }
 
-func (f *fiber) OnReceive(ctx vivid.ActorContext) {
+func (f *fiberComponent) RegisterFiberHandler(handlers ...func(fiberApp *fiber.App)) {
+	f.fiberHandler = append(f.fiberHandler, handlers...)
+}
+
+type fiberActor struct {
+	component *fiberComponent
+	fiberApp  *fiber.App
+}
+
+func (f *fiberActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *vivid.OnLaunch:
 		f.onLaunch(ctx)
@@ -70,13 +70,13 @@ func (f *fiber) OnReceive(ctx vivid.ActorContext) {
 	}
 }
 
-func (f *fiber) onLaunch(ctx vivid.ActorContext) {
+func (f *fiberActor) onLaunch(ctx vivid.ActorContext) {
 	ctx.AwaitForward(ctx.Ref(), func() vivid.Message {
-		return f.fiberApp.Listen(f.addr)
+		return f.fiberApp.Listen(f.component.addr)
 	})
 }
 
-func (f *fiber) onTerminated(ctx vivid.ActorContext, m *vivid.OnTerminated) {
+func (f *fiberActor) onTerminated(ctx vivid.ActorContext, m *vivid.OnTerminated) {
 	if !m.TerminatedActor.Equal(ctx.Ref()) {
 		return
 	}
@@ -88,6 +88,6 @@ func (f *fiber) onTerminated(ctx vivid.ActorContext, m *vivid.OnTerminated) {
 	}
 }
 
-func (f *fiber) onRestarted(ctx vivid.ActorContext, m *vivid.OnRestarted) {
+func (f *fiberActor) onRestarted(ctx vivid.ActorContext, m *vivid.OnRestarted) {
 	ctx.System().Logger().Warn("fiber", log.String("event", "restarted"))
 }

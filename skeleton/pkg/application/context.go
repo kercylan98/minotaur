@@ -16,11 +16,11 @@ func New() *Context {
 
 type Context struct {
 	actorSystem *vivid.ActorSystem
-	modules     []Module
+	components  []Component
 }
 
-func (c *Context) SetupModule(modules ...Module) {
-	c.modules = append(c.modules, modules...)
+func (c *Context) SetupComponents(components ...Component) {
+	c.components = append(c.components, components...)
 }
 
 func (c *Context) ActorSystem() *vivid.ActorSystem {
@@ -28,25 +28,20 @@ func (c *Context) ActorSystem() *vivid.ActorSystem {
 }
 
 func (c *Context) Run() error {
-	// 引入模块依赖
-	for _, module := range c.modules {
-		if v, importer := module.(ModuleDependent); importer {
-			v.ImportDependencies(func(name string) Module {
-				for _, m := range c.modules {
-					if m.Name() == name {
-						return m
-					}
-				}
-				panic(fmt.Sprintf("module %s not found", name))
-			})
-		}
-	}
+	provider := newComponentProvider(c)
+	applyLifecycle[ComponentImporter](c.components, func(v ComponentImporter) {
+		v.OnImport(provider)
+	})
 
-	for _, module := range c.modules {
-		if err := module.Setup(c); err != nil {
-			return err
+	applyLifecycle[ComponentInitializer](c.components, func(v ComponentInitializer) {
+		if err := v.OnInitialize(c); err != nil {
+			panic(fmt.Errorf("component %T initialize failed: %w", v, err))
 		}
-	}
+	})
+
+	applyLifecycle[Component](c.components, func(v Component) {
+		v.OnStart(c)
+	})
 
 	c.actorSystem.Signal(func(system *vivid.ActorSystem, signal os.Signal) {
 		system.Shutdown(true)
