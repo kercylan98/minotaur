@@ -53,25 +53,13 @@ func (c *sharedStreamProcess) packMessage(receiver, sender, forward *ProcessId, 
 		if err != nil {
 			panic(err)
 		}
-		dm = &deliveryMessage{
-			MessageType: name,
-			MessageData: data,
-			System:      system,
-			Sender:      wrapper.Sender,
-			Receiver:    wrapper.Receiver,
-		}
+		dm = wrapDeliveryMessage(name, data, system, wrapper.Sender, wrapper.Receiver)
 	default:
 		name, data, err := c.shared.config.codec.Encode(message)
 		if err != nil {
 			panic(err)
 		}
-		dm = &deliveryMessage{
-			MessageType: name,
-			MessageData: data,
-			System:      system,
-			Sender:      sender,
-			Receiver:    receiver,
-		}
+		dm = wrapDeliveryMessage(name, data, system, sender, receiver)
 	}
 
 	// 持久化网络消息，避免消息丢失

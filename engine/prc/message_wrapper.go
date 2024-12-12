@@ -21,3 +21,13 @@ func UnwrapMessage(wrapper Message) (sender, receiver *ProcessId, message Messag
 	}
 	return w.Sender, w.Receiver, w.Message
 }
+
+func wrapDeliveryMessage(name string, data []byte, system bool, sender, receiver *ProcessId) *deliveryMessage {
+	return &deliveryMessage{
+		MessageType: name,
+		MessageData: data,
+		System:      system,
+		Sender:      sender,
+		Receiver:    receiver,
+	}
+}
