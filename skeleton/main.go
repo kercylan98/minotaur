@@ -1,21 +1,15 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/kercylan98/minotaur/example/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/modules/module/fiber"
+	"time"
 )
 
 func main() {
-	app := application.New(application.FunctionalConfigurator(func(configuration *application.Configuration) {
-		configuration.WithAddr(":8888")
-		configuration.WithFiberSettings(func(fiberApp *fiber.App) {
-			fiberApp.Get("/ping", func(ctx *fiber.Ctx) error {
-				if _, err := ctx.WriteString("pong"); err != nil {
-					return err
-				}
-				return nil
-			})
-		})
-	}))
+	app := application.New()
+	app.SetupModule(fiber.NewFiber(":8888"))
+	app.SetupModule(fiber.NewWebSocket())
 	app.Run()
+	time.Sleep(time.Minute)
 }
