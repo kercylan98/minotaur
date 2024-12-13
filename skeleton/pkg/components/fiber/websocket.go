@@ -2,16 +2,16 @@ package fiber
 
 import (
 	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/socket"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
 	"github.com/kercylan98/minotaur/skeleton/pkg/components"
+	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 )
 
 var (
-	_ application.Component            = (*fiberWebSocketComponent)(nil)
-	_ application.ComponentImporter    = (*fiberWebSocketComponent)(nil)
-	_ application.ComponentInitializer = (*fiberWebSocketComponent)(nil)
+	_ application.Component            = (*fiberWebSocketComponent[any])(nil)
+	_ application.ComponentImporter    = (*fiberWebSocketComponent[any])(nil)
+	_ application.ComponentInitializer = (*fiberWebSocketComponent[any])(nil)
 )
 
 func NewFiberWebSocketComponent[HandleFunc any](path string, provider func(router components.RouterComponent[HandleFunc]) socket.Actor) application.Component {
@@ -46,7 +46,10 @@ func (w *fiberWebSocketComponent[HandleFunc]) OnStart(app *application.Context) 
 }
 
 func (w *fiberWebSocketComponent[HandleFunc]) onWebSocket(app *fiber.App) {
-	app.Get(w.path, websocket.New(func(conn *websocket.Conn) {
-		socket.ProduceFiberSocketV2(w.socketFactory, conn, w.provider(w.router))
-	}))
+	app.Get(w.path, func(ctx *fiber.Context) error {
+		websocket.New(func(conn *websocket.Conn) {
+			socket.ProduceFiberSocketV2(w.socketFactory, conn, w.provider(w.router))
+		})
+		return nil
+	})
 }
