@@ -33,6 +33,24 @@ func (f FunctionalShutdownComponent) OnShutdown(actorSystem *ActorSystem) error 
 	return f(actorSystem)
 }
 
+type ShutdownBeforeComponent interface {
+	Component
+
+	// OnShutdownBefore 在 ActorSystem 关闭前被调用
+	OnShutdownBefore(actorSystem *ActorSystem) error
+}
+
+// FunctionalShutdownBeforeComponent 是 ShutdownBeforeComponent 的函数式组件，但是它无法在 Component.OnInitialize 中执行任何工作
+type FunctionalShutdownBeforeComponent func(actorSystem *ActorSystem) error
+
+func (f FunctionalShutdownBeforeComponent) OnInitialize(actorSystem *ActorSystem) error {
+	return nil
+}
+
+func (f FunctionalShutdownBeforeComponent) OnShutdownBefore(actorSystem *ActorSystem) error {
+	return f(actorSystem)
+}
+
 // ActorDefineCaptureComponent 是用于对 Actor 定义进行捕获的扩展接口，实现该接口的组件可以捕获 Actor 定义，并对 Actor 进行一些必要的处理
 type ActorDefineCaptureComponent interface {
 	Component

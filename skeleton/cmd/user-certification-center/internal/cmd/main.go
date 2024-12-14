@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kercylan98/minotaur/skeleton/cmd/user-certification-center/internal/components/user"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
 	"github.com/kercylan98/minotaur/skeleton/pkg/components/fiber"
+	"github.com/kercylan98/minotaur/skeleton/pkg/components/user"
 )
 
 func main() {

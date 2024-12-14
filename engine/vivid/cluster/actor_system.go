@@ -26,7 +26,7 @@ func NewActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress
 	}
 
 	config.WithShared(address)
-	config.WithShutdownBeforeHooks(system.onShutdown)
+	config.WithComponents(&component{cluster: system})
 
 	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration)
 

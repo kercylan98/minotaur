@@ -12,6 +12,7 @@ func newComponents(actorSystem *ActorSystem) *components {
 		cs.componentRecord[reflect.TypeOf(comp)] = struct{}{}
 
 		tryBindComponent[ShutdownComponent](cs, &cs.shutdown, comp)
+		tryBindComponent[ShutdownBeforeComponent](cs, &cs.shutdownBefore, comp)
 		tryBindComponent[ActorDefineCaptureComponent](cs, &cs.actorDefineCapture, comp)
 		tryBindComponent[ActorContextCaptureComponent](cs, &cs.actorContextCapture, comp)
 		tryBindComponent[ActorReceiveMessageCaptureComponent](cs, &cs.actorReceiveMessageCapture, comp)
@@ -26,6 +27,7 @@ type components struct {
 	actorSystem                *ActorSystem
 	componentRecord            map[reflect.Type]struct{}
 	shutdown                   []ShutdownComponent
+	shutdownBefore             []ShutdownBeforeComponent
 	actorDefineCapture         []ActorDefineCaptureComponent
 	actorContextCapture        []ActorContextCaptureComponent
 	actorReceiveMessageCapture []ActorReceiveMessageCaptureComponent
@@ -105,6 +107,17 @@ func (cs *components) onShutdown() {
 	for _, c := range cs.shutdown {
 		if err := c.OnShutdown(cs.actorSystem); err != nil {
 			cs.actorSystem.Logger().Error("component", log.String("name", reflect.TypeOf(c).Name()), log.String("status", "shutdown failed"), log.Err(err))
+		}
+	}
+}
+
+func (cs *components) onShutdownBefore() {
+	if cs == nil {
+		return
+	}
+	for _, c := range cs.shutdownBefore {
+		if err := c.OnShutdownBefore(cs.actorSystem); err != nil {
+			cs.actorSystem.Logger().Error("component", log.String("name", reflect.TypeOf(c).Name()), log.String("status", "shutdown before failed"), log.Err(err))
 		}
 	}
 }

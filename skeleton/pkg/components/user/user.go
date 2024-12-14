@@ -1,15 +1,15 @@
 package user
 
 import (
-	internalcomponents "github.com/kercylan98/minotaur/skeleton/cmd/user-certification-center/internal/components"
+	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
 	"github.com/kercylan98/minotaur/skeleton/pkg/components"
 	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 )
 
 var (
-	_ internalcomponents.UserComponent = (*userComponent)(nil)
-	_ application.ComponentImporter    = (*userComponent)(nil)
+	_ components.UserComponent      = (*userComponent)(nil)
+	_ application.ComponentImporter = (*userComponent)(nil)
 )
 
 func NewUserComponent() application.Component {
@@ -17,11 +17,16 @@ func NewUserComponent() application.Component {
 }
 
 type userComponent struct {
-	fiber components.FiberComponent
+	app *application.Context
+	ref vivid.ActorRef
+
+	fiber    components.FiberComponent
+	database components.DatabaseComponent
 }
 
 func (u *userComponent) OnImport(provider *application.ComponentProvider) {
 	u.fiber = application.ProvideComponent[components.FiberComponent](provider)
+	u.database = application.ProvideComponent[components.DatabaseComponent](provider)
 
 	u.fiber.RegisterFiberHandler(u.onInitRoutes)
 }
@@ -33,7 +38,10 @@ func (u *userComponent) onInitRoutes(app *fiber.App) {
 }
 
 func (u *userComponent) OnStart(app *application.Context) {
-
+	u.app = app
+	u.ref = app.ActorSystem().ActorOfF(func() vivid.Actor {
+		return newActor(u)
+	})
 }
 
 func (u *userComponent) onRegister(ctx *fiber.Context) error {
