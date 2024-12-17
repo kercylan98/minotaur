@@ -1,0 +1,4 @@
+app:
+  env: "dev"
+  logger:
+    level: "info"
