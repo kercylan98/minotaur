@@ -5,8 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/engine/socket"
 	application2 "github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/application"
 	"github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/components"
-	fiber3 "github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/fiber"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 )
 
 var (
@@ -46,8 +46,8 @@ func (w *fiberWebSocketComponent[HandleFunc]) OnStart(app *application2.Context)
 
 }
 
-func (w *fiberWebSocketComponent[HandleFunc]) onWebSocket(app *fiber3.App) {
-	app.Get(w.path, func(ctx *fiber3.Context) error {
+func (w *fiberWebSocketComponent[HandleFunc]) onWebSocket(app *fiber.Server) {
+	app.Get(w.path, func(ctx *fiber.Context) error {
 		websocket.New(func(conn *websocket.Conn) {
 			socket.ProduceFiberSocketV2(w.socketFactory, conn, w.provider(w.router))
 		})

@@ -7,7 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/skeleton/internal/discard/internal/repository"
 	"github.com/kercylan98/minotaur/skeleton/internal/discard/internal/repository/mapped"
 	"github.com/kercylan98/minotaur/skeleton/internal/discard/internal/services/bo"
-	"github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/fiber"
+	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 )
 
 func NewUserService(dtmServer string, user repository.UserRepository, userAuth repository.UserAuthRepository) *UserService {
@@ -19,7 +19,7 @@ func NewUserService(dtmServer string, user repository.UserRepository, userAuth r
 }
 
 type UserService struct {
-	fiberApp  *fiber.App
+	fiberApp  *fiber.Server
 	dtmServer string
 
 	user     repository.UserRepository

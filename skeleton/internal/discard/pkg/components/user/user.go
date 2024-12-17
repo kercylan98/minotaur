@@ -4,8 +4,8 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 	application2 "github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/application"
 	"github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/components"
-	"github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/fiber"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 )
 
 var (
@@ -32,7 +32,7 @@ func (u *userComponent) OnImport(provider *application.ComponentProvider) {
 	u.fiber.RegisterFiberHandler(u.onInitRoutes)
 }
 
-func (u *userComponent) onInitRoutes(app *fiber.App) {
+func (u *userComponent) onInitRoutes(app *fiber.Server) {
 	app.Post("/api/v1/ucc/register", u.onRegister)
 	app.Post("/api/v1/ucc/login", u.onLogin)
 	app.Post("/api/v1/ucc/refresh_token", u.onRefreshToken)

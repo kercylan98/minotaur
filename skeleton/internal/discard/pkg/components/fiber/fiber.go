@@ -5,8 +5,8 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/supervision"
 	application2 "github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/application"
-	"github.com/kercylan98/minotaur/skeleton/internal/discard/pkg/fiber"
 	"github.com/kercylan98/minotaur/skeleton/pkg/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/fiber"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"time"
 )
@@ -23,14 +23,14 @@ func NewFiberComponent(addr string) application.Component {
 
 type fiberComponent struct {
 	addr         string
-	fiberHandler []func(fiberApp *fiber.App)
+	fiberHandler []func(fiberApp *fiber.Server)
 }
 
 func (f *fiberComponent) OnStart(app *application2.Context) {
 	app.ActorSystem().ActorOfF(func() vivid.Actor {
 		actor := &fiberActor{
 			component: f,
-			fiberApp: fiber.NewApp(app, gofiber.New(gofiber.Config{
+			fiberApp: fiber.New(app, gofiber.New(gofiber.Config{
 				DisableStartupMessage: true,
 			})),
 		}
@@ -50,13 +50,13 @@ func (f *fiberComponent) OnStart(app *application2.Context) {
 	})
 }
 
-func (f *fiberComponent) RegisterFiberHandler(handlers ...func(fiberApp *fiber.App)) {
+func (f *fiberComponent) RegisterFiberHandler(handlers ...func(fiberApp *fiber.Server)) {
 	f.fiberHandler = append(f.fiberHandler, handlers...)
 }
 
 type fiberActor struct {
 	component *fiberComponent
-	fiberApp  *fiber.App
+	fiberApp  *fiber.Server
 }
 
 func (f *fiberActor) OnReceive(ctx vivid.ActorContext) {
