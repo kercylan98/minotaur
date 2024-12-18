@@ -12,6 +12,10 @@ import (
 
 var _ module.FiberModule = (*FiberModule)(nil)
 
+func NewFiberModule() *FiberModule {
+	return &FiberModule{}
+}
+
 type FiberModule struct {
 	modules struct {
 		actorSystem module.ActorSystemModule

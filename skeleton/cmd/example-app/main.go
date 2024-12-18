@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/skeleton/internal/controller"
+	"github.com/kercylan98/minotaur/skeleton/internal/module"
+	"github.com/kercylan98/minotaur/skeleton/internal/module/moduleimpl"
 	"github.com/kercylan98/minotaur/skeleton/internal/repository"
 	"github.com/kercylan98/minotaur/skeleton/internal/repository/repositoryimpl"
 	"github.com/kercylan98/minotaur/skeleton/internal/service"
@@ -41,6 +43,9 @@ func (m *MyService) OnRun() {
 
 func main() {
 	ctx := application.New()
+
+	application.RegisterModule[module.ActorSystemModule](ctx, moduleimpl.NewActorSystemModule())
+	application.RegisterModule[module.FiberModule](ctx, moduleimpl.NewFiberModule())
 
 	application.RegisterRepository[repository.ConfigurationRepository](ctx, repositoryimpl.NewConfigurationFileWithTemplate())
 
