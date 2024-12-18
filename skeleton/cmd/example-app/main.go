@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/skeleton/internal/controller"
 	"github.com/kercylan98/minotaur/skeleton/internal/module"
 	"github.com/kercylan98/minotaur/skeleton/internal/module/moduleimpl"
@@ -47,11 +46,12 @@ func main() {
 	application.RegisterModule[module.ActorSystemModule](ctx, moduleimpl.NewActorSystemModule())
 	application.RegisterModule[module.FiberModule](ctx, moduleimpl.NewFiberModule())
 
-	application.RegisterRepository[repository.ConfigurationRepository](ctx, repositoryimpl.NewConfigurationFileWithTemplate())
+	application.RegisterController(ctx, controller.NewWebSocketController())
 
 	application.RegisterService[application.Service](ctx, new(MyService))
 	application.RegisterService[service.ConfigurationService](ctx, serviceimpl.NewConfigurationService())
-	application.RegisterController(ctx, controller.NewWebSocketController(vivid.NewActorSystem()))
+
+	application.RegisterRepository[repository.ConfigurationRepository](ctx, repositoryimpl.NewConfigurationFileWithTemplate())
 
 	if err := ctx.Run(); err != nil {
 		panic(err)
