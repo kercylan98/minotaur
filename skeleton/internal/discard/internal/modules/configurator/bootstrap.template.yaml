@@ -1,4 +1,0 @@
-app:
-  env: "dev"
-  actor:
-    name: "skeleton"
