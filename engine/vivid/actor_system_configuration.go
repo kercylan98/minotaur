@@ -1,6 +1,7 @@
 package vivid
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/prc/codec"
 	"github.com/kercylan98/minotaur/toolkit/log"
@@ -28,14 +29,27 @@ func NewActorSystemConfiguration() *ActorSystemConfiguration {
 
 // ActorSystemConfiguration 是 ActorSystem 的配置
 type ActorSystemConfiguration struct {
-	actorSystemName string              // ActorSystem 名称
-	physicalAddress prc.PhysicalAddress // 物理地址（透传给 prc.Shared）
-	loggerProvider  log.LoggerProvider  // 日志提供者
-	shared          bool                // 开启网络共享
-	sharedCodec     codec.Codec         // 网络共享编解码器
-	accidentTrace   bool                // 事故堆栈追踪
-	abyss           AbyssProcess        // 深渊进程
-	components      []Component         // 组件
+	actorSystemName     string                        // ActorSystem 名称
+	physicalAddress     prc.PhysicalAddress           // 物理地址（透传给 prc.Shared）
+	loggerProvider      log.LoggerProvider            // 日志提供者
+	shared              bool                          // 开启网络共享
+	sharedCodec         codec.Codec                   // 网络共享编解码器
+	accidentTrace       bool                          // 事故堆栈追踪
+	abyss               AbyssProcess                  // 深渊进程
+	components          []Component                   // 组件
+	fixedActorProviders map[string]FixedActorProvider // 固定的 ActorProvider
+}
+
+// WithFixedActorProvider 设置固定预设且名字唯一的 ActorProvider，用于通过名称创建 Actor
+func (c *ActorSystemConfiguration) WithFixedActorProvider(name string, provider FixedActorProvider) *ActorSystemConfiguration {
+	if c.fixedActorProviders == nil {
+		c.fixedActorProviders = make(map[string]FixedActorProvider)
+	}
+	if _, exist := c.fixedActorProviders[name]; exist {
+		panic(fmt.Errorf("the fixed actor provider[%v] has already been registered", name))
+	}
+	c.fixedActorProviders[name] = provider
+	return c
 }
 
 // WithComponents 设置组件

@@ -13,3 +13,9 @@ type FunctionalActorProvider func() Actor
 func (f FunctionalActorProvider) Provide() Actor {
 	return f()
 }
+
+// FixedActorProvider 是一个固定 Actor 生成器接口，它定义了生成 Actor 实例的方法。
+type FixedActorProvider interface {
+	ProvideActor() (actor Actor)
+	ProvideConfigurator() (configurator ActorDescriptorConfigurator)
+}
