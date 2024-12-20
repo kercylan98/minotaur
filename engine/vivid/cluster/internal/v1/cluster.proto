@@ -1,0 +1,12 @@
+syntax = "proto3";
+package engine.vivid.cluster.internal.v1;
+
+import "engine/prc/v1/process_id.proto";
+
+message SpawnFixedActor {
+  string name = 1;
+}
+
+message SpawnFixedActorResult {
+  prc.v1.ProcessId ref = 1;
+}

@@ -25,18 +25,6 @@ func (c *ConfigurationService) OnInitialize(app *application2.Context, loader *a
 	return nil
 }
 
-func (c *ConfigurationService) GetBootstrapConfig(ctx context.Context) (result *service.GetBootstrapConfigResultDTO, err error) {
-	var config *repository.GetBootstrapConfigResultDTO
-	if config, err = c.repository.configuration.GetBootstrapConfig(ctx); err != nil {
-		return
-	}
-	return &service.GetBootstrapConfigResultDTO{Config: config.Config}, err
-}
-
-func (c *ConfigurationService) LoadBootstrapConfig(ctx context.Context, dto *service.LoadBootstrapConfigDTO) (err error) {
-	return c.repository.configuration.LoadBootstrapConfig(ctx, &repository.LoadBootstrapConfigDTO{Target: dto.Target})
-}
-
 func (c *ConfigurationService) GetServiceConfig(ctx context.Context, dto *service.GetServiceConfigDTO) (result *service.GetServiceConfigResultDTO, err error) {
 	var config *repository.GetServiceConfigResultDTO
 	if config, err = c.repository.configuration.GetServiceConfig(ctx, &repository.GetServiceConfigDTO{ServiceName: dto.ServiceName}); err != nil {

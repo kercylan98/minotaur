@@ -41,7 +41,9 @@ func (m *MyService) OnRun() {
 }
 
 func main() {
-	ctx := application.New()
+	ctx := application.New(application.FunctionalConfigurator(func(c *application.Configuration) {
+		c.WithTemplateConfig(true)
+	}))
 
 	application.RegisterModule[module.ActorSystemModule](ctx, moduleimpl.NewActorSystemModule())
 	application.RegisterModule[module.FiberModule](ctx, moduleimpl.NewFiberModule())
@@ -51,7 +53,7 @@ func main() {
 	application.RegisterService[application.Service](ctx, new(MyService))
 	application.RegisterService[service.ConfigurationService](ctx, serviceimpl.NewConfigurationService())
 
-	application.RegisterRepository[repository.ConfigurationRepository](ctx, repositoryimpl.NewConfigurationFileWithTemplate())
+	application.RegisterRepository[repository.ConfigurationRepository](ctx, repositoryimpl.NewConfigurationFileRepository())
 
 	if err := ctx.Run(); err != nil {
 		panic(err)

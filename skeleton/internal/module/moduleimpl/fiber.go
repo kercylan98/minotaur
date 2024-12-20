@@ -24,7 +24,9 @@ type FiberModule struct {
 }
 
 func (f *FiberModule) OnInitialize(ctx *application.Context) (err error) {
-	f.fiberApp = fiber.New(ctx, gofiber.New())
+	f.fiberApp = fiber.New(ctx, gofiber.New(gofiber.Config{
+		DisableStartupMessage: true,
+	}))
 
 	return
 }
