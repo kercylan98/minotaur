@@ -16,10 +16,10 @@ func newState(ctx vivid.ActorContext, actor *GossiperActor) *State {
 	vc.Increment(ctx.Ref().PhysicalAddress) // 版本初始 1
 
 	node := &Node{
-		Id:                  newNodeId(ctx.Ref()),
-		Status:              NodeStatusJoining,
-		Vc:                  vc,
-		FixedActorProviders: collection.ConvertMapValuesToBoolMap(vivid.GetFixedActorProviders(ctx.System())),
+		Id:        newNodeId(ctx.Ref()),
+		Status:    NodeStatusJoining,
+		Vc:        vc,
+		UserState: actor.nodeState,
 	}
 	state := &State{
 		ctx:   ctx,
@@ -100,6 +100,7 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 	for _, member := range s.gossip.Members {
 		if member.Id.PhysicalAddressEqual(s.node.Id) {
 			member.Vc = s.node.Vc
+			member.UserState = s.node.UserState
 			s.node = member // 确保指针一致
 		}
 		if s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress) {

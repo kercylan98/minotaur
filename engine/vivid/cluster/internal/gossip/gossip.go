@@ -40,4 +40,5 @@ type (
 	ActorPingPongMessage          = gossipv1.GossipActorPingPongMessage
 	ActorClusterExitingMessage    = gossipv1.GossipActorClusterExitingMessage
 	ActorClusterExitedMessage     = gossipv1.GossipActorClusterExitedMessage
+	NodeState                     = gossipv1.NodeState
 )

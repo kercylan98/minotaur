@@ -13,11 +13,12 @@ import (
 	"time"
 )
 
-func NewGossiperActor(seedNodes []prc.PhysicalAddress) *GossiperActor {
+func NewGossiperActor(nodeState *NodeState, seedNodes []prc.PhysicalAddress) *GossiperActor {
 	if len(seedNodes) == 0 {
 		panic(fmt.Errorf("seed nodes cannot be empty"))
 	}
 	return &GossiperActor{
+		nodeState: nodeState,
 		seedNodes: seedNodes,
 		hashRing:  NewHashRing(5),
 	}
@@ -32,6 +33,7 @@ type GossiperActor struct {
 	hashRing     *HashRing                                           // 虚拟节点哈希环
 	afd          map[prc.PhysicalAddress]*phi.AccrualFailureDetector // 故障检测器
 	converged    bool                                                // 集群是否已收敛
+	nodeState    *NodeState                                          // 节点用户状态
 }
 
 func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
