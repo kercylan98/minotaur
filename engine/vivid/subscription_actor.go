@@ -103,7 +103,7 @@ func (s *subscriptionActor) onPublishRequestBroadcast(ctx ActorContext, m *messa
 }
 
 func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.LocalPublishRequest) {
-	if len(s.sas) > 0 {
+	if !m.OnlyLocal && len(s.sas) > 0 {
 		var networkMessage bool
 		tn, data, err := ctx.System().shared.GetCodec().Encode(m.Message)
 		if err == nil {

@@ -16,9 +16,10 @@ func newState(ctx vivid.ActorContext, actor *GossiperActor) *State {
 	vc.Increment(ctx.Ref().PhysicalAddress) // 版本初始 1
 
 	node := &Node{
-		Id:     newNodeId(ctx.Ref()),
-		Status: NodeStatusJoining,
-		Vc:     vc,
+		Id:                  newNodeId(ctx.Ref()),
+		Status:              NodeStatusJoining,
+		Vc:                  vc,
+		FixedActorProviders: collection.ConvertMapValuesToBoolMap(vivid.GetFixedActorProviders(ctx.System())),
 	}
 	state := &State{
 		ctx:   ctx,

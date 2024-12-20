@@ -228,7 +228,7 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 		g.logger.Info("cluster", log.String("info", "LeaderInit"), log.String("leader", g.leader.Id.Ref.URL().String()))
 	}
 
-	// 将 Joining 节点设置为活跃
+	// 领导节点决策
 	if g.leader.Id.Ref.PhysicalAddress == ctx.PhysicalAddress() {
 		var changed bool
 		for i, member := range g.state.gossip.Members {
@@ -268,6 +268,9 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 			g.state.GossipUpdate()
 		}
 	}
+
+	// 推送节点收敛订阅
+	ctx.PublishLocal(TopicNodeConverged, ClusterConvergedEvent(g.state.gossip.Members))
 
 	for _, member := range g.state.gossip.Members {
 		g.logger.Debug("cluster", log.String("member", member.Id.Ref.URL().String()), log.String("status", member.Status.String()))

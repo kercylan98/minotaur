@@ -5,6 +5,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip"
+	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
 )
 
 type (
@@ -40,10 +41,17 @@ func (a *actorSystemActor) OnReceive(ctx vivid.ActorContext) {
 		a.onGossipActorClusterExitingMessage(ctx, m)
 	case *gossip.ActorClusterExitedMessage:
 		a.onGossipActorClusterExitedMessage(ctx, m)
+	case gossip.ClusterConvergedEvent: // 集群收敛消息
+		a.onGossipClusterConvergedEvent(ctx, m)
+	case *clusterv1.SpawnFixedActor:
+		a.onActorOf(ctx, m)
 	}
 }
 
 func (a *actorSystemActor) onLaunch(ctx vivid.ActorContext) {
+	// 订阅集群收敛
+	ctx.Subscribe(gossip.TopicNodeConverged)
+	// 启动 gossip actor
 	a.gossipRef = ctx.ActorOfF(func() vivid.Actor {
 		return gossip.NewGossiperActor(a.seedNodes)
 	}, func(descriptor *vivid.ActorDescriptor) {
@@ -66,4 +74,48 @@ func (a *actorSystemActor) onGossipActorClusterExitedMessage(ctx vivid.ActorCont
 
 func (a *actorSystemActor) onLeaderChanged(ctx vivid.ActorContext, m vivid.ActorRef) {
 	a.leaderRef = m
+}
+
+func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
+	// 保留可达节点
+	var activeList = make(map[prc.PhysicalAddress]*gossip.Node)
+	for _, node := range m {
+		switch node.Status {
+		case gossip.NodeStatusAlive:
+			activeList[node.Id.Ref.GetPhysicalAddress()] = node
+		}
+	}
+
+	a.system.nodeRWLock.Lock()
+	defer a.system.nodeRWLock.Unlock()
+
+	// 移除陈旧
+	for key, node := range a.system.nodes {
+		_, exist := activeList[node.GetId()]
+		if exist {
+			continue
+		}
+		delete(a.system.nodes, key)
+	}
+
+	// 补充新增
+	for _, node := range activeList {
+		_, exist := a.system.nodes[node.Id.Ref.GetPhysicalAddress()]
+		if exist {
+			continue
+		}
+		create := newNode(a.system, ctx, node)
+		a.system.nodes[node.Id.Ref.GetPhysicalAddress()] = create
+	}
+}
+
+func (a *actorSystemActor) onActorOf(ctx vivid.ActorContext, m *clusterv1.SpawnFixedActor) {
+	ref, err := vivid.SpawnActorFromFixedProvider(ctx.System(), ctx, m.Name)
+	if err != nil {
+		ctx.Reply(ref)
+		return
+	}
+	ctx.Reply(&clusterv1.SpawnFixedActorResult{
+		Ref: ref,
+	})
 }

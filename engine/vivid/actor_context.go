@@ -191,6 +191,10 @@ func (ctx *actorContext) Publish(topic Topic, message Message) {
 	ctx.Ask(ctx.system.subscription, &messages.LocalPublishRequest{Topic: topic, Message: message})
 }
 
+func (ctx *actorContext) PublishLocal(topic Topic, message Message) {
+	ctx.Tell(ctx.system.subscription, &messages.LocalPublishRequest{Topic: topic, Message: message, OnlyLocal: true})
+}
+
 func (ctx *actorContext) Watch(target ActorRef) {
 	// 子 Actor 本身销毁可被父 Actor 观测，监听会导致重复执行
 	if ctx.IsChild(target) {

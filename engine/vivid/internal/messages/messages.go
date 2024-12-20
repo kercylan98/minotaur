@@ -15,6 +15,7 @@ type (
 )
 
 type LocalPublishRequest struct {
-	Topic   string
-	Message any
+	Topic     string
+	Message   any
+	OnlyLocal bool
 }

@@ -21,6 +21,8 @@ const (
 	VectorClockOrderingSame       = gossipv1.VectorClockOrdering_VECTOR_CLOCK_ORDERING_SAME
 )
 
+type ClusterConvergedEvent []*Node // 集群收敛事件
+
 type (
 	Node                          = gossipv1.Node
 	NodeId                        = gossipv1.NodeId

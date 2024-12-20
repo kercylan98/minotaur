@@ -114,12 +114,20 @@ func (sys *ActorSystem) ExecLocalFunc(target ActorRef, function func(ctx ActorCo
 	sys.Tell(target, onLocalFunc(function))
 }
 
-// Publish 向所有订阅者发布消息
+// Publish 向所有远端及本地订阅者发布消息
 //
 // 特殊标注：
 //   - MarkMessageImmutability 消息不可变性注意事项
 func (sys *ActorSystem) Publish(topic Topic, message Message) {
 	sys.guard.Publish(topic, message)
+}
+
+// PublishLocal 向所有本地订阅者发布消息
+//
+// 特殊标注：
+//   - MarkMessageImmutability 消息不可变性注意事项
+func (sys *ActorSystem) PublishLocal(topic Topic, message Message) {
+	sys.guard.PublishLocal(topic, message)
 }
 
 // Context 获取 Actor 系统的根 Actor 上下文

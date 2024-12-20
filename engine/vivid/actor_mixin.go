@@ -199,6 +199,9 @@ type mixinSubscription interface {
 	// UnSubscribe 取消特定订阅
 	UnSubscribe(subscription Subscription)
 
-	// Publish 向所有订阅者发布消息
+	// Publish 向所有远端及本地订阅者发布消息
 	Publish(topic Topic, message Message)
+
+	// PublishLocal 向所有本地订阅者发布消息
+	PublishLocal(topic Topic, message Message)
 }

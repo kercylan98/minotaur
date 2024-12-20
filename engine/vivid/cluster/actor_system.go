@@ -3,9 +3,14 @@ package cluster
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
+	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
+	"sync"
+	"time"
 )
 
 func init() {
@@ -23,6 +28,16 @@ func NewActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress
 
 	system := &ActorSystem{
 		config: config,
+		nodes:  make(map[prc.PhysicalAddress]*Node),
+		balancer: func() Balancer {
+			return FunctionalBalancer(func(nodes []*Node) *Node {
+				// temp random
+				if len(nodes) == 0 {
+					return nil
+				}
+				return collection.ChooseRandomSliceElement(nodes)
+			})
+		}(),
 	}
 
 	config.WithShared(address)
@@ -43,6 +58,9 @@ type ActorSystem struct {
 	*vivid.ActorSystem                           // 如果单独使用，那么一切行为将越过集群
 	config             *ActorSystemConfiguration // 集群配置
 	systemRef          vivid.ActorRef            // 集群 ActorSystem 的 Actor 引用
+	nodeRWLock         sync.RWMutex
+	nodes              map[prc.PhysicalAddress]*Node
+	balancer           Balancer
 }
 
 func (sys *ActorSystem) onShutdown() {
@@ -57,4 +75,37 @@ func (sys *ActorSystem) onShutdown() {
 	} else {
 		sys.Logger().Info("cluster", log.String("status", "shutdown success"))
 	}
+}
+
+func (sys *ActorSystem) getAvailableNodeWithFixedProvider(name string) *Node {
+	sys.nodeRWLock.RLock()
+	defer sys.nodeRWLock.RUnlock()
+
+	var targets []*Node
+	for _, node := range sys.nodes {
+		if node.gossipNode.FixedActorProviders[name] {
+			targets = append(targets, node)
+		}
+	}
+
+	return sys.balancer.Select(targets)
+}
+
+func (sys *ActorSystem) SpawnFixedActor(name string, timeout ...time.Duration) (ref vivid.ActorRef, err error) {
+	node := sys.getAvailableNodeWithFixedProvider(name)
+	if node == nil {
+		return nil, errors.New("no available node")
+	}
+
+	var result any
+	if result, err = sys.ActorSystem.FutureAsk(node.nodeRef, &clusterv1.SpawnFixedActor{Name: name}, timeout...).Result(); err != nil {
+		return
+	}
+	actorOfResult, ok := result.(*clusterv1.SpawnFixedActorResult)
+	if !ok {
+		return nil, fmt.Errorf("actor of result type error, expect %T, got %T, please check the cluster version", &clusterv1.SpawnFixedActorResult{}, result)
+	}
+	ref = actorOfResult.Ref
+
+	return
 }

@@ -14,6 +14,7 @@ func TestGossip(t *testing.T) {
 
 	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
 		config.WithShared("127.0.0.1:8081")
+		config.WithFixedActorProvider("nil-fixed", nil)
 	}))
 
 	_ = system1

@@ -67,3 +67,7 @@ func (pid *ProcessId) GetLogicalAddress() LogicalAddress {
 }
 
 var zeroUrl = &url.URL{}
+
+func ClearProcessIdCache(pid *ProcessId) {
+	pid.Cache.Store(nil)
+}
