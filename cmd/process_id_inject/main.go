@@ -50,6 +50,16 @@ func main() {
 					Type:  ast.NewIdent("atomic.Pointer[any]"),
 				}
 				v.Fields.List = append(v.Fields.List, processCacheField)
+				metadataField := &ast.Field{
+					Names: []*ast.Ident{ast.NewIdent("Metadata")},
+					Type:  ast.NewIdent("map[string]any"),
+					Comment: &ast.CommentGroup{
+						List: []*ast.Comment{
+							{Text: "// Metadata is a map of key-value pairs that can be used to store additional information about a process. For concurrency safety, please set the value at the beginning of creation."},
+						},
+					},
+				}
+				v.Fields.List = append(v.Fields.List, metadataField)
 
 				//redirectAddressField := &ast.Field{
 				//	Names: []*ast.Ident{ast.NewIdent("redirect")},

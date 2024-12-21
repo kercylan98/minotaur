@@ -57,3 +57,12 @@ message AbyssMessageEvent {
   bytes data = 5;
   google.protobuf.Timestamp timestamp = 6;
 }
+
+message Ping {
+  int64 unix_millisecond = 1; // 客户端发起时间
+}
+
+message Pong {
+  int64 received_unix_millisecond = 1; // 服务端收到时间
+  int64 client_unix_millisecond = 2; // 客户端发起时间
+}

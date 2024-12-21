@@ -12,6 +12,8 @@ type (
 	Subscription            = messagesv1.Subscription
 	PublishRequestBroadcast = messagesv1.PublishRequestBroadcast
 	AbyssMessageEvent       = messagesv1.AbyssMessageEvent
+	Ping                    = messagesv1.Ping
+	Pong                    = messagesv1.Pong
 )
 
 type LocalPublishRequest struct {

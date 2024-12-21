@@ -91,6 +91,29 @@ func (sys *ActorSystem) getAvailableNodeWithFixedProvider(name string) *Node {
 	return sys.balancer.Select(targets)
 }
 
+// GetOnlyActor 获取一个集群内唯一的 Actor 引用
+func (sys *ActorSystem) GetOnlyActor(name string) (vivid.ActorRef, error) {
+	sys.nodeRWLock.RLock()
+	nodes := collection.CloneMap(sys.nodes)
+	sys.nodeRWLock.RUnlock()
+
+	for _, node := range nodes {
+		alive, exist := node.gossipNode.UserState.AliveOnlyActors[name]
+		if exist {
+			continue
+		}
+		_, err := vivid.Ping(sys.ActorSystem, node.nodeRef, time.Millisecond*200)
+		if err != nil {
+			continue
+		}
+		alive.Ref.Metadata = make(map[string]any)
+		alive.Ref.Metadata["only_actor"] = name
+		return alive.Ref, nil
+	}
+
+	return nil, errors.New("no available node")
+}
+
 func (sys *ActorSystem) SpawnFixedActor(name string, timeout ...time.Duration) (ref vivid.ActorRef, err error) {
 	node := sys.getAvailableNodeWithFixedProvider(name)
 	if node == nil {

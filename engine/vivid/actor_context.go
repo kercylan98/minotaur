@@ -455,8 +455,17 @@ func (ctx *actorContext) processMessage(sender, receiver ActorRef, message Messa
 
 	ctx.message = message
 	ctx.sender = sender
+
 	if !system {
 		switch m := message.(type) {
+		case *messages.Ping:
+			if ctx.sender != nil {
+				ctx.Reply(&messages.Pong{
+					ReceivedUnixMillisecond: time.Now().UnixMilli(),
+					ClientUnixMillisecond:   m.UnixMillisecond,
+				})
+			}
+			return
 		case *OnTerminate:
 			if m.Gracefully {
 				ctx.gracefullyTerminated = true
@@ -564,8 +573,8 @@ func (ctx *actorContext) findProcess(pid *prc.ProcessId) (process prc.Process) {
 
 // deliveryUserMessage 向特定进程投递用户消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliveryUserMessage(receiverProcess, receiver, sender, forward ActorRef, message Message) {
-	message = prc.WrapMessage(sender, receiver, message)
 	process := ctx.findProcess(receiverProcess)
+	message = prc.WrapMessage(sender, receiver, message)
 	process.DeliveryUserMessage(receiver, sender, forward, message)
 }
 

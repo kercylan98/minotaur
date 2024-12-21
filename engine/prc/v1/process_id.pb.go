@@ -28,6 +28,7 @@ type ProcessId struct {
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 	Cache           atomic.Pointer[any]
+	Metadata        map[string]any
 }
 
 func (x *ProcessId) Reset() {
@@ -115,7 +116,10 @@ func file_engine_prc_v1_process_id_proto_init() {
 	if File_engine_prc_v1_process_id_proto != nil {
 		return
 	}
-	type x struct{ Cache atomic.Pointer[any] }
+	type x struct {
+		Cache    atomic.Pointer[any]
+		Metadata map[string]any
+	}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),

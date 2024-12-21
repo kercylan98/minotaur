@@ -1,7 +1,9 @@
 package vivid
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
+	"github.com/kercylan98/minotaur/engine/vivid/internal/messages"
 	"time"
 )
 
@@ -72,3 +74,17 @@ type (
 )
 
 type Message = prc.Message
+
+// Ping 尝试对目标 Actor 发送 Ping 消息，并返回 Pong 消息。
+func Ping(system *ActorSystem, target ActorRef, timeout ...time.Duration) (*messages.Pong, error) {
+	result, err := system.FutureAsk(target, &messages.Ping{
+		UnixMillisecond: time.Now().UnixMilli(),
+	}, timeout...).Result()
+	if err != nil {
+		return nil, err
+	}
+	if pong, ok := result.(*messages.Pong); ok {
+		return pong, nil
+	}
+	return nil, fmt.Errorf("ping result type error, expect %T, got %T, please check vivid version", &messages.Pong{}, result)
+}
