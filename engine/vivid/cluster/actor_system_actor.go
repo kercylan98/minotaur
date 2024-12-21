@@ -5,9 +5,11 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip"
+	gossipv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip/v1"
 	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"sort"
+	"time"
 )
 
 type (
@@ -85,6 +87,25 @@ func (a *actorSystemActor) onLeaderChanged(ctx vivid.ActorContext, m vivid.Actor
 }
 
 func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
+	// 筛选存活节点更新节点列表
+	a.onGossipClusterConvergedFilterAliveNodes(ctx, m)
+
+	// 构建集群内唯一 Actor
+	a.onGossipClusterConvergedProcessOnlyActors(ctx, m)
+}
+
+func (a *actorSystemActor) onActorOf(ctx vivid.ActorContext, m *clusterv1.SpawnFixedActor) {
+	ref, err := vivid.SpawnActorFromFixedProvider(ctx.System(), ctx, m.Name)
+	if err != nil {
+		ctx.Reply(ref)
+		return
+	}
+	ctx.Reply(&clusterv1.SpawnFixedActorResult{
+		Ref: ref,
+	})
+}
+
+func (a *actorSystemActor) onGossipClusterConvergedFilterAliveNodes(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
 	// 保留可达节点
 	var activeList = make(map[prc.PhysicalAddress]*gossip.Node)
 	for _, node := range m {
@@ -95,6 +116,7 @@ func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext,
 	}
 
 	a.system.nodeRWLock.Lock()
+	defer a.system.nodeRWLock.Unlock()
 	// 移除陈旧
 	for key, node := range a.system.nodes {
 		_, exist := activeList[node.GetId()]
@@ -113,68 +135,70 @@ func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext,
 		create := newNode(a.system, ctx, node)
 		a.system.nodes[node.Id.Ref.GetPhysicalAddress()] = create
 	}
-	a.system.nodeRWLock.Unlock()
+}
 
-	// 整理数据
-	var aliveOnlyActors = make(map[string]int64)
+func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
+	// 过滤存活 Actor 并且记录信息
+	var aliveOnlyActors = make(map[string][]*gossip.AliveOnlyActorInfo)
 	for _, node := range m {
 		if node.Status == gossip.NodeStatusAlive {
-			for name, aliveTime := range node.UserState.AliveOnlyActors {
-				aliveOnlyActors[name] = aliveTime
+			for name, info := range node.UserState.AliveOnlyActors {
+				aliveOnlyActors[name] = append(aliveOnlyActors[name], info)
 			}
 		}
 	}
 
-	var onlyNodes = make(map[string][]*gossip.Node)
+	// 分析集群内所需的唯一 Actor
+	var onlyNodes = make(map[string]struct{})
 	for _, node := range m {
 		for name := range node.UserState.OnlyActorProviders {
-			onlyNodes[name] = append(onlyNodes[name], node)
+			onlyNodes[name] = struct{}{}
 		}
 	}
 
-	for name, nodes := range onlyNodes {
-		if aliveOnlyActors[name] > 0 {
+	// 如果集群内缺乏唯一 Actor，且自身节点满足要求，那么创建
+	for name := range onlyNodes {
+		if len(aliveOnlyActors[name]) > 0 {
 			continue
 		}
 
-		// 在选择目标中生成唯一 Actor
-		selected := CalcFirstNode(nodes)
-	}
-}
-
-func (a *actorSystemActor) onActorOf(ctx vivid.ActorContext, m *clusterv1.SpawnFixedActor) {
-	ref, err := vivid.SpawnActorFromFixedProvider(ctx.System(), ctx, m.Name)
-	if err != nil {
-		ctx.Reply(ref)
-		return
-	}
-	ctx.Reply(&clusterv1.SpawnFixedActorResult{
-		Ref: ref,
-	})
-}
-
-func CalcFirstNode(nodes []*gossip.Node) *gossip.Node {
-	if len(nodes) == 0 {
-		return nil
-	}
-
-	// 仅有一个节点，那么就是它
-	if len(nodes) == 1 {
-		return nodes[0]
-	}
-
-	// 可用的第一个节点为领导节点
-	sort.Slice(nodes, func(i, j int) bool {
-		a, b := nodes[i], nodes[j]
-
-		// 先比较状态，Alive 靠前
-		if a.Status != b.Status {
-			return a.Status == gossip.NodeStatusAlive
+		provider, exist := a.system.config.onlyActorProviders[name]
+		if !exist {
+			continue
 		}
 
-		// 如果状态相同，按 PhysicalAddress 升序排序
-		return a.Id.Ref.PhysicalAddress < b.Id.Ref.PhysicalAddress
-	})
+		selected := GetAliveNodeWithLaunchTimeAsc(m)
+		if selected == nil || selected.Id.Ref.GetPhysicalAddress() != ctx.PhysicalAddress() {
+			continue
+		}
 
-	return nodes[0]
+		// 创建 Actor
+		ref := ctx.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
+			return provider.ProvideActor()
+		}), provider.ProvideConfigurator())
+
+		if a.nodeState.AliveOnlyActors == nil {
+			a.nodeState.AliveOnlyActors = make(map[string]*gossipv1.AliveOnlyActorInfo)
+		}
+		info := &gossip.AliveOnlyActorInfo{
+			Ref:          ref,
+			GenerateTime: time.Now().UnixMilli(),
+		}
+		a.nodeState.AliveOnlyActors[name] = info
+		aliveOnlyActors[name] = append(aliveOnlyActors[name], info)
+	}
+
+	// 仅保留最新的
+	for _, infos := range aliveOnlyActors {
+		if len(infos) > 1 {
+			sort.Slice(infos, func(i, j int) bool {
+				return infos[i].GenerateTime > infos[j].GenerateTime
+			})
+			for i := 1; i < len(infos); i++ {
+				ctx.Terminate(infos[i].Ref, true)
+			}
+			infos = infos[:1]
+		}
+	}
+
 }

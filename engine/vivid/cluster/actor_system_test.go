@@ -1,9 +1,11 @@
 package cluster_test
 
 import (
+	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/cluster"
+	"github.com/kercylan98/minotaur/toolkit"
 	"testing"
 	"time"
 )
@@ -23,7 +25,27 @@ func (m *MyFixedProvider) ProvideConfigurator() (configurator vivid.ActorDescrip
 	})
 }
 
-func TestActorSystem(t *testing.T) {
+type MyOnlyActorProvider struct {
+}
+
+func (m *MyOnlyActorProvider) ProvideActor() (actor vivid.Actor) {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch ctx.Message().(type) {
+		case *vivid.OnLaunch:
+			fmt.Println(ctx.System().Name(), "Only Actor Launch")
+		case *vivid.OnTerminated:
+			fmt.Println(ctx.System().Name(), "Only Actor Terminated")
+		}
+	})
+}
+
+func (m *MyOnlyActorProvider) ProvideConfigurator() (configurator vivid.ActorDescriptorConfigurator) {
+	return vivid.FunctionalActorDescriptorConfigurator(func(descriptor *vivid.ActorDescriptor) {
+
+	})
+}
+
+func TestActorSystemFixedActor(t *testing.T) {
 	fap1 := new(MyFixedProvider)
 	fap2 := new(MyFixedProvider)
 	fap3 := new(MyFixedProvider)
@@ -57,6 +79,47 @@ func TestActorSystem(t *testing.T) {
 			panic(err)
 		}
 	}
+
+	time.Sleep(time.Hour)
+}
+
+func TestActorSystemOnlyActor(t *testing.T) {
+
+	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+	system3 := cluster.NewActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+
+	_ = system1
+	_ = system2
+	_ = system3
+
+	time.Sleep(time.Hour)
+}
+
+func TestActorSystemOnlyActorA(t *testing.T) {
+
+	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+
+	_ = system1
+	time.Sleep(time.Hour)
+}
+
+func TestActorSystemOnlyActorB(t *testing.T) {
+	toolkit.EnableHttpPProf(":6060", "/debug/pprof")
+
+	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+
+	_ = system2
 
 	time.Sleep(time.Hour)
 }

@@ -96,9 +96,9 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 
 	// 避免互相等待对方直到超时，协程内需要严格保证竞态问题
 	go func() {
-		var fail bool
+		var created, fail bool
 		defer func() {
-			if fail {
+			if fail && !created {
 				ctx.AfterTask("onGossipActorInitClusterMessage.retry", time.Duration(m.RetryIntervalDuration), func(ctx vivid.ActorContext) {
 					ctx.Tell(ctx.Ref(), m)
 				})
@@ -125,7 +125,8 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 			return
 		}
 
-		if !fail && collection.IsFirst(g.seedNodes, ctx.PhysicalAddress()) {
+		if fail && collection.IsFirst(g.seedNodes, ctx.PhysicalAddress()) {
+			created = true
 			ctx.Tell(ctx.Ref(), &ActorCreateClusterMessage{})
 			return
 		}

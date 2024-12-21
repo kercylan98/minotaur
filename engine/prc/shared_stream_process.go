@@ -88,8 +88,11 @@ func (c *sharedStreamProcess) activation() {
 	if c.state.CompareAndSwap(sharedStreamProcessStateIdle, sharedStreamProcessStateActive) {
 		go func() {
 			for {
-				c.send()
+				stop := c.send()
 				c.state.Store(sharedStreamProcessStateIdle)
+				if stop {
+					break
+				}
 				c.lock.RLock()
 				empty := len(c.batches) == 0
 				c.lock.RUnlock()
@@ -103,7 +106,7 @@ func (c *sharedStreamProcess) activation() {
 	}
 }
 
-func (c *sharedStreamProcess) send() {
+func (c *sharedStreamProcess) send() (stop bool) {
 	for {
 		c.lock.Lock()
 		n := len(c.batches)
@@ -142,7 +145,9 @@ func (c *sharedStreamProcess) send() {
 			c.lock.Lock()
 			c.batches = append(messages, c.batches...)
 			c.lock.Unlock()
+			stop = true
 			break
 		}
 	}
+	return
 }

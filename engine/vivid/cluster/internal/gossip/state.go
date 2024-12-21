@@ -176,7 +176,10 @@ func (s *State) GossipUpdate() {
 	}
 
 	if num == 0 {
-		return // 没有节点可发送 gossip，直接返回
+		// 仅剩一个节点如果继续发送给自己将导致内存溢出
+		// 这里需要提前达到收敛
+		s.ctx.Ask(s.node.Id.Ref, &GossipedAckMessage{Gossiped: &Gossiped{Gossip: s.gossip, GossiperVersion: s.node.Vc}})
+		return
 	}
 
 	for _, node := range collection.ChooseRandomSliceElementN(targets, num) {

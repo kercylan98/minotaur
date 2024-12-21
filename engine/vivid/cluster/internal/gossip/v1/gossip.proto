@@ -45,7 +45,13 @@ message Node {
 message NodeState {
   map<string, bool> fixed_actor_providers = 5; // 节点提供的固定 Actor Providers
   map<string, bool> only_actor_providers = 6; // 节点提供的唯一 Actor Providers
-  map<string, int64> alive_only_actors = 7; // 节点存活的唯一 Actor 及时间戳
+  map<string, AliveOnlyActorInfo> alive_only_actors = 7; // 节点存活的唯一 Actor 及时间戳
+}
+
+// 存活的唯一 Actor 信息
+message AliveOnlyActorInfo {
+  prc.v1.ProcessId ref = 1;
+  int64 generate_time = 2;
 }
 
 // 节点 ID

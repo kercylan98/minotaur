@@ -83,7 +83,7 @@ func (sys *ActorSystem) getAvailableNodeWithFixedProvider(name string) *Node {
 
 	var targets []*Node
 	for _, node := range sys.nodes {
-		if node.gossipNode.FixedActorProviders[name] {
+		if node.gossipNode.UserState.FixedActorProviders[name] {
 			targets = append(targets, node)
 		}
 	}

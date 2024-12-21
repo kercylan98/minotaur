@@ -41,4 +41,5 @@ type (
 	ActorClusterExitingMessage    = gossipv1.GossipActorClusterExitingMessage
 	ActorClusterExitedMessage     = gossipv1.GossipActorClusterExitedMessage
 	NodeState                     = gossipv1.NodeState
+	AliveOnlyActorInfo            = gossipv1.AliveOnlyActorInfo
 )
