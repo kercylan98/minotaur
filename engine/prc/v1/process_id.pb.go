@@ -27,8 +27,8 @@ type ProcessId struct {
 	PhysicalAddress string                 `protobuf:"bytes,2,opt,name=physical_address,json=physicalAddress,proto3" json:"physical_address,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
-	Cache           atomic.Pointer[any]
-	Metadata        map[string]any
+	cache           atomic.Pointer[any]
+	proxy           func(source *ProcessId) (redirect *ProcessId)
 }
 
 func (x *ProcessId) Reset() {
@@ -117,8 +117,8 @@ func file_engine_prc_v1_process_id_proto_init() {
 		return
 	}
 	type x struct {
-		Cache    atomic.Pointer[any]
-		Metadata map[string]any
+		cache atomic.Pointer[any]
+		proxy func(source *ProcessId) (redirect *ProcessId)
 	}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

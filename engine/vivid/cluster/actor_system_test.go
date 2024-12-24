@@ -35,6 +35,8 @@ func (m *MyOnlyActorProvider) ProvideActor() (actor vivid.Actor) {
 			fmt.Println(ctx.System().Name(), "Only Actor Launch")
 		case *vivid.OnTerminated:
 			fmt.Println(ctx.System().Name(), "Only Actor Terminated")
+		case vivid.ActorRef:
+			fmt.Println(ctx.System().Name(), "Only Actor Receive Message")
 		}
 	})
 }
@@ -113,8 +115,6 @@ func TestActorSystemOnlyActorA(t *testing.T) {
 }
 
 func TestActorSystemOnlyActorB(t *testing.T) {
-	toolkit.EnableHttpPProf(":6060", "/debug/pprof")
-
 	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
@@ -122,4 +122,28 @@ func TestActorSystemOnlyActorB(t *testing.T) {
 	_ = system2
 
 	time.Sleep(time.Hour)
+}
+
+func TestActorSystemGetOnlyActor(t *testing.T) {
+	system3 := cluster.NewActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
+	}))
+
+	_ = system3
+	system3.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch m := ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				ctx.Subscribe(vivid.AbyssTopic)
+			case *vivid.OnAbyssMessageEvent:
+				fmt.Println(string(toolkit.MarshalJSON(m)))
+			}
+		})
+	})
+
+	ref := system3.GetOnlyActor("only")
+	for i := 0; i < 1000000; i++ {
+		time.Sleep(time.Second)
+		system3.Tell(ref, ref)
+	}
 }

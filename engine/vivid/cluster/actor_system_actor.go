@@ -87,11 +87,21 @@ func (a *actorSystemActor) onLeaderChanged(ctx vivid.ActorContext, m vivid.Actor
 }
 
 func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
+	var changed bool
+	var setChanged = func() {
+		changed = true
+	}
+
 	// 筛选存活节点更新节点列表
 	a.onGossipClusterConvergedFilterAliveNodes(ctx, m)
 
 	// 构建集群内唯一 Actor
-	a.onGossipClusterConvergedProcessOnlyActors(ctx, m)
+	a.onGossipClusterConvergedProcessOnlyActors(ctx, m, setChanged)
+
+	// 状态变更，继续收敛
+	if changed {
+		ctx.Tell(a.gossipRef, gossip.OnStateChanged)
+	}
 }
 
 func (a *actorSystemActor) onActorOf(ctx vivid.ActorContext, m *clusterv1.SpawnFixedActor) {
@@ -137,7 +147,7 @@ func (a *actorSystemActor) onGossipClusterConvergedFilterAliveNodes(ctx vivid.Ac
 	}
 }
 
-func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
+func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent, changed func()) {
 	// 过滤存活 Actor 并且记录信息
 	var aliveOnlyActors = make(map[string][]*gossip.AliveOnlyActorInfo)
 	for _, node := range m {
@@ -186,10 +196,11 @@ func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.A
 		}
 		a.nodeState.AliveOnlyActors[name] = info
 		aliveOnlyActors[name] = append(aliveOnlyActors[name], info)
+		changed()
 	}
 
 	// 仅保留最新的
-	for _, infos := range aliveOnlyActors {
+	for key, infos := range aliveOnlyActors {
 		if len(infos) > 1 {
 			sort.Slice(infos, func(i, j int) bool {
 				return infos[i].GenerateTime > infos[j].GenerateTime
@@ -197,7 +208,8 @@ func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.A
 			for i := 1; i < len(infos); i++ {
 				ctx.Terminate(infos[i].Ref, true)
 			}
-			infos = infos[:1]
+			aliveOnlyActors[key] = infos
+			changed()
 		}
 	}
 

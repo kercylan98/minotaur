@@ -21,3 +21,25 @@ type Process interface {
 	//  - 该函数在进程从资源控制器中取消注册时将被调用
 	Terminate(source *ProcessId)
 }
+
+func newProxyProcess(process Process, proxy *ProcessId) ProxyProcess {
+	return &proxyProcess{
+		Process: process,
+		proxy:   proxy,
+	}
+}
+
+type ProxyProcess interface {
+	Process
+
+	GetProxy() *ProcessId
+}
+
+type proxyProcess struct {
+	Process
+	proxy *ProcessId
+}
+
+func (p *proxyProcess) GetProxy() *ProcessId {
+	return p.proxy
+}

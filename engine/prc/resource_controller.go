@@ -1,6 +1,7 @@
 package prc
 
 import (
+	prcv1 "github.com/kercylan98/minotaur/engine/prc/v1"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/puzpuzpuz/xsync/v3"
 )
@@ -70,14 +71,24 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 	if id == nil {
 		return rc.config.notFoundSubstitute
 	}
-	processPtr := id.Cache.Load()
+
+	if proxy := prcv1.GetProcessIdProxy(id); proxy != nil {
+		proxyRef := proxy(id)
+		process = rc.GetProcess(proxyRef)
+		if process != rc.config.notFoundSubstitute {
+			process = newProxyProcess(process, proxyRef)
+		}
+		return
+	}
+
+	processPtr := prcv1.LoadProcessIdCache(id)
 	if processPtr != nil {
 		process = (*processPtr).(Process)
 		if !process.IsTerminated() {
 			return process
 		}
 
-		id.Cache.Store(nil)
+		prcv1.ClearProcessIdCache(id)
 	}
 
 	if !rc.Belong(id) {
@@ -85,7 +96,7 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 		for _, resolver := range rc.par {
 			if process = resolver.Resolve(id); process != nil {
 				var anyProcess any = process
-				id.Cache.Store(&anyProcess)
+				prcv1.StoreProcessIdCache(id, &anyProcess)
 				return
 			}
 		}
@@ -97,7 +108,7 @@ func (rc *ResourceController) GetProcess(id *ProcessId) (process Process) {
 	process, exist = rc.processes.Load(id.GetLogicalAddress())
 	if exist {
 		var anyProcess any = process
-		id.Cache.Store(&anyProcess)
+		prcv1.StoreProcessIdCache(id, &anyProcess)
 		return process
 	} else {
 		// 找不到进程时返回默认的替代进程，当默认的替代进程也不存在那么将是空指针

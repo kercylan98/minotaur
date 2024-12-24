@@ -102,6 +102,7 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 			member.Vc = s.node.Vc
 			member.UserState = s.node.UserState
 			s.node = member // 确保指针一致
+			s.ctx.System().Logger().Info("cluster", log.Any("merge", s.gossip.Members))
 		}
 		if s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress) {
 			// 初始化故障检测器

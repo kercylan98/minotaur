@@ -69,5 +69,23 @@ func (pid *ProcessId) GetLogicalAddress() LogicalAddress {
 var zeroUrl = &url.URL{}
 
 func ClearProcessIdCache(pid *ProcessId) {
-	pid.Cache.Store(nil)
+	pid.cache.Store(nil)
+}
+
+func LoadProcessIdCache(pid *ProcessId) *any {
+	return pid.cache.Load()
+}
+
+func StoreProcessIdCache(pid *ProcessId, cache *any) {
+	pid.cache.Store(cache)
+}
+
+// SetProcessIdProxy 设置进程 ID 的代理
+//   - 该函数无法保证并发安全，仅支持在创建进程 ID 完成还未被使用之前设置
+func SetProcessIdProxy(pid *ProcessId, proxy func(source *ProcessId) (redirect *ProcessId)) {
+	pid.proxy = proxy
+}
+
+func GetProcessIdProxy(pid *ProcessId) func(source *ProcessId) (redirect *ProcessId) {
+	return pid.proxy
 }

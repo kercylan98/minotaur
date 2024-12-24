@@ -46,20 +46,15 @@ func main() {
 			switch v := ts.Type.(type) {
 			case *ast.StructType:
 				processCacheField := &ast.Field{
-					Names: []*ast.Ident{ast.NewIdent("Cache")},
+					Names: []*ast.Ident{ast.NewIdent("cache")},
 					Type:  ast.NewIdent("atomic.Pointer[any]"),
 				}
 				v.Fields.List = append(v.Fields.List, processCacheField)
-				metadataField := &ast.Field{
-					Names: []*ast.Ident{ast.NewIdent("Metadata")},
-					Type:  ast.NewIdent("map[string]any"),
-					Comment: &ast.CommentGroup{
-						List: []*ast.Comment{
-							{Text: "// Metadata is a map of key-value pairs that can be used to store additional information about a process. For concurrency safety, please set the value at the beginning of creation."},
-						},
-					},
+				proxyField := &ast.Field{
+					Names: []*ast.Ident{ast.NewIdent("proxy")},
+					Type:  ast.NewIdent("func(source *ProcessId) (redirect *ProcessId)"),
 				}
-				v.Fields.List = append(v.Fields.List, metadataField)
+				v.Fields.List = append(v.Fields.List, proxyField)
 
 				//redirectAddressField := &ast.Field{
 				//	Names: []*ast.Ident{ast.NewIdent("redirect")},

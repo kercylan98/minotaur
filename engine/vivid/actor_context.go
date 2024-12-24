@@ -574,14 +574,28 @@ func (ctx *actorContext) findProcess(pid *prc.ProcessId) (process prc.Process) {
 // deliveryUserMessage 向特定进程投递用户消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliveryUserMessage(receiverProcess, receiver, sender, forward ActorRef, message Message) {
 	process := ctx.findProcess(receiverProcess)
+	if proxy, ok := process.(prc.ProxyProcess); ok {
+		proxyRef := proxy.GetProxy()
+		if receiverProcess.Equal(receiver) {
+			receiver = proxyRef
+		}
+	}
+
 	message = prc.WrapMessage(sender, receiver, message)
 	process.DeliveryUserMessage(receiver, sender, forward, message)
 }
 
 // deliverySystemMessage 向特定进程投递系统消息，接收人与接收进程可能会不同，例如向深渊进程投递完整的收发消息记录
 func (ctx *actorContext) deliverySystemMessage(receiverProcess, receiver, sender, forward ActorRef, message prc.Message) {
-	message = prc.WrapMessage(sender, receiver, message)
 	process := ctx.findProcess(receiverProcess)
+	if proxy, ok := process.(prc.ProxyProcess); ok {
+		proxyRef := proxy.GetProxy()
+		if receiverProcess.Equal(receiver) {
+			receiver = proxyRef
+		}
+	}
+
+	message = prc.WrapMessage(sender, receiver, message)
 	process.DeliverySystemMessage(receiver, sender, forward, message)
 }
 

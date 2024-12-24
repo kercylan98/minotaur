@@ -58,6 +58,8 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 		g.onGossipActorLeaveClusterMessage(ctx)
 	case *ActorPingPongMessage:
 		g.onGossipActorPingPongMessage(ctx, m)
+	case *stateChanged:
+		g.onStateChanged()
 	}
 }
 
@@ -261,14 +263,7 @@ func (g *GossiperActor) onGossipActorClusterConvergedMessage(ctx vivid.ActorCont
 			}
 		}
 		if changed {
-			// 清空 Seen 列表，并标记自己为已看到
-			g.state.gossip.Seen = []*NodeId{g.state.node.Id}
-
-			// 自增领导者节点的 VectorClock，表示集群状态更新
-			g.state.Increment()
-
-			// 传播新的 Gossip 状态
-			g.state.GossipUpdate()
+			g.onStateChanged()
 		}
 	}
 
@@ -369,4 +364,15 @@ func (g *GossiperActor) onHeartbeatCheckTask(ctx vivid.ActorContext) {
 		}(f)
 	}
 
+}
+
+func (g *GossiperActor) onStateChanged() {
+	// 清空 Seen 列表，并标记自己为已看到
+	g.state.gossip.Seen = []*NodeId{g.state.node.Id}
+
+	// 自增领导者节点的 VectorClock，表示集群状态更新
+	g.state.Increment()
+
+	// 传播新的 Gossip 状态
+	g.state.GossipUpdate()
 }

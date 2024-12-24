@@ -23,7 +23,10 @@ const (
 
 type ClusterConvergedEvent []*Node // 集群收敛事件
 
+var OnStateChanged = &stateChanged{}
+
 type (
+	stateChanged                  struct{}
 	Node                          = gossipv1.Node
 	NodeId                        = gossipv1.NodeId
 	Gossip                        = gossipv1.Gossip
