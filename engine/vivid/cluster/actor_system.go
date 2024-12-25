@@ -8,6 +8,7 @@ import (
 	prcv1 "github.com/kercylan98/minotaur/engine/prc/v1"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
+	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"sync"
@@ -21,24 +22,21 @@ func init() {
 	})
 }
 
-func NewActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress, configurator ...ActorSystemConfigurator) *ActorSystem {
+func NewActorSystem(address prc.PhysicalAddress, configurator ...ActorSystemConfigurator) *ActorSystem {
+	return NewFixedSeedNodesActorSystem(address, nil, configurator...)
+}
+
+// NewFixedSeedNodesActorSystem 创建一个固定种子节点的集群 ActorSystem
+func NewFixedSeedNodesActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress, configurator ...ActorSystemConfigurator) *ActorSystem {
 	config := newActorSystemConfiguration()
 	for _, c := range configurator {
 		c.Configure(config)
 	}
+	seedNodes = append(seedNodes, config.seeds...)
 
 	system := &ActorSystem{
 		config: config,
 		nodes:  make(map[prc.PhysicalAddress]*Node),
-		balancer: func() Balancer {
-			return FunctionalBalancer(func(nodes []*Node) *Node {
-				// temp random
-				if len(nodes) == 0 {
-					return nil
-				}
-				return collection.ChooseRandomSliceElement(nodes)
-			})
-		}(),
 	}
 
 	config.WithShared(address)
@@ -46,6 +44,20 @@ func NewActorSystem(address prc.PhysicalAddress, seedNodes []prc.PhysicalAddress
 
 	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration)
 
+	if err := toolkit.RetryByExponentialBackoff(func() error {
+		provideSeeds, err := config.seedProvider.Provide()
+		if err != nil {
+			system.Logger().Error("cluster", log.String("status", "backoff provide seeds failed"), log.Err(err))
+		} else {
+			seedNodes = append(seedNodes, provideSeeds...)
+		}
+		return err
+	}, 64, time.Second, time.Minute, 2, 0.5); err != nil {
+		panic(err)
+	}
+
+	// 去重种子节点
+	seedNodes = collection.DeduplicateSlice(seedNodes)
 	system.systemRef = system.ActorOfF(func() vivid.Actor {
 		return newActorSystemActor(system, seedNodes)
 	}, func(descriptor *vivid.ActorDescriptor) {
@@ -61,7 +73,6 @@ type ActorSystem struct {
 	systemRef          vivid.ActorRef            // 集群 ActorSystem 的 Actor 引用
 	nodeRWLock         sync.RWMutex
 	nodes              map[prc.PhysicalAddress]*Node
-	balancer           Balancer
 }
 
 func (sys *ActorSystem) onShutdown() {
@@ -89,7 +100,7 @@ func (sys *ActorSystem) getAvailableNodeWithFixedProvider(name string) *Node {
 		}
 	}
 
-	return sys.balancer.Select(targets)
+	return sys.config.nodeBalancer.Select(targets)
 }
 
 // GetOnlyActor 获取一个集群内唯一的 Actor 引用

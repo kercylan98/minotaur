@@ -108,15 +108,20 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 		}()
 
 		var ackList []*ActorTryJoinClusterAckMessage
+		var ackError error
+		var ackErrNum int
 		for _, entry := range futures {
 			g.logger.Debug("cluster", log.String("event", "try join cluster"), log.String("ref", entry.Ref.URL().String()))
 			ack, err := entry.Future.Result()
 			if err != nil {
-				g.logger.Error("cluster", log.String("event", "try join cluster"), log.String("ref", entry.Ref.URL().String()), log.Err(err))
-				fail = true
-				break
+				ackError = fmt.Errorf("try join cluster[%s] failed: %w", entry.Ref.URL().String(), err)
+				ackErrNum++
+			} else {
+				ackList = append(ackList, ack.(*ActorTryJoinClusterAckMessage))
 			}
-			ackList = append(ackList, ack.(*ActorTryJoinClusterAckMessage))
+		}
+		if ackErrNum == len(futures) {
+			fail = true
 		}
 
 		for _, ack := range ackList {
@@ -131,6 +136,10 @@ func (g *GossiperActor) onGossipActorInitClusterMessage(ctx vivid.ActorContext, 
 			created = true
 			ctx.Tell(ctx.Ref(), &ActorCreateClusterMessage{})
 			return
+		} else {
+			if fail && ackError != nil {
+				g.logger.Error("cluster", log.String("event", "try join cluster"), log.Err(ackError))
+			}
 		}
 
 		// 如果所有响应都是拒绝，重新尝试

@@ -51,13 +51,13 @@ func TestActorSystemFixedActor(t *testing.T) {
 	fap2 := new(MyFixedProvider)
 	fap3 := new(MyFixedProvider)
 
-	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system1 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithFixedActorProvider("fixed", fap1)
 	}))
-	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system2 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithFixedActorProvider("fixed", fap2)
 	}))
-	system3 := cluster.NewActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system3 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithFixedActorProvider("fixed2", fap3)
 	}))
 
@@ -86,13 +86,13 @@ func TestActorSystemFixedActor(t *testing.T) {
 
 func TestActorSystemOnlyActor(t *testing.T) {
 
-	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system1 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
-	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system2 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
-	system3 := cluster.NewActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system3 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
 
@@ -105,7 +105,7 @@ func TestActorSystemOnlyActor(t *testing.T) {
 
 func TestActorSystemOnlyActorA(t *testing.T) {
 
-	system1 := cluster.NewActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system1 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6666", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
 
@@ -114,7 +114,7 @@ func TestActorSystemOnlyActorA(t *testing.T) {
 }
 
 func TestActorSystemOnlyActorB(t *testing.T) {
-	system2 := cluster.NewActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system2 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6667", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
 
@@ -124,7 +124,7 @@ func TestActorSystemOnlyActorB(t *testing.T) {
 }
 
 func TestActorSystemGetOnlyActor(t *testing.T) {
-	system3 := cluster.NewActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
+	system3 := cluster.NewFixedSeedNodesActorSystem("127.0.0.1:6668", []prc.PhysicalAddress{"127.0.0.1:6666", "127.0.0.1:6667"}, cluster.FunctionalActorSystemConfigurator(func(config *cluster.ActorSystemConfiguration) {
 		config.WithOnlyActorProvider("only", new(MyOnlyActorProvider))
 	}))
 
