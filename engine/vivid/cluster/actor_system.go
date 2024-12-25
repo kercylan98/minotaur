@@ -116,10 +116,6 @@ func (sys *ActorSystem) GetOnlyActor(name string) vivid.ActorRef {
 			if !exist {
 				continue
 			}
-			_, err := vivid.Ping(sys.ActorSystem, alive.Ref, time.Millisecond*200)
-			if err != nil {
-				continue
-			}
 			return alive.Ref
 		}
 		return nil
