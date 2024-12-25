@@ -27,7 +27,7 @@ func GetAliveNodeWithASCLLAsc(nodes []*gossip.Node) *gossip.Node {
 	return nodes[0]
 }
 
-func GetAliveNodeWithLaunchTimeAsc(nodes []*gossip.Node) *gossip.Node {
+func GetAliveNodeWithLaunchTimeAsc(nodes []*Node) *Node {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -38,11 +38,11 @@ func GetAliveNodeWithLaunchTimeAsc(nodes []*gossip.Node) *gossip.Node {
 	sort.Slice(nodes, func(i, j int) bool {
 		a, b := nodes[i], nodes[j]
 
-		if a.Status != b.Status {
-			return a.Status == gossip.NodeStatusAlive
+		if a.gossipNode.Status != b.gossipNode.Status {
+			return a.gossipNode.Status == gossip.NodeStatusAlive
 		}
 
-		return a.LaunchTimestampMillis < b.LaunchTimestampMillis
+		return a.gossipNode.LaunchTimestampMillis < b.gossipNode.LaunchTimestampMillis
 	})
 
 	return nodes[0]

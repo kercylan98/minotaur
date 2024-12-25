@@ -5,7 +5,6 @@ import (
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
 	"github.com/kercylan98/minotaur/engine/vivid/cluster"
-	"github.com/kercylan98/minotaur/toolkit"
 	"testing"
 	"time"
 )
@@ -132,11 +131,9 @@ func TestActorSystemGetOnlyActor(t *testing.T) {
 	_ = system3
 	system3.ActorOfF(func() vivid.Actor {
 		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
-			switch m := ctx.Message().(type) {
+			switch ctx.Message().(type) {
 			case *vivid.OnLaunch:
 				ctx.Subscribe(vivid.AbyssTopic)
-			case *vivid.OnAbyssMessageEvent:
-				fmt.Println(string(toolkit.MarshalJSON(m)))
 			}
 		})
 	})

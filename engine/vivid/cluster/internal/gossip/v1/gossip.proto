@@ -52,6 +52,7 @@ message NodeState {
 message AliveOnlyActorInfo {
   prc.v1.ProcessId ref = 1;
   int64 generate_time = 2;
+  string name = 3;
 }
 
 // 节点 ID

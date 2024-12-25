@@ -8,7 +8,7 @@ import (
 	gossipv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip/v1"
 	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
 	"github.com/kercylan98/minotaur/toolkit/collection"
-	"sort"
+	"github.com/kercylan98/minotaur/toolkit/log"
 	"time"
 )
 
@@ -92,11 +92,14 @@ func (a *actorSystemActor) onGossipClusterConvergedEvent(ctx vivid.ActorContext,
 		changed = true
 	}
 
+	a.system.nodeRWLock.Lock()
+	defer a.system.nodeRWLock.Unlock()
+
 	// 筛选存活节点更新节点列表
 	a.onGossipClusterConvergedFilterAliveNodes(ctx, m)
 
 	// 构建集群内唯一 Actor
-	a.onGossipClusterConvergedProcessOnlyActors(ctx, m, setChanged)
+	a.onGossipClusterConvergedProcessOnlyActors(ctx, setChanged)
 
 	// 状态变更，继续收敛
 	if changed {
@@ -117,100 +120,101 @@ func (a *actorSystemActor) onActorOf(ctx vivid.ActorContext, m *clusterv1.SpawnF
 
 func (a *actorSystemActor) onGossipClusterConvergedFilterAliveNodes(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent) {
 	// 保留可达节点
-	var activeList = make(map[prc.PhysicalAddress]*gossip.Node)
+	var activeList = make(map[prc.PhysicalAddress]*Node)
 	for _, node := range m {
 		switch node.Status {
 		case gossip.NodeStatusAlive:
-			activeList[node.Id.Ref.GetPhysicalAddress()] = node
+			activeList[node.Id.Ref.GetPhysicalAddress()] = newNode(a.system, ctx, node)
 		}
 	}
-
-	a.system.nodeRWLock.Lock()
-	defer a.system.nodeRWLock.Unlock()
-	// 移除陈旧
-	for key, node := range a.system.nodes {
-		_, exist := activeList[node.GetId()]
-		if exist {
-			continue
-		}
-		delete(a.system.nodes, key)
-	}
-
-	// 补充新增
-	for _, node := range activeList {
-		_, exist := a.system.nodes[node.Id.Ref.GetPhysicalAddress()]
-		if exist {
-			continue
-		}
-		create := newNode(a.system, ctx, node)
-		a.system.nodes[node.Id.Ref.GetPhysicalAddress()] = create
-	}
+	a.system.nodes = activeList
 }
 
-func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.ActorContext, m gossip.ClusterConvergedEvent, changed func()) {
-	// 过滤存活 Actor 并且记录信息
-	var aliveOnlyActors = make(map[string][]*gossip.AliveOnlyActorInfo)
-	for _, node := range m {
-		if node.Status == gossip.NodeStatusAlive {
-			for name, info := range node.UserState.AliveOnlyActors {
-				aliveOnlyActors[name] = append(aliveOnlyActors[name], info)
+func (a *actorSystemActor) onGossipClusterConvergedProcessOnlyActors(ctx vivid.ActorContext, changed func()) {
+	var aliveActors = make(map[string]*gossip.AliveOnlyActorInfo)    // 集群内存活的 Actor 名称及其信息
+	var expiredActors = make(map[*Node][]*gossip.AliveOnlyActorInfo) // 集群内过期的 Actor
+	var requiredActors = make(map[string][]*Node)                    // 集群内所需的唯一 Actor 名称及能提供的节点
+	for _, node := range a.system.nodes {
+		// 分析集群内所需的 Actor
+		for name := range node.gossipNode.UserState.OnlyActorProviders {
+			requiredActors[name] = append(requiredActors[name], node)
+		}
+
+		//ctx.System().Logger().Debug("cluster", log.String("node", node.nodeRef.URL().String()),
+		//	log.Any("required", collection.ConvertMapKeysToSlice(node.gossipNode.UserState.OnlyActorProviders)),
+		//	log.Any("alive-only", node.gossipNode.UserState.AliveOnlyActors))
+
+		// 获取存活的 Actor
+		for actorName, info := range node.gossipNode.UserState.AliveOnlyActors {
+			currAliveActor, exist := aliveActors[actorName]
+			if exist {
+				if info.GenerateTime < currAliveActor.GenerateTime {
+					// 创建时间小于当前时间，自身为过期的 Actor
+					expiredActors[node] = append(expiredActors[node], info)
+					continue
+				} else {
+					// 创建时间大于当前时间，自身为存活的 Actor，当前存活的标记过期
+					aliveActors[actorName] = info
+					expiredActors[node] = append(expiredActors[node], currAliveActor)
+				}
+			} else {
+				// 不存在，标记自身为存活的 Actor
+				aliveActors[actorName] = info
 			}
 		}
 	}
 
-	// 分析集群内所需的唯一 Actor
-	var onlyNodes = make(map[string]struct{})
-	for _, node := range m {
-		for name := range node.UserState.OnlyActorProviders {
-			onlyNodes[name] = struct{}{}
-		}
-	}
-
-	// 如果集群内缺乏唯一 Actor，且自身节点满足要求，那么创建
-	for name := range onlyNodes {
-		if len(aliveOnlyActors[name]) > 0 {
+	// 生成集群内缺乏的 Actor
+	for actorName, nodes := range requiredActors {
+		if _, exist := aliveActors[actorName]; exist {
 			continue
 		}
 
-		provider, exist := a.system.config.onlyActorProviders[name]
-		if !exist {
+		// 计算合适的节点
+		selected := GetAliveNodeWithLaunchTimeAsc(nodes)
+		if selected == nil || selected.gossipNode.Id.Ref.GetPhysicalAddress() != ctx.PhysicalAddress() {
+			if selected == nil {
+				ctx.System().Logger().Debug("cluster", log.String("generate_only_actor", actorName), log.String("selected", "no available node"))
+			} else {
+				ctx.System().Logger().Debug("cluster", log.String("generate_only_actor", actorName), log.String("selected", selected.gossipNode.Id.Ref.URL().String()))
+				//ctx.System().Logger().Debug("cluster", log.String("generate_only_actor", actorName), log.String("selected", selected.gossipNode.Id.Ref.URL().String()),
+				//	log.Any("contestants", collection.MappingFromSlice(nodes, func(value *Node) *gossip.Node {
+				//		return value.gossipNode
+				//	})))
+			}
 			continue
 		}
 
-		selected := GetAliveNodeWithLaunchTimeAsc(m)
-		if selected == nil || selected.Id.Ref.GetPhysicalAddress() != ctx.PhysicalAddress() {
-			continue
-		}
-
+		provider := a.system.config.onlyActorProviders[actorName]
 		// 创建 Actor
 		ref := ctx.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 			return provider.ProvideActor()
 		}), provider.ProvideConfigurator())
 
-		if a.nodeState.AliveOnlyActors == nil {
-			a.nodeState.AliveOnlyActors = make(map[string]*gossipv1.AliveOnlyActorInfo)
+		if selected.gossipNode.UserState.AliveOnlyActors == nil {
+			selected.gossipNode.UserState.AliveOnlyActors = make(map[string]*gossipv1.AliveOnlyActorInfo)
 		}
 		info := &gossip.AliveOnlyActorInfo{
+			Name:         actorName,
 			Ref:          ref,
 			GenerateTime: time.Now().UnixMilli(),
 		}
-		a.nodeState.AliveOnlyActors[name] = info
-		aliveOnlyActors[name] = append(aliveOnlyActors[name], info)
+		selected.gossipNode.UserState.AliveOnlyActors[actorName] = info
+		aliveActors[actorName] = info
 		changed()
+
+		ctx.System().Logger().Debug("cluster", log.String("generate", "only_actor"), log.String("name", actorName))
 	}
 
-	// 仅保留最新的
-	for key, infos := range aliveOnlyActors {
-		if len(infos) > 1 {
-			sort.Slice(infos, func(i, j int) bool {
-				return infos[i].GenerateTime > infos[j].GenerateTime
-			})
-			for i := 1; i < len(infos); i++ {
-				ctx.Terminate(infos[i].Ref, true)
-			}
-			aliveOnlyActors[key] = infos
-			changed()
+	// 移除集群内过期的 Actor
+	for node, infos := range expiredActors {
+		for _, info := range infos {
+			ctx.Terminate(info.Ref, true)
+			delete(node.gossipNode.UserState.AliveOnlyActors, info.Name)
+
+			ctx.System().Logger().Debug("cluster", log.String("expire", "only_actor"), log.String("name", info.Name), log.String("ref", info.Ref.URL().String()))
 		}
+		changed()
 	}
 
 }

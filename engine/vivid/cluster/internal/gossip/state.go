@@ -7,6 +7,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/phi"
+	"google.golang.org/protobuf/proto"
 	"sort"
 	"time"
 )
@@ -86,10 +87,22 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 	// 如果接收到的 Gossip 版本更新，则进行合并
 	var accessibilityChanged = len(gossiped.Gossip.AccessibilityChange) > 0
 	if ordering != VectorClockOrderingAfter || accessibilityChanged {
+		// 合并用户状态
+		for _, member := range s.gossip.Members {
+			for _, node := range gossiped.Gossip.Members {
+				if node.Id.Ref.Equal(member.Id.Ref) {
+					proto.Merge(node.UserState, member.UserState)
+				}
+			}
+		}
+		//s.ctx.System().Logger().Debug("cluster", log.String("gossip", "merge"), log.Any("self", s.gossip), log.Any("gossip", gossiped.Gossip))
 		s.gossip = gossiped.Gossip
+		//s.ctx.System().Logger().Debug("cluster", log.String("gossip", "merged"), log.Any("gossip", s.gossip))
+
 	}
 	if ordering != VectorClockOrderingSame || accessibilityChanged {
 		s.node.Vc.Merge(gossiped.GossiperVersion)
+		//s.ctx.System().Logger().Debug("cluster", log.String("version", "merged"))
 
 		// 状态更新，重置 Seen 列表为仅含自身
 		// 这里不改变版本，改变版本将导致永远无终止
@@ -99,10 +112,10 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 
 	for _, member := range s.gossip.Members {
 		if member.Id.PhysicalAddressEqual(s.node.Id) {
+			member.LaunchTimestampMillis = s.node.LaunchTimestampMillis
 			member.Vc = s.node.Vc
 			member.UserState = s.node.UserState
 			s.node = member // 确保指针一致
-			s.ctx.System().Logger().Info("cluster", log.Any("merge", s.gossip.Members))
 		}
 		if s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress) {
 			// 初始化故障检测器
