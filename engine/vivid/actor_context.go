@@ -192,7 +192,7 @@ func (ctx *actorContext) Publish(topic Topic, message Message) {
 }
 
 func (ctx *actorContext) PublishLocal(topic Topic, message Message) {
-	ctx.Tell(ctx.system.subscription, &messages.LocalPublishRequest{Topic: topic, Message: message, OnlyLocal: true})
+	ctx.Ask(ctx.system.subscription, &messages.LocalPublishRequest{Topic: topic, Message: message, OnlyLocal: true})
 }
 
 func (ctx *actorContext) Watch(target ActorRef) {

@@ -2,6 +2,7 @@ syntax = "proto3";
 package engine.vivid.cluster.internal.gossip.v1;
 
 import "engine/prc/v1/process_id.proto";
+import "google/protobuf/any.proto";
 
 // 初始化集群，此刻节点准备尝试加入其他集群或创建集群
 message GossipActorInitClusterMessage {
@@ -38,21 +39,7 @@ message Node {
   GossipNodeStatus status = 2; // 节点状态
   VectorClock vc = 3; // 矢量时钟
   int64 launch_timestamp_millis = 4; // 节点启动时间戳
-  NodeState user_state = 5; // 用户状态 
-}
-
-// 节点用户状态
-message NodeState {
-  map<string, bool> fixed_actor_providers = 5; // 节点提供的固定 Actor Providers
-  map<string, bool> only_actor_providers = 6; // 节点提供的唯一 Actor Providers
-  map<string, AliveOnlyActorInfo> alive_only_actors = 7; // 节点存活的唯一 Actor 及时间戳
-}
-
-// 存活的唯一 Actor 信息
-message AliveOnlyActorInfo {
-  prc.v1.ProcessId ref = 1;
-  int64 generate_time = 2;
-  string name = 3;
+  map<string, google.protobuf.Any> user_data = 5; // 用户数据
 }
 
 // 节点 ID

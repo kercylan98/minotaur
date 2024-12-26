@@ -1,12 +1,29 @@
 syntax = "proto3";
 package engine.vivid.cluster.internal.v1;
 
+import "engine/vivid/cluster/internal/gossip/v1/gossip.proto";
 import "engine/prc/v1/process_id.proto";
 
-message SpawnFixedActor {
-  string name = 1;
+enum UserDataKey {
+  USER_DATA_KEY_UNSPECIFIED = 0;
+  USER_DATA_KEY_FIXED_ACTOR_PROVIDERS = 1; // 节点提供的固定 Actor Providers
+  USER_DATA_KEY_ONLY_ACTOR_PROVIDERS = 2; // 节点提供的唯一 Actor Providers
+  USER_DATA_KEY_ALIVE_ONLY_ACTORS = 3; // 节点存活的唯一 Actor 及时间戳
 }
 
-message SpawnFixedActorResult {
-  prc.v1.ProcessId ref = 1;
+message OnlyActorProviders {
+  map<string, bool> only_actor_providers = 1; // 节点提供的唯一 Actor Providers
 }
+
+message AliveOnlyActorInfos {
+  map<string, AliveOnlyActorInfo> alive_only_actors = 1; // 节点存活的唯一 Actor 及时间戳
+
+  // 存活的唯一 Actor 信息
+  message AliveOnlyActorInfo {
+    vivid.cluster.internal.gossip.v1.NodeId node_id = 1; 
+    prc.v1.ProcessId ref = 2;
+    int64 generate_time = 3;
+    string name = 4;
+  }
+}
+

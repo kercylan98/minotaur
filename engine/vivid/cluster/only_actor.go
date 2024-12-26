@@ -4,4 +4,7 @@ import (
 	"github.com/kercylan98/minotaur/engine/vivid"
 )
 
-type OnlyActorProvider = vivid.FixedActorProvider
+type OnlyActorProvider interface {
+	ProvideActor() (actor vivid.Actor)
+	ProvideConfigurator() (configurator vivid.ActorDescriptorConfigurator)
+}

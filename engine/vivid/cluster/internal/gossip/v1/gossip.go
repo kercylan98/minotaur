@@ -1,11 +1,22 @@
 package gossipv1
 
+import "fmt"
+
+type NodeKey = string
+
 func (ni *NodeId) Equal(other *NodeId) bool {
+	if ni == nil || other == nil {
+		return false
+	}
 	return ni.Guid == other.Guid && ni.Ref.PhysicalAddress == other.Ref.PhysicalAddress
 }
 
 func (ni *NodeId) PhysicalAddressEqual(other *NodeId) bool {
 	return ni.Ref.PhysicalAddress == other.Ref.PhysicalAddress
+}
+
+func (ni *NodeId) Key() NodeKey {
+	return fmt.Sprintf("%s:%d", ni.Ref.PhysicalAddress, ni.Guid)
 }
 
 func (vc *VectorClock) Increment(node string) *VectorClock {

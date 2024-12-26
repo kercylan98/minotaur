@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kercylan98/minotaur/skeleton/internal/repository"
 	"github.com/kercylan98/minotaur/skeleton/internal/service"
-	application2 "github.com/kercylan98/minotaur/skeleton/pkg/application"
+	"github.com/kercylan98/minotaur/skeleton/pkg/application"
 )
 
 var _ service.ConfigurationService = (*ConfigurationService)(nil)
@@ -20,8 +20,8 @@ type ConfigurationService struct {
 	}
 }
 
-func (c *ConfigurationService) OnInitialize(app *application2.Context, loader *application2.RepositoryLoader) error {
-	c.repository.configuration = application2.LoadRepository[repository.ConfigurationRepository](loader)
+func (c *ConfigurationService) OnInitialize(app *application.Context, loader *application.RepositoryLoader) error {
+	c.repository.configuration = application.LoadRepository[repository.ConfigurationRepository](loader)
 	return nil
 }
 

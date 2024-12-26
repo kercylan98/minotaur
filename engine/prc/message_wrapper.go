@@ -17,7 +17,7 @@ func WrapMessage(sender, receiver *ProcessId, message Message) *MessageWrapper {
 func UnwrapMessage(wrapper Message) (sender, receiver *ProcessId, message Message) {
 	w, ok := wrapper.(*MessageWrapper)
 	if !ok {
-		return nil, nil, message
+		return nil, nil, wrapper
 	}
 	return w.Sender, w.Receiver, w.Message
 }

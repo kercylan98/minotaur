@@ -8,6 +8,7 @@ import (
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/phi"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"sort"
 	"time"
 )
@@ -17,11 +18,22 @@ func newState(ctx vivid.ActorContext, actor *GossiperActor) *State {
 	vc.Increment(ctx.Ref().PhysicalAddress) // 版本初始 1
 
 	node := &Node{
-		Id:        newNodeId(ctx.Ref()),
-		Status:    NodeStatusJoining,
-		Vc:        vc,
-		UserState: actor.nodeState,
+		Id:       actor.nodeId,
+		Status:   NodeStatusJoining,
+		Vc:       vc,
+		UserData: make(map[string]*anypb.Any),
 	}
+
+	for _, provider := range actor.providers {
+		k, v := provider.Provide()
+		av, err := anypb.New(v)
+		if err != nil {
+			panic(err)
+		}
+
+		node.UserData[k] = av
+	}
+
 	state := &State{
 		ctx:   ctx,
 		actor: actor,
@@ -91,7 +103,9 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 		for _, member := range s.gossip.Members {
 			for _, node := range gossiped.Gossip.Members {
 				if node.Id.Ref.Equal(member.Id.Ref) {
-					proto.Merge(node.UserState, member.UserState)
+					for key, dst := range node.UserData {
+						proto.Merge(dst, member.UserData[key])
+					}
 				}
 			}
 		}
@@ -114,7 +128,7 @@ func (s *State) MergeGossip(gossiped *Gossiped) {
 		if member.Id.PhysicalAddressEqual(s.node.Id) {
 			member.LaunchTimestampMillis = s.node.LaunchTimestampMillis
 			member.Vc = s.node.Vc
-			member.UserState = s.node.UserState
+			member.UserData = s.node.UserData
 			s.node = member // 确保指针一致
 		}
 		if s.actor.hashRing.AddNode(member.Id.Ref.PhysicalAddress) {

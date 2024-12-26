@@ -5,26 +5,30 @@ import (
 	"github.com/kercylan98/minotaur/engine/future"
 	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	gossipv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip/v1"
 	"github.com/kercylan98/minotaur/toolkit/chrono"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
 	"github.com/kercylan98/minotaur/toolkit/phi"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"log/slog"
 	"time"
 )
 
-func NewGossiperActor(nodeState *NodeState, seedNodes []prc.PhysicalAddress) *GossiperActor {
+func NewGossiperActor(seedNodes []prc.PhysicalAddress, providers ...UserDataProvider) *GossiperActor {
 	if len(seedNodes) == 0 {
 		panic(fmt.Errorf("seed nodes cannot be empty"))
 	}
 	return &GossiperActor{
-		nodeState: nodeState,
 		seedNodes: seedNodes,
 		hashRing:  NewHashRing(5),
+		providers: providers,
 	}
 }
 
 type GossiperActor struct {
+	nodeId       *gossipv1.NodeId                                    // 节点 ID
 	seedNodes    []prc.PhysicalAddress                               // 种子节点
 	seedNodeRefs []vivid.ActorRef                                    // 种子节点 Actor 引用
 	logger       *slog.Logger                                        // 日志记录器
@@ -33,7 +37,7 @@ type GossiperActor struct {
 	hashRing     *HashRing                                           // 虚拟节点哈希环
 	afd          map[prc.PhysicalAddress]*phi.AccrualFailureDetector // 故障检测器
 	converged    bool                                                // 集群是否已收敛
-	nodeState    *NodeState                                          // 节点用户状态
+	providers    []UserDataProvider                                  // 用户数据提供者
 }
 
 func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
@@ -60,6 +64,12 @@ func (g *GossiperActor) OnReceive(ctx vivid.ActorContext) {
 		g.onGossipActorPingPongMessage(ctx, m)
 	case *stateChanged:
 		g.onStateChanged()
+	case *getAvailableNodesRequestMessage:
+		g.onGetAvailableNodesRequestMessage(ctx, m)
+	case *GetUserDataRequestMessage:
+		g.onGetUserDataRequestMessage(ctx, m)
+	case *SetUserDataRequestMessage:
+		g.onSetUserDataRequestMessage(ctx, m)
 	}
 }
 
@@ -68,7 +78,9 @@ func (g *GossiperActor) onLaunch(ctx vivid.ActorContext) {
 	g.logger = ctx.System().Logger().With(log.String("system", ctx.System().PhysicalAddress()))
 
 	// 初始化自身状态
+	g.nodeId = newNodeId(ctx.Ref())
 	g.state = newState(ctx, g)
+	ctx.Tell(ctx.Parent(), g.nodeId)
 	g.seedNodeRefs = make([]vivid.ActorRef, len(g.seedNodes))
 	for i, seedNode := range g.seedNodes {
 		g.seedNodeRefs[i] = vivid.NewActorRef(seedNode, ctx.LogicalAddress())
@@ -384,4 +396,58 @@ func (g *GossiperActor) onStateChanged() {
 
 	// 传播新的 Gossip 状态
 	g.state.GossipUpdate()
+}
+
+func (g *GossiperActor) onGetAvailableNodesRequestMessage(ctx vivid.ActorContext, m *getAvailableNodesRequestMessage) {
+	// 保留可达节点
+	var result = &GetAvailableNodesResponseMessage{
+		NodeIds: make([]*NodeId, 0, len(g.state.gossip.Members)),
+	}
+	for _, node := range g.state.gossip.Members {
+		if node.Status == NodeStatusAlive {
+			result.NodeIds = append(result.NodeIds, node.Id)
+		}
+	}
+	ctx.Reply(result)
+}
+
+func (g *GossiperActor) onGetUserDataRequestMessage(ctx vivid.ActorContext, m *GetUserDataRequestMessage) {
+	var filter = make(map[gossipv1.NodeKey]struct{})
+	for _, id := range m.NodeIds {
+		filter[id.Key()] = struct{}{}
+	}
+
+	var result = make(map[gossipv1.NodeKey]proto.Message)
+	for _, member := range g.state.gossip.Members {
+		if _, ok := filter[member.Id.Key()]; !ok && len(filter) > 0 {
+			continue
+		}
+		if member.Status != NodeStatusAlive {
+			continue
+		}
+
+		av, exist := member.UserData[m.Key]
+		if exist {
+			value, err := av.UnmarshalNew()
+			if err != nil {
+				ctx.Reply(err)
+			}
+			result[member.Id.Key()] = value
+		}
+	}
+	ctx.Reply(result)
+}
+
+func (g *GossiperActor) onSetUserDataRequestMessage(ctx vivid.ActorContext, m *SetUserDataRequestMessage) {
+	v, err := anypb.New(m.Value)
+	if err != nil {
+		ctx.Reply(err)
+		return
+	}
+	if g.state.node.UserData == nil {
+		g.state.node.UserData = make(map[string]*anypb.Any)
+	}
+	g.state.node.UserData[m.Key] = v
+	ctx.Reply(nil)
+	g.onStateChanged()
 }

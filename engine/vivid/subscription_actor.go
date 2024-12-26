@@ -133,8 +133,8 @@ func (s *subscriptionActor) onLocalPublishRequest(ctx ActorContext, m *messages.
 			log.String("type", "subscription"),
 			log.String("type", "local"),
 			log.String("topic", m.Topic),
-			log.String("publisher", ctx.Sender().String()),
-			log.String("subscriber", subscription.Subscriber.String()))
+			log.String("publisher", ctx.Sender().URL().String()),
+			log.String("subscriber", subscription.Subscriber.URL().String()))
 	}
 }
 

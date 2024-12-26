@@ -2,6 +2,7 @@ package vivid
 
 import (
 	"github.com/kercylan98/minotaur/engine/future"
+	"github.com/kercylan98/minotaur/engine/prc"
 	"github.com/kercylan98/minotaur/toolkit/convert"
 	"time"
 )
@@ -39,6 +40,8 @@ func FutureAsk[M Message](ctx mixinDeliver, target ActorRef, message Message, ti
 	}
 
 	f := future.New[M](c.system.rc, c.ref.Derivation(convert.FastUint64ToString(c.nextChildGuid())), t)
-	system.rc.GetProcess(target).DeliveryUserMessage(target, f.Ref(), nil, message)
+	process := system.rc.GetProcess(target)
+	message = prc.WrapMessage(f.Ref(), target, message)
+	process.DeliveryUserMessage(target, f.Ref(), nil, message)
 	return f
 }

@@ -3,15 +3,16 @@ package cluster
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/kercylan98/minotaur/engine/prc"
 	prcv1 "github.com/kercylan98/minotaur/engine/prc/v1"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid/cluster/internal/gossip"
 	clusterv1 "github.com/kercylan98/minotaur/engine/vivid/cluster/internal/v1"
 	"github.com/kercylan98/minotaur/toolkit"
 	"github.com/kercylan98/minotaur/toolkit/collection"
 	"github.com/kercylan98/minotaur/toolkit/log"
-	"sync"
+	"google.golang.org/protobuf/proto"
+	"sync/atomic"
 	"time"
 )
 
@@ -36,7 +37,6 @@ func NewFixedSeedNodesActorSystem(address prc.PhysicalAddress, seedNodes []prc.P
 
 	system := &ActorSystem{
 		config: config,
-		nodes:  make(map[prc.PhysicalAddress]*Node),
 	}
 
 	config.WithShared(address)
@@ -44,22 +44,26 @@ func NewFixedSeedNodesActorSystem(address prc.PhysicalAddress, seedNodes []prc.P
 
 	system.ActorSystem = vivid.NewActorSystemWithConfiguration(config.ActorSystemConfiguration)
 
-	if err := toolkit.RetryByExponentialBackoff(func() error {
-		provideSeeds, err := config.seedProvider.Provide()
-		if err != nil {
-			system.Logger().Error("cluster", log.String("status", "backoff provide seeds failed"), log.Err(err))
-		} else {
-			seedNodes = append(seedNodes, provideSeeds...)
+	if config.seedProvider != nil {
+		if err := toolkit.RetryByExponentialBackoff(func() error {
+			provideSeeds, err := config.seedProvider.Provide()
+			if err != nil {
+				system.Logger().Error("cluster", log.String("status", "backoff provide seeds failed"), log.Err(err))
+			} else {
+				seedNodes = append(seedNodes, provideSeeds...)
+			}
+			return err
+		}, 64, time.Second, time.Minute, 2, 0.5); err != nil {
+			panic(err)
 		}
-		return err
-	}, 64, time.Second, time.Minute, 2, 0.5); err != nil {
-		panic(err)
 	}
 
 	// 去重种子节点
 	seedNodes = collection.DeduplicateSlice(seedNodes)
 	system.systemRef = system.ActorOfF(func() vivid.Actor {
-		return newActorSystemActor(system, seedNodes)
+		return newActorSystemActor(system, seedNodes, func(ref vivid.ActorRef) {
+			system.gossipRef = ref
+		})
 	}, func(descriptor *vivid.ActorDescriptor) {
 		descriptor.WithName("cluster")
 	})
@@ -71,8 +75,7 @@ type ActorSystem struct {
 	*vivid.ActorSystem                           // 如果单独使用，那么一切行为将越过集群
 	config             *ActorSystemConfiguration // 集群配置
 	systemRef          vivid.ActorRef            // 集群 ActorSystem 的 Actor 引用
-	nodeRWLock         sync.RWMutex
-	nodes              map[prc.PhysicalAddress]*Node
+	gossipRef          vivid.ActorRef            // 集群 ActorSystem 的 gossip Actor 引用
 }
 
 func (sys *ActorSystem) onShutdown() {
@@ -89,56 +92,58 @@ func (sys *ActorSystem) onShutdown() {
 	}
 }
 
-func (sys *ActorSystem) getAvailableNodeWithFixedProvider(name string) *Node {
-	sys.nodeRWLock.RLock()
-	defer sys.nodeRWLock.RUnlock()
+// SetUserData 设置集群内用户数据，该数据可以在集群内传播
+func (sys *ActorSystem) SetUserData(key string, value proto.Message) error {
+	return gossip.SetUserData(sys.Context(), sys.gossipRef, key, value)
+}
 
-	var targets []*Node
-	for _, node := range sys.nodes {
-		if node.gossipNode.UserState.FixedActorProviders[name] {
-			targets = append(targets, node)
-		}
-	}
+// GetUserData 获取集群内用户数据，如果 nodeIds 不指定，将获取所有节点的用户数据
+func (sys *ActorSystem) GetUserData(key string, nodeIds ...*NodeId) (map[NodeKey]proto.Message, error) {
+	return gossip.GetUserData[proto.Message](sys.Context(), sys.gossipRef, key, nodeIds...)
+}
 
-	return sys.config.nodeBalancer.Select(targets)
+// GetUserData 获取集群中的用户数据，当 nodeIds 不存在时，将获取所有节点
+func GetUserData[M proto.Message](sys *ActorSystem, key string, nodeIds ...*NodeId) (map[NodeKey]M, error) {
+	return gossip.GetUserData[M](sys.Context(), sys.gossipRef, key, nodeIds...)
+}
+
+// SetUserData 设置集群中的用户数据
+func SetUserData(sys *ActorSystem, key string, value proto.Message) error {
+	return gossip.SetUserData(sys.Context(), sys.gossipRef, key, value)
 }
 
 // GetOnlyActor 获取一个集群内唯一的 Actor 引用
 func (sys *ActorSystem) GetOnlyActor(name string) vivid.ActorRef {
-	proxyRef := vivid.NewActorRef("", "")
+	var proxyRef = vivid.NewActorRef("", "")
+	var cachePointer atomic.Pointer[prc.ProcessId]
 	prcv1.SetProcessIdProxy(proxyRef, func(source *prcv1.ProcessId) (redirect *prcv1.ProcessId) {
-		sys.nodeRWLock.RLock()
-		nodes := collection.CloneMap(sys.nodes)
-		sys.nodeRWLock.RUnlock()
-
-		for _, node := range nodes {
-			alive, exist := node.gossipNode.UserState.AliveOnlyActors[name]
-			if !exist {
-				continue
+		cache := cachePointer.Load()
+		if cache != nil {
+			if _, err := vivid.Ping(sys.ActorSystem, cache); err != nil {
+				cache = nil
+				cachePointer.Store(nil)
 			}
-			return alive.Ref
 		}
-		return nil
+		if cache == nil {
+			// 获取可用节点
+			aliveActorNodeUserDataMap, err := gossip.GetUserData[*clusterv1.AliveOnlyActorInfos](sys.Context(), sys.gossipRef, clusterv1.UserDataKey_USER_DATA_KEY_ALIVE_ONLY_ACTORS.String())
+			if err != nil {
+				sys.Logger().Error("cluster", log.String("event", "get-user-data"),
+					log.String("key", clusterv1.UserDataKey_USER_DATA_KEY_ALIVE_ONLY_ACTORS.String()),
+					log.Err(err))
+			}
+			for _, infos := range aliveActorNodeUserDataMap {
+				alive, exist := infos.AliveOnlyActors[name]
+				if !exist {
+					continue
+				}
+				cache = alive.Ref
+				cachePointer.Store(cache)
+			}
+		}
+
+		return cache
 	})
 
 	return proxyRef
-}
-
-func (sys *ActorSystem) SpawnFixedActor(name string, timeout ...time.Duration) (ref vivid.ActorRef, err error) {
-	node := sys.getAvailableNodeWithFixedProvider(name)
-	if node == nil {
-		return nil, errors.New("no available node")
-	}
-
-	var result any
-	if result, err = sys.ActorSystem.FutureAsk(node.nodeRef, &clusterv1.SpawnFixedActor{Name: name}, timeout...).Result(); err != nil {
-		return
-	}
-	actorOfResult, ok := result.(*clusterv1.SpawnFixedActorResult)
-	if !ok {
-		return nil, fmt.Errorf("actor of result type error, expect %T, got %T, please check the cluster version", &clusterv1.SpawnFixedActorResult{}, result)
-	}
-	ref = actorOfResult.Ref
-
-	return
 }
