@@ -18,6 +18,7 @@ type WebSocketController struct {
 	modules struct {
 		actorSystem module.ActorSystemModule
 		fiber       module.FiberModule
+		rpc         module.RPCModule
 	}
 
 	socketFactory socket.Factory
@@ -26,11 +27,12 @@ type WebSocketController struct {
 func (w *WebSocketController) OnInitialize(ctx *application.Context, loader *application.ServiceLoader) (err error) {
 	w.modules.actorSystem = application.LoadModule[module.ActorSystemModule](ctx)
 	w.modules.fiber = application.LoadModule[module.FiberModule](ctx)
+	w.modules.rpc = application.LoadModule[module.RPCModule](ctx)
 
 	w.socketFactory = socket.NewFactory(w.modules.actorSystem.ActorSystem())
 
 	w.modules.fiber.Fiber().Get("/websocket", fiber.UseFiberHandler[*application.Context](websocket.New(func(conn *websocket.Conn) {
-		socket.ProduceFiberSocketV2(w.socketFactory, conn, newWebSocketActor())
+		socket.ProduceFiberSocketV2(w.socketFactory, conn, newWebSocketActor(w.modules.rpc))
 	})))
 
 	return

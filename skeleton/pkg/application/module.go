@@ -62,8 +62,18 @@ func runModules(ctx *Context) (err error) {
 	}
 
 	for _, module := range ctx.modules {
-		if err = module.OnSetup(); err != nil {
+		if err = module.OnDependencySetup(); err != nil {
 			return
+		}
+	}
+
+	return nil
+}
+
+func setupModules(ctx *Context) error {
+	for _, module := range ctx.modules {
+		if err := module.OnSetup(); err != nil {
+			return err
 		}
 	}
 

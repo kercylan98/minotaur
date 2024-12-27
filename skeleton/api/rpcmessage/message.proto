@@ -1,0 +1,11 @@
+syntax = "proto3";
+package api.rpcmessage;
+
+message RPCOAuthLoginRequest {
+    string account = 1;
+    string password = 2;
+}
+
+message RPCOAuthLoginResponse {
+    string token = 1;
+}

@@ -60,22 +60,38 @@ func NewFixedSeedNodesActorSystem(address prc.PhysicalAddress, seedNodes []prc.P
 
 	// 去重种子节点
 	seedNodes = collection.DeduplicateSlice(seedNodes)
+
+	// wait
+	var wait = make(chan struct{})
 	system.systemRef = system.ActorOfF(func() vivid.Actor {
-		return newActorSystemActor(system, seedNodes, func(ref vivid.ActorRef) {
-			system.gossipRef = ref
-		})
+		return newActorSystemActor(system, seedNodes,
+			func(ref vivid.ActorRef) {
+				system.gossipRef = ref
+			},
+			func(nodeId *NodeId) {
+				system.nodeId = nodeId
+				close(wait)
+			},
+		)
 	}, func(descriptor *vivid.ActorDescriptor) {
 		descriptor.WithName("cluster")
 	})
 
+	<-wait
 	return system
 }
 
 type ActorSystem struct {
 	*vivid.ActorSystem                           // 如果单独使用，那么一切行为将越过集群
 	config             *ActorSystemConfiguration // 集群配置
+	nodeId             *NodeId                   // 集群自身节点 ID
 	systemRef          vivid.ActorRef            // 集群 ActorSystem 的 Actor 引用
 	gossipRef          vivid.ActorRef            // 集群 ActorSystem 的 gossip Actor 引用
+}
+
+// NodeId 获取集群自身节点 ID
+func (sys *ActorSystem) NodeId() *NodeId {
+	return sys.nodeId
 }
 
 func (sys *ActorSystem) onShutdown() {

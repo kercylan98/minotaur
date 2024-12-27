@@ -1,3 +1,0 @@
-syntax = "proto3";
-package api.proto.v1;
-

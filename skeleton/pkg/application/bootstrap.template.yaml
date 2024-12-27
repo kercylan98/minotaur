@@ -2,3 +2,10 @@ app:
   env: "dev"
   logger:
     level: "info"
+#vivid:
+#  name: "actor-system"
+#  addr: ":8080"
+#  cluster:
+#    seed-nodes:
+#      - "127.0.0.1:8080"
+#      - "127.0.0.1:8081"

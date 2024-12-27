@@ -36,6 +36,7 @@ type Future[M prc.Message] interface {
 	AwaitForward(ref *prc.ProcessId, f func() M)
 }
 
+// New 创建一个 Future
 func New[M prc.Message](rc *prc.ResourceController, id *prc.ProcessId, timeout time.Duration) Future[M] {
 	fp := &futureProcess[M]{
 		done:    make(chan struct{}),
@@ -43,6 +44,15 @@ func New[M prc.Message](rc *prc.ResourceController, id *prc.ProcessId, timeout t
 	}
 
 	fp.ref, _ = rc.Register(id, fp)
+	return fp
+}
+
+// Fail 创建一个失败的 Future
+func Fail[M prc.Message](err error) Future[M] {
+	fp := &futureProcess[M]{
+		done: make(chan struct{}),
+	}
+	fp.Close(err)
 	return fp
 }
 

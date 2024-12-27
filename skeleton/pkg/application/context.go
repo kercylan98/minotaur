@@ -62,5 +62,9 @@ func (c *Context) Run() (err error) {
 		return
 	}
 
+	if err = setupModules(c); err != nil {
+		return
+	}
+
 	return nil
 }

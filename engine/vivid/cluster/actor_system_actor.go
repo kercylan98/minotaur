@@ -19,11 +19,12 @@ type (
 	}
 )
 
-func newActorSystemActor(system *ActorSystem, seedNodes []prc.PhysicalAddress, gossipRefHandler func(ref vivid.ActorRef)) *actorSystemActor {
+func newActorSystemActor(system *ActorSystem, seedNodes []prc.PhysicalAddress, gossipRefHandler func(ref vivid.ActorRef), nodeIdHandler func(nodeId *NodeId)) *actorSystemActor {
 	return &actorSystemActor{
 		system:           system,
 		seedNodes:        seedNodes,
 		gossipRefHandler: gossipRefHandler,
+		nodeIdHandler:    nodeIdHandler,
 	}
 }
 
@@ -35,12 +36,14 @@ type actorSystemActor struct {
 	leaderRef        vivid.ActorRef           // 集群当前的领导者引用
 	gossipRefHandler func(ref vivid.ActorRef) // 集群 Gossip 引用处理器
 	nodeId           *gossip.NodeId           // 集群自身节点 ID
+	nodeIdHandler    func(nodeId *NodeId)     // 集群自身节点 ID 处理器
 }
 
 func (a *actorSystemActor) OnReceive(ctx vivid.ActorContext) {
 	switch m := ctx.Message().(type) {
 	case *gossip.NodeId:
 		a.nodeId = m
+		a.nodeIdHandler(proto.Clone(a.nodeId).(*NodeId))
 	case *vivid.OnLaunch:
 		a.onLaunch(ctx)
 	case vivid.ActorRef:

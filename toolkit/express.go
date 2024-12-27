@@ -8,3 +8,10 @@ func If[V any](express bool, t, f V) V {
 	}
 	return f
 }
+
+// IfThen 如果表达式成立，那么执行传入的 handler
+func IfThen(condition bool, handler func()) {
+	if condition {
+		handler()
+	}
+}

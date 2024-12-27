@@ -8,8 +8,11 @@ import (
 )
 
 const (
-	ConfigurationEnvKey         = "app.env"
-	ConfigurationLoggerLevelKey = "app.logger.level"
+	ConfigurationEnvKey                   = "app.env"
+	ConfigurationLoggerLevelKey           = "app.logger.level"
+	ConfigurationVividNameKey             = "vivid.name"
+	ConfigurationVividAddrKey             = "vivid.addr"
+	ConfigurationVividClusterSeedNodesKey = "vivid.cluster.seed-nodes"
 )
 
 //go:embed "bootstrap.template.yaml"

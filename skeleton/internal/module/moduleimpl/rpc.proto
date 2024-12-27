@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package skeleton.internal.module.moduleimpl;
+
+import "engine/prc/v1/process_id.proto";
+
+message RPCModuleClusterUserData {
+  message Handlers {
+    repeated engine.prc.v1.ProcessId ref = 1; // 处理器引用
+  }
+  
+  map<string, Handlers> handlers = 1; // 消息类型处理器
+}
