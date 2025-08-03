@@ -2,6 +2,8 @@
 
 Minotaur 是一个通过 Actor 思想来设计的天然支持分布式的服务端开发支持库，主要目的是提供简单的并发及分布式实现。其中不仅包含了对 Actor 的抽象，同时也包含了大量常用的工具函数，尽管主要是面向于游戏开发，但是其中的大量功能也同样适用于 WEB 开发。
 
+> 该项目整体较为混乱，将逐渐转移至 [Vivid](https://github.com/kercylan98/vivid) 项目。
+
 ***
 
 [![Go doc](https://img.shields.io/badge/go.dev-reference-brightgreen?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/kercylan98/minotaur)
